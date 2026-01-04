@@ -1,0 +1,15 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+
+BasedPyright type errors (4):  Line 1471, Col 63: [reportOptionalMemberAccess] `None` 没有 "find_event_location" 属性 (reportOptionalMemberAccess)
+  Line 1477, Col 52: [reportOptionalMemberAccess] `None` 没有 "remove_event" 属性 (reportOptionalMemberAccess)
+  Line 1510, Col 94: [reportOptionalMemberAccess] `None` 没有 "segments" 属性 (reportOptionalMemberAccess)
+  Line 1513, Col 94: [reportOptionalMemberAccess] `None` 没有 "segments" 属性 (reportOptionalMemberAccess)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

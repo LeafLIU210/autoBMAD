@@ -1,0 +1,3350 @@
+{
+  "metadata": {
+    "source_file": "results\\basedpyright_check_result_20251204_173224.txt",
+    "extraction_time": "2025-12-04T17:32:42.862823",
+    "total_files_with_errors": 31,
+    "total_errors": 503
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\analysis\\business_insights.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "unknown": 8
+      },
+      "errors": [
+        {
+          "line": 180,
+          "column": 17,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_recommend_content_frameworks\" 中 \"str\" 类型的形参 \"content_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 180,
+          "column": 31,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_recommend_content_frameworks\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 185,
+          "column": 17,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"str\" 类型的形参 \"content_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 185,
+          "column": 31,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 609,
+          "column": 42,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 617,
+          "column": 42,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 625,
+          "column": 37,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"extend\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 639,
+          "column": 41,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"extend\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\analysis\\content_intelligence.py",
+      "error_count": 25,
+      "errors_by_rule": {
+        "reportMissingTypeArgument": 2,
+        "unknown": 23
+      },
+      "errors": [
+        {
+          "line": 114,
+          "column": 40,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 134,
+          "column": 22,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 211,
+          "column": 12,
+          "message": "ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 217,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 217,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 218,
+          "column": 33,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 218,
+          "column": 33,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 219,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 219,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 220,
+          "column": 31,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 220,
+          "column": 31,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 231,
+          "column": 38,
+          "message": "Column[int] | <subclass of Column[int] and int> | <subclass of Column[int] and float> | Literal[False] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 232,
+          "column": 40,
+          "message": "Column[int] | <subclass of Column[int] and int> | <subclass of Column[int] and float> | Literal[False] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 233,
+          "column": 40,
+          "message": "Column[int] | <subclass of Column[int] and int> | <subclass of Column[int] and float> | Literal[False] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 234,
+          "column": 38,
+          "message": "Column[int] | <subclass of Column[int] and int> | <subclass of Column[int] and float> | Literal[False] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 236,
+          "column": 12,
+          "message": "bool | ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 257,
+          "column": 12,
+          "message": "ColumnElement[bool] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 262,
+          "column": 16,
+          "message": "\"float | ColumnElement[_NUMERIC]\" 类型不匹配返回类型 \"float\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 315,
+          "column": 12,
+          "message": "ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 350,
+          "column": 60,
+          "message": "\"Column[int] | Literal[0]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 350,
+          "column": 60,
+          "message": "\"Column[int] | Literal[0]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 429,
+          "column": 16,
+          "message": "\"TrendResult | None\" 类型不匹配返回类型 \"Dict[str, Any]\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 694,
+          "column": 20,
+          "message": "ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 736,
+          "column": 22,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 834,
+          "column": 110,
+          "message": "\"List\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\analysis\\enhanced_analyzer.py",
+      "error_count": 71,
+      "errors_by_rule": {
+        "unknown": 70,
+        "reportCallIssue": 1
+      },
+      "errors": [
+        {
+          "line": 328,
+          "column": 16,
+          "message": "SpeechTranscription | Column[str] | None 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 330,
+          "column": 61,
+          "message": "Column[str] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 460,
+          "column": 43,
+          "message": "Column[str] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 461,
+          "column": 55,
+          "message": "Column[str] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 464,
+          "column": 26,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 464,
+          "column": 26,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 464,
+          "column": 47,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 465,
+          "column": 26,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 465,
+          "column": 26,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 465,
+          "column": 47,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 466,
+          "column": 29,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 466,
+          "column": 29,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 466,
+          "column": 53,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 467,
+          "column": 32,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 467,
+          "column": 32,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 467,
+          "column": 59,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 468,
+          "column": 27,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 468,
+          "column": 27,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 468,
+          "column": 49,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 471,
+          "column": 59,
+          "message": "Column[str] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 472,
+          "column": 34,
+          "message": "\"Column[Unknown]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToFloat\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 472,
+          "column": 69,
+          "message": "Column[Unknown] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 473,
+          "column": 69,
+          "message": "Column[str] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 474,
+          "column": 55,
+          "message": "Column[str] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 525,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 525,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 525,
+          "column": 51,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 526,
+          "column": 33,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 526,
+          "column": 33,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 526,
+          "column": 57,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 527,
+          "column": 36,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 527,
+          "column": 36,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 527,
+          "column": 63,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 528,
+          "column": 31,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 528,
+          "column": 31,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 528,
+          "column": 53,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 529,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 529,
+          "column": 30,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"ConvertibleToInt\" 类型的形参 \"x\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 529,
+          "column": 51,
+          "message": "Column[int] | bool 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 725,
+          "column": 38,
+          "message": "无法为 \"EnhancedSpeechAnalysisResult\" 类的 \"transcript_text\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 730,
+          "column": 41,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 734,
+          "column": 47,
+          "message": "Column[str] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 752,
+          "column": 17,
+          "message": "\"ColumnElement[Any] | str | Column[str]\" 类型的实参无法赋值给函数 \"_estimate_tokens\" 中 \"str\" 类型的形参 \"text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 764,
+          "column": 31,
+          "message": "无法为 \"SpeechTranscription\" 类的 \"full_text\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 782,
+          "column": 107,
+          "message": "\"str | None\" 类型的实参无法赋值给函数 \"_fallback_to_basic_analysis_with_transcript\" 中 \"str\" 类型的形参 \"error_message\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 996,
+          "column": 21,
+          "message": "\"dict[str, str | Dict[str, Any] | dict[str, Any | str | float | Dict[str, int] | List[str] | None] | None]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | datetime | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1036,
+          "column": 26,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"analyze_video_content\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1037,
+          "column": 23,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"analyze_video_content\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1038,
+          "column": 29,
+          "message": "\"Column[str] | Literal['']\" 类型的实参无法赋值给函数 \"analyze_video_content\" 中 \"str\" 类型的形参 \"description\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1045,
+          "column": 26,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1046,
+          "column": 23,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1047,
+          "column": 29,
+          "message": "\"Column[str] | Literal['']\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"description\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1065,
+          "column": 26,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1066,
+          "column": 23,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1067,
+          "column": 29,
+          "message": "\"Column[str] | Literal['']\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"description\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1088,
+          "column": 9,
+          "message": "\"dict[str, int]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"int | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1249,
+          "column": 32,
+          "message": "\"Column[Unknown]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"float\" 类型的形参 \"completeness_score\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1250,
+          "column": 35,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1251,
+          "column": 41,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1252,
+          "column": 37,
+          "message": "\"Column[Unknown]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"float\" 类型的形参 \"transcript_completeness\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1254,
+          "column": 46,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1255,
+          "column": 41,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1284,
+          "column": 23,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1285,
+          "column": 29,
+          "message": "\"Column[str] | Literal['']\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"description\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1452,
+          "column": 26,
+          "message": "无法访问 \"APIResponse\" 类的 \"update\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1458,
+          "column": 20,
+          "message": "\"APIResponse\" 类型不匹配返回类型 \"Dict[str, Any]\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1661,
+          "column": 32,
+          "message": "参数 \"title\", \"description\" 缺少传入值 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 1670,
+          "column": 28,
+          "message": "无法为 \"EnhancedSpeechAnalysisResult\" 类的 \"status\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1674,
+          "column": 32,
+          "message": "无法为 \"EnhancedSpeechAnalysisResult\" 类的 \"chinese_character_count\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1676,
+          "column": 32,
+          "message": "无法为 \"EnhancedSpeechAnalysisResult\" 类的 \"overall_quality_score\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1685,
+          "column": 20,
+          "message": "无法为 \"EnhancedSpeechAnalysisResult\" 类的 \"status\" 属性赋值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\analysis\\pattern_recognition.py",
+      "error_count": 5,
+      "errors_by_rule": {
+        "reportConstantRedefinition": 1,
+        "unknown": 4
+      },
+      "errors": [
+        {
+          "line": 295,
+          "column": 5,
+          "message": "不能重新定义常量 \"HOOK_PATTERNS\"（全大写名称） (reportConstantRedefinition)",
+          "rule": "reportConstantRedefinition"
+        },
+        {
+          "line": 1168,
+          "column": 37,
+          "message": "\"list[str | None]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"List[str]\" 类型的形参 \"engagement_triggers\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1170,
+          "column": 16,
+          "message": "\"None\" 类型的实参无法赋值给函数 \"predict_success_probability\" 中 \"Video\" 类型的形参 \"video\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1182,
+          "column": 37,
+          "message": "\"list[str | None]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"List[str]\" 类型的形参 \"engagement_triggers\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1194,
+          "column": 33,
+          "message": "\"list[str | None]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"List[str]\" 类型的形参 \"engagement_triggers\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\speech\\asr_engine.py",
+      "error_count": 9,
+      "errors_by_rule": {
+        "reportInvalidTypeForm": 3,
+        "unknown": 5,
+        "reportOptionalMemberAccess": 1
+      },
+      "errors": [
+        {
+          "line": 51,
+          "column": 30,
+          "message": "类型表达式中不允许使用变量 (reportInvalidTypeForm)",
+          "rule": "reportInvalidTypeForm"
+        },
+        {
+          "line": 67,
+          "column": 32,
+          "message": "类型表达式中不允许使用变量 (reportInvalidTypeForm)",
+          "rule": "reportInvalidTypeForm"
+        },
+        {
+          "line": 111,
+          "column": 49,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 111,
+          "column": 49,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 111,
+          "column": 49,
+          "message": "无法访问 \"str\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 125,
+          "column": 32,
+          "message": "\"int\" 不支持迭代",
+          "rule": "unknown"
+        },
+        {
+          "line": 125,
+          "column": 32,
+          "message": "\"Literal[True]\" 不支持迭代",
+          "rule": "unknown"
+        },
+        {
+          "line": 207,
+          "column": 31,
+          "message": "类型表达式中不允许使用变量 (reportInvalidTypeForm)",
+          "rule": "reportInvalidTypeForm"
+        },
+        {
+          "line": 333,
+          "column": 41,
+          "message": "`None` 没有 \"transcribe\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\speech\\asr_engine_backup.py",
+      "error_count": 43,
+      "errors_by_rule": {
+        "unknown": 42,
+        "reportOptionalMemberAccess": 1
+      },
+      "errors": [
+        {
+          "line": 33,
+          "column": 71,
+          "message": "无法访问 \"ASRModelConfig\" 类的 \"dict\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 184,
+          "column": 50,
+          "message": "无法访问 \"ASRModelConfig\" 类的 \"logprob_threshold\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 194,
+          "column": 51,
+          "message": "`None` 没有 \"transcribe\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str | None\" 类型的形参 \"language\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str\" 类型的形参 \"task\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"log_progress\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"int\" 类型的形参 \"beam_size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"int\" 类型的形参 \"best_of\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float\" 类型的形参 \"patience\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float\" 类型的形参 \"length_penalty\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float\" 类型的形参 \"repetition_penalty\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"int\" 类型的形参 \"no_repeat_ngram_size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float | List[float] | Tuple[float, ...]\" 类型的形参 \"temperature\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float | None\" 类型的形参 \"compression_ratio_threshold\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float | None\" 类型的形参 \"log_prob_threshold\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float | None\" 类型的形参 \"no_speech_threshold\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"condition_on_previous_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float\" 类型的形参 \"prompt_reset_on_temperature\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str | Iterable[int] | None\" 类型的形参 \"initial_prompt\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str | None\" 类型的形参 \"prefix\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"suppress_blank\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"List[int] | None\" 类型的形参 \"suppress_tokens\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"without_timestamps\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float\" 类型的形参 \"max_initial_timestamp\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"word_timestamps\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str\" 类型的形参 \"prepend_punctuations\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str\" 类型的形参 \"append_punctuations\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"multilingual\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"bool\" 类型的形参 \"vad_filter\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"dict[Unknown, Unknown] | VadOptions | None\" 类型的形参 \"vad_parameters\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"int | None\" 类型的形参 \"max_new_tokens\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"int | None\" 类型的形参 \"chunk_length\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str | List[float]\" 类型的形参 \"clip_timestamps\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float | None\" 类型的形参 \"hallucination_silence_threshold\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"str | None\" 类型的形参 \"hotwords\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"float | None\" 类型的形参 \"language_detection_threshold\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 19,
+          "message": "\"str | int | float | Unknown | bool\" 类型的实参无法赋值给函数 \"transcribe\" 中 \"int\" 类型的形参 \"language_detection_segments\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 338,
+          "column": 35,
+          "message": "无法访问 \"ASRModelConfig\" 类的 \"dict\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 365,
+          "column": 13,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 372,
+          "column": 21,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 373,
+          "column": 60,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"total_duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 374,
+          "column": 62,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"word_count\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 377,
+          "column": 13,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\speech\\chinese_optimizer.py",
+      "error_count": 22,
+      "errors_by_rule": {
+        "unknown": 22
+      },
+      "errors": [
+        {
+          "line": 169,
+          "column": 21,
+          "message": "无法为 \"SegmentInfo\" 类的 \"confidence\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 198,
+          "column": 51,
+          "message": "无法访问 \"SegmentInfo\" 类的 \"confidence\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 220,
+          "column": 39,
+          "message": "无法访问 \"SegmentInfo\" 类的 \"confidence\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 240,
+          "column": 28,
+          "message": "无法访问 \"SegmentInfo\" 类的 \"confidence\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 345,
+          "column": 45,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 345,
+          "column": 45,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 348,
+          "column": 54,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 348,
+          "column": 54,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 355,
+          "column": 45,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 355,
+          "column": 45,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 358,
+          "column": 54,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 358,
+          "column": 54,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 363,
+          "column": 45,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 363,
+          "column": 45,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 366,
+          "column": 54,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 366,
+          "column": 54,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 371,
+          "column": 45,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 371,
+          "column": 45,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 374,
+          "column": 54,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 374,
+          "column": 54,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 378,
+          "column": 41,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 378,
+          "column": 41,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\speech\\chinese_optimizer_broken.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "unknown": 7,
+        "reportInvalidStringEscapeSequence": 1
+      },
+      "errors": [
+        {
+          "line": 58,
+          "column": 42,
+          "message": "无法访问 \"ChineseLanguageOptimizer*\" 类的 \"_optimize_chinese_segment\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 65,
+          "column": 44,
+          "message": "无法访问 \"ChineseLanguageOptimizer*\" 类的 \"_calculate_chinese_confidence\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 68,
+          "column": 41,
+          "message": "无法访问 \"ChineseLanguageOptimizer*\" 类的 \"_extract_chinese_metadata\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 108,
+          "column": 60,
+          "message": "根据标注的返回类型，该函数必须在所有代码路径上返回 \"str\" 类型的值",
+          "rule": "unknown"
+        },
+        {
+          "line": 118,
+          "column": 27,
+          "message": "`{` 未闭合",
+          "rule": "unknown"
+        },
+        {
+          "line": 126,
+          "column": 18,
+          "message": "字符串未终止",
+          "rule": "unknown"
+        },
+        {
+          "line": 138,
+          "column": 43,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 391,
+          "column": 33,
+          "message": "语句必须用换行符或分号分隔",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\speech\\service.py",
+      "error_count": 14,
+      "errors_by_rule": {
+        "reportCallIssue": 1,
+        "unknown": 12,
+        "reportGeneralTypeIssues": 1
+      },
+      "errors": [
+        {
+          "line": 107,
+          "column": 71,
+          "message": "需要传入 1 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 149,
+          "column": 49,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"language_detected\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 185,
+          "column": 34,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"bool\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 207,
+          "column": 25,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 207,
+          "column": 25,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 208,
+          "column": 56,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"file_path\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 213,
+          "column": 17,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"transcribe_audio_file\" 中 \"str\" 类型的形参 \"audio_path\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 214,
+          "column": 17,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"transcribe_audio_file\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 248,
+          "column": 34,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"bool\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 249,
+          "column": 37,
+          "message": "此处应为类而非 \"(obj: object, /) -> TypeIs[(...) -> object]\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 294,
+          "column": 34,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"bool\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 427,
+          "column": 35,
+          "message": "无法访问 \"ASRModelConfig\" 类的 \"dict\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 478,
+          "column": 25,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 483,
+          "column": 13,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\ai\\speech\\transcription_processor.py",
+      "error_count": 5,
+      "errors_by_rule": {
+        "unknown": 5
+      },
+      "errors": [
+        {
+          "line": 264,
+          "column": 72,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"total_duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 329,
+          "column": 40,
+          "message": "无法访问 \"ASREngine\" 类的 \"test_transcription\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 339,
+          "column": 31,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"language_detected\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 339,
+          "column": 60,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"language_detected\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 343,
+          "column": 13,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\AudioDownloadManager.py",
+      "error_count": 14,
+      "errors_by_rule": {
+        "reportGeneralTypeIssues": 8,
+        "unknown": 5,
+        "reportCallIssue": 1
+      },
+      "errors": [
+        {
+          "line": 116,
+          "column": 20,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 200,
+          "column": 20,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 230,
+          "column": 16,
+          "message": "AudioFile | ColumnElement[bool] | None 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 243,
+          "column": 43,
+          "message": "无法访问 \"AudioExtractor\" 类的 \"extract_audio\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 274,
+          "column": 59,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 287,
+          "column": 66,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 300,
+          "column": 41,
+          "message": "无法访问 \"AudioExtractor\" 类的 \"get_audio_quality_info\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 305,
+          "column": 51,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 324,
+          "column": 89,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 348,
+          "column": 48,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 390,
+          "column": 66,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"get_by_video_id\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 391,
+          "column": 20,
+          "message": "ColumnElement[bool] | Literal[True] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 402,
+          "column": 84,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 426,
+          "column": 43,
+          "message": "需要传入 0 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\downloader\\audio_extractor.py",
+      "error_count": 11,
+      "errors_by_rule": {
+        "reportMissingTypeArgument": 4,
+        "unknown": 7
+      },
+      "errors": [
+        {
+          "line": 70,
+          "column": 91,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 118,
+          "column": 49,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 136,
+          "column": 62,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"float\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 137,
+          "column": 57,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"float\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 188,
+          "column": 76,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 224,
+          "column": 30,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 227,
+          "column": 10,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 270,
+          "column": 30,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 319,
+          "column": 39,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"float\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 320,
+          "column": 10,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 346,
+          "column": 40,
+          "message": "\"float\" 与 \"int | str | float\" 类型不支持 \"*\" 运算符",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\downloader\\batch_processor.py",
+      "error_count": 19,
+      "errors_by_rule": {
+        "reportMissingTypeArgument": 1,
+        "unknown": 5,
+        "reportOptionalMemberAccess": 11,
+        "reportCallIssue": 2
+      },
+      "errors": [
+        {
+          "line": 95,
+          "column": 39,
+          "message": "\"Future\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 152,
+          "column": 26,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 261,
+          "column": 44,
+          "message": "`None` 没有 \"cancel_task\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 289,
+          "column": 43,
+          "message": "`None` 没有 \"can_start_more_tasks\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 302,
+          "column": 44,
+          "message": "`None` 没有 \"update_task_progress\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 312,
+          "column": 43,
+          "message": "`None` 没有 \"get_active_tasks\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 318,
+          "column": 40,
+          "message": "`None` 没有 \"finalize_batch\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 340,
+          "column": 44,
+          "message": "`None` 没有 \"cancel_task\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 344,
+          "column": 40,
+          "message": "`None` 没有 \"update_task_progress\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 362,
+          "column": 21,
+          "message": "\"source_type\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 369,
+          "column": 59,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"_simulate_download_progress\" 中 \"int\" 类型的形参 \"audio_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 372,
+          "column": 40,
+          "message": "`None` 没有 \"complete_task\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 382,
+          "column": 40,
+          "message": "`None` 没有 \"update_task_progress\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 393,
+          "column": 32,
+          "message": "`None` 没有 \"complete_task\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 450,
+          "column": 36,
+          "message": "`None` 没有 \"update_task_progress\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 460,
+          "column": 34,
+          "message": "无法访问 \"AudioRepository\" 类的 \"get_db_session_safe\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 495,
+          "column": 43,
+          "message": "需要传入 0 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 536,
+          "column": 66,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"get_by_video_id\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 537,
+          "column": 20,
+          "message": "ColumnElement[bool] | Literal[True] 类型的条件值无效",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\downloader\\file_manager.py",
+      "error_count": 5,
+      "errors_by_rule": {
+        "reportMissingTypeArgument": 4,
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 85,
+          "column": 49,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 226,
+          "column": 36,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 365,
+          "column": 52,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 426,
+          "column": 57,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"Path\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 426,
+          "column": 89,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\downloader\\progress_tracker.py",
+      "error_count": 11,
+      "errors_by_rule": {
+        "reportGeneralTypeIssues": 2,
+        "unknown": 9
+      },
+      "errors": [
+        {
+          "line": 132,
+          "column": 45,
+          "message": "此处应为类而非 \"(obj: object, /) -> TypeIs[(...) -> object]\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 170,
+          "column": 35,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"float\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 171,
+          "column": 31,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 172,
+          "column": 20,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 173,
+          "column": 29,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 174,
+          "column": 33,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 175,
+          "column": 30,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 233,
+          "column": 86,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 245,
+          "column": 30,
+          "message": "\"float | None\" 类型的实参无法赋值给函数 \"update_task_progress\" 中 \"float\" 类型的形参 \"progress_percent\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 329,
+          "column": 46,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"int\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 356,
+          "column": 45,
+          "message": "此处应为类而非 \"(obj: object, /) -> TypeIs[(...) -> object]\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\jijidown_client\\connection_manager.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "unknown": 2,
+        "reportMissingTypeArgument": 1
+      },
+      "errors": [
+        {
+          "line": 237,
+          "column": 33,
+          "message": "无法为 \"ConnectionManager*\" 类的 \"_channel\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 244,
+          "column": 24,
+          "message": "\"Channel\" 类型不匹配返回类型 \"Channel\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 321,
+          "column": 38,
+          "message": "\"dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\jijidown_client\\grpc_client.py",
+      "error_count": 10,
+      "errors_by_rule": {
+        "reportMissingImports": 1,
+        "reportConstantRedefinition": 1,
+        "reportPossiblyUnboundVariable": 2,
+        "reportMissingTypeArgument": 6
+      },
+      "errors": [
+        {
+          "line": 27,
+          "column": 10,
+          "message": "无法解析导入 \".proto\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 32,
+          "column": 5,
+          "message": "不能重新定义常量 \"PROTOBUF_AVAILABLE\"（全大写名称） (reportConstantRedefinition)",
+          "rule": "reportConstantRedefinition"
+        },
+        {
+          "line": 86,
+          "column": 41,
+          "message": "\"bvideo_pb2_grpc\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 87,
+          "column": 39,
+          "message": "\"task_pb2_grpc\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 99,
+          "column": 52,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 147,
+          "column": 47,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 210,
+          "column": 76,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 347,
+          "column": 21,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 412,
+          "column": 48,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 507,
+          "column": 38,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\jijidown_client\\proto_utils.py",
+      "error_count": 10,
+      "errors_by_rule": {
+        "reportMissingTypeArgument": 10
+      },
+      "errors": [
+        {
+          "line": 129,
+          "column": 10,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 179,
+          "column": 52,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 179,
+          "column": 62,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 202,
+          "column": 54,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 222,
+          "column": 68,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 254,
+          "column": 57,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 279,
+          "column": 10,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 311,
+          "column": 52,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 311,
+          "column": 61,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 349,
+          "column": 45,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\storage\\audio_manager.py",
+      "error_count": 17,
+      "errors_by_rule": {
+        "unknown": 15,
+        "reportMissingTypeArgument": 2
+      },
+      "errors": [
+        {
+          "line": 38,
+          "column": 24,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 77,
+          "column": 26,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"int\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 78,
+          "column": 33,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"int\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 95,
+          "column": 17,
+          "message": "\"int\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 97,
+          "column": 17,
+          "message": "\"int\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 130,
+          "column": 30,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 130,
+          "column": 30,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 136,
+          "column": 21,
+          "message": "\"Column[int]\" 类型的实参无法赋值给函数 \"update_audio_status\" 中 \"int\" 类型的形参 \"audio_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 137,
+          "column": 21,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"update_audio_status\" 中 \"str\" 类型的形参 \"status\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 166,
+          "column": 16,
+          "message": "Column[str] | Literal[False] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 167,
+          "column": 34,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 167,
+          "column": 34,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 184,
+          "column": 61,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 200,
+          "column": 30,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__new__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 200,
+          "column": 30,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"StrPath\" 类型的形参 \"args\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 210,
+          "column": 70,
+          "message": "Column[datetime] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 226,
+          "column": 38,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\audio\\storage\\storage_config.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportMissingTypeArgument": 3,
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 29,
+          "column": 24,
+          "message": "\"list\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 29,
+          "column": 31,
+          "message": "\"None\" 类型不匹配声明的 \"list[Unknown]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 48,
+          "column": 37,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 72,
+          "column": 26,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\cli\\commands\\audio.py",
+      "error_count": 33,
+      "errors_by_rule": {
+        "unknown": 19,
+        "reportMissingTypeArgument": 4,
+        "reportUndefinedVariable": 7,
+        "reportCallIssue": 3
+      },
+      "errors": [
+        {
+          "line": 227,
+          "column": 44,
+          "message": "无法访问 \"JijidownGrpcClient\" 类的 \"connect\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 285,
+          "column": 40,
+          "message": "无法访问 \"JijidownGrpcClient\" 类的 \"connect\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 310,
+          "column": 47,
+          "message": "\"dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 355,
+          "column": 6,
+          "message": "\"dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 379,
+          "column": 50,
+          "message": "\"None\" 类型的实参无法赋值给函数 \"generate_audio_filename\" 中 \"str\" 类型的形参 \"custom_name\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 539,
+          "column": 88,
+          "message": "无法访问 \"TranscriptionRepository\" 类的 \"exists_for_audio\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 544,
+          "column": 38,
+          "message": "无法访问 \"AudioRepository\" 类的 \"get_files_for_transcription\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 587,
+          "column": 18,
+          "message": "\"ThreadPoolExecutor\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 600,
+          "column": 31,
+          "message": "\"as_completed\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 681,
+          "column": 84,
+          "message": "无法访问 \"TranscriptionRepository\" 类的 \"exists_for_audio\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 685,
+          "column": 34,
+          "message": "无法访问 \"AudioRepository\" 类的 \"get_files_for_transcription\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 730,
+          "column": 6,
+          "message": "\"dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 770,
+          "column": 33,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 772,
+          "column": 41,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"language_detected\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 774,
+          "column": 38,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 785,
+          "column": 41,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"language_detected\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 786,
+          "column": 38,
+          "message": "无法访问 \"TranscriptionResult\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 843,
+          "column": 35,
+          "message": "\"validate_configuration_complete\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 895,
+          "column": 20,
+          "message": "\"get_enhanced_content_analyzer\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 923,
+          "column": 49,
+          "message": "无法访问 \"TranscriptionRepository\" 类的 \"get_for_analysis\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1033,
+          "column": 20,
+          "message": "\"get_enhanced_content_analyzer\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 1048,
+          "column": 45,
+          "message": "无法访问 \"TranscriptionRepository\" 类的 \"get_for_analysis\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1098,
+          "column": 6,
+          "message": "\"dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 1245,
+          "column": 37,
+          "message": "无法访问 \"dict[str, str | int]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1330,
+          "column": 39,
+          "message": "\"validate_configuration_complete\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 1345,
+          "column": 25,
+          "message": "参数 \"force_redownload\", \"max_concurrent\", \"grpc_host\", \"grpc_port\", \"debug\" 缺少传入值 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 1350,
+          "column": 17,
+          "message": "\"force_reextract\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 1351,
+          "column": 17,
+          "message": "\"threads\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 1459,
+          "column": 39,
+          "message": "无法访问 \"AudioRepository\" 类的 \"get_recent_completed\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1469,
+          "column": 56,
+          "message": "无法访问 \"TranscriptionRepository\" 类的 \"get_recent_completed\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1481,
+          "column": 43,
+          "message": "无法访问 \"AudioRepository\" 类的 \"get_total_storage_size\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1493,
+          "column": 28,
+          "message": "无法访问 \"JijidownGrpcClient\" 类的 \"health_check\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1510,
+          "column": 24,
+          "message": "\"get_enhanced_content_analyzer\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\cli\\commands\\export.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "unknown": 2,
+        "reportInvalidTypeArguments": 1
+      },
+      "errors": [
+        {
+          "line": 706,
+          "column": 24,
+          "message": "\"type[ReportFormat]\" 类型的实参无法赋值给函数 \"export_report\" 中 \"str\" 类型的形参 \"format\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 706,
+          "column": 37,
+          "message": "\"ReportFormat\" 类不应有类型参数 (reportInvalidTypeArguments)",
+          "rule": "reportInvalidTypeArguments"
+        },
+        {
+          "line": 715,
+          "column": 27,
+          "message": "无法访问 \"BusinessIntelligenceGenerator\" 类的 \"get_generation_statistics\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\cli\\main.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportMissingImports": 1
+      },
+      "errors": [
+        {
+          "line": 325,
+          "column": 10,
+          "message": "无法解析导入 \".commands.business_intelligence\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\output\\business_intelligence.py",
+      "error_count": 28,
+      "errors_by_rule": {
+        "unknown": 21,
+        "reportIndexIssue": 2,
+        "reportOptionalSubscript": 2,
+        "reportPossiblyUnboundVariable": 3
+      },
+      "errors": [
+        {
+          "line": 213,
+          "column": 48,
+          "message": "无法访问 \"VideoRepository\" 类的 \"get_by_ids\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 284,
+          "column": 20,
+          "message": "Column[datetime] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 285,
+          "column": 28,
+          "message": "ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 302,
+          "column": 20,
+          "message": "\"Column[Unknown]\" 类型不匹配返回类型 \"float\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 304,
+          "column": 12,
+          "message": "ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 314,
+          "column": 16,
+          "message": "\"ColumnElement[_NUMERIC]\" 类型不匹配返回类型 \"float\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 335,
+          "column": 75,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"get_by_video_id\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 336,
+          "column": 41,
+          "message": "Column[str] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 340,
+          "column": 13,
+          "message": "\"dict[str, Column[str] | Column[Unknown] | int]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"Column[str] | Column[datetime] | Column[int] | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 350,
+          "column": 21,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"analyze_patterns\" 中 \"str\" 类型的形参 \"transcript\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 352,
+          "column": 17,
+          "message": "\"dict[str, float | List[str] | None]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"Column[str] | Column[datetime] | Column[int] | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 365,
+          "column": 21,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"analyze_video_with_speech\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 369,
+          "column": 21,
+          "message": "\"dict[str, ContentStructureMetrics | SuccessPatternMetrics | Dict[str, Any] | dict[str, float | Dict[str, int]] | None]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"Column[str] | Column[datetime] | Column[int] | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 382,
+          "column": 17,
+          "message": "\"None\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"Column[str] | Column[datetime] | Column[int] | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 385,
+          "column": 16,
+          "message": "Column[str] | Column[datetime] | Column[int] | float | Literal[False] | None 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 388,
+          "column": 24,
+          "message": "ContentStructureMetrics | SuccessPatternMetrics | Dict[str, Any] | dict[str, float | Dict[str, int]] | ColumnElement[Any] | Unknown | None 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 388,
+          "column": 25,
+          "message": "\"float\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 388,
+          "column": 25,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 389,
+          "column": 25,
+          "message": "\"float\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 389,
+          "column": 25,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 393,
+          "column": 25,
+          "message": "\"dict[str, List[str]]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"Column[str] | Column[datetime] | Column[int] | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 397,
+          "column": 94,
+          "message": "\"patterns\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 401,
+          "column": 21,
+          "message": "\"None\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"Column[str] | Column[datetime] | Column[int] | float\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 662,
+          "column": 47,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 664,
+          "column": 47,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 666,
+          "column": 47,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 669,
+          "column": 16,
+          "message": "\"patterns\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 670,
+          "column": 48,
+          "message": "\"patterns\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\output\\business_intelligence_generator.py",
+      "error_count": 66,
+      "errors_by_rule": {
+        "unknown": 45,
+        "reportCallIssue": 12,
+        "reportMissingTypeArgument": 9
+      },
+      "errors": [
+        {
+          "line": 229,
+          "column": 54,
+          "message": "\"ReportConfiguration | None\" 类型的实参无法赋值给函数 \"_create_error_report\" 中 \"ReportConfiguration\" 类型的形参 \"config\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 289,
+          "column": 38,
+          "message": "需要传入 0 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 290,
+          "column": 46,
+          "message": "需要传入 0 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 291,
+          "column": 54,
+          "message": "需要传入 0 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 374,
+          "column": 16,
+          "message": "SpeechTranscription | Column[str] | None 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 375,
+          "column": 69,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"analyze_patterns\" 中 \"str\" 类型的形参 \"transcript\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 379,
+          "column": 56,
+          "message": "无法访问 \"dict[str, int | list[Unknown] | dict[Unknown, Unknown]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 389,
+          "column": 20,
+          "message": "ColumnElement[bool] 类型的条件值无效",
+          "rule": "unknown"
+        },
+        {
+          "line": 397,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 397,
+          "column": 9,
+          "message": "\"Literal['high_performing_videos']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 399,
+          "column": 9,
+          "message": "\"Dict[str, int]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"dict[str, int | list[Unknown] | dict[Unknown, Unknown]] | list[Unknown]\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 434,
+          "column": 47,
+          "message": "\"Dict[str, Any] | None\" 类型的实参无法赋值给函数 \"generate_business_intelligence\" 中 \"ContentStructureMetrics\" 类型的形参 \"content_structure\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 435,
+          "column": 25,
+          "message": "\"List[str] | None\" 类型的实参无法赋值给函数 \"generate_business_intelligence\" 中 \"SuccessPatternMetrics\" 类型的形参 \"success_patterns\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 435,
+          "column": 59,
+          "message": "\"Dict[str, Any] | None\" 类型的实参无法赋值给函数 \"generate_business_intelligence\" 中 \"ContentInsights\" 类型的形参 \"content_insights\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 449,
+          "column": 61,
+          "message": "无法访问 \"dict[str, int | dict[Unknown, Unknown]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 464,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 464,
+          "column": 9,
+          "message": "\"Literal['total_insights']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 465,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 465,
+          "column": 9,
+          "message": "\"Literal['high_priority_insights']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 466,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 466,
+          "column": 9,
+          "message": "\"Literal['insight_categories']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 467,
+          "column": 94,
+          "message": "\"dict[str, int | dict[Unknown, Unknown]] | list[Unknown]\" 类型的实参无法赋值给函数 \"_aggregate_optimization_roadmap\" 中 \"List[Dict[Unknown, Unknown]]\" 类型的形参 \"strategic_insights\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 496,
+          "column": 47,
+          "message": "无法访问 \"dict[str, int | dict[Unknown, Unknown]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 506,
+          "column": 25,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_recommend_content_frameworks\" 中 \"str\" 类型的形参 \"content_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 506,
+          "column": 50,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_recommend_content_frameworks\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 507,
+          "column": 25,
+          "message": "\"Dict[str, Any] | None\" 类型的实参无法赋值给函数 \"_recommend_content_frameworks\" 中 \"ContentStructureMetrics\" 类型的形参 \"content_structure\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 507,
+          "column": 60,
+          "message": "\"List[str] | None\" 类型的实参无法赋值给函数 \"_recommend_content_frameworks\" 中 \"SuccessPatternMetrics\" 类型的形参 \"success_patterns\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 525,
+          "column": 60,
+          "message": "无法访问 \"dict[str, int | dict[Unknown, Unknown]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 535,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 535,
+          "column": 9,
+          "message": "\"Literal['recommended_frameworks']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 536,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 536,
+          "column": 9,
+          "message": "\"Literal['framework_distribution']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 537,
+          "column": 85,
+          "message": "\"dict[str, int | dict[Unknown, Unknown]] | list[Unknown]\" 类型的实参无法赋值给函数 \"_generate_framework_guidance\" 中 \"List[Dict[Unknown, Unknown]]\" 类型的形参 \"recommendations\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 569,
+          "column": 25,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"str\" 类型的形参 \"content_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 569,
+          "column": 50,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 569,
+          "column": 63,
+          "message": "\"Dict[str, Any] | None\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"ContentStructureMetrics\" 类型的形参 \"content_structure\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 596,
+          "column": 61,
+          "message": "无法访问 \"dict[str, int | dict[Unknown, Unknown]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 605,
+          "column": 72,
+          "message": "无法访问 \"dict[str, int | dict[Unknown, Unknown]]\" 类的 \"extend\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 627,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 627,
+          "column": 9,
+          "message": "\"Literal['total_opportunities']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 628,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 628,
+          "column": 9,
+          "message": "\"Literal['high_value_opportunities']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 629,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 629,
+          "column": 9,
+          "message": "\"Literal['opportunity_types']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 630,
+          "column": 89,
+          "message": "\"dict[str, int | dict[Unknown, Unknown]] | list[Unknown]\" 类型的实参无法赋值给函数 \"_generate_promotion_roadmap\" 中 \"List[Dict[Unknown, Unknown]]\" 类型的形参 \"opportunities\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 670,
+          "column": 25,
+          "message": "\"Dict[str, Any] | None\" 类型的实参无法赋值给函数 \"_calculate_success_improvement_potential\" 中 \"ContentStructureMetrics\" 类型的形参 \"content_structure\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 671,
+          "column": 25,
+          "message": "\"List[str] | None\" 类型的实参无法赋值给函数 \"_calculate_success_improvement_potential\" 中 \"SuccessPatternMetrics\" 类型的形参 \"success_patterns\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 679,
+          "column": 25,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"str\" 类型的形参 \"content_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 679,
+          "column": 50,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"str\" 类型的形参 \"title\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 679,
+          "column": 63,
+          "message": "\"Dict[str, Any] | None\" 类型的实参无法赋值给函数 \"_identify_promotion_opportunities\" 中 \"ContentStructureMetrics\" 类型的形参 \"content_structure\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 728,
+          "column": 13,
+          "message": "\"dict[str, float | int | list[Unknown]]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"dict[str, float | str]\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 749,
+          "column": 35,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 777,
+          "column": 22,
+          "message": "\"Column[str]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str\" 类型的形参 \"video_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 780,
+          "column": 31,
+          "message": "\"MockContentStructure\" 类型的实参无法赋值给函数 \"__init__\" 中 \"Dict[str, Any] | None\" 类型的形参 \"content_structure\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 781,
+          "column": 30,
+          "message": "\"MockSuccessPatterns\" 类型的实参无法赋值给函数 \"__init__\" 中 \"List[str] | None\" 类型的形参 \"success_patterns\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 782,
+          "column": 31,
+          "message": "\"MockEnhancedInsights\" 类型的实参无法赋值给函数 \"__init__\" 中 \"Dict[str, Any] | None\" 类型的形参 \"enhanced_insights\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 783,
+          "column": 34,
+          "message": "\"Column[str] | Literal['']\" 类型的实参无法赋值给函数 \"__init__\" 中 \"str | None\" 类型的形参 \"transcript_full_text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 889,
+          "column": 69,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 899,
+          "column": 61,
+          "message": "\"List\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 909,
+          "column": 72,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 924,
+          "column": 64,
+          "message": "\"Tuple\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 941,
+          "column": 61,
+          "message": "\"Tuple\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 957,
+          "column": 66,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 972,
+          "column": 63,
+          "message": "\"Dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 987,
+          "column": 64,
+          "message": "\"Tuple\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 1007,
+          "column": 54,
+          "message": "\"Tuple\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\scraping\\content_extractor.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "unknown": 6,
+        "reportGeneralTypeIssues": 1,
+        "reportIndexIssue": 1
+      },
+      "errors": [
+        {
+          "line": 687,
+          "column": 48,
+          "message": "无法访问 \"Locator\" 类的 \"query_selector\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 795,
+          "column": 48,
+          "message": "无法访问 \"Locator\" 类的 \"query_selector\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 911,
+          "column": 48,
+          "message": "无法访问 \"Locator\" 类的 \"query_selector\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1045,
+          "column": 69,
+          "message": "\"str | None\" 类型的实参无法赋值给函数 \"_parse_publish_date\" 中 \"str\" 类型的形参 \"text\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1067,
+          "column": 44,
+          "message": "无法访问 \"Locator\" 类的 \"query_selector\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1076,
+          "column": 46,
+          "message": "无法访问 \"Locator\" 类的 \"query_selector_all\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1487,
+          "column": 37,
+          "message": "此处应为类而非 \"(obj: object, /) -> TypeIs[(...) -> object]\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 1596,
+          "column": 28,
+          "message": "\"BaseException\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\scraping\\video_scraper.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "unknown": 1,
+        "reportOptionalMemberAccess": 2,
+        "reportMissingTypeArgument": 1
+      },
+      "errors": [
+        {
+          "line": 622,
+          "column": 51,
+          "message": "无法访问 \"VideoScraper*\" 类的 \"_extract_text_with_playwright\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1466,
+          "column": 82,
+          "message": "`None` 没有 \"group\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1471,
+          "column": 81,
+          "message": "`None` 没有 \"group\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 2016,
+          "column": 60,
+          "message": "\"dict\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\storage\\migrations\\migration_251201_add_interaction_metrics.py",
+      "error_count": 7,
+      "errors_by_rule": {
+        "reportCallIssue": 2,
+        "unknown": 2,
+        "reportOptionalMemberAccess": 3
+      },
+      "errors": [
+        {
+          "line": 32,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 32,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 42,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 112,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 112,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 119,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 159,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\storage\\migrations\\migration_251203_audio_content_schema.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "reportCallIssue": 2,
+        "unknown": 2,
+        "reportOptionalMemberAccess": 4
+      },
+      "errors": [
+        {
+          "line": 33,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 33,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 35,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 143,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 147,
+          "column": 32,
+          "message": "`None` 没有 \"get_table_names\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 185,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 185,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 189,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\storage\\migrations\\migration_512030_add_audio_content.py",
+      "error_count": 11,
+      "errors_by_rule": {
+        "reportCallIssue": 4,
+        "unknown": 4,
+        "reportOptionalMemberAccess": 3
+      },
+      "errors": [
+        {
+          "line": 32,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 32,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 34,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 100,
+          "column": 13,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 100,
+          "column": 35,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 214,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 214,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 216,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 254,
+          "column": 9,
+          "message": "\"reflect\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 254,
+          "column": 31,
+          "message": "\"Engine | None\" 类型的实参无法赋值给函数 \"reflect\" 中 \"Connection\" 类型的形参 \"bind\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 258,
+          "column": 21,
+          "message": "`None` 没有 \"connect\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\bilibiliup\\src\\storage\\validations\\audio_content_validation.py",
+      "error_count": 20,
+      "errors_by_rule": {
+        "reportIndexIssue": 14,
+        "unknown": 6
+      },
+      "errors": [
+        {
+          "line": 65,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 84,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 101,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 142,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 151,
+          "column": 79,
+          "message": "无法访问 \"str\" 类的 \"values\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 153,
+          "column": 13,
+          "message": "\"int\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | dict[Unknown, Unknown]\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 212,
+          "column": 17,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 254,
+          "column": 17,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 295,
+          "column": 17,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 344,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 369,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 398,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 425,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 437,
+          "column": 79,
+          "message": "无法访问 \"str\" 类的 \"values\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 439,
+          "column": 13,
+          "message": "\"int\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | dict[Unknown, Unknown]\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 475,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 476,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 477,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 488,
+          "column": 13,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | dict[Unknown, Unknown]\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 503,
+          "column": 13,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | dict[Unknown, Unknown]\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (6):  Line 57, Col 18: [reportMissingImports] 无法解析导入 "sm_agent" (reportMissingImports)
+  Line 58, Col 18: [reportMissingImports] 无法解析导入 "dev_agent" (reportMissingImports)
+  Line 59, Col 18: [reportMissingImports] 无法解析导入 "qa_agent" (reportMissingImports)
+  Line 60, Col 18: [reportMissingImports] 无法解析导入 "state_manager" (reportMissingImports)
+  Line 101, Col 34: [reportMissingTypeArgument] "Dict" 泛型类应有类型参数 (reportMissingTypeArgument)
+  Line 533, Col 42: [reportMissingTypeArgument] "Dict" 泛型类应有类型参数 (reportMissingTypeArgument)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

@@ -1,0 +1,50 @@
+# BMAD Workflow Execution Configuration - Phase C
+# Fix Mode Development: 3 parallel Dev Agents (QA CONCERNS/FAIL path)
+# Complements timer-based workflow
+
+schema: 2
+phase: c
+phase_name: "Phase C - Fix Mode Development"
+clock_source: "system_timer"
+
+deployment:
+  agent_type: "dev"
+  instance_count: 3                        # 3 parallel Dev agents
+  command: "*review-qa"                    # Fix mode command
+  mode: "parallel"
+  staggered_start: true
+  stagger_delay_seconds: 2
+
+behavior:
+  autoExecute: true
+  autoExecuteCommand: "*review-qa"        # Dev fix mode command
+  showHelp: false
+  timeout: 2400                            # 40 minutes (targeted fixes)
+  exitOnComplete: false
+
+timer_integration:
+  phase_delay_minutes: 30
+  wait_for_timer: true
+  exit_behavior: "return_to_phase_b"     # Always returns to Phase B
+
+logging:
+  log_level: "Info"
+  capture_output: true
+  log_file_prefix: "phase-c"
+  console_output: true
+
+agent_config:
+  skip_permissions: true
+  dangerously_skip_permissions: true
+  command_delay_seconds: 2
+
+# Fix mode settings
+fix_mode:
+  respect_qa_feedback: true
+  prioritize_qa_items: true
+  continue_until_pass: true
+
+transition:
+  next_phase: "b"                          # Return to QA
+  transition_type: "time_based"
+  max_iterations: 10                       # Prevent infinite loops

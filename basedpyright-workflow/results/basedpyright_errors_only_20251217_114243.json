@@ -1,0 +1,1503 @@
+{
+  "metadata": {
+    "source_file": "basedpyright-workflow\\results\\basedpyright_check_result_20251217_114235.txt",
+    "extraction_time": "2025-12-17T11:42:43.740689",
+    "total_files_with_errors": 23,
+    "total_errors": 212
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\export_encrypted_script.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 31,
+          "column": 86,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "error_count": 11,
+      "errors_by_rule": {
+        "unknown": 9,
+        "reportIndexIssue": 2
+      },
+      "errors": [
+        {
+          "line": 26,
+          "column": 9,
+          "message": "\"type[ScriptData]\" 类型不匹配声明的 \"() -> dict[str, Unknown]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 312,
+          "column": 36,
+          "message": "无法访问 \"dict[str, Unknown]\" 类的 \"add_event\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 312,
+          "column": 36,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"add_event\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 315,
+          "column": 24,
+          "message": "\"Literal['events']\" 与 \"ScriptSegment | dict[str, Unknown] | Any | dict[Unknown, Unknown]\" 类型不支持 \"not in\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 316,
+          "column": 25,
+          "message": "\"ScriptSegment\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 317,
+          "column": 21,
+          "message": "\"ScriptSegment\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 320,
+          "column": 32,
+          "message": "无法访问 \"dict[str, Unknown]\" 类的 \"sort_events\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 320,
+          "column": 32,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"sort_events\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 454,
+          "column": 50,
+          "message": "无法为 \"dict[str, Unknown]\" 类的 \"events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 456,
+          "column": 54,
+          "message": "无法访问 \"dict[str, Unknown]\" 类的 \"update_duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 464,
+          "column": 18,
+          "message": "\"(title: str = \"新脚本\", author: str = \"\") -> ScriptData\" 类型不匹配声明的 \"() -> dict[str, Unknown]\" 类型",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_migration_service.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "unknown": 4
+      },
+      "errors": [
+        {
+          "line": 133,
+          "column": 34,
+          "message": "无法访问 \"ScriptData\" 类的 \"characters\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 141,
+          "column": 34,
+          "message": "无法访问 \"ScriptData\" 类的 \"characters\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 264,
+          "column": 16,
+          "message": "无法为 \"ScriptData\" 类的 \"characters\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 282,
+          "column": 16,
+          "message": "无法为 \"ScriptData\" 类的 \"characters\" 属性赋值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_performance_service.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "unknown": 1,
+        "reportUndefinedVariable": 2
+      },
+      "errors": [
+        {
+          "line": 251,
+          "column": 43,
+          "message": "无法访问 \"str\" 类的 \"value\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 382,
+          "column": 27,
+          "message": "\"time\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 388,
+          "column": 26,
+          "message": "\"time\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_services_consolidated.py",
+      "error_count": 10,
+      "errors_by_rule": {
+        "unknown": 10
+      },
+      "errors": [
+        {
+          "line": 165,
+          "column": 51,
+          "message": "\"ScriptData\" 类型的实参无法赋值给函数 \"save_script\" 中 \"str\" 类型的形参 \"script_path\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 165,
+          "column": 59,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"save_script\" 中 \"Dict[str, Any]\" 类型的形参 \"script_data\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 175,
+          "column": 20,
+          "message": "\"ScriptOperationResult\" 类型不匹配返回类型 \"bool\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 192,
+          "column": 20,
+          "message": "\"ScriptOperationResult\" 类型不匹配返回类型 \"ScriptData | None\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 213,
+          "column": 20,
+          "message": "\"Dict[str, Any]\" 类型不匹配返回类型 \"bool\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 224,
+          "column": 40,
+          "message": "无法访问 \"ScriptDataService\" 类的 \"get_script_metadata\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 241,
+          "column": 39,
+          "message": "无法访问 \"ScriptDataService\" 类的 \"get_all_scripts\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 258,
+          "column": 39,
+          "message": "无法访问 \"ScriptDataService\" 类的 \"search_scripts\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 483,
+          "column": 16,
+          "message": "无法为 \"ScriptData\" 类的 \"characters\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 509,
+          "column": 16,
+          "message": "无法为 \"ScriptData\" 类的 \"characters\" 属性赋值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\infrastructure\\logging_manager_unified.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "unknown": 3,
+        "reportCallIssue": 1
+      },
+      "errors": [
+        {
+          "line": 120,
+          "column": 24,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"__init__\" 中 \"int\" 类型的形参 \"process_id\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 494,
+          "column": 13,
+          "message": "\"update\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 494,
+          "column": 26,
+          "message": "\"dict[str, int | str | bool]\" 类型的实参无法赋值给函数 \"update\" 中 \"Iterable[tuple[str, int]]\" 类型的形参 \"m\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 663,
+          "column": 24,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"__init__\" 中 \"int\" 类型的形参 \"process_id\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\logging_service.py",
+      "error_count": 14,
+      "errors_by_rule": {
+        "reportCallIssue": 3,
+        "unknown": 11
+      },
+      "errors": [
+        {
+          "line": 110,
+          "column": 29,
+          "message": "\"get\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 110,
+          "column": 48,
+          "message": "\"LogLevel\" 类型的实参无法赋值给函数 \"get\" 中 \"str\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 140,
+          "column": 18,
+          "message": "\"Literal['DEBUG']\" 类型的实参无法赋值给函数 \"log\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 144,
+          "column": 18,
+          "message": "\"Literal['INFO']\" 类型的实参无法赋值给函数 \"log\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 148,
+          "column": 18,
+          "message": "\"Literal['WARNING']\" 类型的实参无法赋值给函数 \"log\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 153,
+          "column": 18,
+          "message": "\"Literal['ERROR']\" 类型的实参无法赋值给函数 \"log\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 158,
+          "column": 18,
+          "message": "\"Literal['CRITICAL']\" 类型的实参无法赋值给函数 \"log\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 166,
+          "column": 52,
+          "message": "\"LogLevel\" 类型的实参无法赋值给函数 \"get\" 中 \"str\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 184,
+          "column": 27,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 206,
+          "column": 17,
+          "message": "\"logger_name\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 219,
+          "column": 27,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 259,
+          "column": 27,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"LogLevel\" 类型的形参 \"level\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 361,
+          "column": 29,
+          "message": "\"get\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 361,
+          "column": 48,
+          "message": "\"LogLevel\" 类型的实参无法赋值给函数 \"get\" 中 \"str\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\script_model_service.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportCallIssue": 1,
+        "unknown": 3
+      },
+      "errors": [
+        {
+          "line": 338,
+          "column": 13,
+          "message": "\"characters\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 338,
+          "column": 29,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"characters\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 371,
+          "column": 15,
+          "message": "无法为 \"ScriptDataModel*\" 类的 \"characters\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 436,
+          "column": 15,
+          "message": "无法为 \"ScriptDataModel\" 类的 \"characters\" 属性赋值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\test_fixes.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 117,
+          "column": 12,
+          "message": "无法为 \"WuwaRecorderUI\" 类的 \"logger\" 属性赋值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\dialogs\\character_selection_dialog.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportRedeclaration": 1
+      },
+      "errors": [
+        {
+          "line": 257,
+          "column": 9,
+          "message": "\"accept_selection\" 方法的声明被同名声明遮蔽 (reportRedeclaration)",
+          "rule": "reportRedeclaration"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\dialogs\\event_edit_dialog_enhanced.py",
+      "error_count": 12,
+      "errors_by_rule": {
+        "unknown": 10,
+        "reportAttributeAccessIssue": 1,
+        "reportOptionalMemberAccess": 1
+      },
+      "errors": [
+        {
+          "line": 21,
+          "column": 60,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptEvent]\" 类型不匹配声明的 \"type[Project_recorder.ui.dialogs.event_edit_dialog_enhanced.ScriptEvent]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 42,
+          "column": 22,
+          "message": "无法为 \"EnhancedEventEditDialog*\" 类的 \"event\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 216,
+          "column": 68,
+          "message": "\"QRegularExpression\" 是未知的导入符号 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 218,
+          "column": 42,
+          "message": "`None` 没有 \"setValidator\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 229,
+          "column": 46,
+          "message": "无法访问 \"MethodType\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 232,
+          "column": 47,
+          "message": "无法访问 \"MethodType\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 234,
+          "column": 53,
+          "message": "无法访问 \"MethodType\" 类的 \"timestamp\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 291,
+          "column": 34,
+          "message": "无法访问 \"MethodType\" 类的 \"timestamp\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 321,
+          "column": 20,
+          "message": "无法为 \"MethodType\" 类的 \"action_name\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 322,
+          "column": 20,
+          "message": "无法为 \"MethodType\" 类的 \"relative_time\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 323,
+          "column": 20,
+          "message": "无法为 \"MethodType\" 类的 \"remark\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 325,
+          "column": 24,
+          "message": "无法为 \"MethodType\" 类的 \"duration\" 属性赋值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\dialogs\\segment_edit_dialog.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors": [
+        {
+          "line": 23,
+          "column": 60,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptSegment]\" 类型不匹配声明的 \"type[Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegment]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 23,
+          "column": 75,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptSegmentType]\" 类型不匹配声明的 \"type[Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegmentType]\" 类型",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\styles\\components\\input_style_cache.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportGeneralTypeIssues": 1
+      },
+      "errors": [
+        {
+          "line": 194,
+          "column": 44,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\styles\\components\\input_styles.py",
+      "error_count": 22,
+      "errors_by_rule": {
+        "reportMissingImports": 3,
+        "reportGeneralTypeIssues": 1,
+        "unknown": 18
+      },
+      "errors": [
+        {
+          "line": 33,
+          "column": 10,
+          "message": "无法解析导入 \"..components.dpi_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 42,
+          "column": 10,
+          "message": "无法解析导入 \"...services.infrastructure.logging_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 43,
+          "column": 10,
+          "message": "无法解析导入 \"...services.infrastructure.performance_monitor\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 245,
+          "column": 3,
+          "message": "f-string 的表达式部分中使用转义序列 `\\` 需要 Python 3.12 或更高版本 (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        },
+        {
+          "line": 533,
+          "column": 64,
+          "message": "无法访问 \"str\" 类的 \"value\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1078,
+          "column": 36,
+          "message": "\"Literal[InputSize.MEDIUM]\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1078,
+          "column": 54,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputSize\" 类型的形参 \"size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1081,
+          "column": 35,
+          "message": "\"Literal[InputSize.MEDIUM]\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1081,
+          "column": 53,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputSize\" 类型的形参 \"size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1084,
+          "column": 35,
+          "message": "\"Literal[InputSize.MEDIUM]\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1084,
+          "column": 53,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputSize\" 类型的形参 \"size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1087,
+          "column": 38,
+          "message": "\"Literal[InputSize.MEDIUM]\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1087,
+          "column": 56,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputSize\" 类型的形参 \"size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1090,
+          "column": 36,
+          "message": "\"Literal[InputSize.SMALL]\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1090,
+          "column": 53,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputSize\" 类型的形参 \"size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1093,
+          "column": 36,
+          "message": "\"Literal[InputSize.LARGE]\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1093,
+          "column": 53,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_input_style\" 中 \"str | InputSize\" 类型的形参 \"size\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1095,
+          "column": 70,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_area_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1096,
+          "column": 75,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_text_area_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1099,
+          "column": 70,
+          "message": "\"Literal[InputState.NORMAL]\" 类型的实参无法赋值给函数 \"get_slider_style\" 中 \"str\" 类型的形参 \"orientation\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1100,
+          "column": 66,
+          "message": "\"Literal[InputState.NORMAL]\" 类型的实参无法赋值给函数 \"get_slider_style\" 中 \"str\" 类型的形参 \"orientation\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1103,
+          "column": 76,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"get_search_input_style\" 中 \"str | InputState\" 类型的形参 \"state\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\styles\\components\\responsive_input_scaler.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportGeneralTypeIssues": 1
+      },
+      "errors": [
+        {
+          "line": 292,
+          "column": 44,
+          "message": "此处应为类而非 \"(iterable: Iterable[object], /) -> bool\" (reportGeneralTypeIssues)",
+          "rule": "reportGeneralTypeIssues"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\styles\\styles_manager.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 104,
+          "column": 31,
+          "message": "无法访问 \"QCoreApplication\" 类的 \"allWidgets\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\widgets\\script_preview_tree.py",
+      "error_count": 57,
+      "errors_by_rule": {
+        "unknown": 46,
+        "reportRedeclaration": 1,
+        "reportOptionalMemberAccess": 8,
+        "reportCallIssue": 1,
+        "reportUndefinedVariable": 1
+      },
+      "errors": [
+        {
+          "line": 32,
+          "column": 9,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptData]\" 类型不匹配声明的 \"type[Project_recorder.ui.widgets.script_preview_tree.ScriptData]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 32,
+          "column": 21,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptSegment]\" 类型不匹配声明的 \"type[Project_recorder.ui.widgets.script_preview_tree.ScriptSegment]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 32,
+          "column": 36,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptEvent]\" 类型不匹配声明的 \"type[Project_recorder.ui.widgets.script_preview_tree.ScriptEvent]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 32,
+          "column": 49,
+          "message": "\"type[Project_recorder.script_data_model_unified.ScriptSegmentType]\" 类型不匹配声明的 \"type[Project_recorder.ui.widgets.script_preview_tree.ScriptSegmentType]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 156,
+          "column": 26,
+          "message": "\"QPlainTextEdit | None\" 类型的实参无法赋值给函数 \"addWidget\" 中 \"QWidget\" 类型的形参 \"arg__1\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 330,
+          "column": 73,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 409,
+          "column": 9,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"int\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 410,
+          "column": 9,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"int\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 411,
+          "column": 9,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"int\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 439,
+          "column": 72,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"List[str]\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 439,
+          "column": 109,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"List[str]\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 480,
+          "column": 64,
+          "message": "\"ScriptSegment\" 类型的实参无法赋值给函数 \"create_segment_item\" 中 \"ScriptSegment\" 类型的形参 \"segment\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 599,
+          "column": 75,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 600,
+          "column": 51,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 603,
+          "column": 86,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 605,
+          "column": 38,
+          "message": "无法为 \"ScriptEvent\" 类的 \"event_id\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 605,
+          "column": 38,
+          "message": "无法为 \"ScriptEvent\" 类的 \"event_id\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 606,
+          "column": 51,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 619,
+          "column": 38,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 624,
+          "column": 9,
+          "message": "\"_find_tree_item_by_event_id\" 方法的声明被同名声明遮蔽 (reportRedeclaration)",
+          "rule": "reportRedeclaration"
+        },
+        {
+          "line": 651,
+          "column": 38,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 658,
+          "column": 78,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 661,
+          "column": 30,
+          "message": "无法为 \"ScriptEvent\" 类的 \"event_id\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 661,
+          "column": 30,
+          "message": "无法为 \"ScriptEvent\" 类的 \"event_id\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 663,
+          "column": 60,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 993,
+          "column": 35,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1011,
+          "column": 39,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1015,
+          "column": 43,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1018,
+          "column": 43,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1021,
+          "column": 83,
+          "message": "无法访问 \"ScriptData\" 类的 \"metadata\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1022,
+          "column": 56,
+          "message": "无法访问 \"ScriptData\" 类的 \"metadata\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1024,
+          "column": 43,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1026,
+          "column": 43,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1028,
+          "column": 39,
+          "message": "`None` 没有 \"setPlainText\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1060,
+          "column": 42,
+          "message": "\"Project_recorder.ui.widgets.tree_items.ScriptEvent | Project_recorder.script_data_model_unified.ScriptEvent\" 类型的实参无法赋值给函数 \"__init__\" 中 \"ScriptEvent\" 类型的形参 \"event\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1074,
+          "column": 36,
+          "message": "\"ScriptSegment\" 类型的实参无法赋值给函数 \"__init__\" 中 \"ScriptSegment\" 类型的形参 \"segment\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1074,
+          "column": 58,
+          "message": "\"Self@EnhancedScriptPreviewTree\" 类型的实参无法赋值给函数 \"__init__\" 中 \"QDialog | None\" 类型的形参 \"parent\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1139,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1160,
+          "column": 34,
+          "message": "无法为 \"ScriptEvent\" 类的 \"action_name\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1160,
+          "column": 34,
+          "message": "无法为 \"ScriptEvent\" 类的 \"action_name\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1180,
+          "column": 70,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1182,
+          "column": 28,
+          "message": "无法为 \"ScriptEvent\" 类的 \"event_id\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1182,
+          "column": 28,
+          "message": "无法为 \"ScriptEvent\" 类的 \"event_id\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1183,
+          "column": 35,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1273,
+          "column": 30,
+          "message": "无法访问 \"EnhancedScriptPreviewTree*\" 类的 \"events_delete_requested_by_index\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1387,
+          "column": 73,
+          "message": "\"Literal['normal']\" 类型的实参无法赋值给函数 \"_convert_events_to_segment_type\" 中 \"ScriptSegmentType\" 类型的形参 \"target_segment_type\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1409,
+          "column": 73,
+          "message": "\"Literal['loop']\" 类型的实参无法赋值给函数 \"_convert_events_to_segment_type\" 中 \"ScriptSegmentType\" 类型的形参 \"target_segment_type\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1429,
+          "column": 63,
+          "message": "无法访问 \"ScriptSegmentType\" 类的 \"value\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1450,
+          "column": 82,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1472,
+          "column": 41,
+          "message": "无法为 \"ScriptData\" 类的 \"segments\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1544,
+          "column": 20,
+          "message": "\"Literal['normal']\" 类型不匹配返回类型 \"ScriptSegmentType\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1552,
+          "column": 16,
+          "message": "\"Literal['normal']\" 类型不匹配返回类型 \"ScriptSegmentType\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1561,
+          "column": 21,
+          "message": "\"get\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 1561,
+          "column": 36,
+          "message": "\"ScriptSegmentType\" 类型的实参无法赋值给函数 \"get\" 中 \"str\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 1565,
+          "column": 54,
+          "message": "`None` 没有 \"segments\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1778,
+          "column": 37,
+          "message": "\"traceback\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 1811,
+          "column": 28,
+          "message": "\"Project_recorder.ui.widgets.script_preview_tree.ScriptData | Project_recorder.script_data_model_unified.ScriptData | None\" 类型的实参无法赋值给函数 \"save_to_file\" 中 \"ScriptData\" 类型的形参 \"script\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\widgets\\script_preview_tree_phase2.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors": [
+        {
+          "line": 675,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 725,
+          "column": 39,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"with_changes\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\widgets\\segment_event_table.py",
+      "error_count": 9,
+      "errors_by_rule": {
+        "unknown": 9
+      },
+      "errors": [
+        {
+          "line": 134,
+          "column": 24,
+          "message": "无法访问 \"QObject\" 类的 \"controller\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 136,
+          "column": 24,
+          "message": "无法访问 \"QObject\" 类的 \"insert_segment_event\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 163,
+          "column": 24,
+          "message": "无法访问 \"QObject\" 类的 \"controller\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 165,
+          "column": 24,
+          "message": "无法访问 \"QObject\" 类的 \"modify_segment_event\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 177,
+          "column": 24,
+          "message": "无法访问 \"QObject\" 类的 \"controller\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 179,
+          "column": 24,
+          "message": "无法访问 \"QObject\" 类的 \"delete_segment_events\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 196,
+          "column": 20,
+          "message": "无法访问 \"QObject\" 类的 \"controller\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 209,
+          "column": 20,
+          "message": "无法访问 \"QObject\" 类的 \"controller\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 211,
+          "column": 20,
+          "message": "无法访问 \"QObject\" 类的 \"paste_events_at_index\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\widgets\\tree_items.py",
+      "error_count": 36,
+      "errors_by_rule": {
+        "unknown": 36
+      },
+      "errors": [
+        {
+          "line": 208,
+          "column": 40,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 209,
+          "column": 48,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 217,
+          "column": 36,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 218,
+          "column": 65,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 218,
+          "column": 89,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 219,
+          "column": 46,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 239,
+          "column": 31,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 243,
+          "column": 31,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 258,
+          "column": 42,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"timestamp\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 260,
+          "column": 44,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 261,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 262,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 263,
+          "column": 39,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"remark\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 264,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 265,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"parameters\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 272,
+          "column": 42,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"timestamp\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 273,
+          "column": 46,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 274,
+          "column": 44,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 275,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 276,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 277,
+          "column": 39,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"remark\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 279,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"parameters\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 286,
+          "column": 42,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"timestamp\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 287,
+          "column": 46,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 289,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 290,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 291,
+          "column": 39,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"remark\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 292,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 293,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"parameters\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 300,
+          "column": 42,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"timestamp\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 301,
+          "column": 46,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"relative_time\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 302,
+          "column": 44,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"action_name\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 303,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 304,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_id\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 306,
+          "column": 41,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 307,
+          "column": 43,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"parameters\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\undo_redo_manager.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUndefinedVariable": 1
+      },
+      "errors": [
+        {
+          "line": 21,
+          "column": 45,
+          "message": "\"EditOperation\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\validators\\validation_types.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "unknown": 3
+      },
+      "errors": [
+        {
+          "line": 39,
+          "column": 67,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"List[str]\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 39,
+          "column": 95,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"List[str]\" 类型的参数",
+          "rule": "unknown"
+        },
+        {
+          "line": 40,
+          "column": 36,
+          "message": "无法将 \"None\" 类型的表达式赋值给 \"List[str]\" 类型的参数",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\wuwa_recorder_ui_merged.py",
+      "error_count": 12,
+      "errors_by_rule": {
+        "unknown": 9,
+        "reportOptionalMemberAccess": 3
+      },
+      "errors": [
+        {
+          "line": 162,
+          "column": 38,
+          "message": "无法为 \"WuwaRecorderUI*\" 类的 \"script_events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 166,
+          "column": 38,
+          "message": "无法为 \"WuwaRecorderUI*\" 类的 \"script_events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 428,
+          "column": 47,
+          "message": "\"dict[str, Unknown]\" 类型的实参无法赋值给函数 \"set_script_data\" 中 \"ScriptData\" 类型的形参 \"script_data\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 542,
+          "column": 45,
+          "message": "`None` 没有 \"get_selected_events\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 898,
+          "column": 31,
+          "message": "`None` 没有 \"set_recording_state\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 942,
+          "column": 31,
+          "message": "`None` 没有 \"set_recording_state\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1100,
+          "column": 38,
+          "message": "无法为 \"WuwaRecorderUI*\" 类的 \"script_events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1218,
+          "column": 48,
+          "message": "无法访问 \"EnhancedScriptPreviewTree\" 类的 \"get_selected_rows\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1251,
+          "column": 48,
+          "message": "无法访问 \"EnhancedScriptPreviewTree\" 类的 \"get_selected_rows\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1284,
+          "column": 48,
+          "message": "无法访问 \"EnhancedScriptPreviewTree\" 类的 \"get_selected_rows\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1326,
+          "column": 48,
+          "message": "无法访问 \"EnhancedScriptPreviewTree\" 类的 \"get_selected_rows\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1335,
+          "column": 109,
+          "message": "无法访问 \"type[ScriptSegmentType]\" 类的 \"START\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}

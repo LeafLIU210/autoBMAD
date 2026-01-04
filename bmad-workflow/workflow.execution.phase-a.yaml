@@ -1,0 +1,47 @@
+# BMAD Workflow Execution Configuration - Phase A
+# Initial Development: 3 parallel Dev Agents
+# Complements timer-based workflow (15 min delay specified in workflow.config.yaml)
+
+schema: 2
+phase: a
+phase_name: "Phase A - Initial Development"
+clock_source: "system_timer"               # Use system timer (not process monitoring)
+
+deployment:
+  agent_type: "dev"
+  instance_count: 3                        # 3 parallel Dev agents
+  command: "*develop-story"
+  mode: "parallel"
+  staggered_start: true                    # 2-second delay between instances
+  stagger_delay_seconds: 2
+  max_concurrent: 3
+
+behavior:
+  autoExecute: true
+  autoExecuteCommand: "*develop-story"     # Dev agent command
+  showHelp: false                          # Quiet mode for automation
+  timeout: 3600                            # 60 minutes max per instance
+  exitOnComplete: false                    # Wait for timer (workflow controls duration)
+
+# Timer-based phase settings (complements workflow.config.yaml)
+timer_integration:
+  phase_delay_minutes: 15                  # Must match workflow.config.yaml
+  wait_for_timer: true                     # Don't use completion detection
+  exit_behavior: "wait_for_next_phase"     # Workflow manages transitions
+
+logging:
+  log_level: "Info"
+  capture_output: true
+  log_file_prefix: "phase-a"
+  console_output: true
+
+# Agent-specific settings
+agent_config:
+  skip_permissions: true
+  dangerously_skip_permissions: true
+  command_delay_seconds: 2
+
+# Transition settings (for documentation, actual transition handled by timer)
+transition:
+  next_phase: "b"                          # After 15 min timer expires
+  transition_type: "time_based"            # Not completion-based

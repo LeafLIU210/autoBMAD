@@ -1,0 +1,56 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+
+Total errors: 8
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 229, Column: 56
+Rule: unknown
+Error: "Dict[str, str] | None" 类型的实参无法赋值给函数 "__init__" 中 "Dict[str, str]" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 232, Column: 61
+Rule: unknown
+Error: "Dict[str, str] | None" 类型的实参无法赋值给函数 "__init__" 中 "Dict[str, str]" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 253, Column: 62
+Rule: unknown
+Error: "Dict[str, str] | None" 类型的实参无法赋值给函数 "__init__" 中 "Dict[str, str]" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 271, Column: 47
+Rule: unknown
+Error: "Dict[str, str] | None" 类型的实参无法赋值给函数 "__init__" 中 "Dict[str, str]" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 289, Column: 47
+Rule: unknown
+Error: "Dict[str, str] | None" 类型的实参无法赋值给函数 "__init__" 中 "Dict[str, str]" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 316, Column: 43
+Rule: unknown
+Error: "Dict[str, str] | None" 类型的实参无法赋值给函数 "__init__" 中 "Dict[str, str]" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 357, Column: 49
+Rule: unknown
+Error: "deque[Unknown]" 类型的实参无法赋值给函数 "_percentile" 中 "List[float]" 类型的形参 "data"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\performance_monitor.py
+Line: 358, Column: 49
+Rule: unknown
+Error: "deque[Unknown]" 类型的实参无法赋值给函数 "_percentile" 中 "List[float]" 类型的形参 "data"
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

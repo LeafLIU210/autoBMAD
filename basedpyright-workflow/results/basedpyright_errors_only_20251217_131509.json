@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "source_file": "basedpyright-workflow\\results\\basedpyright_check_result_20251217_131500.txt",
+    "extraction_time": "2025-12-17T13:15:09.018346",
+    "total_files_with_errors": 1,
+    "total_errors": 11
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "error_count": 11,
+      "errors_by_rule": {
+        "unknown": 9,
+        "reportIndexIssue": 2
+      },
+      "errors": [
+        {
+          "line": 26,
+          "column": 9,
+          "message": "\"type[ScriptData]\" 类型不匹配声明的 \"() -> dict[str, Unknown]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 312,
+          "column": 36,
+          "message": "无法访问 \"dict[str, Unknown]\" 类的 \"add_event\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 312,
+          "column": 36,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"add_event\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 315,
+          "column": 24,
+          "message": "\"Literal['events']\" 与 \"ScriptSegment | dict[str, Unknown] | Any | dict[Unknown, Unknown]\" 类型不支持 \"not in\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 316,
+          "column": 25,
+          "message": "\"ScriptSegment\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 317,
+          "column": 21,
+          "message": "\"ScriptSegment\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 320,
+          "column": 32,
+          "message": "无法访问 \"dict[str, Unknown]\" 类的 \"sort_events\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 320,
+          "column": 32,
+          "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"sort_events\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 454,
+          "column": 50,
+          "message": "无法为 \"dict[str, Unknown]\" 类的 \"events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 456,
+          "column": 54,
+          "message": "无法访问 \"dict[str, Unknown]\" 类的 \"update_duration\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 464,
+          "column": 18,
+          "message": "\"(title: str = \"新脚本\", author: str = \"\") -> ScriptData\" 类型不匹配声明的 \"() -> dict[str, Unknown]\" 类型",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}

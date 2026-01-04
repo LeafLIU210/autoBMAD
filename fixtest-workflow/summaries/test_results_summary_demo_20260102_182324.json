@@ -1,0 +1,76 @@
+{
+  "scan_timestamp": "2026-01-02T18:21:50.744914",
+  "test_start_time": "2026-01-02T18:23:23.798598",
+  "timestamp": "20260102_182323",
+  "total_files": 1383,
+  "demo_files_tested": 3,
+  "files_with_errors": [
+    {
+      "relative_path": "test_action_dropdown.py",
+      "status": "completed",
+      "result": "error",
+      "errors": [
+        {
+          "type": "ERROR",
+          "message": "\u001b[1mcollecting ... \u001b[0mERROR: file or directory not found: test_action_dropdown.py",
+          "line": 8,
+          "details": [
+            "collected 0 items",
+            "\u001b[33m============================ \u001b[33mno tests ran\u001b[0m\u001b[33m in 0.00s\u001b[0m\u001b[33m ============================\u001b[0m"
+          ]
+        }
+      ],
+      "failures": [],
+      "execution_time": 0.21178221702575684,
+      "timestamp": "2026-01-02T18:23:23.798598",
+      "timeout": false
+    },
+    {
+      "relative_path": "test_format_fix.py",
+      "status": "completed",
+      "result": "error",
+      "errors": [
+        {
+          "type": "ERROR",
+          "message": "\u001b[1mcollecting ... \u001b[0mERROR: file or directory not found: test_format_fix.py",
+          "line": 8,
+          "details": [
+            "collected 0 items",
+            "\u001b[33m============================ \u001b[33mno tests ran\u001b[0m\u001b[33m in 0.00s\u001b[0m\u001b[33m ============================\u001b[0m"
+          ]
+        }
+      ],
+      "failures": [],
+      "execution_time": 0.23012375831604004,
+      "timestamp": "2026-01-02T18:23:24.010381",
+      "timeout": false
+    },
+    {
+      "relative_path": "test_input_styles_optimized.py",
+      "status": "completed",
+      "result": "error",
+      "errors": [
+        {
+          "type": "ERROR",
+          "message": "\u001b[1mcollecting ... \u001b[0mERROR: file or directory not found: test_input_styles_optimized.py",
+          "line": 8,
+          "details": [
+            "collected 0 items",
+            "\u001b[33m============================ \u001b[33mno tests ran\u001b[0m\u001b[33m in 0.00s\u001b[0m\u001b[33m ============================\u001b[0m"
+          ]
+        }
+      ],
+      "failures": [],
+      "execution_time": 0.2219066619873047,
+      "timestamp": "2026-01-02T18:23:24.241506",
+      "timeout": false
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "passed": 0,
+    "failed": 0,
+    "errors": 3,
+    "timeouts": 0
+  }
+}

@@ -1,0 +1,15 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_data_model_unified.py
+
+BasedPyright type errors (4):  Line 748, Col 13: [reportCallIssue] "__setitem__" 的重载与提供的参数不匹配 (reportCallIssue)
+  Line 748, Col 13: [unknown] "int | None" 类型的实参无法赋值给函数 "__setitem__" 中 "SupportsIndex" 类型的形参 "key"
+  Line 752, Col 13: [reportCallIssue] "__setitem__" 的重载与提供的参数不匹配 (reportCallIssue)
+  Line 752, Col 13: [unknown] "int | None" 类型的实参无法赋值给函数 "__setitem__" 中 "SupportsIndex" 类型的形参 "key"
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

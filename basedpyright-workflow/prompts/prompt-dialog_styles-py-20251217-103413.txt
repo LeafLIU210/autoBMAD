@@ -1,0 +1,20 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\components\dialog_styles.py
+
+Total errors: 2
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\components\dialog_styles.py
+Line: 214, Column: 55
+Rule: unknown
+Error: 无法访问 "ColorSystem" 类的 "inverse_surface" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\components\dialog_styles.py
+Line: 215, Column: 44
+Rule: unknown
+Error: 无法访问 "ColorSystem" 类的 "inverse_on_surface" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

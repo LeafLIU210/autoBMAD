@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_service.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_service.py
+Line: 94, Column: 60
+Rule: unknown
+Error: 无法访问 "ScriptData" 类的 "characters" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

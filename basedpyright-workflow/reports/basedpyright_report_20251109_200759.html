@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>BasedPyright 检查报告</title>
+    <style>
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+               background: #f5f5f5; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        h3 { color: #555; margin-top: 20px; margin-bottom: 10px; }
+        .timestamp { color: #7f8c8d; margin-bottom: 20px; }
+        .summary { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+        .stat-card { background: #ecf0f1; padding: 20px; border-radius: 6px; text-align: center; }
+        .stat-card.error { background: #fadbd8; }
+        .stat-card.warning { background: #fcf3cf; }
+        .stat-card.info { background: #d6eaf8; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #2c3e50; }
+        .stat-label { margin-top: 5px; font-size: 0.9em; color: #7f8c8d; }
+        .errors-section { background: white; padding: 20px; margin-top: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #3498db; color: white; }
+        tr:hover { background: #f5f5f5; }
+        .error-item { background: #fff5f5; border-left: 4px solid #e74c3c; padding: 15px; margin: 10px 0; border-radius: 4px; }
+        .error-header { font-size: 1.1em; margin-bottom: 10px; color: #c0392b; }
+        .error-body p { margin: 5px 0; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h1>BasedPyright 检查报告</h1>
+        <p class='timestamp'>生成时间: 2025-11-09 20:07:59</p>
+        <div class='summary'>
+            <h2>📊 执行摘要</h2>
+            <div class='stats-grid'>
+                <div class='stat-card'>
+                    <div class='stat-value'>112</div>
+                    <div class='stat-label'>检查文件数</div>
+                </div>
+                <div class='stat-card error'>
+                    <div class='stat-value'>60</div>
+                    <div class='stat-label'>❌ 错误</div>
+                </div>
+                <div class='stat-card warning'>
+                    <div class='stat-value'>3660</div>
+                    <div class='stat-label'>⚠️ 警告</div>
+                </div>
+                <div class='stat-card info'>
+                    <div class='stat-value'>0</div>
+                    <div class='stat-label'>ℹ️ 信息</div>
+                </div>
+            </div>
+        </div>
+        <div class='errors-section'>
+            <h2>🔴 错误详情</h2>
+            <h3>按规则分组</h3>
+            <table>
+                <thead><tr><th>规则</th><th>出现次数</th></tr></thead>
+                <tbody>
+                <tr><td><code>reportArgumentType</code></td><td>13</td></tr>
+                <tr><td><code>reportUndefinedVariable</code></td><td>10</td></tr>
+                <tr><td><code>reportAttributeAccessIssue</code></td><td>9</td></tr>
+                <tr><td><code>reportGeneralTypeIssues</code></td><td>8</td></tr>
+                <tr><td><code>reportOperatorIssue</code></td><td>8</td></tr>
+                <tr><td><code>reportImportCycles</code></td><td>4</td></tr>
+                <tr><td><code>reportOptionalMemberAccess</code></td><td>3</td></tr>
+                <tr><td><code>reportReturnType</code></td><td>2</td></tr>
+                <tr><td><code>reportIncompatibleMethodOverride</code></td><td>1</td></tr>
+                <tr><td><code>reportCallIssue</code></td><td>1</td></tr>
+                <tr><td><code>reportIndexIssue</code></td><td>1</td></tr>
+                </tbody>
+            </table>
+            <h3>详细错误列表</h3>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#1</strong> d:\Python\fcmrawler\src\core\exporters\json_exporter.py:237
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportIncompatibleMethodOverride</code></p>
+                    <p><strong>错误信息:</strong> 此 "_validate_output_path" 方法以不兼容的方式覆写了 "BaseExporter" 类中的同名方法
+  返回类型不匹配：基类方法返回 "None" 类型，覆写方法返回 "bool" 类型
+    "bool" 与 "None" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#2</strong> d:\Python\fcmrawler\src\core\exporters\json_exporter.py:577
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "list[Any | None]" 类型的实参无法赋值给函数 "min" 中 "Iterable[SupportsRichComparisonT@min]" 类型的形参 "iterable"
+  "list[Any | None]" 与 "Iterable[SupportsRichComparisonT@min]" 不兼容
+    类型参数 "_T_co@Iterable" 是协变（`Covariant`）的，但 "Any | None" 不是 "SupportsRichComparisonT@min" 的子类
+      "Any | None" 类型与 "SupportsRichComparison" 类型不兼容
+        "Any | None" 类型与 "SupportsRichComparison" 类型不兼容
+          "None" 类型与 "SupportsRichComparison" 类型不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#3</strong> d:\Python\fcmrawler\src\core\exporters\json_exporter.py:577
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "list[Any | None]" 类型的实参无法赋值给函数 "max" 中 "Iterable[SupportsRichComparisonT@max]" 类型的形参 "iterable"
+  "list[Any | None]" 与 "Iterable[SupportsRichComparisonT@max]" 不兼容
+    类型参数 "_T_co@Iterable" 是协变（`Covariant`）的，但 "Any | None" 不是 "SupportsRichComparisonT@max" 的子类
+      "Any | None" 类型与 "SupportsRichComparison" 类型不兼容
+        "Any | None" 类型与 "SupportsRichComparison" 类型不兼容
+          "None" 类型与 "SupportsRichComparison" 类型不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#4</strong> d:\Python\fcmrawler\src\main_optimized.py:48
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "QSplashScreen" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#5</strong> d:\Python\fcmrawler\src\main_optimized.py:53
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "pyqtSignal" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#6</strong> d:\Python\fcmrawler\src\main_optimized.py:146
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "QApplication" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#7</strong> d:\Python\fcmrawler\src\main_optimized.py:159
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "QThread" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#8</strong> d:\Python\fcmrawler\src\main_optimized.py:164
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "pyqtSignal" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#9</strong> d:\Python\fcmrawler\src\main_optimized.py:165
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "pyqtSignal" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#10</strong> d:\Python\fcmrawler\src\main_optimized.py:166
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "pyqtSignal" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#11</strong> d:\Python\fcmrawler\src\main_optimized.py:217
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> "WebsiteAnalyzer" 是未知的导入符号</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#12</strong> d:\Python\fcmrawler\src\main_optimized.py:218
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> "ElementExtractor" 是未知的导入符号</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#13</strong> d:\Python\fcmrawler\src\main_optimized.py:278
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "QApplication" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#14</strong> d:\Python\fcmrawler\src\main_optimized.py:314
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "QTimer" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#15</strong> d:\Python\fcmrawler\src\main_optimized.py:363
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportUndefinedVariable</code></p>
+                    <p><strong>错误信息:</strong> "QTimer" 未定义</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#16</strong> d:\Python\fcmrawler\src\models\database.py:1
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportImportCycles</code></p>
+                    <p><strong>错误信息:</strong> 导入链中检测到循环导入
+  d:\Python\fcmrawler\src\models\database.py
+  d:\Python\fcmrawler\src\models\field_schema_migration.py</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#17</strong> d:\Python\fcmrawler\src\models\database.py:1
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportImportCycles</code></p>
+                    <p><strong>错误信息:</strong> 导入链中检测到循环导入
+  d:\Python\fcmrawler\src\models\database.py
+  d:\Python\fcmrawler\src\models\field_change_detection_migration.py</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#18</strong> d:\Python\fcmrawler\src\models\database.py:1961
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportReturnType</code></p>
+                    <p><strong>错误信息:</strong> "int | None" 类型不匹配返回类型 "int"
+  "int | None" 类型与 "int" 类型不兼容
+    "None" 与 "int" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#19</strong> d:\Python\fcmrawler\src\models\entities.py:1
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportImportCycles</code></p>
+                    <p><strong>错误信息:</strong> 导入链中检测到循环导入
+  d:\Python\fcmrawler\src\models\entities.py
+  d:\Python\fcmrawler\src\services\field_validator.py</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#20</strong> d:\Python\fcmrawler\src\services\__init__.py:1
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportImportCycles</code></p>
+                    <p><strong>错误信息:</strong> 导入链中检测到循环导入
+  d:\Python\fcmrawler\src\services\__init__.py
+  d:\Python\fcmrawler\src\services\cms_detector.py</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#21</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:131
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#22</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:740
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "str | None" 类型的实参无法赋值给函数 "__new__" 中 "StrPath" 类型的形参 "args"
+  "str | None" 类型与 "StrPath" 类型不兼容
+    "None" 类型与 "StrPath" 类型不兼容
+      "None" 与 "str" 不兼容
+      "None" 与 Protocol 类 "PathLike[str]" 不兼容
+        "__fspath__" 不存在</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#23</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:741
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "Path" 与 "str | None" 类型不支持 "/" 运算符
+  "Path" 与 "None" 类型不支持 "/" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#24</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:750
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#25</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:788
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#26</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:837
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#27</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:930
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "AttributeValueList" 类的 "strip" 属性
+  属性 "strip" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#28</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:930
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOptionalMemberAccess</code></p>
+                    <p><strong>错误信息:</strong> `None` 没有 "strip" 属性</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#29</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:937
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "AttributeValueList" 类的 "strip" 属性
+  属性 "strip" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#30</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:937
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOptionalMemberAccess</code></p>
+                    <p><strong>错误信息:</strong> `None` 没有 "strip" 属性</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#31</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1091
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#32</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1199
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "str" 类的 "extend" 属性
+  属性 "extend" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#33</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1199
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "dict[Unknown, Unknown]" 类的 "extend" 属性
+  属性 "extend" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#34</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1249
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#35</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1325
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#36</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1362
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportCallIssue</code></p>
+                    <p><strong>错误信息:</strong> 参数 "semaphore" 缺少传入值</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#37</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1373
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "float" 类型的实参无法赋值给函数 "__setitem__" 中 "int" 类型的形参 "value"
+  "float" 与 "int" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#38</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1523
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportGeneralTypeIssues</code></p>
+                    <p><strong>错误信息:</strong> 此处应为类而非 "(obj: object, /) -> TypeIs[(...) -> object]"</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#39</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1753
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "float" 类型的实参无法赋值给函数 "__setitem__" 中 "int" 类型的形参 "value"
+  "float" 与 "int" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#40</strong> d:\Python\fcmrawler\src\services\secondary_url_service.py:1800
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOptionalMemberAccess</code></p>
+                    <p><strong>错误信息:</strong> `None` 没有 "crawl_url" 属性</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#41</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1102
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "str" 类的 "append" 属性
+  属性 "append" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#42</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1102
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "int" 类的 "append" 属性
+  属性 "append" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#43</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1184
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "str" 类型的实参无法赋值给函数 "__setitem__" 中 "None" 类型的形参 "value"
+  "str" 与 "None" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#44</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1189
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "str" 类型的实参无法赋值给函数 "__setitem__" 中 "None" 类型的形参 "value"
+  "str" 与 "None" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#45</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1194
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "str" 类型的实参无法赋值给函数 "__setitem__" 中 "None" 类型的形参 "value"
+  "str" 与 "None" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#46</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1196
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportReturnType</code></p>
+                    <p><strong>错误信息:</strong> "dict[str, None]" 类型不匹配返回类型 "Dict[str, str | None]"
+  "dict[str, None]" 与 "Dict[str, str | None]" 不兼容
+    类型参数 "_VT@dict" 是不变（`Invariant`）的，但 "None" 与 "str | None" 不同
+    请考虑将 `dict` 换成值类型为协变的 `Mapping`</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#47</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1206
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> 无法将 "None" 类型的表达式赋值给 "List[str]" 类型的参数
+  "None" 与 "List[str]" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#48</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1277
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> 无法将 "None" 类型的表达式赋值给 "str" 类型的参数
+  "None" 与 "str" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#49</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1333
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportAttributeAccessIssue</code></p>
+                    <p><strong>错误信息:</strong> 无法访问 "int" 类的 "add" 属性
+  属性 "add" 未知</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#50</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1338
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | set[Unknown]" 与 "Literal[1]" 类型不支持 "+=" 运算符
+  "set[Unknown]" 与 "Literal[1]" 类型不支持 "+" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#51</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1339
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | set[Unknown]" 与 "int" 类型不支持 "+=" 运算符
+  "set[Unknown]" 与 "int" 类型不支持 "+" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#52</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1343
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | set[Unknown]" 与 "Literal[1]" 类型不支持 "+=" 运算符
+  "set[Unknown]" 与 "Literal[1]" 类型不支持 "+" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#53</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1346
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | Unknown | dict[Unknown, Unknown]" 与 "int | set[Unknown] | Unknown" 类型不支持 "+=" 运算符
+  "int" 与 "set[Unknown]" 类型不支持 "+" 运算符
+  "dict[Unknown, Unknown]" 与 "int" 类型不支持 "+" 运算符
+  "dict[Unknown, Unknown]" 与 "set[Unknown]" 类型不支持 "+" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#54</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1347
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | Unknown | dict[Unknown, Unknown]" 与 "int | set[Unknown] | Unknown" 类型不支持 "+=" 运算符
+  "int" 与 "set[Unknown]" 类型不支持 "+" 运算符
+  "dict[Unknown, Unknown]" 与 "int" 类型不支持 "+" 运算符
+  "dict[Unknown, Unknown]" 与 "set[Unknown]" 类型不支持 "+" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#55</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1348
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | Unknown | dict[Unknown, Unknown]" 与 "int | set[Unknown] | Unknown" 类型不支持 "+=" 运算符
+  "int" 与 "set[Unknown]" 类型不支持 "+" 运算符
+  "dict[Unknown, Unknown]" 与 "int" 类型不支持 "+" 运算符
+  "dict[Unknown, Unknown]" 与 "set[Unknown]" 类型不支持 "+" 运算符</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#56</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1351
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "list[Unknown]" 类型的实参无法赋值给函数 "__setitem__" 中 "int | set[Unknown]" 类型的形参 "value"
+  "list[Unknown]" 类型与 "int | set[Unknown]" 类型不兼容
+    "list[Unknown]" 与 "int" 不兼容
+    "list[Unknown]" 与 "set[Unknown]" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#57</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1351
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "int | set[Unknown]" 类型的实参无法赋值给函数 "__init__" 中 "Iterable[_T@list]" 类型的形参 "iterable"
+  "int | set[Unknown]" 类型与 "Iterable[_T@list]" 类型不兼容
+    "int" 与 Protocol 类 "Iterable[_T@list]" 不兼容
+      "__iter__" 不存在</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#58</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1353
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportIndexIssue</code></p>
+                    <p><strong>错误信息:</strong> "int" 类型上未定义 "__setitem__" 方法</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#59</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1356
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportArgumentType</code></p>
+                    <p><strong>错误信息:</strong> "float" 类型的实参无法赋值给函数 "__setitem__" 中 "int | dict[Unknown, Unknown]" 类型的形参 "value"
+  "float" 类型与 "int | dict[Unknown, Unknown]" 类型不兼容
+    "float" 与 "int" 不兼容
+    "float" 与 "dict[Unknown, Unknown]" 不兼容</p>
+                </div>
+            </div>
+            <div class='error-item'>
+                <div class='error-header'>
+                    <strong>#60</strong> d:\Python\fcmrawler\src\services\storage_manager.py:1356
+                </div>
+                <div class='error-body'>
+                    <p><strong>规则:</strong> <code>reportOperatorIssue</code></p>
+                    <p><strong>错误信息:</strong> "int | Unknown | dict[Unknown, Unknown]" 与 "Literal[1048576]" 类型不支持 "/" 运算符
+  "/" 运算符不支持将 "dict[Unknown, Unknown]" 类型和 "Literal[1048576]" 类型计算为目标类型 "_SupportsRound2[float]"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

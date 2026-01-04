@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "basedpyright-workflow"
+version = "1.0.0"
+description = "Python代码质量检查、报告和修复工作流工具"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "BasedPyright Tool"},
+]
+keywords = ["pyright", "type-checking", "code-quality", "linting"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=22.0",
+    "isort>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/username/basedpyright"
+Repository = "https://github.com/username/basedpyright"
+Issues = "https://github.com/username/basedpyright/issues"
+
+[project.scripts]
+basedpyright-workflow = "basedpyright_workflow.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["basedpyright_workflow"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3

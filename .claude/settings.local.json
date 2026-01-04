@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(ls -la:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Skill(BMad:agents:po)",
+      "Skill(BMad:agents:po:*)",
+      "Bash(xargs:*)",
+      "Bash(echo:*)",
+      "Bash(done:*)",
+      "Skill(BMad:agents:dev)",
+      "Skill(BMad:agents:dev:*)",
+      "Bash(wc:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(file:*)",
+      "Bash(du:*)",
+      "Bash(test:*)",
+      "Skill(BMad:agents:qa)",
+      "Skill(BMad:agents:qa:*)",
+      "Bash(pip install:*)",
+      "Bash(basedpyright-workflow:*)",
+      "Bash(git init:*)"
+    ]
+  }
+}

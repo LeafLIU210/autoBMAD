@@ -1,0 +1,42 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py
+
+BasedPyright type errors (31):  Line 95, Col 13: [unknown] "QAStatus | str | int | list[Unknown]" 与 "Literal[1]" 类型不支持 "+=" 运算符
+  Line 98, Col 58: [reportCallIssue] 参数 "stderr", "returncode" 缺少传入值 (reportCallIssue)
+  Line 116, Col 55: [reportCallIssue] 参数 "stderr", "returncode" 缺少传入值 (reportCallIssue)
+  Line 134, Col 31: [unknown] 无法访问 "QAStatus" 类的 "append" 属性
+  Line 134, Col 31: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 134, Col 31: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 138, Col 31: [unknown] 无法访问 "QAStatus" 类的 "append" 属性
+  Line 138, Col 31: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 138, Col 31: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 160, Col 68: [unknown] "tuple[str, str, int | None]" 类型不匹配返回类型 "Tuple[str, str, int]"
+  Line 326, Col 35: [unknown] 无法访问 "QAStatus" 类的 "append" 属性
+  Line 326, Col 35: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 326, Col 35: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 332, Col 13: [unknown] "QAStatus | str | int | list[Unknown]" 与 "Literal[1]" 类型不支持 "+=" 运算符
+  Line 335, Col 38: [reportCallIssue] 参数 "stderr", "returncode" 缺少传入值 (reportCallIssue)
+  Line 355, Col 31: [unknown] 无法访问 "QAStatus" 类的 "append" 属性
+  Line 355, Col 31: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 355, Col 31: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 359, Col 31: [unknown] 无法访问 "QAStatus" 类的 "append" 属性
+  Line 359, Col 31: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 359, Col 31: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 363, Col 41: [reportMissingTypeArgument] "list" 泛型类应有类型参数 (reportMissingTypeArgument)
+  Line 419, Col 68: [unknown] "tuple[str, str, int | None]" 类型不匹配返回类型 "Tuple[str, str, int]"
+  Line 588, Col 40: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 588, Col 40: [unknown] 无法访问 "dict[str, Any]" 类的 "append" 属性
+  Line 593, Col 40: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 593, Col 40: [unknown] 无法访问 "dict[str, Any]" 类的 "append" 属性
+  Line 598, Col 40: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 598, Col 40: [unknown] 无法访问 "dict[str, Any]" 类的 "append" 属性
+  Line 603, Col 40: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 603, Col 40: [unknown] 无法访问 "dict[str, Any]" 类的 "append" 属性
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

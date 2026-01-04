@@ -1,0 +1,26 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\validators\consistency_validator.py
+
+Total errors: 3
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\validators\consistency_validator.py
+Line: 91, Column: 12
+Rule: reportUndefinedVariable
+Error: "actual_characters" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\validators\consistency_validator.py
+Line: 92, Column: 16
+Rule: reportUndefinedVariable
+Error: "actual_characters" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\validators\consistency_validator.py
+Line: 95, Column: 57
+Rule: reportUndefinedVariable
+Error: "actual_characters" 未定义 (reportUndefinedVariable)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

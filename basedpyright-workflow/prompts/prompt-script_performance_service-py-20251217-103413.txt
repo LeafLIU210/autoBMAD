@@ -1,0 +1,26 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_performance_service.py
+
+Total errors: 3
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_performance_service.py
+Line: 251, Column: 43
+Rule: unknown
+Error: 无法访问 "str" 类的 "value" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_performance_service.py
+Line: 382, Column: 27
+Rule: reportUndefinedVariable
+Error: "time" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_performance_service.py
+Line: 388, Column: 26
+Rule: reportUndefinedVariable
+Error: "time" 未定义 (reportUndefinedVariable)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

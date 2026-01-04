@@ -1,0 +1,26 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_script_editor_main.py
+
+Total errors: 3
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_script_editor_main.py
+Line: 113, Column: 30
+Rule: unknown
+Error: 无法为 "ScriptData" 类的 "characters" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_script_editor_main.py
+Line: 126, Column: 43
+Rule: unknown
+Error: 无法访问 "type[ScriptData]" 类的 "from_json_file" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_script_editor_main.py
+Line: 163, Column: 34
+Rule: unknown
+Error: 无法访问 "ScriptData" 类的 "save_to_json_file" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

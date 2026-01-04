@@ -1,0 +1,134 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+
+Total errors: 21
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 108, Column: 42
+Rule: unknown
+Error: 无法访问 "type[Qt]" 类的 "ItemIsEditable" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 116, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 120, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 124, Column: 41
+Rule: unknown
+Error: 无法访问 "type[QMessageBox]" 类的 "Accepted" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 132, Column: 24
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "controller" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 134, Column: 24
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "insert_segment_event" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 139, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 151, Column: 41
+Rule: unknown
+Error: 无法访问 "type[QMessageBox]" 类的 "Accepted" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 154, Column: 35
+Rule: reportAttributeAccessIssue
+Error: "replace" 不是 "copy" 模块的已知属性 (reportAttributeAccessIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 159, Column: 24
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "controller" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 161, Column: 24
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "modify_segment_event" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 173, Column: 24
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "controller" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 175, Column: 24
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "delete_segment_events" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 192, Column: 20
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "controller" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 205, Column: 20
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "controller" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 207, Column: 20
+Rule: unknown
+Error: 无法访问 "QObject" 类的 "paste_events_at_index" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 261, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 283, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 301, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 322, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\segment_event_table.py
+Line: 336, Column: 18
+Rule: unknown
+Error: 无法访问 "SegmentEventTable*" 类的 "logger" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.
