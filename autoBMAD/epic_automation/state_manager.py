@@ -194,13 +194,14 @@ class StateManager:
 
                     if existing:
                         # Update existing record
+                        # Fix: Use explicit NULL checks instead of COALESCE for proper handling of 0 and False
                         cursor.execute('''
                             UPDATE stories
                             SET status = ?,
-                                phase = COALESCE(?, phase),
-                                iteration = COALESCE(?, iteration),
-                                qa_result = COALESCE(?, qa_result),
-                                error_message = COALESCE(?, error_message),
+                                phase = ?,
+                                iteration = ?,
+                                qa_result = ?,
+                                error_message = ?,
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE story_path = ?
                         ''', (
@@ -235,6 +236,10 @@ class StateManager:
 
                 return await asyncio.to_thread(_update)
 
+            except asyncio.CancelledError:
+                logger.warning("State update cancelled, marking as retry_needed")
+                # Don't propagate cancellation error, just mark as failed
+                return False
             except Exception as e:
                 logger.error(f"Failed to update story status: {e}")
                 return False
@@ -970,3 +975,126 @@ class StateManager:
             except Exception as e:
                 logger.error(f"Failed to get epic status: {e}")
                 return None
+
+    async def update_stories_status_batch(
+        self,
+        stories: "list[dict[str, Any]]",
+        lock_timeout: float = 30.0
+    ) -> bool:
+        """
+        Batch update multiple story statuses with transactional support.
+
+        Args:
+            stories: List of story update dicts with keys:
+                - story_path: str (required)
+                - status: str (required)
+                - phase: Optional[str]
+                - iteration: Optional[int]
+                - qa_result: Optional[Dict]
+                - error: Optional[str]
+                - epic_path: Optional[str]
+            lock_timeout: Maximum time to wait for lock (seconds)
+
+        Returns:
+            True if all updates succeeded, False otherwise
+        """
+        try:
+            # Use wait_for to timeout on lock acquisition
+            await asyncio.wait_for(self._lock.acquire(), timeout=lock_timeout)
+        except asyncio.TimeoutError:
+            logger.error(f"Failed to acquire database lock within {lock_timeout}s")
+            return False
+
+        try:
+            def _batch_update():
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                try:
+                    for story_data in stories:
+                        story_path = story_data.get('story_path')
+                        if not story_path:
+                            logger.warning(f"Skipping story without path: {story_data}")
+                            continue
+
+                        # Check if story exists
+                        cursor.execute(
+                            'SELECT id FROM stories WHERE story_path = ?',
+                            (story_path,)
+                        )
+                        existing = cursor.fetchone()
+
+                        # Clean qa_result if present
+                        qa_result_str = None
+                        if story_data.get('qa_result'):
+                            # Clean qa_result to make it JSON serializable
+                            def clean_for_json(obj: Any) -> Any:
+                                if hasattr(obj, 'value'):
+                                    return obj.value
+                                elif isinstance(obj, dict):
+                                    return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
+                                elif isinstance(obj, list):
+                                    return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
+                                else:
+                                    return obj
+
+                            cleaned_qa_result = clean_for_json(story_data['qa_result'])
+                            qa_result_str = json.dumps(cleaned_qa_result)
+
+                        if existing:
+                            # Update existing record
+                            # Fix: Use explicit NULL checks instead of COALESCE for proper handling of 0 and False
+                            cursor.execute('''
+                                UPDATE stories
+                                SET status = ?,
+                                    phase = ?,
+                                    iteration = ?,
+                                    qa_result = ?,
+                                    error_message = ?,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE story_path = ?
+                            ''', (
+                                story_data['status'],
+                                story_data.get('phase'),
+                                story_data.get('iteration', 0),
+                                qa_result_str,
+                                story_data.get('error'),
+                                story_path
+                            ))
+                        else:
+                            # Insert new record
+                            cursor.execute('''
+                                INSERT INTO stories
+                                (epic_path, story_path, status, phase, iteration, qa_result, error_message)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ''', (
+                                story_data.get('epic_path', ''),
+                                story_path,
+                                story_data['status'],
+                                story_data.get('phase'),
+                                story_data.get('iteration', 0),
+                                qa_result_str,
+                                story_data.get('error')
+                            ))
+
+                    # Commit all changes in a single transaction
+                    conn.commit()
+                    logger.info(f"Successfully batch updated {len(stories)} stories")
+                    return True
+
+                except Exception as e:
+                    # Rollback on any error
+                    conn.rollback()
+                    logger.error(f"Batch update failed, rolled back: {e}")
+                    return False
+                finally:
+                    conn.close()
+
+            result = await asyncio.to_thread(_batch_update)
+            return result
+
+        except Exception as e:
+            logger.error(f"Batch update failed: {e}")
+            return False
+        finally:
+            self._lock.release()

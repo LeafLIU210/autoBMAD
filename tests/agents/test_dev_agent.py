@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 
-from src.agents import DevAgent, DevConfig
+from autoBMAD.epic_automation.agents import DevAgent, DevConfig
 
 
 class TestDevAgent:

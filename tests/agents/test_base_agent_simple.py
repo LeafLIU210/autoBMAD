@@ -4,7 +4,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch, mock_open
 
-from src.agents import BaseAgent, AgentConfig
+from autoBMAD.epic_automation.agents import BaseAgent, AgentConfig
 
 
 class TestBaseAgentSimple:

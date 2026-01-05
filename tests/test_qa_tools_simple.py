@@ -8,7 +8,7 @@ into BMAD development cycle.
 import pytest
 from unittest.mock import Mock, patch
 
-from src.qa_tools_integration import (
+from autoBMAD.epic_automation.qa_tools_integration import (
     BasedPyrightWorkflowRunner,
     FixtestWorkflowRunner,
     QAAutomationWorkflow,

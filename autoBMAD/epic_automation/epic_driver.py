@@ -70,7 +70,7 @@ class EpicDriver:
             skip_quality: Skip code quality gates (default: False)
             skip_tests: Skip test automation (default: False)
         """
-        self.epic_path = Path(epic_path)
+        self.epic_path = Path(epic_path).resolve()
         self.epic_id = str(epic_path)  # Use epic path as epic_id
         self.tasks_dir = Path(tasks_dir)
         self.stories = []
@@ -80,8 +80,13 @@ class EpicDriver:
         self.verbose = verbose
         self.concurrent = concurrent
         self.use_claude = use_claude
-        self.source_dir = source_dir
-        self.test_dir = test_dir
+
+        # Auto-resolve source_dir and test_dir to absolute paths
+        source_path = Path(source_dir)
+        test_path = Path(test_dir)
+        self.source_dir = str(source_path.resolve() if source_path.exists() else Path.cwd() / source_dir)
+        self.test_dir = str(test_path.resolve() if test_path.exists() else Path.cwd() / test_dir)
+
         self.skip_quality = skip_quality
         self.skip_tests = skip_tests
         self.task_guidance = {}
@@ -92,10 +97,10 @@ class EpicDriver:
 
         # Import agent classes
         try:
-            from autoBMAD.epic_automation.sm_agent import SMAgent  # type: ignore
-            from autoBMAD.epic_automation.dev_agent import DevAgent  # type: ignore
-            from autoBMAD.epic_automation.qa_agent import QAAgent  # type: ignore
-            from autoBMAD.epic_automation.state_manager import StateManager  # type: ignore
+            from sm_agent import SMAgent  # type: ignore
+            from dev_agent import DevAgent  # type: ignore
+            from qa_agent import QAAgent  # type: ignore
+            from state_manager import StateManager  # type: ignore
 
             self.sm_agent = SMAgent()
             self.dev_agent = DevAgent(use_claude=use_claude)
@@ -189,6 +194,14 @@ class EpicDriver:
             stories: list[dict[str, Any]] = []
             found_stories: list[str] = []
 
+            # Pre-check: collect all existing story files to avoid redundant checks
+            existing_stories: set[str] = set()
+            if stories_dir.exists():
+                for story_file in stories_dir.glob("*.md"):
+                    match = re.match(r'^(\d+(?:\.\d+)?)-', story_file.name)
+                    if match:
+                        existing_stories.add(match.group(1))
+
             if stories_dir.exists():
                 # Find all story files matching pattern 001.*.md, 002.*.md, etc.
                 story_files = list(stories_dir.glob("*.md"))
@@ -197,8 +210,8 @@ class EpicDriver:
                 # Create a mapping of story numbers to files
                 story_file_map: dict[str, Path] = {}
                 for story_file in story_files:
-                    # Extract story number from filename: 001.xxx.md -> 001
-                    match = re.match(r'^(\d+(?:\.\d+)?)\.', story_file.name)
+                    # Extract story number from filename: 001-xxx.md -> 001
+                    match = re.match(r'^(\d+(?:\.\d+)?)-', story_file.name)
                     if match:
                         story_number = match.group(1)
                         story_file_map[story_number] = story_file
@@ -219,20 +232,25 @@ class EpicDriver:
                         logger.info(f"Found story: {story_id} at {story_file}")
                     else:
                         # Story file not found
-                        # Try to create missing story file using SM Agent
-                        story_filename = f"{story_number}.md"
-                        story_path: Path = stories_dir / story_filename
-                        if await self.sm_agent.create_stories_from_epic(str(self.epic_path)):
-                            stories.append({
-                                'id': story_id,
-                                'path': str(story_path.resolve()),
-                                'name': story_path.name
-                            })
-                            found_stories.append(story_id)
-                            logger.info(f"Created story: {story_id} at {story_path}")
+                        # Additional check: verify if file really doesn't exist (race condition protection)
+                        if story_number not in existing_stories:
+                            # Try to create missing story file using SM Agent
+                            story_filename = f"{story_number}.md"
+                            story_path: Path = stories_dir / story_filename
+                            if await self.sm_agent.create_stories_from_epic(str(self.epic_path)):
+                                stories.append({
+                                    'id': story_id,
+                                    'path': str(story_path.resolve()),
+                                    'name': story_path.name
+                                })
+                                found_stories.append(story_id)
+                                logger.info(f"Created story: {story_id} at {story_path}")
+                            else:
+                                logger.error(f"Failed to create story: {story_id}")
+                            logger.warning(f"Story file not found for ID: {story_id} (looking for {stories_dir}/*{story_number}*.md)")
                         else:
-                            logger.error(f"Failed to create story: {story_id}")
-                        logger.warning(f"Story file not found for ID: {story_id} (looking for {stories_dir}/*{story_number}*.md)")
+                            # File exists but not in map (might be a race condition or different naming)
+                            logger.info(f"Story file exists but not matched: {story_number}")
 
             else:
                 logger.warning(f"Stories directory not found: {stories_dir}")
@@ -329,8 +347,8 @@ class EpicDriver:
             with open(story_path, 'r', encoding='utf-8') as f:
                 story_content = f.read()
 
-            # Execute SM phase
-            result: bool = await self.sm_agent.execute(story_content, guidance)
+            # Execute SM phase with story_path parameter
+            result: bool = await self.sm_agent.execute(story_content, guidance, story_path)
 
             # Update state
             await self.state_manager.update_story_status(
@@ -510,8 +528,8 @@ class EpicDriver:
                 # Dev Phase
                 dev_success = await self.execute_dev_phase(story_path, iteration)
                 if not dev_success:
-                    logger.error(f"Dev phase failed for {story_path}")
-                    return False
+                    logger.warning(f"Dev phase failed for {story_path}, proceeding with QA for diagnosis")
+                    # Continue to QA phase for error diagnosis instead of returning False
 
                 # QA Phase
                 qa_passed = await self.execute_qa_phase(story_path)

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 
-from src.agents import QAAgent, QAConfig, QAResult
+from autoBMAD.epic_automation.agents import QAAgent, QAConfig, QAResult
 
 
 class TestQAResult:

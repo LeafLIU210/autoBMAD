@@ -43,10 +43,53 @@ class SMAgent:
         self.config = config or {}
         logger.info(f"{self.name} initialized")
 
+    @staticmethod
+    def _find_story_file(stories_dir: Path, story_id: str) -> Optional[Path]:
+        """
+        模糊匹配故事文件，支持多种命名格式。
+
+        Args:
+            stories_dir: 故事文件目录
+            story_id: 故事ID (如 "1.1", "1.2")
+
+        Returns:
+            匹配的故事文件路径，如果未找到则返回None
+
+        支持的格式:
+            - 1.1-description.md (推荐格式)
+            - 1.1.description.md
+            - story-1-1-description.md
+            - story-1.1-description.md
+        """
+        # 按优先级顺序尝试匹配
+        patterns = [
+            f"{story_id}-*.md",                          # 1.1-xxx.md (推荐)
+            f"{story_id}.*.md",                          # 1.1.xxx.md
+            f"story-{story_id.replace('.', '-')}-*.md",  # story-1-1-xxx.md
+            f"story-{story_id}-*.md",                    # story-1.1-xxx.md
+        ]
+
+        for pattern in patterns:
+            matches = list(stories_dir.glob(pattern))
+            if matches:
+                logger.debug(f"[SM Agent] Found story file with pattern '{pattern}': {matches[0]}")
+                return matches[0]
+
+        # 最后尝试更宽松的匹配：任意包含story_id的文件
+        loose_pattern = f"*{story_id}*.md"
+        matches = list(stories_dir.glob(loose_pattern))
+        if matches:
+            logger.debug(f"[SM Agent] Found story file with loose pattern '{loose_pattern}': {matches[0]}")
+            return matches[0]
+
+        logger.debug(f"[SM Agent] No story file found for ID: {story_id}")
+        return None
+
     async def execute(
         self,
         story_content: str,
-        task_guidance: str = ""
+        task_guidance: str = "",
+        story_path: str = ""
     ) -> bool:
         """
         Execute SM phase for a story.
@@ -54,6 +97,7 @@ class SMAgent:
         Args:
             story_content: Raw markdown content of the story
             task_guidance: Task guidance from .bmad-core/tasks/create-next-story.md
+            story_path: Path to the story file (for status update)
 
         Returns:
             True if successful, False otherwise
@@ -274,6 +318,11 @@ class SMAgent:
                 logger.error("[SM Agent] No story IDs found")
                 return False
 
+            # Pre-check: verify if all story files already exist
+            if await self._check_existing_stories(epic_path, story_ids):
+                logger.info("[SM Agent] All story files already exist, skipping creation")
+                return True
+
             # Build prompt
             prompt = self._build_claude_prompt(epic_path, story_ids)
 
@@ -282,7 +331,7 @@ class SMAgent:
 
             if success:
                 # Verify all story files
-                all_passed, failed_stories = self._verify_story_files(story_ids, epic_path)
+                all_passed, failed_stories = await self._verify_story_files(story_ids, epic_path)
 
                 if all_passed:
                     logger.info("[SM Agent] [OK] All stories created successfully")
@@ -379,7 +428,7 @@ class SMAgent:
         # Get relative path from current directory
         epic_rel_path = str(Path(epic_path))
 
-        prompt = f"@.bmad-core/agents/sm.md *draft {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories"
+        prompt = f"@.bmad-core/agents/sm.md *draft {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from 'Draft' to 'Ready for Development'."
 
         logger.debug(f"Built prompt: {prompt}")
         return prompt
@@ -480,7 +529,7 @@ class SMAgent:
         logger.warning("[SM Agent] SDK call completed but no ResultMessage received")
         return False
 
-    def _verify_story_files(self, story_ids: List[str], epic_path: str) -> Tuple[bool, List[str]]:
+    async def _verify_story_files(self, story_ids: List[str], epic_path: str) -> Tuple[bool, List[str]]:
         """
         Verify that all story files were successfully created with complete content.
         Based on the actual story template structure (story-template-v2)
@@ -506,15 +555,13 @@ class SMAgent:
             return False, story_ids
 
         for story_id in story_ids:
-            # Find matching files
-            matching_files = list(stories_dir.glob(f"{story_id}.*.md"))
+            # Find matching files using fuzzy matching
+            story_file = self._find_story_file(stories_dir, story_id)
 
-            if not matching_files:
+            if not story_file:
                 logger.error(f"[SM Agent] Story file does not exist: {story_id}")
                 failed_stories.append(story_id)
                 continue
-
-            story_file = matching_files[0]
 
             # Verify file content
             try:
@@ -559,5 +606,90 @@ class SMAgent:
             return False, failed_stories
         else:
             logger.info(f"[SM Agent] [OK] All {len(story_ids)} stories verification passed")
+            # Update story status from Draft to Ready for Development
+            await self._update_story_statuses(story_ids, stories_dir)
             return True, []
 
+    async def _update_story_statuses(self, story_ids: List[str], stories_dir: Path) -> None:
+        """
+        Update story status from Draft to Ready for Development.
+
+        Args:
+            story_ids: List of story IDs to update
+            stories_dir: Directory containing story files
+        """
+        logger.info(f"[SM Agent] Updating story statuses to 'Ready for Development'")
+
+        for story_id in story_ids:
+            try:
+                # Find matching story file using fuzzy matching
+                story_file = self._find_story_file(stories_dir, story_id)
+
+                if not story_file:
+                    logger.warning(f"[SM Agent] Story file not found for ID: {story_id}")
+                    continue
+
+                # Read current content
+                with open(story_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Update status from Draft to Ready for Development
+                # Pattern 1: "**Status**: Draft"
+                updated_content = re.sub(
+                    r'(\*\*Status\*\*:\s*)Draft',
+                    r'\1Ready for Development',
+                    content
+                )
+
+                # Pattern 2: "## Status\n**Draft**"
+                updated_content = re.sub(
+                    r'(## Status\s*\n\*\*)(Draft)(\*\*)',
+                    r'\1Ready for Development\3',
+                    updated_content
+                )
+
+                # Write updated content back to file
+                with open(story_file, 'w', encoding='utf-8') as f:
+                    f.write(updated_content)
+
+                logger.info(f"[SM Agent] Updated status for story {story_id}: Draft → Ready for Development")
+
+            except Exception as e:
+                logger.error(f"[SM Agent] Failed to update status for story {story_id}: {e}")
+
+    async def _check_existing_stories(self, epic_path: str, story_ids: List[str]) -> bool:
+        """
+        Check if all story files already exist to avoid redundant creation.
+
+        Args:
+            epic_path: Path to the epic markdown file
+            story_ids: List of story IDs to check
+
+        Returns:
+            True if all stories exist, False otherwise
+        """
+        try:
+            # Determine story file directory
+            epic_path_obj = Path(epic_path)
+            # Epic is in docs/epics/, so stories should be in docs/stories
+            docs_dir = epic_path_obj.parents[1]  # Go up to docs directory
+            stories_dir = docs_dir / "stories"
+
+            if not stories_dir.exists():
+                logger.debug(f"[SM Agent] Stories directory does not exist: {stories_dir}")
+                return False
+
+            # Check each story file using fuzzy matching
+            for story_id in story_ids:
+                story_file = self._find_story_file(stories_dir, story_id)
+
+                if not story_file:
+                    logger.debug(f"[SM Agent] Story file not found: {story_id}")
+                    return False  # At least one file is missing
+
+            logger.info(f"[SM Agent] All {len(story_ids)} story files already exist")
+            return True
+
+        except Exception as e:
+            logger.error(f"[SM Agent] Error checking existing stories: {e}")
+            return False  # If check fails, assume files don't exist

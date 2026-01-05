@@ -1,0 +1,78 @@
+{
+  "version": "1.37.0",
+  "time": "1767619328394",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"all_passed\" 类型未知",
+      "range": {
+        "start": {
+          "line": 284,
+          "character": 16
+        },
+        "end": {
+          "line": 284,
+          "character": 26
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"failed_stories\" 类型未知",
+      "range": {
+        "start": {
+          "line": 284,
+          "character": 28
+        },
+        "end": {
+          "line": 284,
+          "character": 42
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"CoroutineType[Any, Any, Tuple[bool, List[str]]]\" 不支持迭代\n  未定义 \"__iter__\" 方法",
+      "range": {
+        "start": {
+          "line": 284,
+          "character": 45
+        },
+        "end": {
+          "line": 284,
+          "character": 91
+        }
+      },
+      "rule": "reportGeneralTypeIssues"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 10,
+    "errorCount": 3,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.64
+  },
+  "metadata": {
+    "check_time": "2026-01-05T21:22:08.425313",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 10,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py"
+    ]
+  }
+}

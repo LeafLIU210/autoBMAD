@@ -33,7 +33,14 @@
       "Skill(BMad:agents:architect)",
       "Skill(BMad:agents:architect:*)",
       "Bash(grep:*)",
-      "Bash(ruff check:*)"
+      "Bash(ruff check:*)",
+      "Bash(timeout 300 python -m autoBMAD.epic_automation.epic_driver docs/epics/epic-1-core-algorithm-foundation.md --verbose --max-iterations 1)",
+      "Bash(tee:*)",
+      "Bash(claude:*)",
+      "Bash(sqlite3:*)",
+      "Bash(python3:*)",
+      "Bash(cp:*)",
+      "Bash(timeout:*)"
     ]
   }
 }

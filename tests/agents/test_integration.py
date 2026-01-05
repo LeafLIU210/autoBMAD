@@ -4,7 +4,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 
-from src.agents import SMAgent, SMConfig, DevAgent, DevConfig, QAAgent, QAConfig
+from autoBMAD.epic_automation.agents import SMAgent, SMConfig, DevAgent, DevConfig, QAAgent, QAConfig
 
 
 class TestAgentIntegration:
@@ -173,7 +173,7 @@ class TestAgentIntegration:
     @patch.dict(os.environ, {'ANTHROPIC_API_KEY': 'test-key'})
     def test_qa_result_structure(self, mock_anthropic):
         """Test that QAResult has proper structure with all required fields."""
-        from src.agents import QAResult
+        from autoBMAD.epic_automation.agents import QAResult
 
         # Test all gate states
         for gate in ["PASS", "CONCERNS", "FAIL", "WAIVED"]:

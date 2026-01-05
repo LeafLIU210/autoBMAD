@@ -9,7 +9,7 @@ import pytest
 import subprocess
 from unittest.mock import patch, Mock
 
-from src.qa_tools_integration import QAAutomationWorkflow, QAStatus
+from autoBMAD.epic_automation.qa_tools_integration import QAAutomationWorkflow, QAStatus
 
 
 class TestQAIntegrationWorkflow:

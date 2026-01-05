@@ -1,0 +1,158 @@
+{
+  "version": "1.37.0",
+  "time": "1767615598554",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"options\" 参数的类型未知",
+      "range": {
+        "start": {
+          "line": 54,
+          "character": 46
+        },
+        "end": {
+          "line": 54,
+          "character": 53
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "类型表达式中不允许使用变量",
+      "range": {
+        "start": {
+          "line": 54,
+          "character": 56
+        },
+        "end": {
+          "line": 54,
+          "character": 74
+        }
+      },
+      "rule": "reportInvalidTypeForm"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "`None` 不支持调用",
+      "range": {
+        "start": {
+          "line": 69,
+          "character": 24
+        },
+        "end": {
+          "line": 69,
+          "character": 61
+        }
+      },
+      "rule": "reportOptionalCall"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "参数类型未知\n  实参对应于 \"query\" 函数中的 \"options\" 形参",
+      "range": {
+        "start": {
+          "line": 69,
+          "character": 53
+        },
+        "end": {
+          "line": 69,
+          "character": 60
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"aclose\" 类型未知",
+      "range": {
+        "start": {
+          "line": 73,
+          "character": 22
+        },
+        "end": {
+          "line": 73,
+          "character": 38
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"AsyncIterator[Message]\" 类的 \"aclose\" 属性\n  属性 \"aclose\" 未知",
+      "range": {
+        "start": {
+          "line": 73,
+          "character": 32
+        },
+        "end": {
+          "line": 73,
+          "character": 38
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"claude_sdk_context\" 的类型部分未知\n  \"claude_sdk_context\" 为 \"(prompt: str, options: Unknown) -> _AsyncGeneratorContextManager[AsyncIterator[UserMessage | AssistantMessage | SystemMessage | ResultMessage | StreamEvent], None]\" 类型",
+      "range": {
+        "start": {
+          "line": 466,
+          "character": 23
+        },
+        "end": {
+          "line": 466,
+          "character": 46
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"claude_sdk_context\" 的类型部分未知\n  \"claude_sdk_context\" 为 \"(prompt: str, options: Unknown) -> _AsyncGeneratorContextManager[AsyncIterator[UserMessage | AssistantMessage | SystemMessage | ResultMessage | StreamEvent], None]\" 类型",
+      "range": {
+        "start": {
+          "line": 530,
+          "character": 31
+        },
+        "end": {
+          "line": 530,
+          "character": 54
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 10,
+    "errorCount": 8,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.643
+  },
+  "metadata": {
+    "check_time": "2026-01-05T20:19:58.582270",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 10,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py"
+    ]
+  }
+}

@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 
-from src.agents import SMAgent, SMConfig
+from autoBMAD.epic_automation.agents import SMAgent, SMConfig
 
 
 class TestSMAgent:

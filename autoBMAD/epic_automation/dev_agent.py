@@ -26,7 +26,7 @@ except ImportError:
 
 # Export for use in code
 query = _query
-ClaudeAgentOptions = _ClaudeAgentOptions
+ClaudeAgentOptions = _ClaudeAgentOptions  # type: ignore[assignment]
 ResultMessage = _ResultMessage
 
 logger = logging.getLogger(__name__)
@@ -49,72 +49,109 @@ class DevAgent:
         self._claude_available = self._check_claude_available() if use_claude else False
         logger.info(f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})")
 
+    def claude_sdk_query(
+        self,
+        prompt: str,
+        options: Any  # type: ignore[type-var]  # ClaudeAgentOptions from SDK
+    ) -> Any:
+        """
+        Get Claude SDK query generator (not a context manager).
+
+        Args:
+            prompt: The prompt to send to Claude
+            options: Claude agent options
+
+        Returns:
+            Async generator for processing messages
+        """
+        # Check if query is available
+        if query is None:
+            raise RuntimeError("Claude Agent SDK query function not available")
+
+        # Return the query generator directly
+        return query(prompt=prompt, options=options)
+
     def _check_claude_available(self) -> bool:
-        """Check if Claude Code CLI is available."""
-        try:
-            # Try direct path for Windows
-            import os
-            possible_commands = [
-                ['claude', '--version'],
-                [r'C:\Users\Administrator\AppData\Roaming\npm\claude', '--version'],
-                [r'C:\Users\Administrator\AppData\Roaming\npm\claude.cmd', '--version'],
-                ['where', 'claude']
-            ]
+        """Check if Claude Code CLI is available with retry logic."""
+        import os
+        import time
 
-            # Get current environment
-            env = os.environ.copy()
+        max_retries = 3
+        timeout = 30  # Increased from 10 to 30 seconds
 
-            for cmd in possible_commands:
-                try:
-                    result = subprocess.run(
-                        cmd,
-                        capture_output=True,
-                        text=True,
-                        timeout=10,
-                        shell=True,
-                        env=env
-                    )
-                    if result.returncode == 0:
-                        if cmd[0] == 'where':
-                            # Path found, now verify claude works
-                            paths = result.stdout.strip().split('\n')
-                            if paths:
-                                verify = subprocess.run(
-                                    [paths[0], '--version'],
-                                    capture_output=True,
-                                    text=True,
-                                    timeout=10,
-                                    shell=True,
-                                    env=env
-                                )
-                                if verify.returncode == 0:
-                                    logger.info(f"Claude Code CLI available: {verify.stdout.strip()}")
-                                    return True
-                        else:
-                            # Direct version check succeeded
-                            logger.info(f"Claude Code CLI available: {result.stdout.strip()}")
-                            return True
-                except Exception:
-                    continue
+        possible_commands = [
+            ['claude', '--version'],
+            [r'C:\Users\Administrator\AppData\Roaming\npm\claude', '--version'],
+            [r'C:\Users\Administrator\AppData\Roaming\npm\claude.cmd', '--version'],
+            ['where', 'claude']
+        ]
 
-            return False
-        except Exception as e:
-            logger.warning(f"Claude Code CLI not available: {e}")
-            return False
+        env = os.environ.copy()
+
+        for attempt in range(max_retries):
+            try:
+                for cmd in possible_commands:
+                    try:
+                        result = subprocess.run(
+                            cmd,
+                            capture_output=True,
+                            text=True,
+                            timeout=timeout,
+                            shell=True,
+                            env=env
+                        )
+                        if result.returncode == 0:
+                            if cmd[0] == 'where':
+                                paths = result.stdout.strip().split('\n')
+                                if paths:
+                                    verify = subprocess.run(
+                                        [paths[0], '--version'],
+                                        capture_output=True,
+                                        text=True,
+                                        timeout=timeout,
+                                        shell=True,
+                                        env=env
+                                    )
+                                    if verify.returncode == 0:
+                                        logger.info(f"Claude Code CLI available: {verify.stdout.strip()}")
+                                        return True
+                            else:
+                                logger.info(f"Claude Code CLI available: {result.stdout.strip()}")
+                                return True
+                    except subprocess.TimeoutExpired:
+                        logger.warning(f"CLI check timeout for {cmd[0]} (attempt {attempt + 1}/{max_retries})")
+                        continue
+                    except Exception:
+                        continue
+
+                # If no command worked in this attempt, try again
+                if attempt < max_retries - 1:
+                    logger.warning(f"CLI check attempt {attempt + 1} failed, retrying in 2s...")
+                    time.sleep(2)
+
+            except Exception as e:
+                logger.warning(f"CLI check attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+
+        logger.error(f"Claude Code CLI not available after {max_retries} attempts")
+        return False
 
     async def execute(
         self,
         story_content: str,
         task_guidance: str = "",
-        story_path: str = ""
+        story_path: str = "",
+        qa_feedback: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
-        Execute Dev phase for a story.
+        Execute Dev phase for a story with QA feedback loop support.
 
         Args:
             story_content: Raw markdown content of the story
             task_guidance: Task guidance from .bmad-core/tasks/develop-story.md
             story_path: Path to the story file
+            qa_feedback: Optional QA feedback from previous QA review
 
         Returns:
             True if successful, False otherwise
@@ -135,6 +172,11 @@ class DevAgent:
 
             # Add story_path to requirements if available in context
             requirements['story_path'] = self._current_story_path
+
+            # Handle QA feedback if provided
+            if qa_feedback and qa_feedback.get('needs_fix'):
+                logger.info(f"{self.name} Handling QA feedback loop")
+                requirements['qa_prompt'] = qa_feedback.get('dev_prompt', '')
 
             # Validate requirements
             validation = await self._validate_requirements(requirements)
@@ -301,7 +343,7 @@ class DevAgent:
             return False
 
     async def _execute_development_tasks(self, requirements: Dict[str, Any]) -> bool:
-        """Execute development tasks using Claude Agent SDK."""
+        """Execute development tasks using Claude Agent SDK with triple independent calls."""
         logger.info("Executing development tasks")
 
         try:
@@ -316,17 +358,21 @@ class DevAgent:
 
             # Check if this is a QA feedback mode (requirements contains qa_prompt)
             if 'qa_prompt' in requirements:
-                # Handle QA feedback mode
-                return await self._handle_qa_feedback(requirements['qa_prompt'], story_path)
+                # Handle QA feedback mode - execute three independent calls
+                logger.info(f"{self.name} Handling QA feedback with triple SDK calls")
+                result = await self._execute_triple_claude_calls(requirements['qa_prompt'], story_path)
+                return result
 
-            # Normal development mode
-            # Build the prompt for SDK
-            prompt = f'@.bmad-core\\agents\\dev.md *develop-story "{story_path}" 创建或完善测试套件 @tests\\，执行测试驱动开发，直至所有测试完全通过'
+            # Normal development mode - execute three independent SDK calls
+            logger.info(f"{self.name} Executing normal development with triple SDK calls")
+            base_prompt = f'@.bmad-core\\agents\\dev.md *develop-story "{story_path}" 创建或完善测试套件 @tests\\，执行测试驱动开发，直至所有测试完全通过'
 
-            # Execute SDK calls
-            result = await self._execute_claude_sdk(prompt, story_path)
+            # Execute three independent calls
+            result = await self._execute_triple_claude_calls(base_prompt, story_path)
 
             if result:
+                # Development completed successfully, notify QA agent
+                await self._notify_qa_agent(story_path)
                 logger.info(f"Development tasks completed successfully for: {requirements.get('title', 'Unknown')}")
                 return True
             else:
@@ -337,11 +383,11 @@ class DevAgent:
             logger.error(f"Failed to execute development tasks: {e}")
             return False
 
-    # ========== NEW: QA Feedback Handling Methods (奥卡姆剃刀原则 - 极简方案) ==========
+    # ========== QA Feedback Handling Methods (Simplified) ==========
 
     async def _handle_qa_feedback(self, qa_prompt: str, story_path: str) -> bool:
         """
-        Handle QA feedback and execute triple Claude SDK calls.
+        Handle QA feedback using triple independent SDK calls.
 
         Args:
             qa_prompt: Prompt from QA agent containing gate file paths
@@ -353,13 +399,18 @@ class DevAgent:
         try:
             logger.info(f"{self.name} handling QA feedback for: {story_path}")
 
-            # Execute triple independent Claude SDK calls
-            success = await self._execute_triple_claude_calls(qa_prompt, story_path)
+            # Build prompt for QA feedback
+            prompt = f'@.bmad-core\\agents\\dev.md {qa_prompt}'
 
-            if success:
-                # Notify QA agent after completion
-                await self._notify_qa_agent(story_path)
+            # Execute three independent SDK calls for fixing
+            result = await self._execute_triple_claude_calls(prompt, story_path)
+
+            if result:
                 logger.info(f"{self.name} QA feedback handling completed successfully")
+
+                # After fixing, notify QA again for re-review
+                await self._notify_qa_agent(story_path)
+
                 return True
             else:
                 logger.error(f"{self.name} QA feedback handling failed")
@@ -418,7 +469,7 @@ class DevAgent:
 
     async def _execute_single_claude_sdk(self, prompt: str, story_path: str) -> bool:
         """
-        Execute a single Claude SDK call (for triple call mode).
+        Execute a single Claude SDK call with timeout and retry mechanism.
 
         Args:
             prompt: Prompt for the SDK call
@@ -427,59 +478,136 @@ class DevAgent:
         Returns:
             True if successful, False otherwise
         """
-        try:
-            # Check if SDK classes are available
-            if ClaudeAgentOptions is None or query is None:
-                logger.warning("Claude Agent SDK not available - using simulation mode")
-                return True
+        # Check if SDK classes are available
+        if ClaudeAgentOptions is None or query is None:
+            logger.warning("Claude Agent SDK not available - using simulation mode")
+            return True
 
-            options = ClaudeAgentOptions(
-                permission_mode="bypassPermissions",
-                cwd=str(Path.cwd())
-            )
+        options = ClaudeAgentOptions(
+            permission_mode="bypassPermissions",
+            cwd=str(Path.cwd())
+        )
 
-            # Execute single SDK call (no retry logic for independent calls)
-            message_count = 0
-            async for message in query(prompt=prompt, options=options):
-                message_count += 1
-                # Check if ResultMessage is available before isinstance
-                if ResultMessage is not None and isinstance(message, ResultMessage):
-                    if message.is_error:
-                        logger.error(f"[Dev Agent] SDK call failed: {message.result}")
-                        return False
-                    else:
-                        # Ensure result is not None before slicing
-                        result_str = message.result if message.result is not None else ""
-                        logger.info(f"[Dev Agent] SDK call succeeded: {result_str[:200]}...")
-                        return True
+        max_retries = 3
+        retry_delay = 30  # 30 seconds between retries
+        sdk_timeout = 300  # 5 minutes timeout per call
 
-            # If we received messages, return success
-            if message_count > 0:
-                return True
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"[Dev Agent] SDK call attempt {attempt + 1}/{max_retries} for {story_path}")
 
-            logger.warning(f"[Dev Agent] No messages received for: {story_path}")
-            return False
+                message_count = 0
+                try:
+                    # Get the query generator directly (not as context manager)
+                    query_generator = self.claude_sdk_query(prompt, options)
 
-        except Exception as e:
-            logger.error(f"[Dev Agent] SDK call exception: {str(e)}")
-            return False
+                    # Use asyncio.wait_for for timeout control (compatible with Python 3.7+)
+                    # Wrap the async iteration in a task and wait for it with timeout
+                    async def process_messages():
+                        # Allow access to message_count from outer scope
+                        nonlocal message_count
+                        async for message in query_generator:
+                            message_count += 1
+                            if ResultMessage is not None and isinstance(message, ResultMessage):
+                                if message.is_error:
+                                    logger.error(f"[Dev Agent] SDK call failed: {message.result}")
+                                    raise RuntimeError(f"SDK error: {message.result}")
+                                else:
+                                    result_str = message.result if message.result is not None else ""
+                                    logger.info(f"[Dev Agent] SDK call succeeded: {result_str[:200]}...")
+                                    return True
 
-    async def _notify_qa_agent(self, story_path: str) -> None:
+                        # If we received messages without ResultMessage, consider success
+                        if message_count > 0:
+                            logger.info(f"[Dev Agent] SDK call completed with {message_count} messages")
+                            return True
+
+                        logger.warning(f"[Dev Agent] No messages received for: {story_path}")
+                        raise RuntimeError("No messages received from SDK")
+
+                    # Wait for the task with timeout
+                    await asyncio.wait_for(process_messages(), timeout=sdk_timeout)
+                    # If we get here without returning, the function returned True
+                    return True
+
+                except asyncio.TimeoutError:
+                    logger.error(f"[Dev Agent] SDK call timeout (attempt {attempt + 1}/{max_retries})")
+                    if attempt < max_retries - 1:
+                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
+                        await asyncio.sleep(retry_delay)
+                    continue
+
+                except asyncio.CancelledError:
+                    logger.warning(f"[Dev Agent] SDK call cancelled (attempt {attempt + 1}/{max_retries})")
+                    if attempt < max_retries - 1:
+                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
+                        await asyncio.sleep(retry_delay)
+                    continue
+
+            except Exception as e:
+                logger.error(f"[Dev Agent] SDK call exception: {str(e)} (attempt {attempt + 1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
+                    await asyncio.sleep(retry_delay)
+                continue
+
+        logger.error(f"[Dev Agent] All {max_retries} attempts failed for {story_path}")
+        return False
+
+    async def _notify_qa_agent(self, story_path: str) -> Optional[Dict[str, Any]]:
         """
-        Notify QA agent after development completion.
+        Notify QA agent after development completion and get feedback.
 
         Args:
             story_path: Path to the story file
+
+        Returns:
+            QA feedback dictionary or None if failed
         """
         try:
             logger.info(f"[Dev Agent] Notifying QA agent for: {story_path}")
-            # This is a placeholder for actual notification logic
-            # In a real implementation, this might send a message to a queue,
-            # call a callback, or update a shared state
-            # For now, we just log that notification would be sent
+
+            # Read story content
+            story_file = Path(story_path)
+            if not story_file.exists():
+                logger.error(f"[Dev Agent] Story file not found: {story_path}")
+                return None
+
+            with open(story_file, 'r', encoding='utf-8') as f:
+                story_content = f.read()
+
+            # Import and instantiate QA agent
+            try:
+                from .qa_agent import QAAgent
+            except ImportError:
+                logger.warning("[Dev Agent] QA agent not available - simulating QA review")
+                return {
+                    'passed': True,
+                    'completed': True,
+                    'needs_fix': False
+                }
+
+            qa_agent = QAAgent()
+
+            # Execute QA review
+            qa_result = await qa_agent.execute(
+                story_content=story_content,
+                story_path=story_path
+            )
+
+            logger.info(f"[Dev Agent] QA review completed: {qa_result}")
+
+            # Check if QA found issues
+            if qa_result.get('needs_fix'):
+                logger.info(f"[Dev Agent] QA found issues, will trigger Dev-QA loop")
+                return qa_result
+            else:
+                logger.info(f"[Dev Agent] QA passed, story completed")
+                return qa_result
 
         except Exception as e:
-            logger.error(f"Failed to notify QA agent: {str(e)}")
+            logger.error(f"Failed to notify QA agent: {e}")
+            return None
 
 
     async def _execute_claude_sdk(self, prompt: str, story_path: str) -> bool:
@@ -503,7 +631,10 @@ class DevAgent:
                     logger.info(f"[Dev Agent] 尝试调用SDK (第{attempt + 1}次) for {story_path}")
 
                     message_count = 0
-                    async for message in query(prompt=prompt, options=options):
+                    # Get the query generator directly (not as context manager)
+                    query_generator = self.claude_sdk_query(prompt, options)
+
+                    async for message in query_generator:
                         message_count += 1
                         # Check if ResultMessage is available before isinstance
                         if ResultMessage is not None and isinstance(message, ResultMessage):

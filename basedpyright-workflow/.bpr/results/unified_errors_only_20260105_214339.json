@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260105_214337.txt",
+    "extraction_time": "2026-01-05T21:43:39.647218",
+    "total_files_with_errors": 1,
+    "total_errors": 2,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportUnknownMemberType": 1,
+        "reportAttributeAccessIssue": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 505,
+          "column": 32,
+          "message": "\"timeout\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 505,
+          "column": 40,
+          "message": "\"timeout\" 不是 \"asyncio\" 模块的已知属性 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        }
+      ]
+    }
+  ]
+}

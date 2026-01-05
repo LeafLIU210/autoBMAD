@@ -18,7 +18,7 @@ import sqlite3
 import os
 import tempfile
 
-from src.state_manager import (
+from autoBMAD.epic_automation.state_manager import (
     StateManager,
     StoryStatus,
     QAResult

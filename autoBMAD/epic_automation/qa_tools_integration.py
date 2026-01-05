@@ -269,7 +269,7 @@ class BasedPyrightWorkflowRunner:
 class FixtestWorkflowRunner:
     """Runner for Fixtest-Workflow integration."""
 
-    def __init__(self, workflow_dir: str = "fixtest-workflow", timeout: int = 300):
+    def __init__(self, workflow_dir: str = "fixtest-workflow", timeout: int = 120):
         """
         Initialize Fixtest runner.
 
@@ -494,7 +494,7 @@ class QAAutomationWorkflow:
     def __init__(self,
                  basedpyright_dir: str = "basedpyright-workflow",
                  fixtest_dir: str = "fixtest-workflow",
-                 timeout: int = 300,
+                 timeout: int = 120,
                  max_retries: int = 2):
         """
         Initialize QA workflow.
@@ -525,18 +525,29 @@ class QAAutomationWorkflow:
         """
         logger.info("Starting QA checks with Both Tools")
 
+        # Track all tasks to prevent task leaks
+        tasks = []
+
         # Run both checks in parallel
         basedpyright_task = asyncio.create_task(
             self.basedpyright_runner.run_check(source_dir, self.max_retries)
         )
+        tasks.append(basedpyright_task)
+
         fixtest_task = asyncio.create_task(
             self.fixtest_runner.run_check(test_dir, self.max_retries)
         )
+        tasks.append(fixtest_task)
 
         basedpyright_result, fixtest_result = await asyncio.gather(
             basedpyright_task,
             fixtest_task
         )
+
+        # Ensure all tasks are completed
+        for task in tasks:
+            if not task.done():
+                await task
 
         # Determine overall status
         overall_status = self._determine_overall_status(basedpyright_result, fixtest_result)

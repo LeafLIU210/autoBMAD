@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260105_224902.txt",
+    "extraction_time": "2026-01-05T22:49:04.553775",
+    "total_files_with_errors": 1,
+    "total_errors": 4,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportUnusedVariable": 1,
+        "reportPossiblyUnboundVariable": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 499,
+          "column": 17,
+          "message": "变量 \"message_count\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 508,
+          "column": 29,
+          "message": "\"message_count\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 519,
+          "column": 28,
+          "message": "\"message_count\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 520,
+          "column": 80,
+          "message": "\"message_count\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        }
+      ]
+    }
+  ]
+}
