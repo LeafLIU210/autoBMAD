@@ -1,0 +1,542 @@
+{
+  "version": "1.37.0",
+  "time": "1767608221732",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "`None` 不支持调用",
+      "range": {
+        "start": {
+          "line": 328,
+          "character": 22
+        },
+        "end": {
+          "line": 331,
+          "character": 13
+        }
+      },
+      "rule": "reportOptionalCall"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "`None` 不支持调用",
+      "range": {
+        "start": {
+          "line": 341,
+          "character": 41
+        },
+        "end": {
+          "line": 341,
+          "character": 78
+        }
+      },
+      "rule": "reportOptionalCall"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"type[ResultMessage] | None\" 类型的实参无法赋值给函数 \"isinstance\" 中 \"_ClassInfo\" 类型的形参 \"class_or_tuple\"\n  \"type[ResultMessage] | None\" 类型与 \"_ClassInfo\" 类型不兼容\n    \"None\" 类型与 \"_ClassInfo\" 类型不兼容\n      \"None\" 与 \"type\" 不兼容\n      \"None\" 与 \"tuple[_ClassInfo, ...]\" 不兼容",
+      "range": {
+        "start": {
+          "line": 343,
+          "character": 47
+        },
+        "end": {
+          "line": 343,
+          "character": 60
+        }
+      },
+      "rule": "reportArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "`isinstance` 的第二个参数必须是单个类或由多个类构成的元组\n  `None` 不能参与 `isinstance()` 或 `issubclass()`",
+      "range": {
+        "start": {
+          "line": 343,
+          "character": 47
+        },
+        "end": {
+          "line": 343,
+          "character": 60
+        }
+      },
+      "rule": "reportArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"is_error\" 的类型部分未知\n  \"is_error\" 为 \"Unknown | bool\" 类型",
+      "range": {
+        "start": {
+          "line": 344,
+          "character": 31
+        },
+        "end": {
+          "line": 344,
+          "character": 47
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"UserMessage\" 类的 \"is_error\" 属性\n  属性 \"is_error\" 未知",
+      "range": {
+        "start": {
+          "line": 344,
+          "character": 39
+        },
+        "end": {
+          "line": 344,
+          "character": 47
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"AssistantMessage\" 类的 \"is_error\" 属性\n  属性 \"is_error\" 未知",
+      "range": {
+        "start": {
+          "line": 344,
+          "character": 39
+        },
+        "end": {
+          "line": 344,
+          "character": 47
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"SystemMessage\" 类的 \"is_error\" 属性\n  属性 \"is_error\" 未知",
+      "range": {
+        "start": {
+          "line": 344,
+          "character": 39
+        },
+        "end": {
+          "line": 344,
+          "character": 47
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"StreamEvent\" 类的 \"is_error\" 属性\n  属性 \"is_error\" 未知",
+      "range": {
+        "start": {
+          "line": 344,
+          "character": 39
+        },
+        "end": {
+          "line": 344,
+          "character": 47
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"result\" 的类型部分未知\n  \"result\" 为 \"Unknown | str | None\" 类型",
+      "range": {
+        "start": {
+          "line": 345,
+          "character": 69
+        },
+        "end": {
+          "line": 345,
+          "character": 83
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"UserMessage\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 345,
+          "character": 77
+        },
+        "end": {
+          "line": 345,
+          "character": 83
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"AssistantMessage\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 345,
+          "character": 77
+        },
+        "end": {
+          "line": 345,
+          "character": 83
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"SystemMessage\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 345,
+          "character": 77
+        },
+        "end": {
+          "line": 345,
+          "character": 83
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"StreamEvent\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 345,
+          "character": 77
+        },
+        "end": {
+          "line": 345,
+          "character": 83
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"result\" 的类型部分未知\n  \"result\" 为 \"Unknown | str | None\" 类型",
+      "range": {
+        "start": {
+          "line": 351,
+          "character": 68
+        },
+        "end": {
+          "line": 351,
+          "character": 82
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "`None` 不支持下标访问",
+      "range": {
+        "start": {
+          "line": 351,
+          "character": 68
+        },
+        "end": {
+          "line": 351,
+          "character": 82
+        }
+      },
+      "rule": "reportOptionalSubscript"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"UserMessage\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 351,
+          "character": 76
+        },
+        "end": {
+          "line": 351,
+          "character": 82
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"AssistantMessage\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 351,
+          "character": 76
+        },
+        "end": {
+          "line": 351,
+          "character": 82
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"SystemMessage\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 351,
+          "character": 76
+        },
+        "end": {
+          "line": 351,
+          "character": 82
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"StreamEvent\" 类的 \"result\" 属性\n  属性 \"result\" 未知",
+      "range": {
+        "start": {
+          "line": 351,
+          "character": 76
+        },
+        "end": {
+          "line": 351,
+          "character": 82
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"Optional\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 12,
+          "character": 36
+        },
+        "end": {
+          "line": 12,
+          "character": 44
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"subprocess\" 可能未绑定",
+      "range": {
+        "start": {
+          "line": 616,
+          "character": 15
+        },
+        "end": {
+          "line": 616,
+          "character": 25
+        }
+      },
+      "rule": "reportPossiblyUnboundVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "变量 \"title\" 未使用",
+      "range": {
+        "start": {
+          "line": 315,
+          "character": 23
+        },
+        "end": {
+          "line": 315,
+          "character": 28
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 513,
+          "character": 16
+        },
+        "end": {
+          "line": 513,
+          "character": 37
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 526,
+          "character": 20
+        },
+        "end": {
+          "line": 526,
+          "character": 41
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 543,
+          "character": 24
+        },
+        "end": {
+          "line": 543,
+          "character": 47
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 547,
+          "character": 20
+        },
+        "end": {
+          "line": 547,
+          "character": 41
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 554,
+          "character": 16
+        },
+        "end": {
+          "line": 554,
+          "character": 37
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 557,
+          "character": 50
+        },
+        "end": {
+          "line": 557,
+          "character": 64
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "返回类型 \"tuple[Literal[False], list[Unknown]]\" 部分未知",
+      "range": {
+        "start": {
+          "line": 558,
+          "character": 19
+        },
+        "end": {
+          "line": 558,
+          "character": 40
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"state_manager\" 参数的类型未知",
+      "range": {
+        "start": {
+          "line": 19,
+          "character": 23
+        },
+        "end": {
+          "line": 19,
+          "character": 36
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"state_manager\" 类型未知",
+      "range": {
+        "start": {
+          "line": 20,
+          "character": 8
+        },
+        "end": {
+          "line": 20,
+          "character": 26
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 10,
+    "errorCount": 32,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.617
+  },
+  "metadata": {
+    "check_time": "2026-01-05T18:17:01.756153",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 10,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py"
+    ]
+  }
+}

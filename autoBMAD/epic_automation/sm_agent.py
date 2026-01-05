@@ -313,7 +313,7 @@ class SMAgent:
         # Pattern 1: "### Story X.Y: Title"
         pattern1 = r'### Story\s+(\d+(?:\.\d+)?)\s*:\s*(.+?)(?:\n|\$)'
         matches1 = re.findall(pattern1, content, re.MULTILINE)
-        for story_num, title in matches1:
+        for story_num, _title in matches1:
             story_ids.append(story_num)
             logger.debug(f"Found story section: {story_num}")
 
@@ -493,7 +493,7 @@ class SMAgent:
             Tuple[bool, List[str]] - (whether all succeeded, list of failed stories)
         """
         logger.info("[SM Agent] Starting to verify story files...")
-        failed_stories = []
+        failed_stories: List[str] = []
 
         # Determine story file directory
         # Stories are in docs/stories, not docs/epics/stories
@@ -538,7 +538,7 @@ class SMAgent:
                     "## Testing"
                 ]
 
-                missing_sections = []
+                missing_sections: List[str] = []
                 for section in required_sections:
                     if section not in content:
                         missing_sections.append(section)

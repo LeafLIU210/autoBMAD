@@ -1,0 +1,31 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py
+
+BasedPyright type errors (20):  Line 329, Col 23: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 342, Col 42: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 344, Col 48: [unknown] "type[ResultMessage] | None" 类型的实参无法赋值给函数 "isinstance" 中 "_ClassInfo" 类型的形参 "class_or_tuple"
+  Line 344, Col 48: [unknown] `isinstance` 的第二个参数必须是单个类或由多个类构成的元组
+  Line 345, Col 32: [unknown] "is_error" 的类型部分未知
+  Line 345, Col 40: [unknown] 无法访问 "UserMessage" 类的 "is_error" 属性
+  Line 345, Col 40: [unknown] 无法访问 "AssistantMessage" 类的 "is_error" 属性
+  Line 345, Col 40: [unknown] 无法访问 "SystemMessage" 类的 "is_error" 属性
+  Line 345, Col 40: [unknown] 无法访问 "StreamEvent" 类的 "is_error" 属性
+  Line 346, Col 70: [unknown] "result" 的类型部分未知
+  Line 346, Col 78: [unknown] 无法访问 "UserMessage" 类的 "result" 属性
+  Line 346, Col 78: [unknown] 无法访问 "AssistantMessage" 类的 "result" 属性
+  Line 346, Col 78: [unknown] 无法访问 "SystemMessage" 类的 "result" 属性
+  Line 346, Col 78: [unknown] 无法访问 "StreamEvent" 类的 "result" 属性
+  Line 352, Col 69: [unknown] "result" 的类型部分未知
+  Line 352, Col 69: [reportOptionalSubscript] `None` 不支持下标访问 (reportOptionalSubscript)
+  Line 352, Col 77: [unknown] 无法访问 "UserMessage" 类的 "result" 属性
+  Line 352, Col 77: [unknown] 无法访问 "AssistantMessage" 类的 "result" 属性
+  Line 352, Col 77: [unknown] 无法访问 "SystemMessage" 类的 "result" 属性
+  Line 352, Col 77: [unknown] 无法访问 "StreamEvent" 类的 "result" 属性
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

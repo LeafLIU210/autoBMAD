@@ -7,17 +7,23 @@ import logging
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, TYPE_CHECKING
 import sys
 
-from autoBMAD.epic_automation.state_manager import StateManager  # type: ignore[import-untyped]
+if TYPE_CHECKING:
+    from .state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 
 class TestAutomationAgent:
     """Orchestrates pytest test execution and debugging."""
 
-    def __init__(self, state_manager: StateManager, epic_id: str, skip_tests: bool = False):
+    def __init__(
+        self,
+        state_manager: "StateManager",
+        epic_id: str,
+        skip_tests: bool = False
+    ) -> None:
         self.state_manager = state_manager
         self.epic_id = epic_id
         self.max_retry_attempts = 5
