@@ -6,8 +6,19 @@ Integrates with task guidance for SM-specific operations.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+import asyncio
+import time
+from pathlib import Path
+from typing import Dict, Any, Optional, List, Tuple
 import re
+
+try:
+    from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+except ImportError:
+    # For development without SDK installed
+    query = None
+    ClaudeAgentOptions = None
+    ResultMessage = None
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +26,21 @@ logger = logging.getLogger(__name__)
 class SMAgent:
     """Story Master agent for handling story-related tasks."""
 
-    def __init__(self):
-        """Initialize SM agent."""
+    def __init__(self, project_root: Optional[str] = None, tasks_path: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+        """
+        Initialize SM agent.
+
+        Args:
+            project_root: Root directory of the project
+            tasks_path: Path to tasks directory
+            config: Configuration dictionary
+        """
         self.name = "SM Agent"
+        self.agent_name = "SM Agent"
+        self.phase = "Story Management"
+        self.project_root = Path(project_root) if project_root else None
+        self.tasks_path = Path(tasks_path) if tasks_path else None
+        self.config = config or {}
         logger.info(f"{self.name} initialized")
 
     async def execute(
@@ -224,3 +247,317 @@ class SMAgent:
         except Exception as e:
             logger.error(f"Failed to create story: {e}")
             return None
+
+    async def create_stories_from_epic(self, epic_path: str) -> bool:
+        """
+        Create stories from an epic document using Claude.
+        MANDATORY REQUIREMENT: All story documents must be created successfully to proceed.
+
+        Args:
+            epic_path: Path to the epic markdown file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info(f"[SM Agent] Starting to create stories from Epic: {epic_path}")
+
+        try:
+            # Read epic content
+            with open(epic_path, 'r', encoding='utf-8') as f:
+                epic_content = f.read()
+
+            # Extract story IDs from epic
+            story_ids = self._extract_story_ids_from_epic(epic_content)
+            logger.info(f"[SM Agent] Extracted {len(story_ids)} story IDs: {story_ids}")
+
+            if not story_ids:
+                logger.error("[SM Agent] No story IDs found")
+                return False
+
+            # Build prompt
+            prompt = self._build_claude_prompt(epic_path, story_ids)
+
+            # Call Claude to create stories (retry logic is handled in _execute_claude_sdk)
+            success = await self._execute_claude_sdk(prompt)
+
+            if success:
+                # Verify all story files
+                all_passed, failed_stories = self._verify_story_files(story_ids, epic_path)
+
+                if all_passed:
+                    logger.info("[SM Agent] [OK] All stories created successfully")
+                    return True
+                else:
+                    logger.error(f"[SM Agent] [FAIL] Story verification failed: {failed_stories}")
+                    return False
+            else:
+                logger.error("[SM Agent] Failed to create stories")
+                return False
+
+        except Exception as e:
+            logger.error(f"[SM Agent] Exception during story creation: {type(e).__name__}: {e}")
+            return False
+
+    def _extract_story_ids_from_epic(self, content: str) -> List[str]:
+        """
+        Extract story IDs from epic document.
+
+        Args:
+            content: Epic document content
+
+        Returns:
+            List of story IDs (e.g., ["1.1", "1.2", ...])
+        """
+        story_ids: List[str] = []
+
+        # Pattern 1: "### Story X.Y: Title"
+        pattern1 = r'### Story\s+(\d+(?:\.\d+)?)\s*:\s*(.+?)(?:\n|\$)'
+        matches1 = re.findall(pattern1, content, re.MULTILINE)
+        for story_num, title in matches1:
+            story_ids.append(story_num)
+            logger.debug(f"Found story section: {story_num}")
+
+        # Pattern 2: "**Story ID**: 001"
+        pattern2 = r'\*\*Story ID\*\*\s*:\s*(\d+(?:\.\d+)?)'
+        matches2 = re.findall(pattern2, content, re.MULTILINE)
+        for story_num in matches2:
+            if story_num not in story_ids:
+                story_ids.append(story_num)
+                logger.debug(f"Found story ID: {story_num}")
+
+        # Remove duplicates while preserving order
+        seen: set[str] = set()
+        unique_story_ids: List[str] = []
+        for story_id in story_ids:
+            if story_id not in seen:
+                seen.add(story_id)
+                unique_story_ids.append(story_id)
+
+        logger.debug(f"Extracted {len(unique_story_ids)} unique story IDs: {unique_story_ids}")
+        return unique_story_ids
+
+    async def _call_claude_create_stories(self, epic_path: str, story_ids: List[str]) -> bool:
+        """
+        Call Claude to create stories from epic.
+
+        Args:
+            epic_path: Path to the epic markdown file
+            story_ids: List of story IDs to create
+
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info("Calling Claude to create stories")
+
+        try:
+            # Build prompt
+            prompt = self._build_claude_prompt(epic_path, story_ids)
+
+            # Execute Claude SDK call
+            success = await self._execute_claude_sdk(prompt)
+
+            return success
+
+        except Exception as e:
+            logger.error(f"Failed to call Claude for story creation: {e}")
+            return False
+
+    def _build_claude_prompt(self, epic_path: str, story_ids: List[str]) -> str:
+        """
+        Build the prompt for Claude to create stories.
+
+        Args:
+            epic_path: Path to the epic markdown file
+            story_ids: List of story IDs
+
+        Returns:
+            Formatted prompt string
+        """
+        # Convert story IDs to comma-separated string
+        story_list = ", ".join(story_ids)
+
+        # Get relative path from current directory
+        epic_rel_path = str(Path(epic_path))
+
+        prompt = f"@.bmad-core/agents/sm.md *draft {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories"
+
+        logger.debug(f"Built prompt: {prompt}")
+        return prompt
+
+    async def _execute_claude_sdk(self, prompt: str) -> bool:
+        """
+        Execute Claude SDK call to create stories with timeout and retry logic.
+
+        Args:
+            prompt: The prompt to send to Claude
+
+        Returns:
+            True if successful, False otherwise
+        """
+        max_retries = 3
+        retry_delay = 15
+        timeout_seconds = 300
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"[SM Agent] Claude SDK call attempt {attempt + 1}/{max_retries}")
+                start_time = time.time()
+
+                # Check if SDK is available
+                if query is None or ClaudeAgentOptions is None:
+                    logger.error("Claude Agent SDK not installed. Please install claude-agent-sdk")
+                    return False
+
+                # Use asyncio.wait_for to implement timeout
+                result = await asyncio.wait_for(
+                    self._execute_sdk_with_logging(prompt),
+                    timeout=timeout_seconds
+                )
+
+                elapsed = time.time() - start_time
+                logger.info(f"[SM Agent] Call successful, took {elapsed:.2f} seconds")
+                return result
+
+            except asyncio.TimeoutError:
+                logger.warning(f"[SM Agent] Call timeout (>{timeout_seconds} seconds), attempt {attempt + 1}/{max_retries}")
+                if attempt < max_retries - 1:
+                    logger.info(f"[SM Agent] Waiting {retry_delay} seconds before retry...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error(f"[SM Agent] Call failed, reached max retries ({max_retries})")
+                    return False
+
+            except Exception as e:
+                logger.error(f"[SM Agent] Call exception: {type(e).__name__}: {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"[SM Agent] Waiting {retry_delay} seconds before retry...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error("[SM Agent] Call failed, reached max retries")
+                    return False
+
+        return False
+
+    async def _execute_sdk_with_logging(self, prompt: str) -> bool:
+        """
+        Execute SDK call and record detailed logs.
+
+        Args:
+            prompt: The prompt to send to Claude
+
+        Returns:
+            bool - Whether the execution was successful
+        """
+        # Check if SDK is available
+        if query is None or ClaudeAgentOptions is None or ResultMessage is None:
+            logger.error("Claude Agent SDK not installed. Please install claude-agent-sdk")
+            return False
+
+        # Set up options
+        options = ClaudeAgentOptions(
+            permission_mode="bypassPermissions",
+            cwd=str(Path.cwd())
+        )
+
+        message_count = 0
+        async for message in query(prompt=prompt, options=options):
+            message_count += 1
+
+            # Use isinstance() for proper message type checking
+            if isinstance(message, ResultMessage):
+                # Check if the result is an error
+                if message.is_error:
+                    logger.error(f"[SM Agent] Error result received: {message.result}")
+                    return False
+                else:
+                    logger.info(f"[SM Agent] Success result received: {message.result[:200] if message.result else 'No content'}...")
+                    return True
+
+            # Log other message types for debugging
+            message_type = type(message).__name__
+            logger.debug(f"[SM Agent] Message {message_count}: type={message_type}")
+
+        logger.warning("[SM Agent] SDK call completed but no ResultMessage received")
+        return False
+
+    def _verify_story_files(self, story_ids: List[str], epic_path: str) -> Tuple[bool, List[str]]:
+        """
+        Verify that all story files were successfully created with complete content.
+        Based on the actual story template structure (story-template-v2)
+
+        Args:
+            story_ids: List of story IDs to verify
+            epic_path: Path to the epic file
+
+        Returns:
+            Tuple[bool, List[str]] - (whether all succeeded, list of failed stories)
+        """
+        logger.info("[SM Agent] Starting to verify story files...")
+        failed_stories = []
+
+        # Determine story file directory
+        # Stories are in docs/stories, not docs/epics/stories
+        epic_path_obj = Path(epic_path)
+        project_root = epic_path_obj.parents[2]  # Go up to project root
+        stories_dir = project_root / "docs" / "stories"
+
+        if not stories_dir.exists():
+            logger.error(f"[SM Agent] Stories directory does not exist: {stories_dir}")
+            return False, story_ids
+
+        for story_id in story_ids:
+            # Find matching files
+            matching_files = list(stories_dir.glob(f"{story_id}.*.md"))
+
+            if not matching_files:
+                logger.error(f"[SM Agent] Story file does not exist: {story_id}")
+                failed_stories.append(story_id)
+                continue
+
+            story_file = matching_files[0]
+
+            # Verify file content
+            try:
+                with open(story_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Basic validation
+                if len(content) < 100:
+                    logger.warning(f"[SM Agent] Story file too short ({len(content)} chars): {story_file}")
+                    failed_stories.append(story_id)
+                    continue
+
+                # Verify key sections based on actual story-template-v2
+                required_sections = [
+                    "# Story",  # Story title (e.g., "# Story 1.1: ...")
+                    "## Status",
+                    "## Story",  # User story format
+                    "## Acceptance Criteria",
+                    "## Tasks / Subtasks",
+                    "## Dev Notes",
+                    "## Testing"
+                ]
+
+                missing_sections = []
+                for section in required_sections:
+                    if section not in content:
+                        missing_sections.append(section)
+
+                if missing_sections:
+                    logger.warning(f"[SM Agent] Story file missing key sections {missing_sections}: {story_file}")
+                    failed_stories.append(story_id)
+                    continue
+
+                logger.info(f"[SM Agent] [OK] Story file verification passed: {story_file}")
+
+            except Exception as e:
+                logger.error(f"[SM Agent] Failed to verify story file: {story_file}, error: {e}")
+                failed_stories.append(story_id)
+
+        if failed_stories:
+            logger.error(f"[SM Agent] [FAIL] {len(failed_stories)} stories verification failed: {failed_stories}")
+            return False, failed_stories
+        else:
+            logger.info(f"[SM Agent] [OK] All {len(story_ids)} stories verification passed")
+            return True, []
+

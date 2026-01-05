@@ -17,6 +17,20 @@ def get_timestamp():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
+def sanitize_filename(filename):
+    """Sanitize filename by removing special characters and keeping only alphanumeric, dash, underscore, and dot"""
+    import re
+    # Remove path and keep only filename
+    filename = Path(filename).name
+    # Replace special characters with underscore
+    filename = re.sub(r'[^\w\-_.]', '_', filename)
+    # Remove multiple consecutive underscores
+    filename = re.sub(r'_+', '_', filename)
+    # Remove leading/trailing underscores
+    filename = filename.strip('_')
+    return filename
+
+
 def find_latest_summary_json(summaries_dir):
     """
     查找最新的汇总JSON
@@ -52,6 +66,95 @@ def load_summary_json(file_path):
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def generate_single_file_prompt(file_info, output_file):
+    """
+    Generate an English prompt for a single test file
+
+    Args:
+        file_info: File information from JSON
+        output_file: Output file path
+
+    Returns:
+        str: Generated prompt
+    """
+    prompt_parts = []
+    prompt_parts.append("# Test Fix Task")
+    prompt_parts.append("")
+    prompt_parts.append(f"**Test File**: {file_info.get('relative_path', 'N/A')}")
+    prompt_parts.append(f"**Execution Time**: {file_info.get('execution_time', 0):.2f}s")
+    prompt_parts.append(f"**Result**: {file_info.get('result', 'unknown')}")
+    prompt_parts.append("")
+
+    # Add error information
+    if file_info.get("errors"):
+        prompt_parts.append("## Error Information")
+        for error in file_info["errors"]:
+            prompt_parts.append(f"- Type: {error.get('type', 'N/A')}")
+            prompt_parts.append(f"  Message: {error.get('message', 'N/A')}")
+            if error.get("details"):
+                for detail in error["details"]:
+                    prompt_parts.append(f"  - {detail}")
+        prompt_parts.append("")
+
+    # Add failure information
+    if file_info.get("failures"):
+        prompt_parts.append("## Failure Information")
+        for failure in file_info["failures"]:
+            prompt_parts.append(f"- Test: {failure.get('test_name', 'N/A')}")
+            prompt_parts.append(f"  Message: {failure.get('message', 'N/A')}")
+            if failure.get("details"):
+                for detail in failure["details"]:
+                    prompt_parts.append(f"  - {detail}")
+        prompt_parts.append("")
+
+    # Add debug information if available
+    if file_info.get("debug_info"):
+        debug = file_info["debug_info"]
+        prompt_parts.append("## Debug Information")
+        prompt_parts.append(f"- Debug Session ID: {debug.get('debug_session_id', 'N/A')}")
+        prompt_parts.append(f"- Debug Port: {debug.get('debug_port', 'N/A')}")
+
+        debug_log = debug.get('debug_log', '')
+        if debug_log:
+            # Show first 500 characters to avoid being too long
+            if len(debug_log) > 500:
+                prompt_parts.append(f"- Debug Log (first 500 characters):\n```\n{debug_log[:500]}...\n```")
+            else:
+                prompt_parts.append(f"- Debug Log:\n```\n{debug_log}\n```")
+
+        prompt_parts.append("")
+
+    # Add fix instructions
+    prompt_parts.append("## Fix Instructions")
+    prompt_parts.append("")
+    prompt_parts.append("**Task**: Repeatedly execute analysis and problem solving for errors or failures until all errors or failures are resolved")
+    prompt_parts.append("")
+    prompt_parts.append("Please follow these steps:")
+    prompt_parts.append("")
+    prompt_parts.append("1. **Analyze Error Causes**: Carefully read the ERROR and FAIL specific information")
+    prompt_parts.append("2. **Review Debug Information**: If debug_info field exists, carefully analyze the debug log")
+    prompt_parts.append("3. **Fix Code**: Fix the corresponding code based on error messages")
+    prompt_parts.append("4. **Verify Fix**: Run pytest to verify the fix results")
+    prompt_parts.append("5. **Iterative Verification**: If there are still ERROR or FAIL, continue fixing until all tests pass completely")
+    prompt_parts.append("")
+    prompt_parts.append("**Important Requirements**:")
+    prompt_parts.append("- Must fix all ERROR and FAIL")
+    prompt_parts.append("- Must run test verification immediately after each round of fixes")
+    prompt_parts.append("- Repeat verification until all tests pass completely")
+    prompt_parts.append("- Show final test results (should display PASSED with no ERROR or FAIL)")
+
+    prompt = "\n".join(prompt_parts)
+
+    # Save prompt to file
+    output_dir = Path(output_file).parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(prompt)
+
+    return prompt
 
 
 def generate_fix_prompt(summary_data, output_file):
@@ -236,44 +339,74 @@ def main():
         # 检查是否有错误文件
         error_files = summary_data.get("files_with_errors", [])
         if not error_files:
-            print("[OK] 所有测试都已通过，没有需要修复的文件！")
+            print("[OK] All tests have passed, no files need to be fixed!")
             return
 
-        print(f"发现 {len(error_files)} 个失败文件需要修复\n")
+        print(f"Found {len(error_files)} failed test files to fix\n")
 
-        # 生成提示词
+        # Process each file individually
         timestamp = get_timestamp()
-        prompt_file = prompts_dir / f"fix_prompt_{timestamp}.md"
-        print(f"生成提示词文件: {prompt_file}")
+        processed_files = []
 
-        prompt = generate_fix_prompt(summary_data, prompt_file)
-        print(f"提示词长度: {len(prompt)} 字符")
-        print(f"提示词已保存到: {prompt_file}\n")
+        for i, file_info in enumerate(error_files, 1):
+            rel_path = file_info.get("relative_path", "unknown")
+            # Sanitize filename for prompt file
+            safe_filename = sanitize_filename(rel_path)
+            prompt_file = prompts_dir / f"fix_prompt_{safe_filename}_{timestamp}.md"
 
-        # 更新汇总JSON标记已生成提示词
-        summary_data["prompt_generated"] = True
-        summary_data["prompt_file"] = str(prompt_file)
-        summary_data["prompt_timestamp"] = datetime.now().isoformat()
+            print(f"\n{'=' * 60}")
+            print(f"Processing file {i}/{len(error_files)}: {rel_path}")
+            print(f"{'=' * 60}\n")
 
-        output_path = summaries_dir / f"test_results_summary_prompt_{timestamp}.json"
+            # Generate prompt for this single file
+            prompt = generate_single_file_prompt(file_info, prompt_file)
+            print(f"Generated prompt file: {prompt_file}")
+            print(f"Prompt length: {len(prompt)} characters\n")
+
+            # Call Claude for this file
+            print(f"Calling Claude for: {rel_path}")
+            success = call_claude(prompt_file)
+
+            if success:
+                print(f"[SUCCESS] Claude call completed for {rel_path}")
+                processed_files.append({
+                    "file": rel_path,
+                    "prompt_file": str(prompt_file),
+                    "status": "success"
+                })
+            else:
+                print(f"[WARNING] Claude call may have issues for {rel_path}")
+                processed_files.append({
+                    "file": rel_path,
+                    "prompt_file": str(prompt_file),
+                    "status": "warning"
+                })
+
+            # Add 60 second delay between files (except for the last one)
+            if i < len(error_files):
+                print("\nWaiting 60 seconds before processing next file...\n")
+                import time
+                time.sleep(60)
+
+        # Update summary JSON with processed files info
+        summary_data["individual_prompts_generated"] = True
+        summary_data["processed_files"] = processed_files
+        summary_data["individual_processing_timestamp"] = datetime.now().isoformat()
+
+        output_path = summaries_dir / f"test_results_summary_individual_{timestamp}.json"
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(summary_data, f, ensure_ascii=False, indent=2)
 
-        print(f"已更新汇总JSON: {output_path}\n")
-
-        # 调用Claude
-        success = call_claude(prompt_file)
-
-        if success:
-            print("\n[SUCCESS] Claude修复调用成功完成！")
-            print(f"提示词文件: {prompt_file}")
-            print(f"更新后的汇总JSON: {output_path}")
-        else:
-            print("\n[WARNING] Claude调用可能有问题，请检查输出")
-            print(f"提示词文件: {prompt_file}")
+        print(f"\n{'=' * 60}")
+        print("Summary of processed files:")
+        print(f"{'=' * 60}")
+        for pf in processed_files:
+            print(f"- {pf['file']}: {pf['status']}")
+        print(f"\nUpdated summary JSON: {output_path}")
+        print(f"Total files processed: {len(processed_files)}/{len(error_files)}")
 
     except Exception as e:
-        print(f"\n[ERROR] 生成提示词或调用Claude时出错: {str(e)}")
+        print(f"\n[ERROR] Error generating prompts or calling Claude: {str(e)}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

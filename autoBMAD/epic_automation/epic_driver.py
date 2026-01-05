@@ -10,7 +10,7 @@ import asyncio
 import re
 import sys
 from pathlib import Path
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict, Optional, cast
 import logging
 
 # Configure logging
@@ -92,10 +92,10 @@ class EpicDriver:
 
         # Import agent classes
         try:
-            from .sm_agent import SMAgent  # type: ignore
-            from .dev_agent import DevAgent  # type: ignore
-            from .qa_agent import QAAgent  # type: ignore
-            from .state_manager import StateManager  # type: ignore
+            from autoBMAD.epic_automation.sm_agent import SMAgent  # type: ignore
+            from autoBMAD.epic_automation.dev_agent import DevAgent  # type: ignore
+            from autoBMAD.epic_automation.qa_agent import QAAgent  # type: ignore
+            from autoBMAD.epic_automation.state_manager import StateManager  # type: ignore
 
             self.sm_agent = SMAgent()
             self.dev_agent = DevAgent(use_claude=use_claude)
@@ -139,7 +139,7 @@ class EpicDriver:
         # Currently, task guidance is loaded implicitly through agent initialization
         self.logger.debug("Task guidance loading completed")
 
-    def parse_epic(self) -> List[Dict[str, Any]]:
+    async def parse_epic(self) -> List[Dict[str, Any]]:
         """
         Parse epic markdown file and extract story information.
 
@@ -168,10 +168,11 @@ class EpicDriver:
                 logger.warning("No stories found in epic document")
                 return []
 
-            # Step 2: Search for story files in docs-copy/stories/ directory
-            stories_dir = self.epic_path.parent.parent / "docs-copy" / "stories"
+            # Step 2: Search for story files in docs/stories/ directory
+            # epic文件在 docs/epics/，所以stories目录应该是 docs/stories
+            stories_dir = self.epic_path.parent.parent / "stories"
 
-            # Fallback: try relative to epic path
+            # Fallback: try stories directory relative to epic path
             if not stories_dir.exists():
                 stories_dir = self.epic_path.parent / "stories"
 
@@ -218,10 +219,10 @@ class EpicDriver:
                         logger.info(f"Found story: {story_id} at {story_file}")
                     else:
                         # Story file not found
-                        # Try to create missing story file
+                        # Try to create missing story file using SM Agent
                         story_filename = f"{story_number}.md"
                         story_path: Path = stories_dir / story_filename
-                        if self._create_missing_story(story_path, story_id):
+                        if await self.sm_agent.create_stories_from_epic(str(self.epic_path)):
                             stories.append({
                                 'id': story_id,
                                 'path': str(story_path.resolve()),
@@ -229,12 +230,15 @@ class EpicDriver:
                             })
                             found_stories.append(story_id)
                             logger.info(f"Created story: {story_id} at {story_path}")
+                        else:
+                            logger.error(f"Failed to create story: {story_id}")
                         logger.warning(f"Story file not found for ID: {story_id} (looking for {stories_dir}/*{story_number}*.md)")
 
             else:
                 logger.warning(f"Stories directory not found: {stories_dir}")
                 logger.info("Tried searching in:")
                 logger.info(f"  - {self.epic_path.parent.parent / 'docs-copy' / 'stories'}")
+                logger.info(f"  - {self.epic_path.parent / 'docs' / 'stories'}")
                 logger.info(f"  - {self.epic_path.parent / 'stories'}")
                 logger.info(f"  - {(self.epic_path.parent.parent / 'autoBMAD' / 'stories') if self.epic_path.parent.parent.name != 'autoBMAD' else 'N/A'}")
 
@@ -304,240 +308,6 @@ class EpicDriver:
         logger.debug(f"Extracted {len(unique_story_ids)} unique story IDs: {unique_story_ids}")
 
         return unique_story_ids
-
-    def _create_missing_story(self, story_path: Path, story_id: str) -> bool:
-        """
-        Create a missing story file by extracting content from epic.
-
-        Args:
-            story_path: Path where the story file should be created
-            story_id: Story identifier from the epic (e.g., "1.1: Title")
-
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            # Create directory if it doesn't exist
-            story_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Read the epic file and extract story content
-            with open(self.epic_path, 'r', encoding='utf-8') as f:
-                epic_content = f.read()
-
-            # Extract story section from epic
-            story_section = self._extract_story_section_from_epic(epic_content, story_id)
-
-            if story_section:
-                # Use extracted content
-                story_content = story_section
-            else:
-                # Fallback to template if extraction fails
-                story_content = f"""# Story {story_id}
-
-**Epic**: {self.epic_path.name}
-
----
-
-## Status
-**Status**: Draft
-
----
-
-## Story
-**As a** [user type],
-**I want to** [action],
-**So that** [benefit]
-
----
-
-## Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
----
-
-## Tasks / Subtasks
-- [ ] Task 1: Description
-  - [ ] Subtask 1.1: Detail
-  - [ ] Subtask 1.2: Detail
-
----
-
-## Dev Notes
-### Implementation Notes
-- Key technical details
-- Architecture decisions
-- Dependencies
-
-### Technical Details
-- Specific technical implementation guidance
-- API specifications
-- Data models
-- Component structure
-
----
-
-## Testing
-### Testing Standards
-- Framework used
-- Coverage requirements
-- Test types
-
-### Specific Testing Requirements
-- Unit tests
-- Integration tests
-- E2E tests
-
----
-
-## Change Log
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2026-01-04 | 1.0 | Initial story creation | Epic Driver |
-
----
-
-## Dev Agent Record
-*Populated during implementation*
-
-### Agent Model Used
-Claude Code 2.0.73
-
-### Debug Log References
-*Links to debug logs*
-
-### Completion Notes List
-*Implementation notes*
-
-### File List
-*Files created/modified*
-
-### Change Log
-*Detailed change log*
-
----
-
-## QA Results
-*Populated by QA agent*
-"""
-
-            # Write the story file
-            with open(story_path, 'w', encoding='utf-8') as f:
-                f.write(story_content)
-
-            logger.info(f"Successfully created story file: {story_path}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to create story file {story_path}: {e}")
-            return False
-
-    def _extract_story_section_from_epic(self, epic_content: str, story_id: str) -> Optional[str]:
-        """
-        Extract story section from epic document.
-
-        Args:
-            epic_content: Full content of the epic file
-            story_id: Story identifier (e.g., "1.1: Title")
-
-        Returns:
-            Extracted story section as markdown, or None if not found
-        """
-        try:
-            # Extract story number and title
-            story_num = story_id.split(':')[0].strip()
-            story_title = story_id.split(':', 1)[1].strip() if ':' in story_id else ""
-
-            # Look for the story section in epic
-            # Pattern: ### Story X.Y: Title
-            pattern = rf'### Story\s+{re.escape(story_num)}\s*:\s*{re.escape(story_title)}.*?(?=^###|\Z)'
-            match = re.search(pattern, epic_content, re.MULTILINE | re.DOTALL)
-
-            if match:
-                story_text = match.group(0).strip()
-                
-                # Convert to story format
-                story_content = f"""# Story {story_id}
-
-**Epic**: {self.epic_path.name}
-
----
-
-## Status
-**Status**: Draft
-
----
-
-{story_text}
-
----
-
-## Dev Notes
-### Implementation Notes
-- Key technical details
-- Architecture decisions
-- Dependencies
-
-### Technical Details
-- Specific technical implementation guidance
-- API specifications
-- Data models
-- Component structure
-
----
-
-## Testing
-### Testing Standards
-- Framework used
-- Coverage requirements
-- Test types
-
-### Specific Testing Requirements
-- Unit tests
-- Integration tests
-- E2E tests
-
----
-
-## Change Log
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2026-01-04 | 1.0 | Extracted from epic | Epic Driver |
-
----
-
-## Dev Agent Record
-*Populated during implementation*
-
-### Agent Model Used
-Claude Code 2.0.73
-
-### Debug Log References
-*Links to debug logs*
-
-### Completion Notes List
-*Implementation notes*
-
-### File List
-*Files created/modified*
-
-### Change Log
-*Detailed change log*
-
----
-
-## QA Results
-*Populated by QA agent*
-"""
-                return story_content
-            else:
-                logger.warning(f"Could not extract story section for {story_id}")
-                return None
-
-        except Exception as e:
-            logger.error(f"Failed to extract story section: {e}")
-            return None
 
 
     async def execute_sm_phase(self, story_path: str) -> bool:
@@ -651,10 +421,21 @@ Claude Code 2.0.73
         """
         logger.info(f"Executing QA phase for {story_path}")
 
-        try:
-            # Get task guidance for QA agent
-            guidance = self.task_guidance.get("qa_agent", "")
+        # Check if quality gates are skipped
+        if self.skip_quality:
+            logger.info("QA phase skipped via CLI flag")
+            # Update state to completed when skipping QA
+            await self.state_manager.update_story_status(
+                story_path=story_path,
+                status="completed",
+                phase="qa"
+            )
+            return True
 
+        # Get task guidance for QA agent
+        guidance = self.task_guidance.get("qa_agent", "")
+
+        try:
             # Read story content
             with open(story_path, 'r', encoding='utf-8') as f:
                 story_content = f.read()
@@ -812,21 +593,22 @@ Claude Code 2.0.73
             return {'status': 'skipped'}
 
         try:
-            from .code_quality_agent import CodeQualityAgent  # type: ignore
+            from autoBMAD.epic_automation.code_quality_agent import CodeQualityAgent  # type: ignore
 
-            quality_agent: Any = CodeQualityAgent(
+            quality_agent: Any = CodeQualityAgent(  # pyright: ignore[reportUnknownVariableType]
                 state_manager=self.state_manager,
                 epic_id=self.epic_id,
                 skip_quality=self.skip_quality
             )
 
-            quality_results: Dict[str, Any] = await quality_agent.run_quality_gates(
+            raw_results: Any = await quality_agent.run_quality_gates(  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                 source_dir=self.source_dir,
                 skip_quality=self.skip_quality
             )
+            quality_results: Dict[str, Any] = cast(Dict[str, Any], raw_results)
 
             # Update progress
-            status: str = quality_results.get('status', 'failed')
+            status: str = str(quality_results.get('status', 'failed'))
             await self._update_progress('quality_gates', status, quality_results)
 
             if status == 'completed':
@@ -859,21 +641,22 @@ Claude Code 2.0.73
             return {'status': 'skipped'}
 
         try:
-            from .test_automation_agent import TestAutomationAgent  # type: ignore
+            from autoBMAD.epic_automation.test_automation_agent import TestAutomationAgent  # type: ignore
 
-            test_agent: Any = TestAutomationAgent(
+            test_agent: Any = TestAutomationAgent(  # pyright: ignore[reportUnknownVariableType]
                 state_manager=self.state_manager,
                 epic_id=self.epic_id,
                 skip_tests=self.skip_tests
             )
 
-            test_results: Dict[str, Any] = await test_agent.run_test_automation(
+            raw_results: Any = await test_agent.run_test_automation(  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                 test_dir=self.test_dir,
                 skip_tests=self.skip_tests
             )
+            test_results: Dict[str, Any] = cast(Dict[str, Any], raw_results)
 
             # Update progress
-            status: str = test_results.get('status', 'failed')
+            status: str = str(test_results.get('status', 'failed'))
             await self._update_progress('test_automation', status, test_results)
 
             if status == 'completed':
@@ -1012,7 +795,7 @@ Claude Code 2.0.73
             await self.load_task_guidance()
 
             # Parse epic
-            stories = self.parse_epic()
+            stories = await self.parse_epic()
             if not stories:
                 self.logger.error("No stories found in epic")
                 return False

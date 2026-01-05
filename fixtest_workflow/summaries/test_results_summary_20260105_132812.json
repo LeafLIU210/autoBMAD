@@ -1,0 +1,14 @@
+{
+  "scan_timestamp": "2026-01-05T13:27:30.311892",
+  "test_start_time": "2026-01-05T13:27:39.755916",
+  "timestamp": "20260105_132739",
+  "total_files": 37,
+  "files_with_errors": [],
+  "summary": {
+    "total": 37,
+    "passed": 37,
+    "failed": 0,
+    "errors": 0,
+    "timeouts": 0
+  }
+}

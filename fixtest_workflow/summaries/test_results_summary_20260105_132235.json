@@ -1,0 +1,357 @@
+{
+  "scan_timestamp": "2026-01-05T13:04:23.772289",
+  "test_start_time": "2026-01-05T13:21:59.220129",
+  "timestamp": "20260105_132159",
+  "total_files": 37,
+  "files_with_errors": [
+    {
+      "relative_path": "D:\\GITHUB\\pytQt_template\\tests\\test_epic_automation.py",
+      "status": "completed",
+      "result": "failed",
+      "errors": [],
+      "failures": [
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\test_epic_automation.py::TestIntegrationSmDevQaCycle::test_agent_coordination_and_handoffs",
+          "test_name": "FAILED ..\\tests\\test_epic_automation.py::TestIntegrationSmDevQaCycle::test_agent_coordination_and_handoffs",
+          "line": 19,
+          "details": []
+        }
+      ],
+      "execution_time": 8.020101547241211,
+      "timestamp": "2026-01-05T13:21:59.220129",
+      "timeout": false
+    },
+    {
+      "relative_path": "D:\\GITHUB\\pytQt_template\\tests\\integration\\test_complete_workflow.py",
+      "status": "completed",
+      "result": "failed",
+      "errors": [],
+      "failures": [
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\integration\\test_complete_workflow.py::TestCompleteWorkflow::test_workflow_multiple_stories",
+          "test_name": "FAILED ..\\tests\\integration\\test_complete_workflow.py::TestCompleteWorkflow::test_workflow_multiple_stories",
+          "line": 131,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\integration\\test_complete_workflow.py::TestCompleteWorkflow::test_workflow_qa_failure",
+          "test_name": "FAILED ..\\tests\\integration\\test_complete_workflow.py::TestCompleteWorkflow::test_workflow_qa_failure",
+          "line": 132,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\integration\\test_complete_workflow.py::TestCompleteWorkflow::test_workflow_with_retry",
+          "test_name": "FAILED ..\\tests\\integration\\test_complete_workflow.py::TestCompleteWorkflow::test_workflow_with_retry",
+          "line": 133,
+          "details": []
+        }
+      ],
+      "execution_time": 2.1864006519317627,
+      "timestamp": "2026-01-05T13:22:07.628055",
+      "timeout": false
+    },
+    {
+      "relative_path": "D:\\GITHUB\\pytQt_template\\tests\\e2e\\test_epic_processing.py",
+      "status": "completed",
+      "result": "failed",
+      "errors": [],
+      "failures": [
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\e2e\\test_epic_processing.py::TestEpicProcessingE2E::test_epic_with_multiple_stories_e2e",
+          "test_name": "FAILED ..\\tests\\e2e\\test_epic_processing.py::TestEpicProcessingE2E::test_epic_with_multiple_stories_e2e",
+          "line": 105,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\e2e\\test_epic_processing.py::TestEpicProcessingE2E::test_error_recovery_scenario",
+          "test_name": "FAILED ..\\tests\\e2e\\test_epic_processing.py::TestEpicProcessingE2E::test_error_recovery_scenario",
+          "line": 106,
+          "details": []
+        }
+      ],
+      "execution_time": 1.081885814666748,
+      "timestamp": "2026-01-05T13:22:11.676807",
+      "timeout": false
+    },
+    {
+      "relative_path": "D:\\GITHUB\\pytQt_template\\tests\\unit\\test_documentation.py",
+      "status": "completed",
+      "result": "failed",
+      "errors": [],
+      "failures": [
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_readme_commands_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_readme_commands_exist",
+          "line": 183,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_setup_dependencies_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_setup_dependencies_exist",
+          "line": 184,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_example_epic_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_example_epic_exists",
+          "line": 185,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_troubleshooting_guide_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_troubleshooting_guide_exists",
+          "line": 186,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_user_guides_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_user_guides_exist",
+          "line": 187,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_api_documentation_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_api_documentation_exists",
+          "line": 188,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_integration_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_integration_tests_exist",
+          "line": 189,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_performance_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_performance_tests_exist",
+          "line": 190,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_documented_files_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_documented_files_exist",
+          "line": 191,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_cli_options_documented",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_cli_options_documented",
+          "line": 192,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_workflow_phases_documented",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_workflow_phases_documented",
+          "line": 193,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_quality_gate_tools_documented",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_quality_gate_tools_documented",
+          "line": 194,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_test_automation_tools_documented",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_test_automation_tools_documented",
+          "line": 195,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_configuration_example_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_configuration_example_exists",
+          "line": 196,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_example_commands_work",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_example_commands_work",
+          "line": 197,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_story_task_completion",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_story_task_completion",
+          "line": 198,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_file_list_section_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_file_list_section_exists",
+          "line": 199,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_change_log_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation.py::TestDocumentationAccuracy::test_change_log_exists",
+          "line": 200,
+          "details": []
+        }
+      ],
+      "execution_time": 0.4804112911224365,
+      "timestamp": "2026-01-05T13:22:22.366548",
+      "timeout": false
+    },
+    {
+      "relative_path": "D:\\GITHUB\\pytQt_template\\tests\\unit\\test_documentation_simple.py",
+      "status": "completed",
+      "result": "failed",
+      "errors": [],
+      "failures": [
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_readme_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_readme_exists",
+          "line": 140,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_setup_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_setup_exists",
+          "line": 141,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_example_epic_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_example_epic_exists",
+          "line": 142,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_troubleshooting_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_troubleshooting_exists",
+          "line": 143,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_user_guide_quality_gates_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_user_guide_quality_gates_exists",
+          "line": 144,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_user_guide_test_automation_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_user_guide_test_automation_exists",
+          "line": 145,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_api_documentation_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_api_documentation_exists",
+          "line": 146,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_integration_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_integration_tests_exist",
+          "line": 147,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_quality_gates_integration_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_quality_gates_integration_tests_exist",
+          "line": 148,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_test_automation_integration_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_test_automation_integration_tests_exist",
+          "line": 149,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_performance_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_performance_tests_exist",
+          "line": 150,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_documentation_tests_exist",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_documentation_tests_exist",
+          "line": 151,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_code_quality_agent_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_code_quality_agent_exists",
+          "line": 152,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_test_automation_agent_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_test_automation_agent_exists",
+          "line": 153,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_epic_driver_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_epic_driver_exists",
+          "line": 154,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_state_manager_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_state_manager_exists",
+          "line": 155,
+          "details": []
+        },
+        {
+          "type": "FAILED",
+          "message": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_story_005_exists",
+          "test_name": "FAILED ..\\tests\\unit\\test_documentation_simple.py::TestDocumentationFilesExist::test_story_005_exists",
+          "line": 156,
+          "details": []
+        }
+      ],
+      "execution_time": 0.35605931282043457,
+      "timestamp": "2026-01-05T13:22:33.611001",
+      "timeout": false
+    }
+  ],
+  "summary": {
+    "total": 37,
+    "passed": 32,
+    "failed": 5,
+    "errors": 0,
+    "timeouts": 0
+  }
+}

@@ -9,6 +9,8 @@ autoBMAD Epic Automation is a portable template that enables teams to quickly se
 ### Key Features
 
 - **Complete 5-Phase Workflow**: SM-Dev-QA cycle followed by quality gates and test automation
+- **AI-Powered Story Creation**: SM Agent uses Claude Agent SDK to create stories from epic documents
+- **Claude Agent SDK Integration**: Direct SDK integration with `permission_mode="bypassPermissions"`
 - **Quality Gates**: Basedpyright type checking and Ruff linting with auto-fix capabilities
 - **Test Automation**: Pytest execution with Debugpy integration for persistent failures
 - **CLI Interface**: Simple command-line interface with flexible options
@@ -183,19 +185,30 @@ pytest tests/ --pdb
    cp -r /path/to/epic_automation /your/project/
    ```
 
-2. **Ensure Claude SDK is configured** in your environment
+2. **Ensure quality gate tools are available** (one of the following):
+   ```bash
+   # Option A: Copy quality gate tools to your project
+   cp -r /path/to/basedpyright-workflow /your/project/
+   cp -r /path/to/fixtest-workflow /your/project/
 
-3. **Verify the setup** by running the help command:
+   # Option B: Install dependencies manually
+   pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+   ```
+
+3. **Create task guidance files** in `.bmad-core/tasks/`:
+   ```bash
+   mkdir -p .bmad-core/tasks
+   # Copy the task guidance files (see Task Guidance Files section below)
+   ```
+
+4. **Ensure Claude SDK is configured** in your environment
+
+5. **Verify the setup** by running the help command:
    ```bash
    cd /your/project
    source venv/Scripts/activate
    python autoBMAD/epic_automation/epic_driver.py --help
    ```
-
-4. **Ensure task guidance files exist** in `.bmad-core/tasks/`:
-   - `create-next-story.md` (for SM agent)
-   - `develop-story.md` (for Dev agent)
-   - `review-story.md` (for QA agent)
 
 ### Configuration
 
@@ -205,6 +218,98 @@ No additional configuration required! The tool automatically:
 - Manages state between runs
 - Handles logging and error reporting
 
+### Task Guidance Files
+
+The `.bmad-core/tasks/` directory contains task guidance files that customize the behavior of SM, Dev, and QA agents. Create these files with the following content:
+
+#### `.bmad-core/tasks/create-next-story.md` (SM Agent)
+```markdown
+# Story Creation Guidance
+
+## Story Structure Requirements
+- Clear user story format (As a... I want... So that...)
+- Comprehensive acceptance criteria
+- Detailed task breakdown
+- Definition of done
+
+## Story Quality Standards
+- Stories should be atomic and focused
+- Acceptance criteria should be testable
+- Technical details should be documented
+```
+
+#### `.bmad-core/tasks/develop-story.md` (Dev Agent)
+```markdown
+# Development Guidance
+
+## Implementation Standards
+- Follow Ralph's four principles (DRY, KISS, YAGNI, Occam's Razor)
+- Write clean, maintainable code
+- Include comprehensive tests
+- Document all changes
+
+## Code Quality Requirements
+- Type hints for all functions
+- Docstrings for public APIs
+- Unit test coverage > 80%
+- No linting errors
+```
+
+#### `.bmad-core/tasks/review-story.md` (QA Agent)
+```markdown
+# QA Review Guidance
+
+## Review Checklist
+- [ ] Code follows style guidelines
+- [ ] All tests pass
+- [ ] Type checking passes
+- [ ] No linting errors
+- [ ] Documentation is complete
+- [ ] Security considerations addressed
+
+## Quality Gates
+- BasedPyright: 0 errors, minimal warnings
+- Fixtest: All tests pass
+- Code coverage: > 80%
+```
+
+### Dependencies
+
+**Required Dependencies:**
+- **Python 3.8+**: Core runtime
+- **claude_agent_sdk>=0.1.0**: For AI agent functionality (SM Agent story creation)
+- **Claude SDK**: Must be installed and configured in environment
+
+**Quality Gate Tools** (one of the following options):
+- **Option A**: Copy `basedpyright-workflow` and `fixtest-workflow` directories to your project
+- **Option B**: Install manually: `basedpyright>=1.1.0`, `ruff>=0.1.0`, `pytest>=7.0.0`, `debugpy>=1.6.0`
+
+**Optional:** **bmad-workflow** - Not required (autoBMAD is a standalone system)
+
+### Dependency Installation
+
+Install all required dependencies:
+
+```bash
+# Install core dependencies including Claude Agent SDK
+pip install claude_agent_sdk>=0.1.0
+
+# Install quality gate tools (optional but recommended)
+pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+```
+
+**Note**: The `claude_agent_sdk` package is required for SM Agent's AI-powered story creation functionality.
+
+### Graceful Fallback
+
+If quality gate tools are not available, the system will:
+1. Log a warning about missing tools
+2. Continue with reduced QA capabilities
+3. Mark QA status as "WAIVED"
+4. Provide partial credit for QA score
+5. Allow the workflow to continue
+
+This ensures the system can still be used for development even without the full toolchain.
 ## Usage
 
 ### Basic Usage
@@ -291,12 +396,34 @@ The BMAD Epic Automation system consists of the following components:
 
 ```
 autoBMAD/epic_automation/
-├── epic_driver.py          # Main orchestrator and CLI interface
-├── sm_agent.py            # Story Master agent
+├── epic_driver.py          # Main orchestrator and CLI interface (async parse_epic)
+├── sm_agent.py            # Story Master agent (with Claude SDK integration)
 ├── dev_agent.py           # Development agent
 ├── qa_agent.py            # Quality Assurance agent
 └── state_manager.py       # State persistence and tracking
 ```
+
+### Recent Updates (v2.0)
+
+#### SM Agent Enhancements
+
+**New Features:**
+- ✅ **Claude Agent SDK Integration**: Direct SDK calls replace hardcoded story creation
+- ✅ **Async Story Creation**: `create_stories_from_epic()` method for non-blocking story generation
+- ✅ **Epic Parsing**: Built-in regex-based story ID extraction from epic documents
+- ✅ **Smart Prompting**: Automatic prompt construction with proper formatting
+- ✅ **Permission Management**: Automatic `bypassPermissions` mode for seamless execution
+
+**Removed Features:**
+- ❌ `_create_missing_story()` - Hardcoded template-based story creation (replaced by AI)
+- ❌ `_extract_story_section_from_epic()` - Manual content extraction (replaced by AI)
+- ❌ **Backward Compatibility**: All fallback mechanisms removed per Occam's Razor principle
+
+**Benefits:**
+- 🎯 More accurate and context-aware story generation
+- 🎯 Follows BMAD methodology more closely (SM Agent owns story creation)
+- 🎯 Simpler codebase (fewer methods, clearer responsibilities)
+- 🎯 Better adherence to Occam's Razor (no unnecessary complexity)
 
 ### File Structure
 
@@ -346,10 +473,24 @@ project/
 
 #### Story Master (SM) Agent
 
-- Refines story requirements
-- Ensures story completeness
-- Validates acceptance criteria
-- Creates task breakdowns
+The SM Agent now includes powerful AI-driven story creation capabilities:
+
+- **Epic Analysis**: Extracts story IDs from epic documents using regex patterns
+- **AI Story Creation**: Uses Claude Agent SDK to generate complete story documents
+- **SDK Integration**: Direct integration with `claude_agent_sdk.query()` and `ClaudeAgentOptions`
+- **Automatic Prompt Generation**: Builds prompts in format: `@.bmad-core/agents/sm.md *draft {epic_path} Create all story documents from epic: {story_list}. Save to @docs/stories`
+- **Permission Handling**: Automatically sets `permission_mode="bypassPermissions"` for seamless execution
+- **Refines story requirements**
+- **Ensures story completeness**
+- **Validates acceptance criteria**
+- **Creates task breakdowns**
+
+**Key Methods:**
+- `create_stories_from_epic(epic_path)` - Main entry point for story creation
+- `_extract_story_ids_from_epic(content)` - Parses epic documents for story references
+- `_call_claude_create_stories(epic_path, story_ids)` - Invokes Claude SDK
+- `_build_claude_prompt(epic_path, story_ids)` - Constructs proper prompt format
+- `_execute_claude_sdk(prompt)` - Executes the SDK call with proper options
 
 #### Development (Dev) Agent
 
@@ -389,11 +530,31 @@ WARNING - Tasks directory not found: .bmad-core/tasks
 ```
 
 **Solution**:
-- Ensure the `.bmad-core/tasks/` directory exists
-- Verify task guidance files are present:
-  - `create-next-story.md`
-  - `develop-story.md`
-  - `review-story.md`
+- Create the directory: `mkdir -p .bmad-core/tasks`
+- Add task guidance files (see "Task Guidance Files" section above)
+- The system will continue without them but with reduced capabilities
+
+#### Issue: "Quality gate tools not found"
+
+**Error Message**:
+```
+WARNING - BasedPyright-Workflow directory not found
+WARNING - Fixtest-Workflow directory not found
+```
+
+**Solution**:
+- **Option A**: Copy the tool directories to your project:
+  ```bash
+  cp -r /path/to/basedpyright-workflow /your/project/
+  cp -r /path/to/fixtest-workflow /your/project/
+  ```
+- **Option B**: Install dependencies manually:
+  ```bash
+  pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+  ```
+- **Option C**: Use `--skip-quality` to bypass quality gates (system will continue with WAIVED status)
+
+Note: The system has graceful fallback - it will continue even without these tools but with reduced QA capabilities.
 
 #### Issue: "Failed to import agent classes"
 

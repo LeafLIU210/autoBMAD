@@ -1,0 +1,27 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (16):  Line 833, Col 13: [reportUnknownVariableType] "quality_agent" 类型未知 (reportUnknownVariableType)
+  Line 839, Col 13: [unknown] "quality_results" 的类型部分未知
+  Line 839, Col 53: [unknown] "run_quality_gates" 的类型部分未知
+  Line 845, Col 13: [unknown] "status" 的类型部分未知
+  Line 845, Col 27: [unknown] "get" 的类型部分未知
+  Line 846, Col 58: [unknown] 部分参数的类型未知
+  Line 846, Col 66: [unknown] 部分参数的类型未知
+  Line 855, Col 20: [reportUnknownVariableType] 返回类型 "Unknown | Dict[str, Any]" 部分未知 (reportUnknownVariableType)
+  Line 880, Col 13: [reportUnknownVariableType] "test_agent" 类型未知 (reportUnknownVariableType)
+  Line 886, Col 13: [unknown] "test_results" 的类型部分未知
+  Line 886, Col 50: [unknown] "run_test_automation" 的类型部分未知
+  Line 892, Col 13: [unknown] "status" 的类型部分未知
+  Line 892, Col 27: [unknown] "get" 的类型部分未知
+  Line 893, Col 60: [unknown] 部分参数的类型未知
+  Line 893, Col 68: [unknown] 部分参数的类型未知
+  Line 902, Col 20: [reportUnknownVariableType] 返回类型 "Unknown | Dict[str, Any]" 部分未知 (reportUnknownVariableType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

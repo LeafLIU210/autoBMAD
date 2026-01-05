@@ -6,10 +6,10 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-# Add the epic_automation directory to the path
-sys.path.insert(0, str(Path(__file__).parent.parent / "autoBMAD" / "epic_automation"))
+# Add the project root to the path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from epic_driver import parse_arguments, EpicDriver
+from autoBMAD.epic_automation.epic_driver import parse_arguments, EpicDriver
 
 
 class TestCLIInterface:

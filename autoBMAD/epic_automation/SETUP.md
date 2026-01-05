@@ -54,9 +54,20 @@ Ensure you have:
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install Quality Gate Dependencies**
+3. **Install Required Dependencies**
 
    Install the required Python packages:
+   ```bash
+   pip install claude_agent_sdk>=0.1.0
+   ```
+
+   **Claude Agent SDK** - AI agent functionality for SM Agent
+   - Required for AI-powered story creation
+   - Direct SDK integration with `permission_mode="bypassPermissions"`
+   - Enables asynchronous story generation from epic documents
+
+4. **Install Quality Gate Dependencies** (optional but recommended)
+
    ```bash
    pip install basedpyright>=1.1.0
    ```
@@ -95,7 +106,7 @@ Ensure you have:
 
    **Or install all at once:**
    ```bash
-   pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+   pip install claude_agent_sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
    ```
 
 4. **Verify Quality Gate Installation**
@@ -114,11 +125,16 @@ Ensure you have:
    python -c "import debugpy; print(debugpy.__version__)"
    ```
 
-5. **Claude SDK** configured and working
+5. **Claude Agent SDK** installed and verified
+   ```bash
+   python -c "import claude_agent_sdk; print('Claude Agent SDK installed successfully')"
+   ```
+
+6. **Claude SDK** configured and working
    - The SDK should be accessible from your project directory
    - Verify with: `claude --version`
 
-6. **Task Guidance Files**
+7. **Task Guidance Files**
    - Ensure `.bmad-core/tasks/` directory exists
    - Verify these files are present:
      - `create-next-story.md` (for SM agent)
@@ -355,6 +371,22 @@ cd /your/project
 python autoBMAD/epic_automation/epic_driver.py --help
 ```
 
+#### Issue: "Claude Agent SDK not installed" errors
+
+**Error Message**:
+```
+ERROR - Claude Agent SDK not installed. Please install claude-agent-sdk
+```
+
+**Solution**:
+```bash
+# Install the Claude Agent SDK
+pip install claude_agent_sdk>=0.1.0
+
+# Verify installation
+python -c "import claude_agent_sdk; print('Claude Agent SDK installed successfully')"
+```
+
 #### Issue: "Tasks directory not found"
 
 **Solution**:
@@ -415,27 +447,56 @@ cp /path/to/template/.bmad-core/tasks/* .bmad-core/tasks/
    - Safe to delete `.ai/` to reset state
    - Epics can be re-run safely
 
+### Recent Updates (v2.0)
+
+#### SM Agent Enhancements
+
+The SM Agent has been significantly enhanced in version 2.0:
+
+**New Features:**
+- ✅ **Claude Agent SDK Integration**: Direct SDK calls replace hardcoded story creation
+- ✅ **Async Story Creation**: `create_stories_from_epic()` method for non-blocking story generation
+- ✅ **Epic Parsing**: Built-in regex-based story ID extraction from epic documents
+- ✅ **Smart Prompting**: Automatic prompt construction with proper formatting
+- ✅ **Permission Management**: Automatic `bypassPermissions` mode for seamless execution
+
+**Removed Features:**
+- ❌ `_create_missing_story()` - Hardcoded template-based story creation (replaced by AI)
+- ❌ `_extract_story_section_from_epic()` - Manual content extraction (replaced by AI)
+- ❌ **Backward Compatibility**: All fallback mechanisms removed per Occam's Razor principle
+
+**Benefits:**
+- 🎯 More accurate and context-aware story generation
+- 🎯 Follows BMAD methodology more closely (SM Agent owns story creation)
+- 🎯 Simpler codebase (fewer methods, clearer responsibilities)
+- 🎯 Better adherence to Occam's Razor (no unnecessary complexity)
+
 ### Migration from Other Versions
 
 If you're migrating from an older version:
 
-1. **Backup your data**
+1. **Install new dependencies**
+   ```bash
+   pip install claude_agent_sdk>=0.1.0
+   ```
+
+2. **Backup your data**
    ```bash
    cp -r .ai .ai-backup
    cp -r docs/epics docs-epics-backup
    ```
 
-2. **Copy new template**
+3. **Copy new template**
    ```bash
    cp -r /path/to/new/epic_automation autoBMAD/
    ```
 
-3. **Test with a simple epic**
+4. **Test with a simple epic**
    ```bash
    python autoBMAD/epic_automation/epic_driver.py docs/epics/test-epic.md --verbose
    ```
 
-4. **Restore your data if needed**
+5. **Restore your data if needed**
    ```bash
    cp -r .ai-backup .ai
    ```

@@ -18,9 +18,9 @@ import os
 
 # Import the EpicDriver class
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "autoBMAD" / "epic_automation"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from epic_driver import EpicDriver, parse_arguments
+from autoBMAD.epic_automation.epic_driver import EpicDriver, parse_arguments
 
 
 class TestEpicDriverInitialization:

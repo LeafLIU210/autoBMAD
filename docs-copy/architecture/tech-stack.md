@@ -39,6 +39,33 @@ This document defines the complete technology stack for the autoBMAD epic automa
 | pip | Latest | Package management | Built-in with Python |
 | virtualenv/venv | Built-in | Environment isolation | `python -m venv .venv` |
 
+## Quality Gate Tool Integration
+
+**Two Integration Modes Available:**
+
+### Option A: Workflow Directory Integration
+```bash
+# Copy workflow directories to project root
+cp -r /path/to/basedpyright-workflow /your/project/
+cp -r /path/to/fixtest-workflow /your/project/
+```
+**Benefits**: Complete toolchain, pre-configured, includes automation scripts
+
+### Option B: Pip Installation
+```bash
+# Install quality gate tools
+pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+```
+**Benefits**: Standard Python dependency management, version control via requirements.txt
+
+**Graceful Fallback**: If tools unavailable, system continues with WAIVED QA status
+
+## Standalone Systems
+
+**NOT Required:**
+- **bmad-workflow**: autoBMAD is a standalone system with its own orchestrator
+- **External CI/CD**: Self-contained with SQLite state management
+
 ---
 
 ## Dependency Versions

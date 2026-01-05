@@ -1,0 +1,14 @@
+{
+  "test_automation_id": "test-auto-20260105-132749",
+  "epic_id": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpofwgivfd\\test_epic.md",
+  "timestamp": "2026-01-05T13:27:49.120662",
+  "summary": {
+    "passed": 1,
+    "total": 1,
+    "collected": 1
+  },
+  "failed_tests": [],
+  "retry_history": [],
+  "debugpy_sessions": [],
+  "status": "completed"
+}

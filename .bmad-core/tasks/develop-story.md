@@ -1,43 +1,50 @@
-<!-- Powered by BMAD™ Core -->
+# Development Guidance
 
-# develop-story
+## Implementation Standards
+- Follow Ralph's four principles (DRY, KISS, YAGNI, Occam's Razor)
+- Write clean, maintainable code
+- Include comprehensive tests
+- Document all changes
 
-Execute the develop-story command for the story located at path. Follow the order-of-execution as defined:
+## Code Quality Requirements
+- Type hints for all functions
+- Docstrings for public APIs
+- Unit test coverage > 80%
+- No linting errors
+- Follow PEP 8 style guidelines
 
-## Order of Execution
+## DRY (Don't Repeat Yourself)
+- Extract duplicate logic into reusable functions
+- Create shared utilities for common operations
+- Use configuration files for constants
+- Avoid copy-paste coding
 
-1. Read (first or next) task
-2. Implement Task and its subtasks
-3. Write tests
-4. Execute validations
-5. Only if ALL pass, then update the task checkbox with [x]
-6. Update story section File List to ensure it lists all new or modified or deleted source files
-7. Repeat order-of-execution until complete
+## KISS (Keep It Simple, Stupid)
+- Choose the simplest solution that works
+- Write self-documenting code
+- Avoid premature optimization
+- Keep functions small and focused
 
-## Story File Updates (ONLY these sections)
+## YAGNI (You Aren't Gonna Need It)
+- Implement only what's required now
+- Remove unused code
+- Avoid speculative generalization
+- Defer future features to future stories
 
-You are ONLY authorized to edit these specific sections of story files:
-- Tasks / Subtasks Checkboxes
-- Dev Agent Record section and all its subsections
-- Agent Model Used
-- Debug Log References
-- Completion Notes List
-- File List
-- Change Log
-- Status
+## Occam's Razor
+- Prefer simple solutions over complex ones
+- Minimize assumptions
+- Choose the solution with fewest moving parts
+- When in doubt, simplify
 
-## Ready for Review Criteria
+## Testing Requirements
+- Write tests before or alongside code
+- Include unit, integration, and E2E tests as appropriate
+- Use descriptive test names
+- Ensure tests are deterministic and isolated
 
-- Code matches requirements
-- All validations pass
-- Follows standards
-- File List complete
-
-## Completion
-
-All Tasks and Subtasks marked [x] and have tests
-- Validations and full regression passes
-- Ensure File List is Complete
-- Run the task execute-checklist for the checklist story-dod-checklist
-- Set story status: 'Ready for Review'
-- HALT
+## Documentation
+- Document all public APIs
+- Include code comments for complex logic
+- Update relevant documentation files
+- Add examples for usage patterns
