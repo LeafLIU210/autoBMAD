@@ -1,0 +1,82 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py
+
+BasedPyright type errors (71):  Line 15, Col 6: [reportMissingImports] 无法解析导入 "autoBMAD.epic_automation.state_manager" (reportMissingImports)
+  Line 15, Col 52: [reportUnknownVariableType] "StateManager" 类型未知 (reportUnknownVariableType)
+  Line 19, Col 10: [reportMissingImports] 无法解析导入 "fixtest_workflow.test_automation_workflow" (reportMissingImports)
+  Line 19, Col 59: [reportUnknownVariableType] "run_pytest_execution" 类型未知 (reportUnknownVariableType)
+  Line 20, Col 10: [reportMissingImports] 无法解析导入 "fixtest_workflow.debugpy_integration" (reportMissingImports)
+  Line 21, Col 9: [reportUnknownVariableType] "start_debugpy_listener" 类型未知 (reportUnknownVariableType)
+  Line 22, Col 9: [reportUnknownVariableType] "attach_debugpy" 类型未知 (reportUnknownVariableType)
+  Line 23, Col 9: [reportUnknownVariableType] "collect_debug_info" 类型未知 (reportUnknownVariableType)
+  Line 34, Col 34: [reportAttributeAccessIssue] "Claude" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 34, Col 34: [reportUnknownVariableType] "Claude" 类型未知 (reportUnknownVariableType)
+  Line 34, Col 34: [reportUnusedImport] "Claude" 导入项未使用 (reportUnusedImport)
+  Line 44, Col 9: [reportUnknownParameterType] "state_manager" 参数的类型未知 (reportUnknownParameterType)
+  Line 56, Col 9: [reportUnknownMemberType] "state_manager" 类型未知 (reportUnknownMemberType)
+  Line 88, Col 9: [unknown] "results" 的类型部分未知
+  Line 105, Col 13: [unknown] "append" 的类型部分未知
+  Line 105, Col 31: [unknown] 无法访问 "str" 类的 "append" 属性
+  Line 105, Col 31: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 105, Col 31: [unknown] 无法访问 "dict[Unknown, Unknown]" 类的 "append" 属性
+  Line 106, Col 20: [reportUnknownVariableType] 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  Line 123, Col 20: [reportUnknownVariableType] 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  Line 128, Col 59: [unknown] 部分参数的类型未知
+  Line 174, Col 27: [reportUnknownMemberType] "state_manager" 类型未知 (reportUnknownMemberType)
+  Line 174, Col 27: [reportUnknownMemberType] "add_test_phase_record" 类型未知 (reportUnknownMemberType)
+  Line 282, Col 19: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 285, Col 13: [reportUnknownVariableType] "attach_success" 类型未知 (reportUnknownVariableType)
+  Line 285, Col 36: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 293, Col 25: [reportUnknownVariableType] "debug_info" 类型未知 (reportUnknownVariableType)
+  Line 293, Col 38: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 296, Col 31: [reportUnknownMemberType] "state_manager" 类型未知 (reportUnknownMemberType)
+  Line 296, Col 31: [reportUnknownMemberType] "add_test_phase_record" 类型未知 (reportUnknownMemberType)
+  Line 335, Col 17: [reportUnusedVariable] 变量 "stdout" 未使用 (reportUnusedVariable)
+  Line 335, Col 25: [reportUnusedVariable] 变量 "stderr" 未使用 (reportUnusedVariable)
+  Line 362, Col 16: [reportUnknownVariableType] 返回类型未知 (reportUnknownVariableType)
+  Line 385, Col 21: [unknown] "append" 的类型部分未知
+  Line 396, Col 20: [reportUnknownVariableType] 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  Line 413, Col 46: [reportAttributeAccessIssue] "Claude" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 413, Col 46: [reportUnknownVariableType] "Claude" 类型未知 (reportUnknownVariableType)
+  Line 431, Col 13: [reportUnknownVariableType] "claude" 类型未知 (reportUnknownVariableType)
+  Line 444, Col 17: [unknown] "append" 的类型部分未知
+  Line 452, Col 43: [unknown] 部分参数的类型未知
+  Line 460, Col 13: [reportUnknownVariableType] "response" 类型未知 (reportUnknownVariableType)
+  Line 462, Col 36: [reportUnknownMemberType] "content" 类型未知 (reportUnknownMemberType)
+  Line 467, Col 13: [unknown] "response_text" 的类型部分未知
+  Line 467, Col 29: [unknown] "content" 的类型部分未知
+  Line 467, Col 29: [reportUnknownMemberType] "text" 类型未知 (reportUnknownMemberType)
+  Line 467, Col 68: [reportUnknownMemberType] "content" 类型未知 (reportUnknownMemberType)
+  Line 467, Col 101: [reportUnknownMemberType] "content" 类型未知 (reportUnknownMemberType)
+  Line 467, Col 101: [unknown] 参数类型未知
+  Line 473, Col 13: [unknown] "lines" 的类型部分未知
+  Line 473, Col 21: [unknown] "split" 的类型部分未知
+  Line 475, Col 27: [unknown] 部分参数的类型未知
+  Line 476, Col 17: [unknown] "line" 的类型部分未知
+  Line 476, Col 24: [unknown] "strip" 的类型部分未知
+  Line 477, Col 20: [unknown] "startswith" 的类型部分未知
+  Line 479, Col 21: [unknown] "file_path" 的类型部分未知
+  Line 479, Col 33: [unknown] "replace" 的类型部分未知
+  Line 479, Col 33: [unknown] "strip" 的类型部分未知
+  Line 483, Col 35: [unknown] 部分参数的类型未知
+  Line 486, Col 33: [unknown] 部分参数的类型未知
+  Line 493, Col 35: [unknown] 部分参数的类型未知
+  Line 493, Col 50: [unknown] "strip" 的类型部分未知
+  Line 493, Col 50: [unknown] "startswith" 的类型部分未知
+  Line 494, Col 25: [unknown] "append" 的类型部分未知
+  Line 499, Col 43: [unknown] 部分参数的类型未知
+  Line 500, Col 34: [unknown] 部分参数的类型未知
+  Line 500, Col 66: [unknown] 部分参数的类型未知
+  Line 528, Col 13: [reportUnknownVariableType] "debug_info" 类型未知 (reportUnknownVariableType)
+  Line 528, Col 26: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 530, Col 19: [reportUnknownMemberType] "state_manager" 类型未知 (reportUnknownMemberType)
+  Line 530, Col 19: [reportUnknownMemberType] "add_test_phase_record" 类型未知 (reportUnknownMemberType)
+  Line 538, Col 20: [reportUnknownVariableType] 返回类型未知 (reportUnknownVariableType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

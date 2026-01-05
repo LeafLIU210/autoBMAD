@@ -8,7 +8,7 @@ Uses Claude Code CLI for actual implementation.
 
 import logging
 import subprocess
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, cast
 import re
 from pathlib import Path
 
@@ -148,7 +148,8 @@ class DevAgent:
 
         try:
             # Basic requirement extraction from markdown
-            requirements = {
+            # Type the requirements dict structure explicitly
+            requirements: Dict[str, Any] = {
                 'title': '',
                 'acceptance_criteria': [],
                 'tasks': [],
@@ -168,8 +169,8 @@ class DevAgent:
                 ac_lines = ac_section.group(1).strip().split('\n')
                 for line in ac_lines:
                     if line.strip().startswith('-'):
-                        acceptance_criteria = requirements['acceptance_criteria']
-                        assert isinstance(acceptance_criteria, list), "acceptance_criteria should be a list"
+                        # Cast to List[str] to help type checker
+                        acceptance_criteria = cast(List[str], requirements['acceptance_criteria'])
                         acceptance_criteria.append(line.strip())
 
             # Extract tasks
@@ -178,33 +179,38 @@ class DevAgent:
                 task_lines = tasks_section.group(1).strip().split('\n')
                 for line in task_lines:
                     if line.strip().startswith('-'):
-                        tasks = requirements['tasks']
-                        assert isinstance(tasks, list), "tasks should be a list"
+                        # Cast to List[str] to help type checker
+                        tasks = cast(List[str], requirements['tasks'])
                         tasks.append(line.strip())
 
             # Extract subtasks (nested)
             subtask_pattern = r'^\s*-\s*\[x\]\s*(.+)'
             for line in story_content.split('\n'):
                 if re.match(subtask_pattern, line):
-                    subtasks = requirements['subtasks']
-                    assert isinstance(subtasks, list), "subtasks should be a list"
+                    # Cast to List[str] to help type checker
+                    subtasks = cast(List[str], requirements['subtasks'])
                     subtasks.append(line.strip())
 
             # Extract dev notes
             dev_notes_section = re.search(r'## Dev Notes\s*\n(.*?)(?=\n---|\n##|$)', story_content, re.DOTALL)
             if dev_notes_section:
-                dev_notes = requirements['dev_notes']
-                assert isinstance(dev_notes, dict), "dev_notes should be a dict"
+                # Cast to Dict[str, str] to help type checker
+                dev_notes = cast(Dict[str, str], requirements['dev_notes'])
                 dev_notes['content'] = dev_notes_section.group(1).strip()
 
             # Extract testing info
             testing_section = re.search(r'## Testing\s*\n(.*?)(?=\n---|\n##|$)', story_content, re.DOTALL)
             if testing_section:
-                testing = requirements['testing']
-                assert isinstance(testing, dict), "testing should be a dict"
+                # Cast to Dict[str, str] to help type checker
+                testing = cast(Dict[str, str], requirements['testing'])
                 testing['content'] = testing_section.group(1).strip()
 
-            logger.info(f"Extracted requirements: {len(requirements['acceptance_criteria'])} AC, {len(requirements['tasks'])} tasks, {len(requirements['subtasks'])} subtasks")
+            # Log with explicit type casting to help type checker
+            acceptance_criteria_len = len(cast(List[str], requirements['acceptance_criteria']))
+            tasks_len = len(cast(List[str], requirements['tasks']))
+            subtasks_len = len(cast(List[str], requirements['subtasks']))
+
+            logger.info(f"Extracted requirements: {acceptance_criteria_len} AC, {tasks_len} tasks, {subtasks_len} subtasks")
             return requirements
 
         except Exception as e:
@@ -213,8 +219,9 @@ class DevAgent:
 
     async def _validate_requirements(self, requirements: Dict[str, Any]) -> Dict[str, Any]:
         """Validate extracted requirements."""
-        issues = []
-        warnings = []
+        # Initialize with explicit types to help type checker
+        issues: List[str] = []
+        warnings: List[str] = []
 
         if not requirements.get('acceptance_criteria'):
             issues.append('No acceptance criteria found')
@@ -226,6 +233,7 @@ class DevAgent:
         if not requirements.get('title'):
             issues.append('No title found')
 
+        # Return with explicit type
         return {
             'valid': len(issues) == 0,
             'issues': issues,

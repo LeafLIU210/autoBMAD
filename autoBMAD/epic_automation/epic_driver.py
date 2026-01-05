@@ -10,7 +10,7 @@ import asyncio
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Dict, Optional
 import logging
 
 # Configure logging
@@ -28,7 +28,7 @@ class EpicDriver:
     epic_path: Path
     epic_id: str
     tasks_dir: Path
-    stories: list
+    stories: List[Dict[str, Any]]
     current_story_index: int
     max_iterations: int
     retry_failed: bool
@@ -39,7 +39,7 @@ class EpicDriver:
     test_dir: str
     skip_quality: bool
     skip_tests: bool
-    task_guidance: dict
+    task_guidance: Dict[str, str]
     max_quality_iterations: int
     max_test_iterations: int
     sm_agent: Any
@@ -92,10 +92,10 @@ class EpicDriver:
 
         # Import agent classes
         try:
-            from sm_agent import SMAgent  # type: ignore
-            from dev_agent import DevAgent  # type: ignore
-            from qa_agent import QAAgent  # type: ignore
-            from state_manager import StateManager  # type: ignore
+            from .sm_agent import SMAgent  # type: ignore
+            from .dev_agent import DevAgent  # type: ignore
+            from .qa_agent import QAAgent  # type: ignore
+            from .state_manager import StateManager  # type: ignore
 
             self.sm_agent = SMAgent()
             self.dev_agent = DevAgent(use_claude=use_claude)
@@ -139,7 +139,7 @@ class EpicDriver:
         # Currently, task guidance is loaded implicitly through agent initialization
         self.logger.debug("Task guidance loading completed")
 
-    def parse_epic(self) -> list[dict[str, Any]]:
+    def parse_epic(self) -> List[Dict[str, Any]]:
         """
         Parse epic markdown file and extract story information.
 
@@ -185,8 +185,8 @@ class EpicDriver:
 
             logger.debug(f"Searching for story files in: {stories_dir}")
 
-            stories = []
-            found_stories = []
+            stories: List[Dict[str, Any]] = []
+            found_stories: List[str] = []
 
             if stories_dir.exists():
                 # Find all story files matching pattern 001.*.md, 002.*.md, etc.
@@ -194,7 +194,7 @@ class EpicDriver:
                 logger.debug(f"Found {len(story_files)} markdown files in stories directory")
 
                 # Create a mapping of story numbers to files
-                story_file_map = {}
+                story_file_map: Dict[str, Path] = {}
                 for story_file in story_files:
                     # Extract story number from filename: 001.xxx.md -> 001
                     match = re.match(r'^(\d+(?:\.\d+)?)\.', story_file.name)
@@ -208,7 +208,7 @@ class EpicDriver:
                     story_number = story_id.split(':')[0].strip()
 
                     if story_number in story_file_map:
-                        story_file = story_file_map[story_number]
+                        story_file: Path = story_file_map[story_number]
                         stories.append({
                             'id': story_id,
                             'path': str(story_file.resolve()),
@@ -220,7 +220,7 @@ class EpicDriver:
                         # Story file not found
                         # Try to create missing story file
                         story_filename = f"{story_number}.md"
-                        story_path = stories_dir / story_filename
+                        story_path: Path = stories_dir / story_filename
                         if self._create_missing_story(story_path, story_id):
                             stories.append({
                                 'id': story_id,
@@ -239,12 +239,12 @@ class EpicDriver:
                 logger.info(f"  - {(self.epic_path.parent.parent / 'autoBMAD' / 'stories') if self.epic_path.parent.parent.name != 'autoBMAD' else 'N/A'}")
 
             # Warn about stories not found
-            missing_stories = set(story_ids) - set(found_stories)
+            missing_stories: set[str] = set(story_ids) - set(found_stories)
             if missing_stories:
                 logger.warning(f"Missing story files for IDs: {missing_stories}")
 
             # Sort stories by story ID
-            stories.sort(key=lambda x: x['id'])
+            stories.sort(key=lambda x: x['id'])  # type: ignore[arg-type]
 
             self.stories = stories
             logger.info(f"Epic parsing complete: {len(stories)}/{len(story_ids)} stories found")
@@ -257,7 +257,7 @@ class EpicDriver:
             logger.debug(traceback.format_exc())
             return []
 
-    def _extract_story_ids_from_epic(self, content: str) -> list[str]:
+    def _extract_story_ids_from_epic(self, content: str) -> List[str]:
         """
         Extract story IDs from epic document.
 
@@ -271,7 +271,7 @@ class EpicDriver:
         Returns:
             List of story IDs (e.g., ["001", "001: Title", ...])
         """
-        story_ids = []
+        story_ids: List[str] = []
 
         # Pattern 1: "### Story X: Title"
         pattern1 = r'### Story\s+(\d+(?:\.\d+)?)\s*:\s*(.+?)(?:\n|\$)'
@@ -292,11 +292,11 @@ class EpicDriver:
                 logger.debug(f"Found story ID: {story_id}")
 
         # Remove duplicates while preserving order
-        seen = set()
-        unique_story_ids = []
+        seen: set[str] = set()
+        unique_story_ids: List[str] = []
         for story_id in story_ids:
             # Use story number as uniqueness key
-            key = story_id.split(':')[0].strip().zfill(3)
+            key: str = story_id.split(':')[0].strip().zfill(3)
             if key not in seen:
                 seen.add(key)
                 unique_story_ids.append(story_id)
@@ -433,7 +433,7 @@ Claude Code 2.0.73
             logger.error(f"Failed to create story file {story_path}: {e}")
             return False
 
-    def _extract_story_section_from_epic(self, epic_content: str, story_id: str) -> str | None:
+    def _extract_story_section_from_epic(self, epic_content: str, story_id: str) -> Optional[str]:
         """
         Extract story section from epic document.
 
@@ -696,7 +696,7 @@ Claude Code 2.0.73
             )
             return False
 
-    async def process_story(self, story: dict[str, Any]) -> bool:
+    async def process_story(self, story: Dict[str, Any]) -> bool:
         """
         Process a single story through SM-Dev-QA cycle.
 
@@ -761,7 +761,7 @@ Claude Code 2.0.73
             )
             return False
 
-    async def execute_sm_dev_qa_cycle(self, stories: list[dict[str, Any]]) -> bool:
+    async def execute_sm_dev_qa_cycle(self, stories: List[Dict[str, Any]]) -> bool:
         """
         Execute SM-Dev-QA cycle for all stories.
 
@@ -796,7 +796,7 @@ Claude Code 2.0.73
         self.logger.info(f"SM-Dev-QA cycle complete: {success_count}/{len(stories)} stories succeeded")
         return success_count == len(stories)
 
-    async def execute_quality_gates(self) -> dict[str, Any]:
+    async def execute_quality_gates(self) -> Dict[str, Any]:
         """
         Execute quality gates after SM-Dev-QA completion.
 
@@ -812,21 +812,21 @@ Claude Code 2.0.73
             return {'status': 'skipped'}
 
         try:
-            from code_quality_agent import CodeQualityAgent
+            from .code_quality_agent import CodeQualityAgent  # type: ignore
 
-            quality_agent = CodeQualityAgent(
+            quality_agent: Any = CodeQualityAgent(
                 state_manager=self.state_manager,
                 epic_id=self.epic_id,
                 skip_quality=self.skip_quality
             )
 
-            quality_results = await quality_agent.run_quality_gates(
+            quality_results: Dict[str, Any] = await quality_agent.run_quality_gates(
                 source_dir=self.source_dir,
                 skip_quality=self.skip_quality
             )
 
             # Update progress
-            status = quality_results.get('status', 'failed')
+            status: str = quality_results.get('status', 'failed')
             await self._update_progress('quality_gates', status, quality_results)
 
             if status == 'completed':
@@ -843,7 +843,7 @@ Claude Code 2.0.73
             await self._update_progress('quality_gates', 'failed', {'error': str(e)})
             return {'status': 'failed', 'error': str(e)}
 
-    async def execute_test_automation(self) -> dict[str, Any]:
+    async def execute_test_automation(self) -> Dict[str, Any]:
         """
         Execute test automation after quality gates.
 
@@ -859,21 +859,21 @@ Claude Code 2.0.73
             return {'status': 'skipped'}
 
         try:
-            from test_automation_agent import TestAutomationAgent
+            from .test_automation_agent import TestAutomationAgent  # type: ignore
 
-            test_agent = TestAutomationAgent(
+            test_agent: Any = TestAutomationAgent(
                 state_manager=self.state_manager,
                 epic_id=self.epic_id,
                 skip_tests=self.skip_tests
             )
 
-            test_results = await test_agent.run_test_automation(
+            test_results: Dict[str, Any] = await test_agent.run_test_automation(
                 test_dir=self.test_dir,
                 skip_tests=self.skip_tests
             )
 
             # Update progress
-            status = test_results.get('status', 'failed')
+            status: str = test_results.get('status', 'failed')
             await self._update_progress('test_automation', status, test_results)
 
             if status == 'completed':
@@ -911,7 +911,7 @@ Claude Code 2.0.73
 
         return True
 
-    async def _update_progress(self, phase: str, status: str, details: dict[str, Any]) -> None:
+    async def _update_progress(self, phase: str, status: str, details: Dict[str, Any]) -> None:
         """
         Update progress tracking in state manager.
 
@@ -967,7 +967,7 @@ Claude Code 2.0.73
         except Exception as e:
             self.logger.error(f"Failed to initialize epic processing: {e}")
 
-    def _generate_final_report(self) -> dict[str, Any]:
+    def _generate_final_report(self) -> Dict[str, Any]:
         """
         Generate final epic processing report.
 

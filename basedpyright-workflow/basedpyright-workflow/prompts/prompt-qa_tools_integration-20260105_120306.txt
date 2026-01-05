@@ -1,0 +1,38 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py
+
+BasedPyright type errors (27):  Line 78, Col 9: [unknown] "result" 的类型部分未知
+  Line 97, Col 106: [unknown] "int | None" 类型的实参无法赋值给函数 "_parse_basedpyright_output" 中 "int" 类型的形参 "returncode"
+  Line 115, Col 103: [unknown] "int | None" 类型的实参无法赋值给函数 "_parse_basedpyright_output" 中 "int" 类型的形参 "returncode"
+  Line 139, Col 16: [reportUnknownVariableType] 返回类型 "dict[str, QAStatus | str | int | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  Line 164, Col 17: [reportUnknownParameterType] 返回类型未知 (reportUnknownParameterType)
+  Line 164, Col 29: [reportUnknownParameterType] "data" 参数的类型未知 (reportUnknownParameterType)
+  Line 164, Col 29: [reportMissingParameterType] "data" 参数缺少类型注解 (reportMissingParameterType)
+  Line 166, Col 28: [reportUnknownMemberType] "decode" 类型未知 (reportUnknownMemberType)
+  Line 166, Col 28: [reportUnknownVariableType] 返回类型未知 (reportUnknownVariableType)
+  Line 169, Col 28: [reportUnknownMemberType] "decode" 类型未知 (reportUnknownMemberType)
+  Line 169, Col 28: [reportUnknownVariableType] 返回类型未知 (reportUnknownVariableType)
+  Line 196, Col 13: [reportUnusedVariable] 变量 "stdout" 未使用 (reportUnusedVariable)
+  Line 316, Col 9: [unknown] "result" 的类型部分未知
+  Line 338, Col 24: [reportUnknownVariableType] 返回类型 "dict[str, QAStatus | str | int | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  Line 346, Col 78: [unknown] "int | None" 类型的实参无法赋值给函数 "_parse_test_output" 中 "int" 类型的形参 "returncode"
+  Line 372, Col 16: [reportUnknownVariableType] 返回类型 "dict[str, QAStatus | str | int | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  Line 403, Col 21: [unknown] "append" 的类型部分未知
+  Line 405, Col 20: [reportUnknownVariableType] 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  Line 431, Col 17: [reportUnknownParameterType] 返回类型未知 (reportUnknownParameterType)
+  Line 431, Col 29: [reportUnknownParameterType] "data" 参数的类型未知 (reportUnknownParameterType)
+  Line 431, Col 29: [reportMissingParameterType] "data" 参数缺少类型注解 (reportMissingParameterType)
+  Line 433, Col 28: [reportUnknownMemberType] "decode" 类型未知 (reportUnknownMemberType)
+  Line 433, Col 28: [reportUnknownVariableType] 返回类型未知 (reportUnknownVariableType)
+  Line 436, Col 28: [reportUnknownMemberType] "decode" 类型未知 (reportUnknownMemberType)
+  Line 436, Col 28: [reportUnknownVariableType] 返回类型未知 (reportUnknownVariableType)
+  Line 589, Col 9: [unknown] "summary" 的类型部分未知
+  Line 624, Col 16: [reportUnknownVariableType] 返回类型 "dict[str, str | dict[str, Any] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

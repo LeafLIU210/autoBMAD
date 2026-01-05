@@ -20,6 +20,7 @@ import shutil
 import os
 from pathlib import Path
 from datetime import datetime
+from typing import Union
 import logging
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,7 @@ def rollback_migration(db_path: Path, backup_path: Path) -> bool:
         return False
 
 
-def run_migration(db_path: str) -> bool:
+def run_migration(db_path: Union[str, Path]) -> bool:
     """
     Execute the migration to add quality gates support.
 
@@ -120,22 +121,23 @@ def run_migration(db_path: str) -> bool:
     Returns:
         True if migration successful, False otherwise
     """
-    db_path = Path(db_path)
+    # Ensure db_path is a Path object for consistent type handling
+    db_path_obj = Path(db_path) if isinstance(db_path, str) else db_path
 
     try:
-        logger.info(f"Starting migration: {db_path}")
+        logger.info(f"Starting migration: {db_path_obj}")
 
-        if not db_path.exists():
-            logger.error(f"Database file not found: {db_path}")
+        if not db_path_obj.exists():
+            logger.error(f"Database file not found: {db_path_obj}")
             return False
 
-        backup_path = create_backup(db_path)
+        backup_path = create_backup(db_path_obj)
 
         if not verify_backup(backup_path):
             logger.error("Backup verification failed, aborting migration")
             return False
 
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(db_path_obj)
         cursor = conn.cursor()
 
         logger.info("Creating code_quality_phase table...")
@@ -191,11 +193,12 @@ def run_migration(db_path: str) -> bool:
         logger.error("Attempting rollback...")
 
         import glob
-        backup_pattern = str(db_path.parent / f"{db_path.stem}_backup_*")
+        # Create backup pattern using the Path object
+        backup_pattern = str(db_path_obj.parent / f"{db_path_obj.stem}_backup_*")
         backups = glob.glob(backup_pattern)
         if backups:
             latest_backup = max(backups, key=os.path.getctime)
-            rollback_migration(db_path, Path(latest_backup))
+            rollback_migration(db_path_obj, Path(latest_backup))
         return False
 
 

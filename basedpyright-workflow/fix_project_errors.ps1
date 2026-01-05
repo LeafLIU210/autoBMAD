@@ -361,7 +361,7 @@ function Invoke-ClaudeFix {
         Write-Log "Calling Claude Code to fix $FilePath..." "INFO"
 
         # Use Start-Process to create new interactive window with --dangerously-skip-permissions
-        Start-Process powershell -ArgumentList "-NoExit", "-Command", "claude --dangerously-skip-permissions `"$tempPromptFile`"" -NoNewWindow:$false
+        Start-Process powershell -ArgumentList "-NoExit", "-Command", "claude --dangerously-skip-permissions `"@$tempPromptFile`"" -NoNewWindow:$false
 
         Write-Log "Claude Code window launched for $FilePath" "SUCCESS"
         Write-Log "Claude prompt saved to: $tempPromptFile" "INFO"

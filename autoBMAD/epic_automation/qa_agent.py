@@ -8,38 +8,44 @@ Integrates with task guidance for QA-specific operations.
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Union, TYPE_CHECKING
+from enum import Enum
 import re
 
-# Try to import QA tools, provide fallback if not available
-try:
-    from qa_tools_integration import QAAutomationWorkflow, QAStatus
-    QA_TOOLS_AVAILABLE = True
-except ImportError:
-    # Fallback classes for when qa_tools_integration is not available
-    class QAStatus:
-        PASS = "PASS"
-        FAIL = "FAIL"
-        CONCERNS = "CONCERNS"
-        WAIVED = "WAIVED"
+# Type annotations for QA tools
+if TYPE_CHECKING:
+    from .qa_tools_integration import QAAutomationWorkflow, QAStatus
+else:
+    try:
+        from .qa_tools_integration import QAAutomationWorkflow, QAStatus  # type: ignore
+        QA_TOOLS_AVAILABLE = True
+    except ImportError:
+        # Fallback classes for when qa_tools_integration is not available
+        class QAStatus(Enum):
+            """QA status enum with value attribute."""
+            PASS = "PASS"
+            FAIL = "FAIL"
+            CONCERNS = "CONCERNS"
+            WAIVED = "WAIVED"
 
-    class QAAutomationWorkflow:
-        def __init__(self, basedpyright_dir: str, fixtest_dir: str, timeout: int = 300, max_retries: int = 2):
-            self.basedpyright_dir = basedpyright_dir
-            self.fixtest_dir = fixtest_dir
-            self.timeout = timeout
-            self.max_retries = max_retries
+        class QAAutomationWorkflow:
+            """Fallback QA workflow when tools are not available."""
+            def __init__(self, basedpyright_dir: str, fixtest_dir: str, timeout: int = 300, max_retries: int = 2):
+                self.basedpyright_dir = basedpyright_dir
+                self.fixtest_dir = fixtest_dir
+                self.timeout = timeout
+                self.max_retries = max_retries
 
-        async def run_qa_checks(self, source_dir: str, test_dir: str) -> Dict[str, Any]:
-            """Fallback implementation when QA tools are not available."""
-            return {
-                'overall_status': QAStatus.WAIVED.value,
-                'basedpyright': {'errors': 0, 'warnings': 0},
-                'fixtest': {'tests_failed': 0, 'tests_errors': 0},
-                'message': 'QA tools not available'
-            }
+            async def run_qa_checks(self, source_dir: str, test_dir: str) -> Dict[str, Any]:
+                """Fallback implementation when QA tools are not available."""
+                return {
+                    'overall_status': QAStatus.WAIVED.value,  # type: ignore
+                    'basedpyright': {'errors': 0, 'warnings': 0},
+                    'fixtest': {'tests_failed': 0, 'tests_errors': 0},
+                    'message': 'QA tools not available'
+                }
 
-    QA_TOOLS_AVAILABLE = False
+        # QA_TOOLS_AVAILABLE already set to False by default
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +65,7 @@ class QAAgent:
         use_qa_tools: bool = True,
         source_dir: str = "src",
         test_dir: str = "tests"
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Union[str, int, bool, Dict[str, Any], List[str]]]:
         """
         Execute QA phase for a story.
 
@@ -98,7 +104,7 @@ class QAAgent:
                 validations.update(guided_validations)
 
             # Run QA tools if enabled
-            tool_results = {}
+            tool_results: Dict[str, Any] = {}
             if use_qa_tools:
                 try:
                     tool_results = await self._run_qa_tools(source_dir, test_dir)
@@ -107,7 +113,7 @@ class QAAgent:
                     logger.error(f"QA tools execution failed: {e}")
                     tool_results = {
                         'error': str(e),
-                        'overall_status': QAStatus.FAIL.value
+                        'overall_status': QAStatus.FAIL.value  # type: ignore
                     }
 
             # Calculate overall result including tool results
@@ -117,9 +123,11 @@ class QAAgent:
             if qa_result['passed']:
                 logger.info(f"{self.name} QA phase PASSED (score: {qa_result['score']})")
             else:
+                failures = qa_result.get('failures', [])
+                failures_count = len(failures) if isinstance(failures, list) else 0
                 logger.warning(
                     f"{self.name} QA phase FAILED (score: {qa_result['score']}, "
-                    f"failures: {len(qa_result.get('failures', []))})"
+                    f"failures: {failures_count})"
                 )
 
             return qa_result
@@ -143,7 +151,7 @@ class QAAgent:
             Parsed story data or None if parsing fails
         """
         try:
-            data = {
+            data: Dict[str, Any] = {
                 'title': None,
                 'status': None,
                 'acceptance_criteria': [],
@@ -364,7 +372,7 @@ class QAAgent:
             fixtest_dir = current_dir.parent.parent / "fixtest-workflow"
 
         # Initialize QA workflow
-        qa_workflow = QAAutomationWorkflow(
+        qa_workflow = QAAutomationWorkflow(  # type: ignore
             basedpyright_dir=str(basedpyright_dir),
             fixtest_dir=str(fixtest_dir),
             timeout=300,
@@ -373,14 +381,15 @@ class QAAgent:
 
         try:
             # Run QA checks
-            results = await qa_workflow.run_qa_checks(source_dir, test_dir)
-            logger.info(f"QA tools completed with status: {results.get('overall_status', 'UNKNOWN')}")
+            results: Dict[str, Any] = await qa_workflow.run_qa_checks(source_dir, test_dir)  # type: ignore
+            overall_status: str = str(results.get('overall_status', 'UNKNOWN'))
+            logger.info(f"QA tools completed with status: {overall_status}")
             return results
         except Exception as e:
             logger.error(f"QA tools execution failed: {e}")
             # Return fallback result on error
             return {
-                'overall_status': QAStatus.WAIVED.value,
+                'overall_status': QAStatus.WAIVED.value,  # type: ignore
                 'basedpyright': {'errors': 0, 'warnings': 0},
                 'fixtest': {'tests_failed': 0, 'tests_errors': 0},
                 'error': str(e),
@@ -391,7 +400,7 @@ class QAAgent:
         self,
         validations: Dict[str, Any],
         tool_results: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Union[str, bool, int, Dict[str, Any], List[str]]]:
         """
         Calculate overall QA result from validations and tool results.
 
@@ -402,10 +411,10 @@ class QAAgent:
         Returns:
             Dictionary with QA result including pass/fail and details
         """
-        failures = []
-        warnings = []
-        tool_failures = []
-        tool_warnings = []
+        failures: List[str] = []
+        warnings: List[str] = []
+        tool_failures: List[str] = []
+        tool_warnings: List[str] = []
 
         # Check required fields
         if not validations.get('has_title'):
@@ -438,35 +447,44 @@ class QAAgent:
             tool_status = overall_status
 
             # Add tool-specific failures
-            if overall_status == QAStatus.FAIL.value:
+            if overall_status == QAStatus.FAIL.value:  # type: ignore
                 # Extract BasedPyright errors
                 bp_result = tool_results.get('basedpyright', {})
-                if isinstance(bp_result, dict) and bp_result.get('errors', 0) > 0:
-                    tool_failures.append(
-                        f"BasedPyright found {bp_result['errors']} type errors"
-                    )
+                if isinstance(bp_result, dict):
+                    errors: int = int(bp_result.get('errors', 0) or 0)  # type: ignore
+                    if errors > 0:
+                        tool_failures.append(
+                            f"BasedPyright found {errors} type errors"
+                        )
 
                 # Extract Fixtest failures
                 ft_result = tool_results.get('fixtest', {})
-                if isinstance(ft_result, dict) and ft_result.get('tests_failed', 0) > 0:
-                    tool_failures.append(
-                        f"Fixtest: {ft_result['tests_failed']} tests failed, "
-                        f"{ft_result.get('tests_errors', 0)} errors"
-                    )
+                if isinstance(ft_result, dict):
+                    tests_failed: int = int(ft_result.get('tests_failed', 0) or 0)  # type: ignore
+                    tests_errors: int = int(ft_result.get('tests_errors', 0) or 0)  # type: ignore
+                    if tests_failed > 0:
+                        tool_failures.append(
+                            f"Fixtest: {tests_failed} tests failed, "
+                            f"{tests_errors} errors"
+                        )
 
-            elif overall_status == QAStatus.CONCERNS.value:
+            elif overall_status == QAStatus.CONCERNS.value:  # type: ignore
                 # Extract warnings from tools
                 bp_result = tool_results.get('basedpyright', {})
-                if isinstance(bp_result, dict) and bp_result.get('warnings', 0) > 0:
-                    tool_warnings.append(
-                        f"BasedPyright: {bp_result['warnings']} warnings"
-                    )
+                if isinstance(bp_result, dict):
+                    bp_warnings: int = int(bp_result.get('warnings', 0) or 0)  # type: ignore
+                    if bp_warnings > 0:
+                        tool_warnings.append(
+                            f"BasedPyright: {bp_warnings} warnings"
+                        )
 
                 ft_result = tool_results.get('fixtest', {})
-                if isinstance(ft_result, dict) and ft_result.get('tests_failed', 0) > 0:
-                    tool_warnings.append(
-                        f"Fixtest: {ft_result['tests_failed']} tests need attention"
-                    )
+                if isinstance(ft_result, dict):
+                    tests_failed_concerns: int = int(ft_result.get('tests_failed', 0) or 0)  # type: ignore
+                    if tests_failed_concerns > 0:
+                        tool_warnings.append(
+                            f"Fixtest: {tests_failed_concerns} tests need attention"
+                        )
 
         # Combine failures and warnings
         all_failures = failures + tool_failures
@@ -479,13 +497,13 @@ class QAAgent:
         # Adjust score based on tool results
         if tool_results:
             overall_status = tool_results.get('overall_status', 'UNKNOWN')
-            if overall_status == QAStatus.PASS.value:
+            if overall_status == QAStatus.PASS.value:  # type: ignore
                 tool_score = 30
-            elif overall_status == QAStatus.CONCERNS.value:
+            elif overall_status == QAStatus.CONCERNS.value:  # type: ignore
                 tool_score = 15
-            elif overall_status == QAStatus.FAIL.value:
+            elif overall_status == QAStatus.FAIL.value:  # type: ignore
                 tool_score = 0
-            elif overall_status == QAStatus.WAIVED.value:
+            elif overall_status == QAStatus.WAIVED.value:  # type: ignore
                 tool_score = 20  # Partial credit if tools are unavailable
 
         score = base_score + tool_score
@@ -493,14 +511,14 @@ class QAAgent:
         # Determine pass/fail
         # Must have 100% completion on AC and tasks, no critical failures
         # AND tool results must not be FAIL
-        tool_passed = True
+        tool_passed: bool = True
         if tool_results:
             overall_status = tool_results.get('overall_status', 'UNKNOWN')
-            tool_passed = overall_status not in [QAStatus.FAIL.value]
+            tool_passed = overall_status not in [QAStatus.FAIL.value]  # type: ignore
 
         passed = len(all_failures) == 0 and validations['story_completeness'] >= 1.0 and tool_passed
 
-        result = {
+        result: Dict[str, Union[str, bool, int, Dict[str, Any], List[str]]] = {
             'passed': passed,
             'score': score,
             'completeness': validations['story_completeness'],

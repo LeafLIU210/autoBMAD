@@ -1,0 +1,608 @@
+{
+  "version": "1.37.0",
+  "time": "1767588844618",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 453,
+          "character": 38
+        },
+        "end": {
+          "line": 453,
+          "character": 51
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"x\" 形参\n  参数类型为 \"Unknown | Literal[0]\"",
+      "range": {
+        "start": {
+          "line": 453,
+          "character": 38
+        },
+        "end": {
+          "line": 453,
+          "character": 69
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 462,
+          "character": 44
+        },
+        "end": {
+          "line": 462,
+          "character": 57
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"x\" 形参\n  参数类型为 \"Unknown | Literal[0]\"",
+      "range": {
+        "start": {
+          "line": 462,
+          "character": 44
+        },
+        "end": {
+          "line": 462,
+          "character": 81
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 463,
+          "character": 44
+        },
+        "end": {
+          "line": 463,
+          "character": 57
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"x\" 形参\n  参数类型为 \"Unknown | Literal[0]\"",
+      "range": {
+        "start": {
+          "line": 463,
+          "character": 44
+        },
+        "end": {
+          "line": 463,
+          "character": 81
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 474,
+          "character": 43
+        },
+        "end": {
+          "line": 474,
+          "character": 56
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"x\" 形参\n  参数类型为 \"Unknown | Literal[0]\"",
+      "range": {
+        "start": {
+          "line": 474,
+          "character": 43
+        },
+        "end": {
+          "line": 474,
+          "character": 76
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 482,
+          "character": 53
+        },
+        "end": {
+          "line": 482,
+          "character": 66
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"x\" 形参\n  参数类型为 \"Unknown | Literal[0]\"",
+      "range": {
+        "start": {
+          "line": 482,
+          "character": 53
+        },
+        "end": {
+          "line": 482,
+          "character": 90
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"lines\" 的类型部分未知\n  \"lines\" 为 \"list[str] | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 494,
+          "character": 12
+        },
+        "end": {
+          "line": 494,
+          "character": 17
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"split\" 的类型部分未知\n  \"split\" 为 \"Unknown | ((sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[str])\" 类型",
+      "range": {
+        "start": {
+          "line": 494,
+          "character": 31
+        },
+        "end": {
+          "line": 494,
+          "character": 50
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[str] | Unknown\"",
+      "range": {
+        "start": {
+          "line": 496,
+          "character": 26
+        },
+        "end": {
+          "line": 496,
+          "character": 31
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"line\" 的类型部分未知\n  \"line\" 为 \"str | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 497,
+          "character": 16
+        },
+        "end": {
+          "line": 497,
+          "character": 20
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"strip\" 的类型部分未知\n  \"strip\" 为 \"((chars: str | None = None, /) -> str) | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 497,
+          "character": 28
+        },
+        "end": {
+          "line": 497,
+          "character": 42
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"startswith\" 的类型部分未知\n  \"startswith\" 为 \"((prefix: str | tuple[str, ...], start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> bool) | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 498,
+          "character": 19
+        },
+        "end": {
+          "line": 498,
+          "character": 34
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"file_path\" 的类型部分未知\n  \"file_path\" 为 \"str | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 500,
+          "character": 20
+        },
+        "end": {
+          "line": 500,
+          "character": 29
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"replace\" 的类型部分未知\n  \"replace\" 为 \"((old: str, new: str, count: SupportsIndex = -1, /) -> str) | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 500,
+          "character": 37
+        },
+        "end": {
+          "line": 500,
+          "character": 49
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"strip\" 的类型部分未知\n  \"strip\" 为 \"((chars: str | None = None, /) -> str) | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 500,
+          "character": 37
+        },
+        "end": {
+          "line": 500,
+          "character": 70
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[str] | Unknown\"",
+      "range": {
+        "start": {
+          "line": 504,
+          "character": 34
+        },
+        "end": {
+          "line": 504,
+          "character": 39
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[str] | Unknown\"",
+      "range": {
+        "start": {
+          "line": 507,
+          "character": 32
+        },
+        "end": {
+          "line": 507,
+          "character": 37
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[str] | Unknown\"",
+      "range": {
+        "start": {
+          "line": 514,
+          "character": 34
+        },
+        "end": {
+          "line": 514,
+          "character": 39
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"strip\" 的类型部分未知\n  \"strip\" 为 \"((chars: str | None = None, /) -> str) | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 514,
+          "character": 49
+        },
+        "end": {
+          "line": 514,
+          "character": 63
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "\"startswith\" 的类型部分未知\n  \"startswith\" 为 \"((prefix: str | tuple[str, ...], start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> bool) | Unknown\" 类型",
+      "range": {
+        "start": {
+          "line": 514,
+          "character": 49
+        },
+        "end": {
+          "line": 514,
+          "character": 76
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"append\" 函数中的 \"object\" 形参\n  参数类型为 \"str | Unknown\"",
+      "range": {
+        "start": {
+          "line": 515,
+          "character": 48
+        },
+        "end": {
+          "line": 515,
+          "character": 56
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"exists\" 函数中的 \"path\" 形参\n  参数类型为 \"str | Unknown\"",
+      "range": {
+        "start": {
+          "line": 520,
+          "character": 42
+        },
+        "end": {
+          "line": 520,
+          "character": 51
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"args\" 形参\n  参数类型为 \"str | Unknown\"",
+      "range": {
+        "start": {
+          "line": 521,
+          "character": 33
+        },
+        "end": {
+          "line": 521,
+          "character": 42
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"Optional\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 5,
+          "character": 36
+        },
+        "end": {
+          "line": 5,
+          "character": 44
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"Union\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 5,
+          "character": 46
+        },
+        "end": {
+          "line": 5,
+          "character": 51
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"workflow\" 类型未知",
+      "range": {
+        "start": {
+          "line": 48,
+          "character": 8
+        },
+        "end": {
+          "line": 48,
+          "character": 16
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"driver\" 类型未知",
+      "range": {
+        "start": {
+          "line": 82,
+          "character": 12
+        },
+        "end": {
+          "line": 82,
+          "character": 18
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"Unknown | List[Dict[str, Any]]\"",
+      "range": {
+        "start": {
+          "line": 85,
+          "character": 41
+        },
+        "end": {
+          "line": 85,
+          "character": 48
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"agent\" 类型未知",
+      "range": {
+        "start": {
+          "line": 110,
+          "character": 12
+        },
+        "end": {
+          "line": 110,
+          "character": 17
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Unknown | Overload[(key: str, default: None = None, /) -> (Any | None), (key: str, default: Any, /) -> Any, (key: str, default: _T@get, /) -> (Any | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 140,
+          "character": 34
+        },
+        "end": {
+          "line": 140,
+          "character": 44
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Unknown | Overload[(key: str, default: None = None, /) -> (Any | None), (key: str, default: Any, /) -> Any, (key: str, default: _T@get, /) -> (Any | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 141,
+          "character": 35
+        },
+        "end": {
+          "line": 141,
+          "character": 45
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "severity": "error",
+      "message": "\"get\" 的类型部分未知\n  \"get\" 为 \"Unknown | Overload[(key: str, default: None = None, /) -> (Any | None), (key: str, default: Any, /) -> Any, (key: str, default: _T@get, /) -> (Any | _T@get)]\" 类型",
+      "range": {
+        "start": {
+          "line": 142,
+          "character": 41
+        },
+        "end": {
+          "line": 142,
+          "character": 51
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 12,
+    "errorCount": 36,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.612
+  },
+  "metadata": {
+    "check_time": "2026-01-05T12:54:04.643927",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 12,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "..\\autoBMAD\\epic_automation\\test_changes.py",
+      "..\\autoBMAD\\epic_automation\\test_portability.py"
+    ]
+  }
+}

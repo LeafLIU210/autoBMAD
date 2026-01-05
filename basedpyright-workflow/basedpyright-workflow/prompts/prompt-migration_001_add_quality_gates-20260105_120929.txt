@@ -1,0 +1,14 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py
+
+BasedPyright type errors (3):  Line 113, Col 32: [reportGeneralTypeIssues] `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  Line 200, Col 32: [unknown] "str" 类型的实参无法赋值给函数 "rollback_migration" 中 "Path" 类型的形参 "db_path"
+  Line 200, Col 50: [unknown] "str" 类型的实参无法赋值给函数 "rollback_migration" 中 "Path" 类型的形参 "backup_path"
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

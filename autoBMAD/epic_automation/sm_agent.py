@@ -6,7 +6,7 @@ Integrates with task guidance for SM-specific operations.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import re
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class SMAgent:
             Dictionary with parsed story metadata, or None if parsing fails
         """
         try:
-            metadata = {
+            metadata: Dict[str, Any] = {
                 'title': None,
                 'status': None,
                 'acceptance_criteria': [],
@@ -120,8 +120,8 @@ class SMAgent:
         Returns:
             Dictionary with validation result
         """
-        issues = []
-        warnings = []
+        issues: List[str] = []
+        warnings: List[str] = []
 
         # Check required fields
         if not story_data.get('title'):
@@ -142,7 +142,7 @@ class SMAgent:
         if task_count == 0:
             warnings.append("No tasks found")
 
-        result = {
+        result: Dict[str, Any] = {
             'valid': len(issues) == 0,
             'issues': issues,
             'warnings': warnings
@@ -209,7 +209,7 @@ class SMAgent:
             Created story metadata or None if failed
         """
         try:
-            story_data = {
+            story_data: Dict[str, Any] = {
                 'title': title,
                 'description': description,
                 'epic_path': epic_path,

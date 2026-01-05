@@ -10,7 +10,7 @@ import asyncio
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 import logging
 import uuid
 
@@ -141,11 +141,11 @@ class StateManager:
         self,
         story_path: str,
         status: str,
-        phase: str | None = None,
-        iteration: int | None = None,
-        qa_result: dict[str, Any] | None = None,
-        error: str | None = None,
-        epic_path: str | None = None
+        phase: Union[str, None] = None,
+        iteration: Union[int, None] = None,
+        qa_result: Union["dict[str, Any]", None] = None,
+        error: Union[str, None] = None,
+        epic_path: Union[str, None] = None
     ) -> bool:
         """
         Update or insert story status.
@@ -179,16 +179,16 @@ class StateManager:
                     if qa_result:
                         # Clean qa_result to make it JSON serializable
                         # Remove non-serializable objects like QAStatus enums
-                        def clean_for_json(obj):
+                        def clean_for_json(obj: Any) -> Any:
                             if hasattr(obj, 'value'):
                                 return obj.value
                             elif isinstance(obj, dict):
-                                return {k: clean_for_json(v) for k, v in obj.items()}
+                                return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
                             elif isinstance(obj, list):
-                                return [clean_for_json(v) for v in obj]
+                                return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
                             else:
                                 return obj
-                        
+
                         cleaned_qa_result = clean_for_json(qa_result)
                         qa_result_str = json.dumps(cleaned_qa_result)
 
@@ -239,7 +239,7 @@ class StateManager:
                 logger.error(f"Failed to update story status: {e}")
                 return False
 
-    async def get_story_status(self, story_path: str) -> dict[str, Any] | None:
+    async def get_story_status(self, story_path: str) -> Union["dict[str, Any]", None]:
         """
         Get current status for a story.
 
@@ -295,7 +295,7 @@ class StateManager:
                 logger.error(f"Failed to get story status: {e}")
                 return None
 
-    async def get_all_stories(self) -> list[dict[str, Any]]:
+    async def get_all_stories(self) -> "list[dict[str, Any]]":
         """
         Get all stories from database.
 
@@ -304,7 +304,7 @@ class StateManager:
         """
         async with self._lock:
             try:
-                def _get_all():
+                def _get_all() -> "list[dict[str, Any]]":
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
 
@@ -318,9 +318,9 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    stories = []
+                    stories: "list[dict[str, Any]]" = []
                     for row in rows:
-                        story = {
+                        story: "dict[str, Any]" = {
                             'epic_path': row[0],
                             'story_path': row[1],
                             'status': row[2],
@@ -349,7 +349,7 @@ class StateManager:
                 logger.error(f"Failed to get all stories: {e}")
                 return []
 
-    async def get_stories_by_status(self, status: str) -> list[dict[str, Any]]:
+    async def get_stories_by_status(self, status: str) -> "list[dict[str, Any]]":
         """
         Get all stories with a specific status.
 
@@ -361,7 +361,7 @@ class StateManager:
         """
         async with self._lock:
             try:
-                def _get_by_status():
+                def _get_by_status() -> "list[dict[str, Any]]":
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
 
@@ -376,9 +376,9 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    stories = []
+                    stories: "list[dict[str, Any]]" = []
                     for row in rows:
-                        story = {
+                        story: "dict[str, Any]" = {
                             'epic_path': row[0],
                             'story_path': row[1],
                             'status': row[2],
@@ -440,7 +440,7 @@ class StateManager:
                 logger.error(f"Failed to delete story: {e}")
                 return False
 
-    async def get_stats(self) -> dict[str, int]:
+    async def get_stats(self) -> "dict[str, int]":
         """
         Get statistics about story statuses.
 
@@ -449,7 +449,7 @@ class StateManager:
         """
         async with self._lock:
             try:
-                def _get_stats():
+                def _get_stats() -> "dict[str, int]":
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
 
@@ -462,7 +462,7 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    stats = {}
+                    stats: "dict[str, int]" = {}
                     for status, count in rows:
                         stats[status] = count
 
@@ -474,7 +474,7 @@ class StateManager:
                 logger.error(f"Failed to get stats: {e}")
                 return {}
 
-    async def create_backup(self) -> str | None:
+    async def create_backup(self) -> Union[str, None]:
         """
         Create a backup of the database before schema changes.
 
@@ -505,7 +505,7 @@ class StateManager:
         basedpyright_errors: str,
         ruff_errors: str,
         fix_status: str = "pending"
-    ) -> str | None:
+    ) -> Union[str, None]:
         """
         Add a new code quality phase record.
 
@@ -560,7 +560,7 @@ class StateManager:
         failure_count: int,
         debug_info: str,
         fix_status: str = "pending"
-    ) -> str | None:
+    ) -> Union[str, None]:
         """
         Add a new test automation phase record.
 
@@ -606,7 +606,7 @@ class StateManager:
                 logger.error(f"Failed to add test phase record: {e}")
                 return None
 
-    async def get_quality_phase_records(self, epic_id: str) -> list[dict[str, Any]]:
+    async def get_quality_phase_records(self, epic_id: str) -> "list[dict[str, Any]]":
         """
         Get all quality phase records for an epic.
 
@@ -618,7 +618,7 @@ class StateManager:
         """
         async with self._lock:
             try:
-                def _get_records():
+                def _get_records() -> "list[dict[str, Any]]":
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
 
@@ -633,7 +633,7 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    records = []
+                    records: "list[dict[str, Any]]" = []
                     for row in rows:
                         records.append({
                             'record_id': row[0],
@@ -654,7 +654,7 @@ class StateManager:
                 logger.error(f"Failed to get quality phase records: {e}")
                 return []
 
-    async def get_test_phase_records(self, epic_id: str) -> list[dict[str, Any]]:
+    async def get_test_phase_records(self, epic_id: str) -> "list[dict[str, Any]]":
         """
         Get all test automation phase records for an epic.
 
@@ -666,7 +666,7 @@ class StateManager:
         """
         async with self._lock:
             try:
-                def _get_records():
+                def _get_records() -> "list[dict[str, Any]]":
                     conn = sqlite3.connect(self.db_path)
                     cursor = conn.cursor()
 
@@ -681,7 +681,7 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    records = []
+                    records: "list[dict[str, Any]]" = []
                     for row in rows:
                         records.append({
                             'record_id': row[0],
@@ -705,7 +705,7 @@ class StateManager:
         self,
         record_id: str,
         fix_status: str,
-        error_count: int | None = None
+        error_count: Union[int, None] = None
     ) -> bool:
         """
         Update the fix status of a quality phase record.
@@ -760,8 +760,8 @@ class StateManager:
         self,
         record_id: str,
         fix_status: str,
-        failure_count: int | None = None,
-        debug_info: str | None = None
+        failure_count: Union[int, None] = None,
+        debug_info: Union[str, None] = None
     ) -> bool:
         """
         Update the fix status of a test phase record.
@@ -830,12 +830,12 @@ class StateManager:
         epic_id: str,
         file_path: str,
         status: str,
-        total_stories: int | None = None,
-        completed_stories: int | None = None,
-        quality_phase_status: str | None = None,
-        test_phase_status: str | None = None,
-        quality_phase_errors: int | None = None,
-        test_phase_failures: int | None = None
+        total_stories: Union[int, None] = None,
+        completed_stories: Union[int, None] = None,
+        quality_phase_status: Union[str, None] = None,
+        test_phase_status: Union[str, None] = None,
+        quality_phase_errors: Union[int, None] = None,
+        test_phase_failures: Union[int, None] = None
     ) -> bool:
         """
         Update or insert epic processing status.
@@ -921,7 +921,7 @@ class StateManager:
                 logger.error(f"Failed to update epic status: {e}")
                 return False
 
-    async def get_epic_status(self, epic_id: str) -> dict[str, Any] | None:
+    async def get_epic_status(self, epic_id: str) -> Union["dict[str, Any]", None]:
         """
         Get current status for an epic.
 

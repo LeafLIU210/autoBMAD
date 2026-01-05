@@ -1,0 +1,30 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py
+
+BasedPyright type errors (19):  Line 48, Col 9: [reportUnknownVariableType] "workflow" 类型未知 (reportUnknownVariableType)
+  Line 57, Col 9: [reportUnknownVariableType] "bp_available" 类型未知 (reportUnknownVariableType)
+  Line 57, Col 24: [reportUnknownMemberType] "basedpyright_runner" 类型未知 (reportUnknownMemberType)
+  Line 57, Col 24: [reportUnknownMemberType] "available" 类型未知 (reportUnknownMemberType)
+  Line 58, Col 9: [reportUnknownVariableType] "ft_available" 类型未知 (reportUnknownVariableType)
+  Line 58, Col 24: [reportUnknownMemberType] "fixtest_runner" 类型未知 (reportUnknownMemberType)
+  Line 58, Col 24: [reportUnknownMemberType] "available" 类型未知 (reportUnknownMemberType)
+  Line 82, Col 13: [reportUnknownVariableType] "driver" 类型未知 (reportUnknownVariableType)
+  Line 83, Col 13: [reportUnknownVariableType] "stories" 类型未知 (reportUnknownVariableType)
+  Line 83, Col 23: [reportUnknownMemberType] "parse_epic" 类型未知 (reportUnknownMemberType)
+  Line 85, Col 42: [unknown] 参数类型未知
+  Line 86, Col 17: [reportUnknownVariableType] "story" 类型未知 (reportUnknownVariableType)
+  Line 87, Col 62: [unknown] 参数类型未知
+  Line 109, Col 13: [reportUnknownVariableType] "agent" 类型未知 (reportUnknownVariableType)
+  Line 133, Col 13: [reportUnknownVariableType] "result" 类型未知 (reportUnknownVariableType)
+  Line 133, Col 28: [reportUnknownMemberType] "execute" 类型未知 (reportUnknownMemberType)
+  Line 139, Col 35: [reportUnknownMemberType] "get" 类型未知 (reportUnknownMemberType)
+  Line 140, Col 36: [reportUnknownMemberType] "get" 类型未知 (reportUnknownMemberType)
+  Line 141, Col 42: [reportUnknownMemberType] "get" 类型未知 (reportUnknownMemberType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

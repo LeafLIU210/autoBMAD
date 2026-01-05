@@ -75,7 +75,7 @@ class BasedPyrightWorkflowRunner:
         if not self.available:
             return self._create_unavailable_result()
 
-        result = {
+        result: Dict[str, Any] = {
             "status": QAStatus.PASS,
             "tool": "BasedPyright-Workflow",
             "timestamp": datetime.now().isoformat(),
@@ -161,14 +161,16 @@ class BasedPyrightWorkflowRunner:
                 timeout=self.timeout
             )
             # Handle encoding errors gracefully
-            def safe_decode(data):
+            def safe_decode(data: bytes) -> str:
                 try:
                     return data.decode('utf-8')
                 except UnicodeDecodeError:
                     # Try latin-1 as fallback (accepts any byte sequence)
                     return data.decode('latin-1')
-            
-            return safe_decode(stdout), safe_decode(stderr), process.returncode
+
+            stdout_str = safe_decode(stdout)
+            stderr_str = safe_decode(stderr)
+            return stdout_str, stderr_str, process.returncode
         except asyncio.TimeoutError:
             process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
@@ -193,7 +195,7 @@ class BasedPyrightWorkflowRunner:
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(
+            _stdout, stderr = await asyncio.wait_for(
                 process.communicate(),
                 timeout=self.timeout
             )
@@ -207,7 +209,7 @@ class BasedPyrightWorkflowRunner:
             process.kill()
             logger.warning("Auto-fix timed out")
 
-    def _parse_basedpyright_output(self, stdout: str, stderr: str, returncode: int) -> Tuple[int, int, int]:
+    def _parse_basedpyright_output(self, stdout: str, stderr: str, returncode: Optional[int]) -> Tuple[int, int, int]:
         """Parse BasedPyright output to extract error counts."""
         errors = 0
         warnings = 0
@@ -313,7 +315,7 @@ class FixtestWorkflowRunner:
         if not self.available:
             return self._create_unavailable_result()
 
-        result = {
+        result: Dict[str, Any] = {
             "status": QAStatus.PASS,
             "tool": "Fixtest-Workflow",
             "timestamp": datetime.now().isoformat(),
@@ -395,7 +397,7 @@ class FixtestWorkflowRunner:
 
             # Parse scan output to get test file count
             output = stdout.decode('utf-8')
-            test_files = []
+            test_files: List[str] = []
 
             # Look for JSON output or file list
             for line in output.split('\n'):
@@ -428,19 +430,21 @@ class FixtestWorkflowRunner:
                 timeout=self.timeout
             )
             # Handle encoding errors gracefully
-            def safe_decode(data):
+            def safe_decode(data: bytes) -> str:
                 try:
                     return data.decode('utf-8')
                 except UnicodeDecodeError:
                     # Try latin-1 as fallback (accepts any byte sequence)
                     return data.decode('latin-1')
-            
-            return safe_decode(stdout), safe_decode(stderr), process.returncode
+
+            stdout_str = safe_decode(stdout)
+            stderr_str = safe_decode(stderr)
+            return stdout_str, stderr_str, process.returncode
         except asyncio.TimeoutError:
             process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
 
-    def _parse_test_output(self, stdout: str, stderr: str, returncode: int) -> Tuple[int, int, int]:
+    def _parse_test_output(self, stdout: str, stderr: str, returncode: Optional[int]) -> Tuple[int, int, int]:
         """Parse test output to extract test counts."""
         passed = 0
         failed = 0
@@ -586,7 +590,7 @@ class QAAutomationWorkflow:
                          ft_result: Dict[str, Any],
                          overall_status: QAStatus) -> Dict[str, Any]:
         """Generate human-readable summary of QA results."""
-        summary = {
+        summary: Dict[str, Any] = {
             "overall_status": overall_status.value,
             "tools_status": {
                 "BasedPyright": bp_result["status"],

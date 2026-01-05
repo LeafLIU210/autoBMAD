@@ -1,0 +1,17 @@
+{
+  "version": "ruff-integrated",
+  "totalFiles": 0,
+  "errors": 0,
+  "warnings": 0,
+  "time": "0s",
+  "files": [],
+  "summary": {
+    "error_count": 0,
+    "warning_count": 0
+  },
+  "tool": "ruff",
+  "returncode": 2,
+  "stderr": "ruff failed\n  Cause: Failed to load configuration `C:\\Users\\Administrator\\AppData\\Local\\Temp\\ruff_config_283em858\\ruff.toml`\n  Cause: Failed to parse C:\\Users\\Administrator\\AppData\\Local\\Temp\\ruff_config_283em858\\ruff.toml\n  Cause: TOML parse error at line 3, column 18\n  |\n3 | target-version = py311\n  |                  ^^^^^\nstring values must be quoted, expected literal string\n\n",
+  "fix_applied": false,
+  "dry_run": false
+}

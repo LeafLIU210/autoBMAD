@@ -1,0 +1,40 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (29):  Line 13, Col 47: [reportUnusedImport] "Union" 导入项未使用 (reportUnusedImport)
+  Line 211, Col 25: [reportUnknownVariableType] "story_file" 类型未知 (reportUnknownVariableType)
+  Line 212, Col 25: [unknown] "append" 的类型部分未知
+  Line 214, Col 41: [reportUnknownMemberType] "resolve" 类型未知 (reportUnknownMemberType)
+  Line 214, Col 41: [unknown] 参数类型未知
+  Line 215, Col 37: [reportUnknownMemberType] "name" 类型未知 (reportUnknownMemberType)
+  Line 217, Col 25: [unknown] "append" 的类型部分未知
+  Line 225, Col 29: [unknown] "append" 的类型部分未知
+  Line 230, Col 29: [unknown] "append" 的类型部分未知
+  Line 242, Col 52: [unknown] 部分参数的类型未知
+  Line 247, Col 13: [unknown] "sort" 的类型部分未知
+  Line 247, Col 37: [reportUnknownLambdaType] "x" 参数的类型未知 (reportUnknownLambdaType)
+  Line 247, Col 40: [reportUnknownLambdaType] 该 `lambda` 的返回类型未知 (reportUnknownLambdaType)
+  Line 250, Col 55: [unknown] 部分参数的类型未知
+  Line 252, Col 20: [reportUnknownVariableType] 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  Line 281, Col 13: [unknown] "append" 的类型部分未知
+  Line 291, Col 17: [unknown] "append" 的类型部分未知
+  Line 295, Col 9: [unknown] "seen" 的类型部分未知
+  Line 297, Col 13: [reportUnknownVariableType] "story_id" 类型未知 (reportUnknownVariableType)
+  Line 299, Col 13: [reportUnknownVariableType] "key" 类型未知 (reportUnknownVariableType)
+  Line 299, Col 19: [reportUnknownMemberType] "split" 类型未知 (reportUnknownMemberType)
+  Line 299, Col 19: [reportUnknownMemberType] "strip" 类型未知 (reportUnknownMemberType)
+  Line 299, Col 19: [reportUnknownMemberType] "zfill" 类型未知 (reportUnknownMemberType)
+  Line 301, Col 17: [unknown] "add" 的类型部分未知
+  Line 301, Col 26: [unknown] 参数类型未知
+  Line 302, Col 17: [unknown] "append" 的类型部分未知
+  Line 302, Col 41: [unknown] 参数类型未知
+  Line 304, Col 39: [unknown] 部分参数的类型未知
+  Line 306, Col 16: [reportUnknownVariableType] 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

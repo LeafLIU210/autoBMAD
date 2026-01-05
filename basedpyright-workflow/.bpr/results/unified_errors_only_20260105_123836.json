@@ -1,0 +1,376 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260105_123834.txt",
+    "extraction_time": "2026-01-05T12:38:36.903527",
+    "total_files_with_errors": 3,
+    "total_errors": 53,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "error_count": 10,
+      "errors_by_rule": {
+        "reportMissingImports": 1,
+        "reportUnknownVariableType": 2,
+        "unknown": 6,
+        "reportOperatorIssue": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 10
+      },
+      "errors": [
+        {
+          "line": 17,
+          "column": 10,
+          "message": "无法解析导入 \"qa_tools_integration\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 17,
+          "column": 38,
+          "message": "\"QAAutomationWorkflow\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 17,
+          "column": 60,
+          "message": "\"QAStatus\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 448,
+          "column": 40,
+          "message": "\"get\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 457,
+          "column": 46,
+          "message": "\"get\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 458,
+          "column": 46,
+          "message": "\"get\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 469,
+          "column": 32,
+          "message": "\"int\" 类型不匹配声明的 \"List[str]\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 469,
+          "column": 42,
+          "message": "\"get\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 470,
+          "column": 24,
+          "message": "\"List[str]\" 与 \"Literal[0]\" 类型不支持 \">\" 运算符 (reportOperatorIssue)",
+          "rule": "reportOperatorIssue"
+        },
+        {
+          "line": 477,
+          "column": 46,
+          "message": "\"get\" 的类型部分未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "error_count": 35,
+      "errors_by_rule": {
+        "reportMissingImports": 3,
+        "reportUnknownVariableType": 6,
+        "reportUnknownParameterType": 1,
+        "reportIndexIssue": 17,
+        "unknown": 8
+      },
+      "errors_by_tool": {
+        "basedpyright": 35
+      },
+      "errors": [
+        {
+          "line": 17,
+          "column": 10,
+          "message": "无法解析导入 \"autoBMAD.epic_automation.state_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 17,
+          "column": 56,
+          "message": "\"StateManager\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 21,
+          "column": 10,
+          "message": "无法解析导入 \"fixtest_workflow.test_automation_workflow\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 21,
+          "column": 59,
+          "message": "\"run_pytest_execution\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 22,
+          "column": 10,
+          "message": "无法解析导入 \"fixtest_workflow.debugpy_integration\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 23,
+          "column": 9,
+          "message": "\"start_debugpy_listener\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 24,
+          "column": 9,
+          "message": "\"attach_debugpy\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 25,
+          "column": 9,
+          "message": "\"collect_debug_info\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 58,
+          "column": 9,
+          "message": "\"state_manager\" 参数的类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 81,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 166,
+          "column": 18,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 167,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 209,
+          "column": 18,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 210,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 289,
+          "column": 18,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 290,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 342,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 388,
+          "column": 10,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 388,
+          "column": 15,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 403,
+          "column": 21,
+          "message": "\"append\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 414,
+          "column": 20,
+          "message": "返回类型 \"list[Unknown]\" 部分未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 420,
+          "column": 41,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 420,
+          "column": 46,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 496,
+          "column": 27,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 498,
+          "column": 20,
+          "message": "\"startswith\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 500,
+          "column": 21,
+          "message": "\"file_path\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 500,
+          "column": 33,
+          "message": "\"replace\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 500,
+          "column": 33,
+          "message": "\"strip\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 520,
+          "column": 43,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 521,
+          "column": 34,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 543,
+          "column": 24,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 544,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 571,
+          "column": 18,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 572,
+          "column": 19,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 572,
+          "column": 24,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_changes.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "reportUnknownVariableType": 4,
+        "unknown": 1,
+        "reportUnknownMemberType": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 8
+      },
+      "errors": [
+        {
+          "line": 48,
+          "column": 9,
+          "message": "\"workflow\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 82,
+          "column": 13,
+          "message": "\"driver\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 85,
+          "column": 42,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 86,
+          "column": 17,
+          "message": "\"story\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 110,
+          "column": 13,
+          "message": "\"agent\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 140,
+          "column": 35,
+          "message": "\"get\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 141,
+          "column": 36,
+          "message": "\"get\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 142,
+          "column": 42,
+          "message": "\"get\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        }
+      ]
+    }
+  ]
+}
