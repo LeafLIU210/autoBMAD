@@ -5,17 +5,6 @@
 # Store the workflow directory (bmad-workflow) globally
 $script:WorkflowCoreDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Import QA Workflow module for automated QA tools integration
-$qaWorkflowModulePath = Join-Path $script:WorkflowCoreDir "BMAD.QA.Workflow.ps1"
-if (Test-Path $qaWorkflowModulePath) {
-    try {
-        . $qaWorkflowModulePath
-        Write-WorkflowLogInternal -State $null -Message "QA Workflow module loaded successfully" -Level ([LogLevel]::Success)
-    } catch {
-        Write-WorkflowLogInternal -State $null -Message "Failed to load QA Workflow module: $_" -Level ([LogLevel]::Warning)
-    }
-}
-
 # Enum for workflow status
 enum WorkflowStatus {
     NotStarted
@@ -300,35 +289,6 @@ function Start-BMADWorkflow {
             throw "One or more development flows failed: $($devResults.Errors -join '; ')"
         }
 
-        # ========================================
-        # Phase A.1: Automated QA Tools Integration
-        # Run BasedPyright and Fixtest workflows
-        # ========================================
-        Write-WorkflowLogInternal -State $workflowState -Message "Starting automated QA tools integration after Dev phase" -Level ([LogLevel]::Info)
-        Write-Host "Phase A.1: Running Automated QA Tools (BasedPyright & Fixtest)..." -ForegroundColor Cyan
-
-        $projectRoot = Split-Path -Parent (Split-Path -Parent $StoryPath)
-        try {
-            $qaResult = Start-QAToolsWorkflow -ProjectRoot $projectRoot -StoryPath $StoryPath -WorkflowState $workflowState -Config $config -MaxRetries 2
-
-            # Check QA results
-            if ($qaResult.OverallStatus -eq 'Fail') {
-                Write-WorkflowLogInternal -State $workflowState -Message "QA tools failed with critical errors. Last error: $qaResult.ErrorMessage" -Level ([LogLevel]::Error)
-                $workflowState.LastQAError = "QA tools failed: $($qaResult.ErrorMessage)"
-                # Continue anyway - let the QA review phase handle the issues
-            } elseif ($qaResult.OverallStatus -eq 'Concerns') {
-                Write-WorkflowLogInternal -State $workflowState -Message "QA tools found issues (Concerns level)" -Level ([LogLevel]::Warning)
-            } elseif ($qaResult.OverallStatus -eq 'Pass') {
-                Write-WorkflowLogInternal -State $workflowState -Message "QA tools passed all checks" -Level ([LogLevel]::Success)
-            }
-
-            $workflowState.LastQAResult = $qaResult.OverallStatus.ToString()
-        } catch {
-            Write-WorkflowLogInternal -State $workflowState -Message "QA tools integration failed: $_" -Level ([LogLevel]::Error)
-            $workflowState.LastQAError = "QA integration failed: $_"
-            # Continue anyway - don't let QA tools failure block the workflow
-        }
-
         # Phase A to Phase B delay with countdown
         Write-PhaseTransitionLog -State $workflowState -FromPhase "A" -ToPhase "B" -Duration $phaseDelay
         $countdownResult = Show-PhaseCountdown -PhaseName "Phase A → Phase B Transition" -DurationSeconds $phaseDelay -Config $config
@@ -367,32 +327,6 @@ function Start-BMADWorkflow {
 
         if (-not $fixResults.AllSuccessful) {
             throw "Fix mode development flows failed: $($fixResults.Errors -join '; ')"
-        }
-
-        # ========================================
-        # Phase C.1: Automated QA Tools Integration (Post-Fix)
-        # Re-run QA tools after fix mode development
-        # ========================================
-        Write-WorkflowLogInternal -State $workflowState -Message "Running QA tools after fix mode development" -Level ([LogLevel]::Info)
-        Write-Host "Phase C.1: Re-running QA Tools after Fix Mode..." -ForegroundColor Cyan
-
-        try {
-            $qaResult2 = Start-QAToolsWorkflow -ProjectRoot $projectRoot -StoryPath $StoryPath -WorkflowState $workflowState -Config $config -MaxRetries 2
-
-            # Check QA results
-            if ($qaResult2.OverallStatus -eq 'Fail') {
-                Write-WorkflowLogInternal -State $workflowState -Message "QA tools still failing after fix mode" -Level ([LogLevel]::Error)
-                $workflowState.LastQAError = "QA tools failed after fixes"
-            } elseif ($qaResult2.OverallStatus -eq 'Concerns') {
-                Write-WorkflowLogInternal -State $workflowState -Message "QA tools found remaining issues after fix mode" -Level ([LogLevel]::Warning)
-            } elseif ($qaResult2.OverallStatus -eq 'Pass') {
-                Write-WorkflowLogInternal -State $workflowState -Message "QA tools passed after fix mode!" -Level ([LogLevel]::Success)
-            }
-
-            $workflowState.LastQAResult = $qaResult2.OverallStatus.ToString()
-        } catch {
-            Write-WorkflowLogInternal -State $workflowState -Message "QA tools integration failed after fix mode: $_" -Level ([LogLevel]::Error)
-            # Continue anyway
         }
 
         # Phase C to Phase B delay with countdown

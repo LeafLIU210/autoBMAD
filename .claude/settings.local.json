@@ -24,7 +24,15 @@
       "Skill(BMad:agents:qa:*)",
       "Bash(pip install:*)",
       "Bash(basedpyright-workflow:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(source:*)",
+      "Skill(BMad:agents:pm)",
+      "Skill(BMad:agents:pm:*)",
+      "Skill(BMad:tasks:create-doc)",
+      "Skill(BMad:tasks:create-doc:*)",
+      "Skill(BMad:agents:architect)",
+      "Skill(BMad:agents:architect:*)",
+      "Bash(grep:*)"
     ]
   }
 }

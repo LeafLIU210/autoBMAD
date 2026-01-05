@@ -12,21 +12,18 @@ def test_imports():
     print("Testing imports...")
 
     try:
-        import qa_tools_integration  # type: ignore[import-untyped,import]
         print("  [PASS] qa_tools_integration")
     except Exception as e:
         print(f"  [FAIL] qa_tools_integration: {e}")
         return False
 
     try:
-        import qa_agent  # type: ignore[import-untyped,import]
         print("  [PASS] qa_agent")
     except Exception as e:
         print(f"  [FAIL] qa_agent: {e}")
         return False
 
     try:
-        import epic_driver  # type: ignore[import-untyped,import]
         print("  [PASS] epic_driver")
     except Exception as e:
         print(f"  [FAIL] epic_driver: {e}")
@@ -40,13 +37,17 @@ def test_qa_tools():
     print("\nTesting QA tools integration...")
 
     try:
-        from qa_tools_integration import QAAutomationWorkflow, QAStatus  # type: ignore[import-untyped,import]
+        from qa_tools_integration import QAAutomationWorkflow  # type: ignore[import-untyped,import]
         print("  [PASS] QAStatus enum imported")
 
         # Initialize workflow
+        # Determine workflow directories relative to test script location
+        test_script_dir = Path(__file__).parent
+        project_root = test_script_dir.parent.parent
+
         workflow = QAAutomationWorkflow(
-            basedpyright_dir="basedpyright-workflow",
-            fixtest_dir="fixtest-workflow",
+            basedpyright_dir=str(project_root / "basedpyright-workflow"),
+            fixtest_dir=str(project_root / "fixtest-workflow"),
             timeout=300,
             max_retries=2
         )
@@ -86,7 +87,7 @@ def test_epic_parsing():
                 print(f"    - ID: {story['id']}, File: {Path(story['path']).name}")
         else:
             print(f"  [INFO] Epic file not found: {epic_path}")
-            print(f"  [INFO] This is expected if docs-copy is not available")
+            print("  [INFO] This is expected if docs-copy is not available")
 
         return True
     except Exception as e:
@@ -134,7 +135,7 @@ def test_qa_agent():
                 use_qa_tools=False  # Disable tools for basic test
             )
 
-            print(f"  [PASS] QA agent executed successfully")
+            print("  [PASS] QA agent executed successfully")
             print(f"    - Score: {result.get('score', 0)}")
             print(f"    - Passed: {result.get('passed', False)}")
             print(f"    - Completeness: {result.get('completeness', 0):.0%}")

@@ -1,0 +1,636 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-05 11:57:37
+检查目录: ..\autoBMAD\epic_automation
+Python文件数量: 12
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. ..\autoBMAD\epic_automation\__init__.py
+  2. ..\autoBMAD\epic_automation\code_quality_agent.py
+  3. ..\autoBMAD\epic_automation\dev_agent.py
+  4. ..\autoBMAD\epic_automation\epic_driver.py
+  5. ..\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py
+  6. ..\autoBMAD\epic_automation\qa_agent.py
+  7. ..\autoBMAD\epic_automation\qa_tools_integration.py
+  8. ..\autoBMAD\epic_automation\sm_agent.py
+  9. ..\autoBMAD\epic_automation\state_manager.py
+ 10. ..\autoBMAD\epic_automation\test_automation_agent.py
+ 11. ..\autoBMAD\epic_automation\test_changes.py
+ 12. ..\autoBMAD\epic_automation\test_portability.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:19:39 - error: "run_basedpyright_check" 是未知的导入符号 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:19:39 - error: "run_basedpyright_check" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:20:39 - error: "run_ruff_check" 是未知的导入符号 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:20:39 - error: "run_ruff_check" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:28:34 - error: "Claude" 是未知的导入符号 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:28:34 - error: "Claude" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:28:34 - error: "Claude" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:76:9 - error: "results" 的类型部分未知
+    "results" 为 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:92:13 - error: "append" 的类型部分未知
+    "append" 为 "Unknown | ((object: Unknown, /) -> None)" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:92:31 - error: 无法访问 "str" 类的 "append" 属性
+    属性 "append" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:92:31 - error: 无法访问 "int" 类的 "append" 属性
+    属性 "append" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:92:31 - error: 无法访问 "dict[Unknown, Unknown]" 类的 "append" 属性
+    属性 "append" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:93:20 - error: 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:102:20 - error: 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:129:24 - error: 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:150:30 - error: "total_errors" 可能未绑定 (reportPossiblyUnboundVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:154:16 - error: 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:169:13 - error: "result" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:169:28 - error: `None` 不支持调用 (reportOptionalCall)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:174:17 - error: "file_errors" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:174:31 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:174:31 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:175:35 - error: 参数类型未知
+    实参对应于 "len" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:177:39 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:187:20 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:211:13 - error: "result" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:211:28 - error: `None` 不支持调用 (reportOptionalCall)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:216:17 - error: "file_errors" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:216:31 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:216:31 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:217:35 - error: 参数类型未知
+    实参对应于 "len" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:219:39 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:230:20 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:256:46 - error: "Claude" 是未知的导入符号 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:256:46 - error: "Claude" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:274:13 - error: "claude" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:277:13 - error: 变量 "fixed_files" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:285:17 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:292:17 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:299:46 - error: 部分参数的类型未知
+    实参对应于 "_create_fix_prompt" 函数中的 "errors" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:302:13 - error: "response" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:302:30 - error: "messages" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:302:30 - error: "create" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:315:16 - error: "content" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\code_quality_agent.py:316:54 - error: "content" 类型未知 (reportUnknownMemberType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:151:13 - error: "requirements" 的类型部分未知
+    "requirements" 为 "dict[str, str | list[Unknown] | dict[Unknown, Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:171:25 - error: "acceptance_criteria" 的类型部分未知
+    "acceptance_criteria" 为 "str | list[Unknown] | dict[Unknown, Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:173:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:181:25 - error: "tasks" 的类型部分未知
+    "tasks" 为 "str | list[Unknown] | dict[Unknown, Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:183:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:189:21 - error: "subtasks" 的类型部分未知
+    "subtasks" 为 "str | list[Unknown] | dict[Unknown, Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:191:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:196:17 - error: "dev_notes" 的类型部分未知
+    "dev_notes" 为 "str | list[Unknown] | dict[Unknown, Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:203:17 - error: "testing" 的类型部分未知
+    "testing" 为 "str | list[Unknown] | dict[Unknown, Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:207:56 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "str | list[Unknown] | dict[Unknown, Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:207:103 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "str | list[Unknown] | dict[Unknown, Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:207:139 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "str | list[Unknown] | dict[Unknown, Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:208:20 - error: 返回类型 "dict[str, str | list[Unknown] | dict[Unknown, Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:220:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:223:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:227:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:230:26 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:31:14 - error: "list" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:42:20 - error: "dict" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:142:29 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:142:34 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:211:25 - error: "story_file" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:212:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:214:41 - error: "resolve" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:214:41 - error: 参数类型未知
+    实参对应于 "__new__" 函数中的 "object" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:215:37 - error: "name" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:217:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:225:29 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:230:29 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:242:52 - error: 部分参数的类型未知
+    实参对应于 "__init__" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:247:13 - error: "sort" 的类型部分未知
+    "sort" 为 "Overload[(*, key: None = None, reverse: bool = False) -> None, (*, key: (Unknown) -> (SupportsDunderLT[Any] | SupportsDunderGT[Any]), reverse: bool = False) -> None]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:247:37 - error: "x" 参数的类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:247:40 - error: 该 `lambda` 的返回类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:250:55 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:252:20 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:260:61 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:281:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:291:17 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:295:9 - error: "seen" 的类型部分未知
+    "seen" 为 "set[Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:297:13 - error: "story_id" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:299:13 - error: "key" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:299:19 - error: "split" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:299:19 - error: "strip" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:299:19 - error: "zfill" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:301:17 - error: "add" 的类型部分未知
+    "add" 为 "(element: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:301:26 - error: 参数类型未知
+    实参对应于 "add" 函数中的 "element" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:302:17 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:302:41 - error: 参数类型未知
+    实参对应于 "append" 函数中的 "object" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:304:39 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:306:16 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:436:89 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:557:13 - error: "guidance" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:557:24 - error: "task_guidance" 的类型部分未知
+    "task_guidance" 为 "dict[Unknown, Unknown]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:557:24 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:610:13 - error: "guidance" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:610:24 - error: "task_guidance" 的类型部分未知
+    "task_guidance" 为 "dict[Unknown, Unknown]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:610:24 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:656:13 - error: "guidance" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:656:24 - error: "task_guidance" 的类型部分未知
+    "task_guidance" 为 "dict[Unknown, Unknown]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:656:24 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:699:42 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:764:54 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:764:59 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:799:46 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:815:18 - error: 无法解析导入 "code_quality_agent" (reportMissingImports)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:815:44 - error: "CodeQualityAgent" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:817:13 - error: "quality_agent" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:823:13 - error: "quality_results" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:823:37 - error: "run_quality_gates" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:829:13 - error: "status" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:829:22 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:830:58 - error: 参数类型未知
+    实参对应于 "_update_progress" 函数中的 "status" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:830:66 - error: 参数类型未知
+    实参对应于 "_update_progress" 函数中的 "details" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:839:20 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:846:48 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:862:18 - error: 无法解析导入 "test_automation_agent" (reportMissingImports)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:862:47 - error: "TestAutomationAgent" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:864:13 - error: "test_agent" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:870:13 - error: "test_results" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:870:34 - error: "run_test_automation" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:876:13 - error: "status" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:876:22 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:877:60 - error: 参数类型未知
+    实参对应于 "_update_progress" 函数中的 "status" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:877:68 - error: 参数类型未知
+    实参对应于 "_update_progress" 函数中的 "details" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:886:20 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:914:72 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:970:41 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:985:34 - error: "stories" 的类型部分未知
+    "stories" 为 "list[Unknown]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:985:34 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:123:15 - error: "Path" 类型不匹配声明的 "str" 类型
+    "Path" 与 "str" 不兼容 (reportAssignmentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:128:16 - error: "exists" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:128:24 - error: 无法访问 "str" 类的 "exists" 属性
+    属性 "exists" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:132:37 - error: "str" 类型的实参无法赋值给函数 "create_backup" 中 "Path" 类型的形参 "db_path"
+    "str" 与 "Path" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:194:30 - error: "parent" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:194:30 - error: 参数类型未知
+    实参对应于 "__new__" 函数中的 "object" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:194:38 - error: 无法访问 "str" 类的 "parent" 属性
+    属性 "parent" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:194:50 - error: "stem" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:194:58 - error: 无法访问 "str" 类的 "stem" 属性
+    属性 "stem" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py:198:32 - error: "str" 类型的实参无法赋值给函数 "rollback_migration" 中 "Path" 类型的形参 "db_path"
+    "str" 与 "Path" 不兼容 (reportArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:16:10 - error: 无法解析导入 "qa_tools_integration" (reportMissingImports)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:16:38 - error: "QAAutomationWorkflow" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:16:60 - error: "QAStatus" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:36:35 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:36:51 - error: 无法访问 "Literal['WAIVED']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:42:5 - error: 不能重新定义常量 "QA_TOOLS_AVAILABLE"（全大写名称） (reportConstantRedefinition)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:108:21 - error: "tool_results" 的类型部分未知
+    "tool_results" 为 "dict[str, str | Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:110:43 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:110:57 - error: 无法访问 "Literal['FAIL']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:114:64 - error: 部分参数的类型未知
+    实参对应于 "_calculate_qa_result" 函数中的 "tool_results" 形参
+    参数类型为 "Dict[str, Any] | dict[str, str | Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:146:13 - error: "data" 的类型部分未知
+    "data" 为 "dict[str, str | list[Unknown] | None]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:215:45 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:216:24 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:216:52 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:218:20 - error: 返回类型 "dict[str, str | list[Unknown] | None]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:383:35 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:383:51 - error: 无法访问 "Literal['WAIVED']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:412:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:415:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:419:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:422:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:425:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:429:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:432:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:441:34 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:441:48 - error: 无法访问 "Literal['FAIL']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:444:52 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:445:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:451:52 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:452:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:454:28 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:457:36 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:457:54 - error: 无法访问 "Literal['CONCERNS']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:460:52 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:461:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:466:52 - error: "get" 的类型部分未知
+    "get" 为 "Overload[(key: Unknown, default: None = None, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:467:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:472:9 - error: "all_failures" 的类型部分未知
+    "all_failures" 为 "list[Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:473:9 - error: "all_warnings" 的类型部分未知
+    "all_warnings" 为 "list[Unknown]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:482:34 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:482:48 - error: 无法访问 "Literal['PASS']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:484:36 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:484:54 - error: 无法访问 "Literal['CONCERNS']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:486:36 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:486:50 - error: 无法访问 "Literal['FAIL']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:488:36 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:488:52 - error: 无法访问 "Literal['WAIVED']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:499:50 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:499:64 - error: 无法访问 "Literal['FAIL']" 类的 "value" 属性
+    属性 "value" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:501:22 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:503:9 - error: "result" 的类型部分未知
+    "result" 为 "dict[str, Any | bool | int | list[Unknown] | Dict[str, Any] | dict[str, int | Any | str]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py:518:16 - error: 返回类型 "dict[str, Any | bool | int | list[Unknown] | Dict[str, Any] | dict[str, int | Any | str]]" 部分未知 (reportUnknownVariableType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:78:9 - error: "result" 的类型部分未知
+    "result" 为 "dict[str, QAStatus | str | int | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:97:106 - error: "int | None" 类型的实参无法赋值给函数 "_parse_basedpyright_output" 中 "int" 类型的形参 "returncode"
+    "int | None" 类型与 "int" 类型不兼容
+      "None" 与 "int" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:115:103 - error: "int | None" 类型的实参无法赋值给函数 "_parse_basedpyright_output" 中 "int" 类型的形参 "returncode"
+    "int | None" 类型与 "int" 类型不兼容
+      "None" 与 "int" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:139:16 - error: 返回类型 "dict[str, QAStatus | str | int | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:164:17 - error: 返回类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:164:29 - error: "data" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:164:29 - error: "data" 参数缺少类型注解 (reportMissingParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:166:28 - error: "decode" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:166:28 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:169:28 - error: "decode" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:169:28 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:196:13 - error: 变量 "stdout" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:316:9 - error: "result" 的类型部分未知
+    "result" 为 "dict[str, QAStatus | str | int | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:338:24 - error: 返回类型 "dict[str, QAStatus | str | int | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:346:78 - error: "int | None" 类型的实参无法赋值给函数 "_parse_test_output" 中 "int" 类型的形参 "returncode"
+    "int | None" 类型与 "int" 类型不兼容
+      "None" 与 "int" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:372:16 - error: 返回类型 "dict[str, QAStatus | str | int | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:403:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:405:20 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:431:17 - error: 返回类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:431:29 - error: "data" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:431:29 - error: "data" 参数缺少类型注解 (reportMissingParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:433:28 - error: "decode" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:433:28 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:436:28 - error: "decode" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:436:28 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:589:9 - error: "summary" 的类型部分未知
+    "summary" 为 "dict[str, str | dict[str, Any] | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py:624:16 - error: 返回类型 "dict[str, str | dict[str, Any] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:78:13 - error: "metadata" 的类型部分未知
+    "metadata" 为 "dict[str, str | list[Unknown] | None]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:107:20 - error: 返回类型 "dict[str, str | list[Unknown] | None]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:128:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:131:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:136:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:138:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:143:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:145:9 - error: "result" 的类型部分未知
+    "result" 为 "dict[str, bool | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:146:26 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:156:16 - error: 返回类型 "dict[str, bool | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:212:13 - error: "story_data" 的类型部分未知
+    "story_data" 为 "dict[str, str | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:222:20 - error: 返回类型 "dict[str, str | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:144:20 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:145:24 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:146:20 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:146:35 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:147:20 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:148:24 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:182:29 - error: 返回类型 "Unknown | dict[Unknown, Unknown | dict[Unknown, Unknown] | list[Unknown | dict[Unknown, Unknown] | list[Unknown]]] | list[Unknown | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:182:44 - error: "obj" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:182:44 - error: "obj" 参数缺少类型注解 (reportMissingParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:183:40 - error: 参数类型未知
+    实参对应于 "hasattr" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:184:40 - error: "value" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:184:40 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:186:40 - error: 返回类型 "dict[Unknown, Unknown | dict[Unknown, Unknown] | list[Unknown | dict[Unknown, Unknown] | list[Unknown]]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:186:59 - error: 参数类型未知
+    实参对应于 "clean_for_json" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:186:66 - error: "k" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:186:69 - error: "v" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:188:40 - error: 返回类型 "list[Unknown | dict[Unknown, Unknown | dict[Unknown, Unknown] | list[Unknown]] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:188:56 - error: 参数类型未知
+    实参对应于 "clean_for_json" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:188:63 - error: "v" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:190:40 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:192:25 - error: "cleaned_qa_result" 的类型部分未知
+    "cleaned_qa_result" 为 "Unknown | dict[str, Unknown | dict[str, Unknown] | list[Unknown | dict[str, Unknown] | list[Unknown]]] | list[Unknown | dict[str, Unknown | dict[str, Unknown] | list[Unknown]] | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:242:58 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:242:73 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:298:40 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:298:45 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:307:21 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:342:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:344:28 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:346:24 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:352:59 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:352:64 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:364:21 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:400:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:402:28 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:404:24 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:443:34 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:452:21 - error: 返回类型 "dict[Unknown, Unknown]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:469:28 - error: 返回类型 "dict[Unknown, Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:471:24 - error: 返回类型 "dict[Unknown, Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:477:42 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:508:14 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:563:14 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:609:64 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:609:69 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:621:21 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:638:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:649:28 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:651:24 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:657:61 - error: 在 "list" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:657:66 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:669:21 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:686:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:696:28 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:698:24 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:708:26 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:763:28 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:764:25 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:833:28 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:834:32 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:835:35 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:836:32 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:837:35 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:838:34 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:924:54 - error: 在 "dict" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:924:69 - error: `Union` 的替代语法需要 Python 3.10 或更高版本 (reportGeneralTypeIssues)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:15:6 - error: 无法解析导入 "autoBMAD.epic_automation.state_manager" (reportMissingImports)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:15:52 - error: "StateManager" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:19:10 - error: 无法解析导入 "fixtest_workflow.test_automation_workflow" (reportMissingImports)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:19:59 - error: "run_pytest_execution" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:20:10 - error: 无法解析导入 "fixtest_workflow.debugpy_integration" (reportMissingImports)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:21:9 - error: "start_debugpy_listener" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:22:9 - error: "attach_debugpy" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:23:9 - error: "collect_debug_info" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:34:34 - error: "Claude" 是未知的导入符号 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:34:34 - error: "Claude" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:34:34 - error: "Claude" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:44:9 - error: "state_manager" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:56:9 - error: "state_manager" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:88:9 - error: "results" 的类型部分未知
+    "results" 为 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:105:13 - error: "append" 的类型部分未知
+    "append" 为 "Unknown | ((object: Unknown, /) -> None)" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:105:31 - error: 无法访问 "str" 类的 "append" 属性
+    属性 "append" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:105:31 - error: 无法访问 "int" 类的 "append" 属性
+    属性 "append" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:105:31 - error: 无法访问 "dict[Unknown, Unknown]" 类的 "append" 属性
+    属性 "append" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:106:20 - error: 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:123:20 - error: 返回类型 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:128:59 - error: 部分参数的类型未知
+    实参对应于 "_run_initial_tests" 函数中的 "results" 形参
+    参数类型为 "dict[str, str | int | dict[Unknown, Unknown] | list[Unknown]]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:174:27 - error: "state_manager" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:174:27 - error: "add_test_phase_record" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:282:19 - error: `None` 不支持调用 (reportOptionalCall)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:285:13 - error: "attach_success" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:285:36 - error: `None` 不支持调用 (reportOptionalCall)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:293:25 - error: "debug_info" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:293:38 - error: `None` 不支持调用 (reportOptionalCall)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:296:31 - error: "state_manager" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:296:31 - error: "add_test_phase_record" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:335:17 - error: 变量 "stdout" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:335:25 - error: 变量 "stderr" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:362:16 - error: 返回类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:385:21 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:396:20 - error: 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:413:46 - error: "Claude" 是未知的导入符号 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:413:46 - error: "Claude" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:431:13 - error: "claude" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:444:17 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:452:43 - error: 部分参数的类型未知
+    实参对应于 "join" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:460:13 - error: "response" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:462:36 - error: "content" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:467:13 - error: "response_text" 的类型部分未知
+    "response_text" 为 "Unknown | str" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:467:29 - error: "content" 的类型部分未知
+    "content" 为 "list[Unknown]" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:467:29 - error: "text" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:467:68 - error: "content" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:467:101 - error: "content" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:467:101 - error: 参数类型未知
+    实参对应于 "__new__" 函数中的 "object" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:473:13 - error: "lines" 的类型部分未知
+    "lines" 为 "list[str] | Unknown" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:473:21 - error: "split" 的类型部分未知
+    "split" 为 "Unknown | ((sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[str])" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:475:27 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[str] | Unknown" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:476:17 - error: "line" 的类型部分未知
+    "line" 为 "str | Unknown" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:476:24 - error: "strip" 的类型部分未知
+    "strip" 为 "((chars: str | None = None, /) -> str) | Unknown" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:477:20 - error: "startswith" 的类型部分未知
+    "startswith" 为 "((prefix: str | tuple[str, ...], start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> bool) | Unknown" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:479:21 - error: "file_path" 的类型部分未知
+    "file_path" 为 "str | Unknown" 类型 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:479:33 - error: "replace" 的类型部分未知
+    "replace" 为 "((old: str, new: str, count: SupportsIndex = -1, /) -> str) | Unknown" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:479:33 - error: "strip" 的类型部分未知
+    "strip" 为 "((chars: str | None = None, /) -> str) | Unknown" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:483:35 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[str] | Unknown" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:486:33 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[str] | Unknown" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:493:35 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[str] | Unknown" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:493:50 - error: "strip" 的类型部分未知
+    "strip" 为 "((chars: str | None = None, /) -> str) | Unknown" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:493:50 - error: "startswith" 的类型部分未知
+    "startswith" 为 "((prefix: str | tuple[str, ...], start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> bool) | Unknown" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:494:25 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:499:43 - error: 部分参数的类型未知
+    实参对应于 "exists" 函数中的 "path" 形参
+    参数类型为 "str | Unknown" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:500:34 - error: 部分参数的类型未知
+    实参对应于 "__new__" 函数中的 "args" 形参
+    参数类型为 "str | Unknown" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:500:66 - error: 部分参数的类型未知
+    实参对应于 "join" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:528:13 - error: "debug_info" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:528:26 - error: `None` 不支持调用 (reportOptionalCall)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:530:19 - error: "state_manager" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:530:19 - error: "add_test_phase_record" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:538:20 - error: 返回类型未知 (reportUnknownVariableType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:48:9 - error: "workflow" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:57:9 - error: "bp_available" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:57:24 - error: "basedpyright_runner" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:57:24 - error: "available" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:58:9 - error: "ft_available" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:58:24 - error: "fixtest_runner" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:58:24 - error: "available" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:82:13 - error: "driver" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:83:13 - error: "stories" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:83:23 - error: "parse_epic" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:85:42 - error: 参数类型未知
+    实参对应于 "len" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:86:17 - error: "story" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:87:62 - error: 参数类型未知
+    实参对应于 "__new__" 函数中的 "args" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:109:13 - error: "agent" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:133:13 - error: "result" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:133:28 - error: "execute" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:139:35 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:140:36 - error: "get" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_changes.py:141:42 - error: "get" 类型未知 (reportUnknownMemberType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:29:16 - error: "argparse" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:46:9 - error: 变量 "test_args" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:50:25 - error: 参数类型未知
+    实参对应于 "callable" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:66:9 - error: "driver" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:74:16 - error: "epic_path" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:75:16 - error: "max_iterations" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:76:16 - error: "retry_failed" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:77:16 - error: "verbose" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:78:16 - error: "concurrent" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:173:9 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:204:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:235:13 - error: "driver" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:244:20 - error: "max_iterations" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:275:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:278:13 - error: "append" 的类型部分未知
+    "append" 为 "(object: Unknown, /) -> None" 类型 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:285:24 - error: "_" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:285:27 - error: "result" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:286:17 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:288:9 - error: "test_name" 类型未知 (reportUnknownVariableType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_portability.py:288:20 - error: "result" 类型未知 (reportUnknownVariableType)
+410 errors, 0 warnings, 0 notes
+

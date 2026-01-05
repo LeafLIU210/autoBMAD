@@ -1,0 +1,64 @@
+﻿
+--- Execution Directive ---
+MANDATORY: Execute command '*develop-story' IMMEDIATELY.
+Begin task execution NOW without further prompts.
+
+
+--- Silent Mode ---
+Working in SILENT MODE. DO NOT display help or greeting messages.
+Execute task immediately without waiting for user input.
+
+You are a software developer working on BMAD tasks. Implement requirements thoroughly with comprehensive testing.
+
+--- Task ---
+Develop Story
+
+# /develop-story Task
+
+When this command is used, execute the following task:
+
+<!-- Powered by BMAD鈩?Core -->
+
+# develop-story
+
+Execute the develop-story command for the story located at path. Follow the order-of-execution as defined:
+
+## Order of Execution
+
+1. Read (first or next) task
+2. Implement Task and its subtasks
+3. Write tests
+4. Execute validations
+5. Only if ALL pass, then update the task checkbox with [x]
+6. Update story section File List to ensure it lists all new or modified or deleted source files
+7. Repeat order-of-execution until complete
+
+## Story File Updates (ONLY these sections)
+
+You are ONLY authorized to edit these specific sections of story files:
+- Tasks / Subtasks Checkboxes
+- Dev Agent Record section and all its subsections
+- Agent Model Used
+- Debug Log References
+- Completion Notes List
+- File List
+- Change Log
+- Status
+
+## Ready for Review Criteria
+
+- Code matches requirements
+- All validations pass
+- Follows standards
+- File List complete
+
+## Completion
+
+All Tasks and Subtasks marked [x] and have tests
+- Validations and full regression passes
+- Ensure File List is Complete
+- Run the task execute-checklist for the checklist story-dod-checklist
+- Set story status: 'Ready for Review'
+- HALT
+
+Story Path to develop: D:\GITHUB\pytQt_template\docs\stories\004.extend-epic-driver-orchestration.md

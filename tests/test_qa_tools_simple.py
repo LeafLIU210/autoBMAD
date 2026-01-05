@@ -6,8 +6,6 @@ into BMAD development cycle.
 """
 
 import pytest
-import subprocess
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from src.qa_tools_integration import (

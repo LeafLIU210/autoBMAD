@@ -7,11 +7,10 @@ Reads epic markdown files and drives SM-Dev-QA cycle.
 
 import argparse
 import asyncio
-import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 import logging
 
 # Configure logging
@@ -23,14 +22,40 @@ logger = logging.getLogger(__name__)
 
 
 class EpicDriver:
-    """Main orchestrator for BMAD epic automation."""
+    """Main orchestrator for complete BMAD workflow."""
+
+    # Class attribute type annotations for basedpyright strict mode
+    epic_path: Path
+    epic_id: str
+    tasks_dir: Path
+    stories: list
+    current_story_index: int
+    max_iterations: int
+    retry_failed: bool
+    verbose: bool
+    concurrent: bool
+    use_claude: bool
+    source_dir: str
+    test_dir: str
+    skip_quality: bool
+    skip_tests: bool
+    task_guidance: dict
+    max_quality_iterations: int
+    max_test_iterations: int
+    sm_agent: Any
+    dev_agent: Any
+    qa_agent: Any
+    state_manager: Any
+    logger: Any
 
     def __init__(self, epic_path: str, tasks_dir: str = ".bmad-core/tasks",
                  max_iterations: int = 3, retry_failed: bool = False,
                  verbose: bool = False, concurrent: bool = False,
-                 use_claude: bool = True):
+                 use_claude: bool = True, source_dir: str = "src",
+                 test_dir: str = "tests", skip_quality: bool = False,
+                 skip_tests: bool = False):
         """
-        Initialize EpicDriver.
+        Initialize epic driver with quality gate options.
 
         Args:
             epic_path: Path to the epic markdown file
@@ -40,8 +65,13 @@ class EpicDriver:
             verbose: Enable detailed logging output
             concurrent: Process stories in parallel (experimental)
             use_claude: Use Claude Code CLI for real implementation (default True)
+            source_dir: Source code directory for QA checks (default: "src")
+            test_dir: Test directory for QA checks (default: "tests")
+            skip_quality: Skip code quality gates (default: False)
+            skip_tests: Skip test automation (default: False)
         """
         self.epic_path = Path(epic_path)
+        self.epic_id = str(epic_path)  # Use epic path as epic_id
         self.tasks_dir = Path(tasks_dir)
         self.stories = []
         self.current_story_index = 0
@@ -50,7 +80,15 @@ class EpicDriver:
         self.verbose = verbose
         self.concurrent = concurrent
         self.use_claude = use_claude
+        self.source_dir = source_dir
+        self.test_dir = test_dir
+        self.skip_quality = skip_quality
+        self.skip_tests = skip_tests
         self.task_guidance = {}
+
+        # Quality gate and test automation iteration limits
+        self.max_quality_iterations = 3
+        self.max_test_iterations = 5
 
         # Import agent classes
         try:
@@ -64,41 +102,44 @@ class EpicDriver:
             self.qa_agent = QAAgent()
             self.state_manager = StateManager()
         except ImportError as e:
+            # Create a basic logger before exiting
+            logging.basicConfig(
+                level=logging.ERROR,
+                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            logger = logging.getLogger(__name__)
             logger.error(f"Failed to import agent classes: {e}")
             sys.exit(1)
 
+        # Initialize logger
+        self.logger = self._setup_logging()
+
+    def _setup_logging(self) -> logging.Logger:
+        """Set up logging configuration."""
+        logger = logging.getLogger(f"epic_driver.{self.epic_path.name}")
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            logger.setLevel(logging.DEBUG if self.verbose else logging.INFO)
+        return logger
+
     async def load_task_guidance(self) -> None:
         """
-        Load task guidance from .bmad-core/tasks/*.md files.
+        Load task guidance files from tasks directory.
 
-        Reads task files and extracts prompt knowledge for agents.
+        This method can be extended to load additional task guidance
+        if needed in the future. Currently, it's a placeholder to
+        maintain compatibility with the workflow orchestration.
         """
-        logger.info(f"Loading task guidance from {self.tasks_dir}")
+        # Placeholder for future task guidance loading
+        # Currently, task guidance is loaded implicitly through agent initialization
+        self.logger.debug("Task guidance loading completed")
 
-        if not self.tasks_dir.exists():
-            logger.warning(f"Tasks directory not found: {self.tasks_dir}")
-            return
-
-        task_files = {
-            "create-next-story": "sm_agent",
-            "develop-story": "dev_agent",
-            "review-story": "qa_agent"
-        }
-
-        for task_file, agent_name in task_files.items():
-            task_path = self.tasks_dir / f"{task_file}.md"
-            if task_path.exists():
-                try:
-                    with open(task_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        self.task_guidance[agent_name] = content
-                        logger.info(f"Loaded {task_file}.md for {agent_name}")
-                except Exception as e:
-                    logger.error(f"Failed to load {task_path}: {e}")
-            else:
-                logger.warning(f"Task file not found: {task_path}")
-
-    def parse_epic(self) -> List[Dict[str, Any]]:
+    def parse_epic(self) -> list[dict[str, Any]]:
         """
         Parse epic markdown file and extract story information.
 
@@ -156,7 +197,7 @@ class EpicDriver:
                 story_file_map = {}
                 for story_file in story_files:
                     # Extract story number from filename: 001.xxx.md -> 001
-                    match = re.match(r'^(\d{3})\.', story_file.name)
+                    match = re.match(r'^(\d+(?:\.\d+)?)\.', story_file.name)
                     if match:
                         story_number = match.group(1)
                         story_file_map[story_number] = story_file
@@ -164,7 +205,7 @@ class EpicDriver:
                 # Match story IDs to files
                 for story_id in story_ids:
                     # Extract story number: "001" or "001: Title" -> "001"
-                    story_number = story_id.split(':')[0].strip().zfill(3)
+                    story_number = story_id.split(':')[0].strip()
 
                     if story_number in story_file_map:
                         story_file = story_file_map[story_number]
@@ -177,6 +218,17 @@ class EpicDriver:
                         logger.info(f"Found story: {story_id} at {story_file}")
                     else:
                         # Story file not found
+                        # Try to create missing story file
+                        story_filename = f"{story_number}.md"
+                        story_path = stories_dir / story_filename
+                        if self._create_missing_story(story_path, story_id):
+                            stories.append({
+                                'id': story_id,
+                                'path': str(story_path.resolve()),
+                                'name': story_path.name
+                            })
+                            found_stories.append(story_id)
+                            logger.info(f"Created story: {story_id} at {story_path}")
                         logger.warning(f"Story file not found for ID: {story_id} (looking for {stories_dir}/*{story_number}*.md)")
 
             else:
@@ -205,7 +257,7 @@ class EpicDriver:
             logger.debug(traceback.format_exc())
             return []
 
-    def _extract_story_ids_from_epic(self, content: str) -> List[str]:
+    def _extract_story_ids_from_epic(self, content: str) -> list[str]:
         """
         Extract story IDs from epic document.
 
@@ -222,7 +274,7 @@ class EpicDriver:
         story_ids = []
 
         # Pattern 1: "### Story X: Title"
-        pattern1 = r'### Story\s+(\d+)\s*:\s*(.+?)(?:\n|$)'
+        pattern1 = r'### Story\s+(\d+(?:\.\d+)?)\s*:\s*(.+?)(?:\n|\$)'
         matches1 = re.findall(pattern1, content, re.MULTILINE)
         for story_num, title in matches1:
             story_id = f"{story_num}: {title}"
@@ -255,11 +307,11 @@ class EpicDriver:
 
     def _create_missing_story(self, story_path: Path, story_id: str) -> bool:
         """
-        Create a missing story file with a basic template.
+        Create a missing story file by extracting content from epic.
 
         Args:
             story_path: Path where the story file should be created
-            story_id: Story identifier from the epic
+            story_id: Story identifier from the epic (e.g., "1.1: Title")
 
         Returns:
             True if successful, False otherwise
@@ -268,12 +320,19 @@ class EpicDriver:
             # Create directory if it doesn't exist
             story_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Extract story title from the ID
-            # Format: "001: User Registration API" -> Title: "User Registration API"
-            title = story_id.split(':', 1)[1].strip() if ':' in story_id else story_id
+            # Read the epic file and extract story content
+            with open(self.epic_path, 'r', encoding='utf-8') as f:
+                epic_content = f.read()
 
-            # Create basic story template
-            story_content = f"""# Story {story_id}
+            # Extract story section from epic
+            story_section = self._extract_story_section_from_epic(epic_content, story_id)
+
+            if story_section:
+                # Use extracted content
+                story_content = story_section
+            else:
+                # Fallback to template if extraction fails
+                story_content = f"""# Story {story_id}
 
 **Epic**: {self.epic_path.name}
 
@@ -343,7 +402,7 @@ class EpicDriver:
 *Populated during implementation*
 
 ### Agent Model Used
-{{agent_model_name_version}}
+Claude Code 2.0.73
 
 ### Debug Log References
 *Links to debug logs*
@@ -373,6 +432,113 @@ class EpicDriver:
         except Exception as e:
             logger.error(f"Failed to create story file {story_path}: {e}")
             return False
+
+    def _extract_story_section_from_epic(self, epic_content: str, story_id: str) -> str | None:
+        """
+        Extract story section from epic document.
+
+        Args:
+            epic_content: Full content of the epic file
+            story_id: Story identifier (e.g., "1.1: Title")
+
+        Returns:
+            Extracted story section as markdown, or None if not found
+        """
+        try:
+            # Extract story number and title
+            story_num = story_id.split(':')[0].strip()
+            story_title = story_id.split(':', 1)[1].strip() if ':' in story_id else ""
+
+            # Look for the story section in epic
+            # Pattern: ### Story X.Y: Title
+            pattern = rf'### Story\s+{re.escape(story_num)}\s*:\s*{re.escape(story_title)}.*?(?=^###|\Z)'
+            match = re.search(pattern, epic_content, re.MULTILINE | re.DOTALL)
+
+            if match:
+                story_text = match.group(0).strip()
+                
+                # Convert to story format
+                story_content = f"""# Story {story_id}
+
+**Epic**: {self.epic_path.name}
+
+---
+
+## Status
+**Status**: Draft
+
+---
+
+{story_text}
+
+---
+
+## Dev Notes
+### Implementation Notes
+- Key technical details
+- Architecture decisions
+- Dependencies
+
+### Technical Details
+- Specific technical implementation guidance
+- API specifications
+- Data models
+- Component structure
+
+---
+
+## Testing
+### Testing Standards
+- Framework used
+- Coverage requirements
+- Test types
+
+### Specific Testing Requirements
+- Unit tests
+- Integration tests
+- E2E tests
+
+---
+
+## Change Log
+| Date | Version | Description | Author |
+|------|---------|-------------|--------|
+| 2026-01-04 | 1.0 | Extracted from epic | Epic Driver |
+
+---
+
+## Dev Agent Record
+*Populated during implementation*
+
+### Agent Model Used
+Claude Code 2.0.73
+
+### Debug Log References
+*Links to debug logs*
+
+### Completion Notes List
+*Implementation notes*
+
+### File List
+*Files created/modified*
+
+### Change Log
+*Detailed change log*
+
+---
+
+## QA Results
+*Populated by QA agent*
+"""
+                return story_content
+            else:
+                logger.warning(f"Could not extract story section for {story_id}")
+                return None
+
+        except Exception as e:
+            logger.error(f"Failed to extract story section: {e}")
+            return None
+
 
     async def execute_sm_phase(self, story_path: str) -> bool:
         """
@@ -498,8 +664,8 @@ class EpicDriver:
                 story_content,
                 task_guidance=guidance,
                 use_qa_tools=True,
-                source_dir="src",
-                test_dir="tests"
+                source_dir=self.source_dir,
+                test_dir=self.test_dir
             )
 
             # Update state with QA result
@@ -530,7 +696,7 @@ class EpicDriver:
             )
             return False
 
-    async def process_story(self, story: Dict[str, Any]) -> bool:
+    async def process_story(self, story: dict[str, Any]) -> bool:
         """
         Process a single story through SM-Dev-QA cycle.
 
@@ -595,23 +761,251 @@ class EpicDriver:
             )
             return False
 
-    async def run(self) -> bool:
+    async def execute_sm_dev_qa_cycle(self, stories: list[dict[str, Any]]) -> bool:
         """
-        Main execution loop for the epic driver.
+        Execute SM-Dev-QA cycle for all stories.
+
+        Args:
+            stories: List of story dictionaries
 
         Returns:
             True if all stories completed successfully, False otherwise
         """
-        logger.info("Starting Epic Driver")
+        self.logger.info(f"Starting SM-Dev-QA cycle for {len(stories)} stories")
+
+        # Initialize epic processing record
+        await self._initialize_epic_processing(len(stories))
+
+        success_count = 0
+        for story in stories:
+            if self.verbose:
+                self.logger.debug(f"Processing story: {story['id']}")
+
+            if await self.process_story(story):
+                success_count += 1
+            elif not self.retry_failed:
+                if self.verbose:
+                    self.logger.debug(f"Continuing to next story after failure: {story['id']}")
+
+        # Update progress
+        await self._update_progress('sm_dev_qa', 'completed', {
+            'completed_stories': success_count,
+            'total_stories': len(stories)
+        })
+
+        self.logger.info(f"SM-Dev-QA cycle complete: {success_count}/{len(stories)} stories succeeded")
+        return success_count == len(stories)
+
+    async def execute_quality_gates(self) -> dict[str, Any]:
+        """
+        Execute quality gates after SM-Dev-QA completion.
+
+        Returns:
+            Dict with quality gate results and status
+        """
+        self.logger.info("Starting quality gates")
+
+        # Check if quality gates are skipped
+        if self.skip_quality:
+            self.logger.info("Quality gates skipped via CLI flag")
+            await self._update_progress('quality_gates', 'skipped', {})
+            return {'status': 'skipped'}
+
+        try:
+            from code_quality_agent import CodeQualityAgent
+
+            quality_agent = CodeQualityAgent(
+                state_manager=self.state_manager,
+                epic_id=self.epic_id,
+                skip_quality=self.skip_quality
+            )
+
+            quality_results = await quality_agent.run_quality_gates(
+                source_dir=self.source_dir,
+                skip_quality=self.skip_quality
+            )
+
+            # Update progress
+            status = quality_results.get('status', 'failed')
+            await self._update_progress('quality_gates', status, quality_results)
+
+            if status == 'completed':
+                self.logger.info("Quality gates passed successfully")
+            elif status == 'skipped':
+                self.logger.info("Quality gates skipped via CLI flag")
+            else:
+                self.logger.warning(f"Quality gates completed with status: {status}")
+
+            return quality_results
+
+        except Exception as e:
+            self.logger.error(f"Quality gates execution failed: {e}", exc_info=True)
+            await self._update_progress('quality_gates', 'failed', {'error': str(e)})
+            return {'status': 'failed', 'error': str(e)}
+
+    async def execute_test_automation(self) -> dict[str, Any]:
+        """
+        Execute test automation after quality gates.
+
+        Returns:
+            Dict with test automation results and status
+        """
+        self.logger.info("Starting test automation")
+
+        # Check if test automation is skipped
+        if self.skip_tests:
+            self.logger.info("Test automation skipped via CLI flag")
+            await self._update_progress('test_automation', 'skipped', {})
+            return {'status': 'skipped'}
+
+        try:
+            from test_automation_agent import TestAutomationAgent
+
+            test_agent = TestAutomationAgent(
+                state_manager=self.state_manager,
+                epic_id=self.epic_id,
+                skip_tests=self.skip_tests
+            )
+
+            test_results = await test_agent.run_test_automation(
+                test_dir=self.test_dir,
+                skip_tests=self.skip_tests
+            )
+
+            # Update progress
+            status = test_results.get('status', 'failed')
+            await self._update_progress('test_automation', status, test_results)
+
+            if status == 'completed':
+                self.logger.info("Test automation completed successfully")
+            elif status == 'skipped':
+                self.logger.info("Test automation skipped via CLI flag")
+            else:
+                self.logger.warning(f"Test automation completed with status: {status}")
+
+            return test_results
+
+        except Exception as e:
+            self.logger.error(f"Test automation execution failed: {e}", exc_info=True)
+            await self._update_progress('test_automation', 'failed', {'error': str(e)})
+            return {'status': 'failed', 'error': str(e)}
+
+    def _validate_phase_gates(self) -> bool:
+        """
+        Validate that all prerequisites are met before each phase.
+
+        Returns:
+            True if all validations pass, False otherwise
+        """
+        # Validate source directory exists
+        if not self.skip_quality:
+            if not Path(self.source_dir).exists():
+                self.logger.error(f"Source directory not found: {self.source_dir}")
+                return False
+
+        # Validate test directory exists
+        if not self.skip_tests:
+            if not Path(self.test_dir).exists():
+                self.logger.error(f"Test directory not found: {self.test_dir}")
+                return False
+
+        return True
+
+    async def _update_progress(self, phase: str, status: str, details: dict[str, Any]) -> None:
+        """
+        Update progress tracking in state manager.
+
+        Args:
+            phase: Phase name (sm_dev_qa, quality_gates, test_automation)
+            status: Phase status (pending, in_progress, completed, failed, skipped)
+            details: Additional phase details
+        """
+        try:
+            # Update epic status based on phase
+            if phase == 'sm_dev_qa':
+                # For SM-Dev-QA, we don't track in epic_processing, it's tracked in stories table
+                pass
+            elif phase == 'quality_gates':
+                await self.state_manager.update_epic_status(
+                    epic_id=self.epic_id,
+                    file_path=str(self.epic_path),
+                    status='in_progress',
+                    quality_phase_status=status,
+                    quality_phase_errors=details.get('total_errors', 0)
+                )
+            elif phase == 'test_automation':
+                await self.state_manager.update_epic_status(
+                    epic_id=self.epic_id,
+                    file_path=str(self.epic_path),
+                    status='in_progress',
+                    test_phase_status=status,
+                    test_phase_failures=details.get('failed_count', 0)
+                )
+
+            self.logger.debug(f"Updated {phase} progress: {status}")
+        except Exception as e:
+            self.logger.error(f"Failed to update progress for {phase}: {e}")
+
+    async def _initialize_epic_processing(self, total_stories: int) -> None:
+        """
+        Initialize epic processing record.
+
+        Args:
+            total_stories: Total number of stories in epic
+        """
+        try:
+            await self.state_manager.update_epic_status(
+                epic_id=self.epic_id,
+                file_path=str(self.epic_path),
+                status="in_progress",
+                total_stories=total_stories,
+                completed_stories=0,
+                quality_phase_status="pending",
+                test_phase_status="pending"
+            )
+            self.logger.debug(f"Initialized epic processing for {total_stories} stories")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize epic processing: {e}")
+
+    def _generate_final_report(self) -> dict[str, Any]:
+        """
+        Generate final epic processing report.
+
+        Returns:
+            Dict with final epic results
+        """
+        return {
+            'epic_id': self.epic_id,
+            'status': 'completed',
+            'phases': {
+                'sm_dev_qa': 'completed',
+                'quality_gates': 'skipped' if self.skip_quality else 'completed',
+                'test_automation': 'skipped' if self.skip_tests else 'completed'
+            },
+            'total_stories': len(self.stories),
+            'timestamp': asyncio.get_event_loop().time()
+        }
+
+    async def run(self) -> bool:
+        """
+        Execute complete epic processing workflow.
+
+        Returns:
+            True if epic completed successfully, False otherwise
+        """
+        self.logger.info("Starting Epic Driver - Complete 5-Phase Workflow")
 
         # Log configuration
         if self.verbose:
-            logger.debug(f"Configuration: max_iterations={self.max_iterations}, "
-                        f"retry_failed={self.retry_failed}, verbose={self.verbose}, "
-                        f"concurrent={self.concurrent}")
+            self.logger.debug(
+                f"Configuration: max_iterations={self.max_iterations}, "
+                f"retry_failed={self.retry_failed}, verbose={self.verbose}, "
+                f"concurrent={self.concurrent}, skip_quality={self.skip_quality}, "
+                f"skip_tests={self.skip_tests}"
+            )
 
         if self.concurrent:
-            logger.warning("Concurrent processing is experimental and not yet implemented")
+            self.logger.warning("Concurrent processing is experimental and not fully tested with quality gates")
 
         try:
             # Load task guidance
@@ -620,44 +1014,79 @@ class EpicDriver:
             # Parse epic
             stories = self.parse_epic()
             if not stories:
-                logger.error("No stories found in epic")
+                self.logger.error("No stories found in epic")
                 return False
 
-            # Process each story
-            success_count = 0
-            for story in stories:
-                if self.verbose:
-                    logger.debug(f"Processing story: {story['id']}")
+            # Validate phase gates
+            if not self._validate_phase_gates():
+                self.logger.error("Phase gate validation failed")
+                return False
 
-                if await self.process_story(story):
-                    success_count += 1
-                elif not self.retry_failed:
-                    # If retry is disabled and a story fails, we could continue or stop
-                    # For now, we'll continue to the next story
-                    if self.verbose:
-                        logger.debug(f"Continuing to next story after failure: {story['id']}")
+            # Phase 1: SM-Dev-QA Cycle
+            self.logger.info("=== Phase 1: SM-Dev-QA Cycle ===")
+            await self._update_progress('sm_dev_qa', 'in_progress', {})
+            sm_dev_qa_success = await self.execute_sm_dev_qa_cycle(stories)
 
-            # Summary
-            total_stories = len(stories)
-            logger.info(f"Processing complete: {success_count}/{total_stories} stories succeeded")
+            if not sm_dev_qa_success:
+                self.logger.error("SM-Dev-QA cycle failed")
+                await self._update_progress('sm_dev_qa', 'failed', {})
+                return False
 
-            return success_count == total_stories
+            # Phase 2: Quality Gates (conditional)
+            if not self.skip_quality:
+                self.logger.info("=== Phase 2: Quality Gates ===")
+                await self._update_progress('quality_gates', 'in_progress', {})
+                quality_results = await self.execute_quality_gates()
+
+                if quality_results.get('status') not in ['completed', 'skipped']:
+                    self.logger.error("Quality gates failed")
+                    return False
+            else:
+                self.logger.info("=== Phase 2: Quality Gates (SKIPPED) ===")
+                await self._update_progress('quality_gates', 'skipped', {})
+
+            # Phase 3: Test Automation (conditional)
+            if not self.skip_tests:
+                self.logger.info("=== Phase 3: Test Automation ===")
+                await self._update_progress('test_automation', 'in_progress', {})
+                test_results = await self.execute_test_automation()
+
+                if test_results.get('status') not in ['completed', 'skipped']:
+                    self.logger.warning("Test automation completed with issues but continuing")
+            else:
+                self.logger.info("=== Phase 3: Test Automation (SKIPPED) ===")
+                await self._update_progress('test_automation', 'skipped', {})
+
+            self.logger.info("=== Epic Processing Complete ===")
+            return True
 
         except Exception as e:
-            logger.error(f"Epic driver execution failed: {e}")
+            self.logger.error(f"Epic driver execution failed: {e}", exc_info=True)
             return False
 
 
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='BMAD Epic Automation - Process epic markdown files through SM-Dev-QA cycle',
+        description='BMAD Epic Automation - Process epic markdown files through complete 5-phase workflow',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python epic_driver.py docs/epics/my-epic.md
   python epic_driver.py docs/epics/my-epic.md --max-iterations 5
   python epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
+  python epic_driver.py docs/epics/my-epic.md --source-dir src --test-dir tests
+  python epic_driver.py docs/epics/my-epic.md --skip-quality
+  python epic_driver.py docs/epics/my-epic.md --skip-tests
+  python epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
+
+Quality Gates:
+  Quality gates (basedpyright and ruff) run after SM-Dev-QA cycle completes.
+  Use --skip-quality to bypass quality gates.
+
+Test Automation:
+  Test automation (pytest and debugpy) runs after quality gates complete.
+  Use --skip-tests to bypass test automation.
         """
     )
 
@@ -701,6 +1130,34 @@ Examples:
         help='Disable Claude Code CLI integration (use simulation mode)'
     )
 
+    parser.add_argument(
+        '--source-dir',
+        type=str,
+        default="src",
+        metavar='DIR',
+        help='Source code directory for QA checks (default: "src")'
+    )
+
+    parser.add_argument(
+        '--test-dir',
+        type=str,
+        default="tests",
+        metavar='DIR',
+        help='Test directory for QA checks (default: "tests")'
+    )
+
+    parser.add_argument(
+        '--skip-quality',
+        action='store_true',
+        help='Skip code quality gates (basedpyright and ruff checks)'
+    )
+
+    parser.add_argument(
+        '--skip-tests',
+        action='store_true',
+        help='Skip test automation (pytest and debugpy checks)'
+    )
+
     args = parser.parse_args()
 
     # Validate max_iterations
@@ -731,7 +1188,11 @@ async def main():
         retry_failed=args.retry_failed,
         verbose=args.verbose,
         concurrent=args.concurrent,
-        use_claude=not args.no_claude
+        use_claude=not args.no_claude,
+        source_dir=args.source_dir,
+        test_dir=args.test_dir,
+        skip_quality=args.skip_quality,
+        skip_tests=args.skip_tests
     )
 
     success = await driver.run()

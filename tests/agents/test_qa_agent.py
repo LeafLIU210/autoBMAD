@@ -2,7 +2,6 @@
 
 import pytest
 import os
-import yaml
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 

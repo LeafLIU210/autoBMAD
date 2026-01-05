@@ -8,7 +8,6 @@ copied and used in a fresh location without modification.
 """
 
 import sys
-import os
 import tempfile
 import shutil
 from pathlib import Path

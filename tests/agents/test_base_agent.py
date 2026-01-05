@@ -2,8 +2,6 @@
 
 import pytest
 import os
-import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 
 from src.agents import BaseAgent, AgentConfig

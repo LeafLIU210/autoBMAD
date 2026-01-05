@@ -1,19 +1,169 @@
-# BMAD Epic Automation
+# autoBMAD Epic Automation System
 
-A self-contained automation system for the BMAD (Breakthrough Method of Agile AI-driven Development) workflow. This tool processes epic markdown files through the complete SM-Dev-QA cycle, automating story development and quality assurance.
+A comprehensive automation system for the BMAD (Breakthrough Method of Agile AI-driven Development) workflow. This tool processes epic markdown files through a complete 5-phase workflow including SM-Dev-QA cycle, quality gates, and test automation.
 
 ## Overview
 
-BMAD Epic Automation is a portable template that enables teams to quickly set up and use the BMAD methodology in their projects. It reads epic markdown files, identifies stories, and orchestrates the automated execution of the SM (Story Master), Dev (Development), and QA (Quality Assurance) phases for each story.
+autoBMAD Epic Automation is a portable template that enables teams to quickly set up and use the BMAD methodology in their projects. It reads epic markdown files, identifies stories, and orchestrates the automated execution through all five phases of the complete development workflow.
 
 ### Key Features
 
-- **Automated SM-Dev-QA Cycle**: Processes stories through all three phases automatically
+- **Complete 5-Phase Workflow**: SM-Dev-QA cycle followed by quality gates and test automation
+- **Quality Gates**: Basedpyright type checking and Ruff linting with auto-fix capabilities
+- **Test Automation**: Pytest execution with Debugpy integration for persistent failures
 - **CLI Interface**: Simple command-line interface with flexible options
-- **Retry Logic**: Configurable retry attempts for failed stories
+- **Retry Logic**: Configurable retry attempts for failed stories (3 for quality, 5 for tests)
 - **Verbose Logging**: Detailed logging for debugging and monitoring
 - **Portable**: Self-contained solution requiring only Python and the Claude SDK
 - **No Complex Setup**: Copy the folder to your project and start using immediately
+
+## Quick Start
+
+### Installation with Quality Gate Dependencies
+
+```bash
+# Clone or copy the project
+git clone <your-repo>
+cd <your-project>
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies including quality gate tools
+pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+
+# Verify installation
+python autoBMAD/epic_automation/epic_driver.py --help
+```
+
+### Basic Usage with Complete 5-Phase Workflow
+
+```bash
+# Process an epic through all 5 phases
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+
+# Skip quality gates (for faster development)
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
+
+# Skip test automation (for quick validation)
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
+```
+
+## Complete Workflow
+
+The system executes epics through 5 distinct phases:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    EPIC PROCESSING                          │
+└─────────────────────────────────────────────────────────────┘
+
+Phase 1: SM-Dev-QA Cycle (Stories 001-004 foundation)
+├── Story Creation (SM Agent)
+├── Implementation (Dev Agent)
+└── Validation (QA Agent)
+         ↓
+Phase 2: Quality Gates (Story 002)
+├── Basedpyright Type Checking
+├── Ruff Linting with Auto-fix
+└── Max 3 Retry Attempts
+         ↓
+Phase 3: Test Automation (Story 003)
+├── Pytest Test Execution
+├── Debugpy for Persistent Failures
+└── Max 5 Retry Attempts
+         ↓
+Phase 4: Orchestration (Story 004)
+├── Epic Driver Manages Complete Workflow
+├── Phase-gated Execution
+└── Progress Tracking
+         ↓
+Phase 5: Documentation & Testing (Story 005)
+├── Comprehensive Documentation
+├── Integration Tests
+└── User Guidance
+```
+
+## Quality Gates
+
+Quality gates ensure code quality after the SM-Dev-QA cycle completes.
+
+### Basedpyright Type Checking
+
+- **Purpose**: Static type checking to catch type-related errors
+- **Retry Logic**: Up to 3 automatic retry attempts
+- **Auto-fix**: Ruff can fix many issues automatically
+- **Configuration**: Configured via `pyproject.toml`
+
+```bash
+# Run with quality gates (default)
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+
+# Check only quality gates
+cd basedpyright-workflow
+basedpyright-workflow check
+```
+
+### Ruff Linting
+
+- **Purpose**: Fast Python linting with auto-fix capabilities
+- **Coverage**: PEP 8, complexity, imports, and more
+- **Auto-fix**: Automatically fixes fixable issues
+- **Performance**: Very fast, mostly I/O bound
+
+```bash
+# Check and auto-fix issues
+ruff check --fix src/
+
+# Format code
+ruff format src/
+```
+
+### CLI Quality Gate Options
+
+- `--skip-quality`: Bypass quality gates entirely
+- `--max-iterations`: Control retry attempts (default: 3)
+
+## Test Automation
+
+Test automation runs after quality gates complete successfully.
+
+### Pytest Execution
+
+- **Purpose**: Run all tests in the test suite
+- **Coverage**: Unit, integration, and E2E tests
+- **Reporting**: Detailed test reports with failure analysis
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/test_my_feature.py -v
+```
+
+### Debugpy Integration
+
+- **Purpose**: Debug persistent test failures
+- **Timeout**: 300 seconds (5 minutes) per debug session
+- **Integration**: Automatic activation for failing tests
+
+```bash
+# Debugpy is automatically used for persistent failures
+# No manual configuration required
+
+# Run tests with debugpy enabled
+pytest tests/ --pdb
+```
+
+### CLI Test Automation Options
+
+- `--skip-tests`: Bypass test automation
+- `--test-dir`: Specify custom test directory (default: "tests")
 
 ## Installation
 
@@ -21,7 +171,10 @@ BMAD Epic Automation is a portable template that enables teams to quickly set up
 
 - Python 3.8 or higher
 - Claude SDK (for AI agent functionality)
-- No other external dependencies required
+- Basedpyright>=1.1.0 (for type checking)
+- Ruff>=0.1.0 (for linting)
+- Pytest>=7.0.0 (for testing)
+- Debugpy>=1.6.0 (for debugging)
 
 ### Setup Steps
 
@@ -74,56 +227,61 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 - `--retry-failed`: Enable automatic retry of failed stories
 - `--verbose`: Enable detailed logging output
 - `--concurrent`: Process stories in parallel (experimental feature)
+- `--no-claude`: Disable Claude Code CLI integration (use simulation mode)
+- `--source-dir DIR`: Source code directory for QA checks (default: "src")
+- `--test-dir DIR`: Test directory for QA checks (default: "tests")
+
+#### Quality Gate and Test Options
+
+- `--skip-quality`: Skip code quality gates (basedpyright and ruff)
+- `--skip-tests`: Skip test automation (pytest)
 
 ### Usage Examples
 
-#### Example 1: Basic Processing
+#### Example 1: Complete Workflow with Quality Gates
 
 ```bash
 python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 ```
 
-This will process all stories in `my-epic.md` with default settings:
-- Max 3 retry attempts per story
-- No automatic retry on QA failures
-- Standard logging level
+This will process all stories in `my-epic.md` through the complete 5-phase workflow:
+- Phase 1: SM-Dev-QA cycle for all stories
+- Phase 2: Quality gates (basedpyright + ruff)
+- Phase 3: Test automation (pytest)
+- Max 3 retry attempts for quality gates
+- Max 5 retry attempts for test automation
 
-#### Example 2: Custom Retry Limit
+#### Example 2: Skip Quality Gates (Faster Development)
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --max-iterations 5
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
 ```
 
-Increases the maximum retry attempts to 5 for each failed story.
+Processes stories through SM-Dev-QA cycle and test automation, but skips quality gates for faster iteration during development.
 
-#### Example 3: Enable Automatic Retry
+#### Example 3: Skip Test Automation (Quick Validation)
 
 ```bash
-python autoBMAD/epic_automation/epic_automation/epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
+```
+
+Processes stories through SM-Dev-QA cycle and quality gates, but skips test automation for quick validation without running tests.
+
+#### Example 4: Skip Both Quality Gates and Tests
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
+```
+
+Processes only the SM-Dev-QA cycle, skipping both quality gates and test automation for maximum speed during initial development.
+
+#### Example 5: Enable Automatic Retry
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
 ```
 
 Enables automatic retry of failed stories and provides detailed logging output.
-
-#### Example 4: Full Configuration
-
-```bash
-python autoBMAD/epic_automation/epic_driver.py \
-  docs/epics/my-epic.md \
-  --max-iterations 10 \
-  --retry-failed \
-  --verbose \
-  --concurrent
-```
-
-Applies all available options for maximum control and visibility.
-
-#### Example 5: Debug Mode
-
-```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose --max-iterations 1
-```
-
-Run with verbose logging and only 1 retry attempt to quickly identify issues.
 
 ## Architecture
 
@@ -337,6 +495,9 @@ A: Yes, the tool is designed to be idempotent and will skip completed stories.
 
 **Q: Can I customize the agent behavior?**
 A: Yes, modify the task guidance files in `.bmad-core/tasks/` to customize agent behavior.
+
+**Q: How do I specify custom source and test directories for QA checks?**
+A: Use the `--source-dir` and `--test-dir` flags when running epic_driver.py. For example: `python epic_driver.py docs/epics/my-epic.md --source-dir my_src --test-dir my_tests`. The default directories are "src" and "tests" respectively.
 
 ## Example Epic
 

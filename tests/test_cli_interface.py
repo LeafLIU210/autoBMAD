@@ -4,8 +4,7 @@ Tests for CLI interface of epic_driver.py
 import pytest
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import argparse
+from unittest.mock import patch
 
 # Add the epic_automation directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent / "autoBMAD" / "epic_automation"))

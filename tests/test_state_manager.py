@@ -17,8 +17,6 @@ import pytest
 import sqlite3
 import os
 import tempfile
-from pathlib import Path
-from unittest.mock import patch
 
 from src.state_manager import (
     StateManager,
@@ -419,7 +417,6 @@ class TestPortability:
         """Test that StateManager has no external dependencies"""
         # This is a static test - we verify the imports
         import sys
-        import src.state_manager as sm_module
 
         # Check that only standard library modules are used
         # (This is verified by the fact that we only import sqlite3, os, datetime, etc.)

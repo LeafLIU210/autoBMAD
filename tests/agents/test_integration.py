@@ -2,7 +2,6 @@
 
 import pytest
 import os
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from src.agents import SMAgent, SMConfig, DevAgent, DevConfig, QAAgent, QAConfig

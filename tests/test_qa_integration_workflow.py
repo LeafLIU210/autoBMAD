@@ -7,11 +7,7 @@ including PowerShell script execution and story file updates.
 
 import pytest
 import subprocess
-import json
-from pathlib import Path
 from unittest.mock import patch, Mock
-import tempfile
-import os
 
 from src.qa_tools_integration import QAAutomationWorkflow, QAStatus
 

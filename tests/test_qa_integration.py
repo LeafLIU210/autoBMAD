@@ -10,11 +10,9 @@ Version: 1.0.0
 
 import pytest
 import json
-import subprocess
-import tempfile
 from pathlib import Path
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import Mock, patch
 import sys
 
 # Add the bmad-workflow module to the path
@@ -22,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "bmad-workflow"))
 
 from qa.qa_tools_integration import (
     QAStatus,
-    QAToolType,
     QAViolation,
     QAResult,
     QAAggregateResult,

@@ -10,9 +10,7 @@ Tests the Story Management agent functionality including:
 
 import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch
-import tempfile
-import shutil
+from unittest.mock import patch
 
 from autoBMAD.epic_automation.sm_agent import SMAgent
 

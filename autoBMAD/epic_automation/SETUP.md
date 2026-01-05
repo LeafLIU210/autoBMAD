@@ -39,7 +39,7 @@ your-project/
         └── your-epic.md
 ```
 
-### Step 2: Verify Dependencies
+### Step 2: Install Dependencies
 
 Ensure you have:
 
@@ -48,11 +48,77 @@ Ensure you have:
    python --version
    ```
 
-2. **Claude SDK** configured and working
-   - The SDK should be accessible from your project directory
-   - No additional Python packages required
+2. **Create Virtual Environment** (recommended)
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-3. **Task Guidance Files**
+3. **Install Quality Gate Dependencies**
+
+   Install the required Python packages:
+   ```bash
+   pip install basedpyright>=1.1.0
+   ```
+
+   **Basedpyright** - Static type checker
+   - Provides enhanced type checking beyond mypy
+   - Better performance and more features
+   - Configuration via `pyproject.toml`
+
+   ```bash
+   pip install ruff>=0.1.0
+   ```
+
+   **Ruff** - Fast Python linter and formatter
+   - Replacement for flake8, pylint, and other tools
+   - Built-in auto-fix capabilities
+   - Extremely fast performance
+
+   ```bash
+   pip install pytest>=7.0.0
+   ```
+
+   **Pytest** - Testing framework
+   - Unit, integration, and E2E testing
+   - Rich assertion introspection
+   - Extensive plugin ecosystem
+
+   ```bash
+   pip install debugpy>=1.6.0
+   ```
+
+   **Debugpy** - Debugger for Python
+   - Remote debugging capabilities
+   - VS Code integration
+   - Used for persistent test failure debugging
+
+   **Or install all at once:**
+   ```bash
+   pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+   ```
+
+4. **Verify Quality Gate Installation**
+
+   ```bash
+   # Verify basedpyright
+   basedpyright --version
+
+   # Verify ruff
+   ruff --version
+
+   # Verify pytest
+   pytest --version
+
+   # Verify debugpy
+   python -c "import debugpy; print(debugpy.__version__)"
+   ```
+
+5. **Claude SDK** configured and working
+   - The SDK should be accessible from your project directory
+   - Verify with: `claude --version`
+
+6. **Task Guidance Files**
    - Ensure `.bmad-core/tasks/` directory exists
    - Verify these files are present:
      - `create-next-story.md` (for SM agent)
@@ -69,6 +135,40 @@ python autoBMAD/epic_automation/epic_driver.py --help
 ```
 
 You should see the help message with all available options.
+
+### Step 3.1: Quality Gate Setup
+
+Create or update `pyproject.toml` in your project root:
+
+```toml
+[tool.basedpyright]
+pythonVersion = "3.8"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = true
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+select = ["E", "F", "W", "I", "N", "UP", "YTT", "ANN", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PGH", "PL", "TRY", "FLY", "NPY", "PERF", "FURB", "LOG", "RUF"]
+ignore = ["ANN101", "ANN102"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["S101", "ANN"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+```
+
+This configuration:
+- Enables strict type checking with basedpyright
+- Configures ruff with comprehensive linting rules
+- Sets up pytest with sensible defaults
 
 ### Step 4: Create Your First Epic
 

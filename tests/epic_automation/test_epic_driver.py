@@ -13,7 +13,6 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from unittest.mock import mock_open, patch
 
 from autoBMAD.epic_automation.epic_driver import EpicParser
 

@@ -1,0 +1,18 @@
+{
+  "version": "1.36.1",
+  "time": "1767543343276",
+  "generalDiagnostics": [],
+  "summary": {
+    "filesAnalyzed": 0,
+    "errorCount": 0,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0
+  },
+  "metadata": {
+    "check_time": "2026-01-05T00:15:43.289654",
+    "check_directory": "..\\src",
+    "python_files_count": 0,
+    "python_files": []
+  }
+}

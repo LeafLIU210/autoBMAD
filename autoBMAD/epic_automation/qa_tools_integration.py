@@ -6,7 +6,6 @@ Provides automated quality assurance checks with quality gate decisions.
 """
 
 import asyncio
-import json
 import logging
 import subprocess
 import sys
@@ -141,7 +140,11 @@ class BasedPyrightWorkflowRunner:
 
     async def _run_basedpyright_check(self, source_dir: str) -> Tuple[str, str, Optional[int]]:
         """Run BasedPyright check command."""
-        cmd = [sys.executable, "-m", "basedpyright_workflow", "check"]
+        # Calculate relative path from basedpyright-workflow directory
+        # source_dir is relative to project root, need to convert to relative to workflow dir
+        workflow_to_project = Path("..")  # basedpyright-workflow is at project root level
+        relative_path = workflow_to_project / source_dir
+        cmd = [sys.executable, "-m", "basedpyright_workflow", "check", "--path", str(relative_path)]
 
         logger.debug(f"Executing: {' '.join(cmd)} in {self.workflow_dir}")
 
@@ -157,7 +160,15 @@ class BasedPyrightWorkflowRunner:
                 process.communicate(),
                 timeout=self.timeout
             )
-            return stdout.decode('utf-8'), stderr.decode('utf-8'), process.returncode
+            # Handle encoding errors gracefully
+            def safe_decode(data):
+                try:
+                    return data.decode('utf-8')
+                except UnicodeDecodeError:
+                    # Try latin-1 as fallback (accepts any byte sequence)
+                    return data.decode('latin-1')
+            
+            return safe_decode(stdout), safe_decode(stderr), process.returncode
         except asyncio.TimeoutError:
             process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
@@ -416,7 +427,15 @@ class FixtestWorkflowRunner:
                 process.communicate(),
                 timeout=self.timeout
             )
-            return stdout.decode('utf-8'), stderr.decode('utf-8'), process.returncode
+            # Handle encoding errors gracefully
+            def safe_decode(data):
+                try:
+                    return data.decode('utf-8')
+                except UnicodeDecodeError:
+                    # Try latin-1 as fallback (accepts any byte sequence)
+                    return data.decode('latin-1')
+            
+            return safe_decode(stdout), safe_decode(stderr), process.returncode
         except asyncio.TimeoutError:
             process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)

@@ -14,9 +14,7 @@ sys.path.insert(0, str(project_root))
 import pytest
 import asyncio
 import tempfile
-import os
 import sqlite3
-import json
 import logging
 
 # Import modules to test

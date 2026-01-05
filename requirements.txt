@@ -10,3 +10,13 @@ loguru>=0.7.0
 
 # BMAD Epic自动化 - 基于奥卡姆剃刀原则的最小化实现
 claude_agent_sdk>=0.1.0  # 启用此行以使用BMAD自动化
+
+# 代码质量工具 - 类型检查和代码风格检查
+basedpyright>=1.1.0
+ruff>=0.1.0
+
+# 测试自动化工具 - pytest测试框架和debugpy调试工具
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-json-report>=1.5.0
+debugpy>=1.6.0

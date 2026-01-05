@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'bmad-workflow'))
 
-from qa_tools_integration import QAStatus, BasedPyrightResult, FixtestResult
+from qa_tools_integration import BasedPyrightResult, FixtestResult
 
 class TestBasedPyrightResult:
     def test_creation(self):

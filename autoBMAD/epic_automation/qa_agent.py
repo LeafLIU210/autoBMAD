@@ -6,7 +6,6 @@ Returns QA results indicating pass/fail status.
 Integrates with task guidance for QA-specific operations.
 """
 
-import asyncio
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -328,18 +327,41 @@ class QAAgent:
         """
         logger.info("Running QA tools (BasedPyright + Fixtest)...")
 
-        # Determine workflow directories from current path
+        # Determine workflow directories from current path with flexible lookup
         current_dir = Path(__file__).parent
-        project_root = current_dir.parent.parent  # Go up to project root
 
-        basedpyright_dir = project_root / "basedpyright-workflow"
-        fixtest_dir = project_root / "fixtest-workflow"
+        # Try multiple locations for basedpyright-workflow
+        possible_locations = [
+            current_dir.parent.parent / "basedpyright-workflow",  # project_root/basedpyright-workflow
+            current_dir / "basedpyright-workflow",                 # current_dir/basedpyright-workflow
+            Path.cwd() / "basedpyright-workflow",                  # cwd/basedpyright-workflow
+        ]
 
-        # If directories don't exist in project root, try alternative locations
-        if not basedpyright_dir.exists():
-            basedpyright_dir = current_dir / "basedpyright-workflow"
-        if not fixtest_dir.exists():
-            fixtest_dir = current_dir / "fixtest-workflow"
+        basedpyright_dir = None
+        for loc in possible_locations:
+            if loc.exists():
+                basedpyright_dir = loc
+                break
+
+        if basedpyright_dir is None:
+            # Default fallback
+            basedpyright_dir = current_dir.parent.parent / "basedpyright-workflow"
+
+        # Same for fixtest_dir
+        possible_ft_locations = [
+            current_dir.parent.parent / "fixtest-workflow",
+            current_dir / "fixtest-workflow",
+            Path.cwd() / "fixtest-workflow",
+        ]
+
+        fixtest_dir = None
+        for loc in possible_ft_locations:
+            if loc.exists():
+                fixtest_dir = loc
+                break
+
+        if fixtest_dir is None:
+            fixtest_dir = current_dir.parent.parent / "fixtest-workflow"
 
         # Initialize QA workflow
         qa_workflow = QAAutomationWorkflow(
