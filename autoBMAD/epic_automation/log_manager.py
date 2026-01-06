@@ -48,7 +48,7 @@ class LogManager:
         try:
             self.logs_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            print(f"Warning: Failed to create logs directory: {e}")
+            _original_stdout.write(f"Warning: Failed to create logs directory: {e}\n")
 
     def create_timestamped_log(self) -> Path:
         """
@@ -83,11 +83,11 @@ class LogManager:
             self.log_file_handle.write(header)
             self.log_file_handle.flush()
 
-            print(f"[LOG] Log file created: {self.current_log_file}")
+            _original_stdout.write(f"[LOG] Log file created: {self.current_log_file}\n")
             return self.current_log_file
 
         except Exception as e:
-            print(f"Error: Failed to create log file: {e}")
+            _original_stdout.write(f"Error: Failed to create log file: {e}\n")
             raise
 
     def write_log(self, message: str, level: str = "INFO"):
@@ -115,7 +115,7 @@ class LogManager:
             self.log_file_handle.flush()
 
         except Exception as e:
-            print(f"Warning: Failed to write to log file: {e}")
+            _original_stdout.write(f"Warning: Failed to write to log file: {e}\n")
 
     def write_sdk_message(self, message: str, msg_type: str = "SDK"):
         """
@@ -142,7 +142,7 @@ class LogManager:
             self.log_file_handle.flush()
 
         except Exception as e:
-            print(f"Warning: Failed to write SDK message to log: {e}")
+            _original_stdout.write(f"Warning: Failed to write SDK message to log: {e}\n")
 
     def write_exception(self, exception: Exception, context: str = ""):
         """
@@ -181,7 +181,7 @@ Traceback:
             self.log_file_handle.flush()
 
         except Exception as e:
-            print(f"Warning: Failed to write exception to log: {e}")
+            _original_stdout.write(f"Warning: Failed to write exception to log: {e}\n")
 
     def close_log(self):
         """Close current log file and write footer."""
@@ -205,10 +205,10 @@ Traceback:
             self.log_file_handle.write(footer)
             self.log_file_handle.close()
 
-            print(f"[LOG] Log file closed: {self.current_log_file}")
+            _original_stdout.write(f"[LOG] Log file closed: {self.current_log_file}\n")
 
         except Exception as e:
-            print(f"Warning: Failed to close log file: {e}")
+            _original_stdout.write(f"Warning: Failed to close log file: {e}\n")
         finally:
             self.log_file_handle = None
             self.current_log_file = None
@@ -221,6 +221,43 @@ Traceback:
             Path to current log file or None
         """
         return self.current_log_file
+
+    def log_cancellation(self, message: str):
+        """
+        Log cancellation event.
+
+        Args:
+            message: Cancellation message
+        """
+        if not self.log_file_handle:
+            return
+
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_entry = f"[{timestamp}] [CANCELLED ] Cancellation: {message}\n"
+            self.log_file_handle.write(log_entry)
+            self.log_file_handle.flush()
+        except Exception as e:
+            _original_stdout.write(f"Warning: Failed to write cancellation log: {e}\n")
+
+    def log_state_resync(self, story_path: str, new_status: str):
+        """
+        Log state resynchronization event.
+
+        Args:
+            story_path: Path to the story
+            new_status: New status after resync
+        """
+        if not self.log_file_handle:
+            return
+
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_entry = f"[{timestamp}] [RESYNC    ] State resync: {story_path} -> {new_status}\n"
+            self.log_file_handle.write(log_entry)
+            self.log_file_handle.flush()
+        except Exception as e:
+            _original_stdout.write(f"Warning: Failed to write resync log: {e}\n\n")
 
     def list_log_files(self, limit: int = 10) -> "list[Path]":
         """
@@ -242,7 +279,7 @@ Traceback:
             return log_files[:limit]
 
         except Exception as e:
-            print(f"Warning: Failed to list log files: {e}")
+            _original_stdout.write(f"Warning: Failed to list log files: {e}\n")
             return []
 
 
@@ -292,6 +329,10 @@ class DualWriteStream:
 # Global log manager instance
 _log_manager: Optional[LogManager] = None
 
+# Store original stdout/stderr before any redirection
+_original_stdout = sys.stdout
+_original_stderr = sys.stderr
+
 
 def get_log_manager() -> Optional[LogManager]:
     """
@@ -318,11 +359,10 @@ def init_logging(log_manager: LogManager):
 
     # Setup logging configuration
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.StreamHandler(sys.stdout),  # Console output
-            logging.FileHandler(log_file, encoding='utf-8')  # File output
+            logging.StreamHandler(sys.stdout)  # Console output only (avoid duplicate file writing)
         ]
     )
 

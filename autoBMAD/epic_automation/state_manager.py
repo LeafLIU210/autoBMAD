@@ -254,8 +254,29 @@ class StateManager:
 
                 return await asyncio.to_thread(_update)
 
-            except asyncio.CancelledError:
-                logger.warning("State update cancelled, marking as retry_needed")
+            except asyncio.CancelledError as e:
+                cause = getattr(e, '__cause__', None)
+                cause_type = cause.__class__.__name__ if cause else 'timeout_or_cancellation'
+                cause_str = str(cause) if cause else 'No cause'
+
+                logger.warning(
+                    f"State update cancelled for {story_path}: {cause_type}, "
+                    f"cause={cause_str[:100]}, "
+                    f"operation={status}, phase={phase}"
+                )
+
+                # Distinguish between timeout cancellation and user cancellation
+                if "timeout" in cause_str.lower():
+                    logger.warning(
+                        f"Operation timed out for {story_path}. "
+                        f"Consider increasing timeout or optimizing the operation."
+                    )
+                else:
+                    logger.info(
+                        f"Operation was cancelled by user/system for {story_path}. "
+                        f"This is expected during cleanup."
+                    )
+
                 # Don't propagate cancellation error, just mark as failed
                 return False
             except Exception as e:

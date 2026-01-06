@@ -41,7 +41,8 @@
       "Bash(python3:*)",
       "Bash(cp:*)",
       "Bash(timeout:*)",
-      "Bash(pytest:*)"
+      "Bash(pytest:*)",
+      "Bash(pwsh:*)"
     ]
   }
 }

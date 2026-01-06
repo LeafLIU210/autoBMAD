@@ -5,23 +5,27 @@ This module provides a safe wrapper around the Claude Agent SDK to prevent
 cancel scope errors and ensure proper cleanup of async generators.
 """
 
+# type: ignore[import-untyped, reportMissingImports]
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 import time
 
-# Type aliases for SDK classes
+# Type aliases for SDK Classes
+# type: ignore[import-untyped, import-untyped-missing, reportMissingImports]
 try:
+    # type: ignore[import-untyped, import-untyped-missing, reportMissingImports]
+    # type: ignore[import]
     from claude_agent_sdk import query, ResultMessage
     _query = query
     _ResultMessage = ResultMessage
     _sdk_available = True  # type: ignore
 except ImportError:
     _query = None  # type: ignore
-    _ResultMessage = None  # type: ignore  # type: ignore
+    _ResultMessage = None  # type: ignore
     _sdk_available = False  # type: ignore
 
 # Re-export with proper types
@@ -29,22 +33,39 @@ query = _query
 ResultMessage = _ResultMessage
 
 # Import Claude SDK types for proper type checking
+# type: ignore[import-untyped, import-untyped-missing, reportMissingImports]
 try:
+    # type: ignore[import-untyped, import-untyped-missing, reportMissingImports]
+    # type: ignore[import]
     from claude_agent_sdk import (
-        SystemMessage, AssistantMessage, UserMessage,
-        TextBlock, ThinkingBlock, ToolUseBlock, ToolResultBlock
-    )
+        SystemMessage as _SystemMessage,
+        AssistantMessage as _AssistantMessage,
+        UserMessage as _UserMessage,
+        TextBlock as _TextBlock,
+        ThinkingBlock as _ThinkingBlock,
+        ToolUseBlock as _ToolUseBlock,
+        ToolResultBlock as _ToolResultBlock
+    )  # noqa: F401  # Imported for type checking, used via duck typing
     _claude_types_available = True
 except ImportError:
     # Fallback types for when SDK is not available
-    SystemMessage = None
-    AssistantMessage = None
-    UserMessage = None
-    TextBlock = None
-    ThinkingBlock = None
-    ToolUseBlock = None
-    ToolResultBlock = None
+    _SystemMessage = None  # type: ignore[misc]
+    _AssistantMessage = None  # type: ignore[misc]
+    _UserMessage = None  # type: ignore[misc]
+    _TextBlock = None  # type: ignore[misc]
+    _ThinkingBlock = None  # type: ignore[misc]
+    _ToolUseBlock = None  # type: ignore[misc]
+    _ToolResultBlock = None  # type: ignore[misc]
     _claude_types_available = False
+
+# Re-export with proper names (kept for backward compatibility)
+SystemMessage = _SystemMessage
+AssistantMessage = _AssistantMessage
+UserMessage = _UserMessage
+TextBlock = _TextBlock
+ThinkingBlock = _ThinkingBlock
+ToolUseBlock = _ToolUseBlock
+ToolResultBlock = _ToolResultBlock
 
 # Export constants for backward compatibility
 SDK_AVAILABLE = _sdk_available
@@ -77,6 +98,9 @@ class SDKMessageTracker:
                 self.log_manager.write_sdk_message(message, msg_type)
             except Exception as e:
                 logger.debug(f"Failed to write SDK message to log: {e}")
+
+        # Output to console for real-time display (will be captured by DualWriteStream)
+        print(f"[{msg_type}] {message}")
     
     def get_elapsed_time(self) -> float:
         """Get elapsed time since start."""
@@ -84,26 +108,47 @@ class SDKMessageTracker:
     
     async def start_periodic_display(self):
         """Start periodic display of latest message every 10 seconds."""
-        self._display_task = asyncio.create_task(self._periodic_display())
-    
-    async def stop_periodic_display(self):
-        """Stop the periodic display."""
+        # Only create task if not already created
+        if self._display_task is None or self._display_task.done():
+            self._stop_event.clear()  # Reset stop event
+            self._display_task = asyncio.ensure_future(self._periodic_display())
+
+    async def stop_periodic_display(self, timeout: float = 1.0):
+        """Stop the periodic display using Event signaling instead of task cancellation."""
         self._stop_event.set()
-        if self._display_task:
-            await self._display_task
+        if self._display_task and not self._display_task.done():
+            try:
+                # Wait for task to exit naturally using Event signal
+                await asyncio.wait_for(self._display_task, timeout=timeout)
+            except asyncio.TimeoutError:
+                # Task didn't exit in time, but stop_event is set so it will exit on next iteration
+                logger.debug("Display task exit timeout (acceptable - will exit naturally)")
+            except Exception as e:
+                logger.debug(f"Error waiting for display task to exit: {e}")
+            finally:
+                self._display_task = None
     
     async def _periodic_display(self):
         """Display latest message every 10 seconds."""
-        while not self._stop_event.is_set():
-            try:
-                await asyncio.wait_for(self._stop_event.wait(), timeout=10.0)
-                break  # Stop event was set
-            except asyncio.TimeoutError:
-                # 10 seconds passed, display latest message
-                if self.latest_message:
-                    elapsed = self.get_elapsed_time()
-                    # Clean display format: [Type] Message content
-                    logger.info(f"[{self.message_type}] {self.latest_message} (after {elapsed:.1f}s)")
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    await asyncio.wait_for(self._stop_event.wait(), timeout=10.0)
+                    break  # Stop event was set
+                except asyncio.TimeoutError:
+                    # 10 seconds passed, display latest message
+                    if self.latest_message and not self._stop_event.is_set():
+                        elapsed = self.get_elapsed_time()
+                        # Clean display format: [Type] Message content
+                        logger.info(f"[{self.message_type}] {self.latest_message} (after {elapsed:.1f}s)")
+        except asyncio.CancelledError:
+            # Task was cancelled, exit gracefully without raising
+            logger.debug("Periodic display task was cancelled")
+            # Don't re-raise CancelledError to prevent scope issues
+            return
+        except Exception as e:
+            # Log any unexpected errors but don't crash
+            logger.debug(f"Error in periodic display: {e}")
     
     def display_final_summary(self):
         """Display final summary when complete."""
@@ -124,7 +169,7 @@ class SafeClaudeSDK:
         timeout: Optional timeout in seconds (default: 300.0)
     """
 
-    def __init__(self, prompt: str, options: Any, timeout: Optional[float] = 900.0, log_manager: Optional[Any] = None):
+    def __init__(self, prompt: str, options: Any, timeout: Optional[float] = 1800.0, log_manager: Optional[Any] = None):
         self.prompt: str = prompt
         self.options: Any = options
         self.timeout: Optional[float] = timeout
@@ -161,26 +206,33 @@ class SafeClaudeSDK:
             return None
 
         content_parts: list[str] = []
-        for block in message.content:
+        content_list: list[Any] = message.content  # type: ignore[assignment]
+        for block in content_list:
             block_item: Any = block
-            block_type: str = block_item.__class__.__name__
+            block_type: str = str(block_item.__class__.__name__)
 
-            if block_type == 'TextBlock' and hasattr(block_item, 'text') and block_item.text:
-                content_parts.append(block_item.text.strip())
-            elif block_type == 'ThinkingBlock' and hasattr(block_item, 'thinking') and block_item.thinking:
-                thinking_text = block_item.thinking.strip()
-                preview = thinking_text[:150] + "..." if len(thinking_text) > 150 else thinking_text
-                content_parts.append(f"[Thinking] {preview}")
+            if block_type == 'TextBlock' and hasattr(block_item, 'text'):
+                text_value: str = str(getattr(block_item, 'text', ''))
+                if text_value:
+                    content_parts.append(text_value.strip())
+            elif block_type == 'ThinkingBlock' and hasattr(block_item, 'thinking'):
+                thinking_value: str = str(getattr(block_item, 'thinking', ''))
+                if thinking_value:
+                    thinking_text: str = thinking_value.strip()
+                    preview: str = thinking_text[:150] + "..." if len(thinking_text) > 150 else thinking_text
+                    content_parts.append(f"[Thinking] {preview}")
             elif block_type == 'ToolUseBlock' and hasattr(block_item, 'name'):
-                tool_name = getattr(block_item, 'name', 'unknown')
+                tool_name: str = str(getattr(block_item, 'name', 'unknown'))
                 content_parts.append(f"[Using tool: {tool_name}]")
             elif block_type == 'ToolResultBlock' and hasattr(block_item, 'content'):
-                tool_content = getattr(block_item, 'content')
+                tool_content: Any = getattr(block_item, 'content', None)
                 if tool_content:
                     if isinstance(tool_content, str) and tool_content.strip():
                         content_parts.append(f"[Tool result] {tool_content.strip()}")
-                    elif isinstance(tool_content, list) and tool_content:
-                        content_parts.append(f"[Tool completed with {len(tool_content)} results]")
+                    elif isinstance(tool_content, list):
+                        result_count: int = len(tool_content)  # type: ignore[arg-type]
+                        if result_count > 0:
+                            content_parts.append(f"[Tool completed with {result_count} results]")
 
         return " ".join(content_parts) if content_parts else None
 
@@ -189,14 +241,15 @@ class SafeClaudeSDK:
         if not hasattr(message, 'subtype'):
             return None
 
-        subtype = getattr(message, 'subtype', 'unknown')
-        if hasattr(message, 'data') and isinstance(message.data, dict):
+        subtype: str = str(getattr(message, 'subtype', 'unknown'))
+        if hasattr(message, 'data') and isinstance(message.data, dict):  # type: ignore[union-attr]
+            data_dict: dict[str, Any] = message.data  # type: ignore[assignment]
             if subtype == 'init':
-                session_id = message.data.get('session_id', 'unknown')
-                model = message.data.get('model', 'unknown')
-                return f"[System initialized] Model: {model}, Session: {str(session_id)[:8]}..."
+                session_id: str = str(data_dict.get('session_id', 'unknown'))
+                model: str = str(data_dict.get('model', 'unknown'))
+                return f"[System initialized] Model: {model}, Session: {session_id[:8]}..."
             elif subtype == 'tool':
-                tool_name = message.data.get('tool', 'unknown')
+                tool_name: str = str(data_dict.get('tool', 'unknown'))
                 return f"[System] Tool: {tool_name}"
         return f"[System] {subtype}"
 
@@ -205,11 +258,12 @@ class SafeClaudeSDK:
         if not hasattr(message, 'content'):
             return None
 
-        content = message.content
+        content: Any = message.content  # type: ignore[union-attr]
         if isinstance(content, str) and content.strip():
             return f"[User] {content.strip()[:100]}..."
         elif isinstance(content, list):
-            return f"[User sent {len(content)} content blocks]"
+            block_count: int = len(content)  # type: ignore[arg-type]
+            return f"[User sent {block_count} content blocks]"
         return None
 
     def _extract_result_content(self, message: Any) -> Optional[str]:
@@ -245,9 +299,9 @@ class SafeClaudeSDK:
                 return 'SYSTEM'
 
             elif msg_class == 'AssistantMessage':
-                if hasattr(message, 'content') and isinstance(message.content, list):
-                    for block in message.content:
-                        block_type = block.__class__.__name__
+                if hasattr(message, 'content') and isinstance(message.content, list):  # type: ignore
+                    for block in message.content:  # type: ignore
+                        block_type = block.__class__.__name__  # type: ignore
                         if block_type == 'ThinkingBlock':
                             return 'THINKING'
                         elif block_type == 'TextBlock':
@@ -280,10 +334,8 @@ class SafeClaudeSDK:
             True if execution succeeded, False otherwise
         """
         if not SDK_AVAILABLE:
-            raise RuntimeError(
-                "Claude Agent SDK is required but not available. "
-                "Please install claude-agent-sdk: pip install claude-agent-sdk"
-            )
+            logger.warning("Claude Agent SDK not available - returning False for cancelled execution")
+            return False  # Return False instead of raising exception for better cancellation handling
 
         try:
             # Set timeout if specified
@@ -294,14 +346,21 @@ class SafeClaudeSDK:
 
         except asyncio.TimeoutError:
             logger.error(f"Claude SDK execution timeout after {self.timeout}s - operation took too long")
-            raise TimeoutError(f"Claude SDK execution exceeded timeout of {self.timeout}s")
+            return False  # Return False instead of raising TimeoutError for cancellation compatibility
         except RuntimeError as e:
-            if "cancel scope" in str(e):
-                logger.error("Claude SDK cancel scope error - indicates SDK internal error")
-                raise
+            error_msg = str(e)
+            if "cancel scope" in error_msg:
+                logger.error(f"Claude SDK cancel scope error (handled gracefully): {e}")
+                return False  # Return False for cancel scope errors instead of re-raising
+            elif "Event loop is closed" in error_msg:
+                logger.warning(f"Claude SDK event loop closed (handled gracefully): {e}")
+                return False  # Return False for event loop issues
             else:
                 logger.error(f"Claude SDK RuntimeError: {e}")
-                raise
+                return False  # Return False for other RuntimeErrors
+        except asyncio.CancelledError:
+            logger.warning("Claude SDK execution was cancelled by user/system")
+            return False  # Return False for cancellation instead of re-raising
         except Exception as e:
             logger.error(f"Claude SDK execution failed: {e}")
             return False
@@ -317,31 +376,32 @@ class SafeClaudeSDK:
         logger.info(f"[SDK Config] Options: {self.options}")
         logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
 
+        generator = None
         try:
             # Create the generator
             generator = query(prompt=self.prompt, options=self.options)
 
             # Start periodic message display
             await self.message_tracker.start_periodic_display()
-            
+
             # Iterate through the generator directly (not using async with)
             message_count = 0
             start_time = asyncio.get_event_loop().time()
-            
+
             async for message in generator:
                 message_count += 1
-                
+
                 # Extract actual content from Claude's messages
                 message_content = self._extract_message_content(message)
                 message_type = self._classify_message_type(message)
-                
+
                 # Update message tracker with actual Claude content
                 if message_content:
                     self.message_tracker.update_message(message_content, message_type)
                 else:
                     # Fallback to generic message if no content extracted
                     self.message_tracker.update_message(f"Received {message_type} message {message_count}", message_type)
-                
+
                 if ResultMessage is not None and isinstance(message, ResultMessage):
                     # Safely access attributes based on type
                     if hasattr(message, 'is_error') and message.is_error:
@@ -358,10 +418,10 @@ class SafeClaudeSDK:
 
             # If we get here, no ResultMessage was received
             total_elapsed = asyncio.get_event_loop().time() - start_time
-            
+
             # Stop periodic display
             await self.message_tracker.stop_periodic_display()
-            
+
             if message_count > 0:
                 self.message_tracker.update_message(f"Completed with {message_count} messages", "COMPLETE")
                 self.message_tracker.display_final_summary()
@@ -383,7 +443,96 @@ class SafeClaudeSDK:
             return True
         except GeneratorExit:
             logger.warning("Claude SDK generator closed prematurely")
-            return await self._check_work_completed()
+            # Try to check if work was completed despite generator closure
+            try:
+                result = await self._check_work_completed()
+                if result:
+                    logger.info("Work completed despite generator closure")
+                return result
+            except Exception as e:
+                logger.warning(f"Failed to check work completion after generator exit: {e}")
+                return False
+        except asyncio.CancelledError:
+            # Handle cancellation gracefully without re-raising to prevent scope errors
+            logger.warning("Claude SDK execution was cancelled")
+
+            # Mark cancellation on the message tracker to prevent further operations
+            try:
+                # Accessing protected member _stop_event for cleanup purposes
+                stop_event = getattr(self.message_tracker, '_stop_event', None)  # type: ignore  # noqa: SLF001
+                if stop_event and not stop_event.is_set():
+                    stop_event.set()
+
+                # Update message tracker to reflect cancellation
+                self.message_tracker.update_message("Execution cancelled by user/system", "CANCELLED")
+
+                # Signal the display task to stop using Event (not task cancellation)
+                display_task = getattr(self.message_tracker, '_display_task', None)
+                if display_task and not display_task.done():
+                    try:
+                        # Wait briefly for natural task exit via Event signal
+                        await asyncio.wait_for(display_task, timeout=0.5)
+                    except asyncio.TimeoutError:
+                        # Task will exit on next event check since stop_event is set
+                        logger.debug("Display task will exit naturally via Event signal")
+                    except (asyncio.CancelledError, Exception):
+                        # Other exceptions during cleanup - ignore
+                        pass
+            except Exception as e:
+                logger.debug(f"Error during cancellation cleanup: {e}")
+
+            # Return False to indicate cancellation without raising
+            return False
+        except RuntimeError as e:
+            # Handle cancel scope errors specifically
+            error_msg = str(e)
+            if "cancel scope" in error_msg:
+                logger.error(f"[SDK Error] Cancel scope error: {e}")
+                logger.error(f"[SDK Error] This indicates improper async cleanup - check event loop management")
+                # Don't re-raise cancel scope errors as they're SDK internal issues
+                return False
+            elif "Event loop is closed" in error_msg:
+                logger.warning(f"[SDK Warning] Event loop closed during cleanup: {e}")
+                # This is a cleanup issue, not a critical error
+                return False
+            else:
+                logger.error(f"Claude SDK RuntimeError: {e}")
+                raise
+        except Exception as e:
+            # Ensure we stop the periodic display on any exception
+            logger.error(f"Claude SDK execution error: {e}")
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception as cleanup_error:
+                logger.debug(f"Error during cleanup: {cleanup_error}")
+            raise
+        finally:
+            # Final cleanup to ensure periodic display is stopped
+            if generator is not None:
+                try:
+                    # Async generator cleanup - using getattr to avoid attribute errors
+                    aclose_method = getattr(generator, 'aclose', None)  # type: ignore
+                    if aclose_method is not None:
+                        try:
+                            # Check if event loop is still running before attempting cleanup
+                            loop = asyncio.get_event_loop()
+                            if not loop.is_closed():
+                                await aclose_method()
+                            else:
+                                logger.debug("Event loop closed, skipping generator cleanup")
+                        except RuntimeError as e:
+                            error_msg = str(e)
+                            if "cancel scope" in error_msg or "Event loop is closed" in error_msg:
+                                # Expected during cleanup - log as debug
+                                logger.debug(f"Expected cleanup error (ignored): {e}")
+                            else:
+                                # Unexpected error - log as warning
+                                logger.warning(f"Unexpected error during generator cleanup: {e}")
+                        except Exception as e:
+                            # Other exceptions during cleanup - log as debug
+                            logger.debug(f"Generator cleanup exception (ignored): {e}")
+                except Exception:
+                    pass  # Generator may already be closed
 
     async def _check_work_completed(self) -> bool:
         """
@@ -408,7 +557,7 @@ class SafeClaudeSDK:
 async def safe_claude_sdk(
     prompt: str,
     options: Any,
-    timeout: Optional[float] = 900.0,
+    timeout: Optional[float] = 1800.0,
     log_manager: Optional[Any] = None
 ) -> AsyncIterator[SafeClaudeSDK]:
     """

@@ -53,28 +53,6 @@ class DevAgent:
         self._claude_available = self._check_claude_available() if use_claude else False
         logger.info(f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})")
 
-    def claude_sdk_query(
-        self,
-        prompt: str,
-        options: Any  # type: ignore[type-var]  # ClaudeAgentOptions from SDK
-    ) -> Any:
-        """
-        Get Claude SDK query generator (not a context manager).
-
-        Args:
-            prompt: The prompt to send to Claude
-            options: Claude agent options
-
-        Returns:
-            Async generator for processing messages
-        """
-        # Check if query is available
-        if query is None:
-            raise RuntimeError("Claude Agent SDK query function not available")
-
-        # Return the query generator directly
-        return query(prompt=prompt, options=options)
-
     def _validate_prompt_format(self, prompt: str) -> bool:
         """Validate prompt format for BMAD commands."""
         try:
@@ -122,7 +100,7 @@ class DevAgent:
         import os
         import time
 
-        max_retries = 3
+        max_retries = 1
         timeout = 30  # Increased from 10 to 30 seconds
 
         possible_commands = [
@@ -389,7 +367,7 @@ class DevAgent:
             return False
 
     async def _execute_development_tasks(self, requirements: Dict[str, Any]) -> bool:
-        """Execute development tasks using Claude Agent SDK with triple independent calls."""
+        """Execute development tasks using Claude Agent SDK with single call."""
         logger.info("Executing development tasks")
 
         try:
@@ -403,22 +381,35 @@ class DevAgent:
             # Get story path
             story_path = requirements.get('story_path', self._current_story_path or '')
 
+            # Check if story status is already "Ready for Review"
+            if story_path:
+                story_status = await self._check_story_status(story_path)
+                if story_status == "Ready for Review":
+                    logger.info(f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls")
+                    # Development is considered complete, notify QA agent directly
+                    await self._notify_qa_agent(story_path)
+                    return True
+                elif story_status:
+                    logger.info(f"[Dev Agent] Story status: {story_status}, proceeding with development")
+                else:
+                    logger.warning(f"[Dev Agent] Could not determine story status for {story_path}, proceeding anyway")
+
             # Get log_manager from epic_driver context if available
             log_manager = getattr(self, '_log_manager', None)
 
             # Check if this is a QA feedback mode (requirements contains qa_prompt)
             if 'qa_prompt' in requirements:
-                # Handle QA feedback mode - execute three independent calls
-                logger.info(f"{self.name} Handling QA feedback with triple SDK calls")
-                result = await self._execute_triple_claude_calls(requirements['qa_prompt'], story_path, log_manager)
+                # Handle QA feedback mode - execute single SDK call
+                logger.info(f"{self.name} Handling QA feedback with single SDK call")
+                result = await self._execute_single_claude_sdk(requirements['qa_prompt'], story_path, log_manager)
                 return result
 
-            # Normal development mode - execute three independent SDK calls
-            logger.info(f"{self.name} Executing normal development with triple SDK calls")
-            base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create and improve test suites @tests/, perform test-driven development until all tests pass completely'
+            # Normal development mode - execute single SDK call
+            logger.info(f"{self.name} Executing normal development with single SDK call")
+            base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create and improve test suites @tests/, perform test-driven development until all tests pass completely. Change story document Status to "Ready for Review".'
 
-            # Execute three independent calls
-            result = await self._execute_triple_claude_calls(base_prompt, story_path, log_manager)
+            # Execute single SDK call
+            result = await self._execute_single_claude_sdk(base_prompt, story_path, log_manager)
 
             if result:
                 # Development completed successfully, notify QA agent
@@ -437,7 +428,7 @@ class DevAgent:
 
     async def _handle_qa_feedback(self, qa_prompt: str, story_path: str) -> bool:
         """
-        Handle QA feedback using triple independent SDK calls.
+        Handle QA feedback using single SDK call.
 
         Args:
             qa_prompt: Prompt from QA agent containing gate file paths
@@ -452,8 +443,8 @@ class DevAgent:
             # Build prompt for QA feedback
             prompt = f'@.bmad-core/agents/dev.md {qa_prompt}'
 
-            # Execute three independent SDK calls for fixing
-            result = await self._execute_triple_claude_calls(prompt, story_path)
+            # Execute single SDK call for fixing
+            result = await self._execute_single_claude_sdk(prompt, story_path)
 
             if result:
                 logger.info(f"{self.name} QA feedback handling completed successfully")
@@ -468,54 +459,6 @@ class DevAgent:
 
         except Exception as e:
             logger.error(f"Failed to handle QA feedback: {e}")
-            return False
-
-    async def _execute_triple_claude_calls(self, qa_prompt: str, story_path: str, log_manager: "Optional[LogManager]" = None) -> bool:
-        """
-        Execute three independent Claude SDK calls with bypasspermissions.
-
-        Args:
-            qa_prompt: Prompt from QA agent
-            story_path: Path to the story file
-            log_manager: LogManager instance for logging
-
-        Returns:
-            True if all three calls succeeded, False otherwise
-        """
-        try:
-            logger.info(f"{self.name} executing triple Claude SDK calls for: {story_path}")
-
-            # Build the combined prompt
-            base_prompt = f'@.bmad-core/agents/dev.md {qa_prompt}'
-
-            # Execute three independent calls (not retries - three separate calls)
-            for i in range(3):
-                round_number = i + 1
-                try:
-                    logger.info(f"[Dev Agent] Executing {round_number}/3 independent SDK call for {story_path}")
-
-                    # Create round-specific prompt
-                    round_prompt = f"{base_prompt} 第{round_number}轮修复"
-
-                    # Execute the SDK call without retry logic (these are independent calls)
-                    # Use the existing _execute_claude_sdk but call it three times independently
-                    result = await self._execute_single_claude_sdk(round_prompt, story_path, log_manager)
-
-                    if not result:
-                        logger.error(f"[Dev Agent] {round_number}/3 call failed for {story_path}")
-                        return False
-
-                    logger.info(f"[Dev Agent] {round_number}/3 call succeeded for {story_path}")
-
-                except Exception as e:
-                    logger.error(f"[Dev Agent] {round_number}/3 call exception: {str(e)}")
-                    return False
-
-            logger.info(f"{self.name} All three SDK calls completed successfully for: {story_path}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to execute triple Claude SDK calls: {e}")
             return False
 
     async def _execute_single_claude_sdk(self, prompt: str, story_path: str, log_manager: "Optional[LogManager]" = None) -> bool:
@@ -545,8 +488,8 @@ class DevAgent:
             cwd=str(Path.cwd())
         )
 
-        max_retries = 3
-        retry_delay = 30  # 30 seconds between retries
+        max_retries = 1
+        retry_delay = 15  # 15 seconds between retries
 
         for attempt in range(max_retries):
             try:
@@ -555,7 +498,7 @@ class DevAgent:
 
                 # Use safe wrapper with detailed timing
                 start_time = asyncio.get_event_loop().time()
-                sdk = SafeClaudeSDK(prompt, options, timeout=900.0, log_manager=log_manager)
+                sdk = SafeClaudeSDK(prompt, options, timeout=1200.0, log_manager=log_manager)
                 result = await sdk.execute()
                 elapsed = asyncio.get_event_loop().time() - start_time
 
@@ -636,66 +579,6 @@ class DevAgent:
             logger.error(f"Failed to notify QA agent: {e}")
             return None
 
-
-    async def _execute_claude_sdk(self, prompt: str, story_path: str) -> bool:
-        """Execute Claude SDK call with retry logic."""
-        try:
-            # Check if SDK classes are available
-            if ClaudeAgentOptions is None or query is None:
-                logger.warning("Claude Agent SDK not available - using simulation mode")
-                return True
-
-            options = ClaudeAgentOptions(
-                permission_mode="bypassPermissions",
-                cwd=str(Path.cwd())
-            )
-
-            max_retries = 3
-            retry_delay = 60  # 60 seconds between retries
-
-            for attempt in range(max_retries):
-                try:
-                    logger.info(f"[Dev Agent] 尝试调用SDK (第{attempt + 1}次) for {story_path}")
-
-                    message_count = 0
-                    # Get the query generator directly (not as context manager)
-                    query_generator = self.claude_sdk_query(prompt, options)
-
-                    async for message in query_generator:
-                        message_count += 1
-                        # Check if ResultMessage is available before isinstance
-                        if ResultMessage is not None and isinstance(message, ResultMessage):
-                            # Type narrowing: message is ResultMessage
-                            # type: ignore[union-attr] - is_error and result are ResultMessage attributes
-                            if message.is_error:
-                                logger.error(f"[Dev Agent] SDK调用失败: {message.result}")
-                                if attempt < max_retries - 1:
-                                    await asyncio.sleep(retry_delay)
-                                    break
-                                return False
-                            else:
-                                # Ensure result is not None before slicing
-                                result_str = message.result if message.result is not None else ""
-                                logger.info(f"[Dev Agent] SDK调用成功: {result_str}...")
-                                return True
-
-                    # If we received messages, break from retry loop
-                    if message_count > 0:
-                        break
-
-                except Exception as e:
-                    logger.error(f"[Dev Agent] SDK调用异常: {str(e)}")
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(retry_delay)
-                    else:
-                        return False
-
-            return True
-
-        except Exception as e:
-            logger.error(f"[Dev Agent] SDK初始化失败: {str(e)}")
-            return False
-
     async def _update_story_completion(self, story_content: str, requirements: Dict[str, Any]) -> None:
         """Update story file with completion information."""
         logger.info("Updating story file with completion")
@@ -738,3 +621,43 @@ class DevAgent:
 
         except Exception as e:
             logger.error(f"Failed to update story file: {e}")
+
+    async def _check_story_status(self, story_path: str) -> Optional[str]:
+        """
+        Check the status field in a story document.
+
+        Args:
+            story_path: Path to the story file
+
+        Returns:
+            Status string (e.g., "Ready for Review", "Approved", "Draft")
+            or None if not found/error
+        """
+        try:
+            story_file = Path(story_path)
+            if not story_file.exists():
+                logger.warning(f"[Dev Agent] Story file not found: {story_path}")
+                return None
+
+            with open(story_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Match the Status section pattern: ## Status\n**Status Text**
+            status_match = re.search(
+                r'## Status\s*\n\s*\*\*([^*]+)\*\*',
+                content,
+                re.MULTILINE
+            )
+
+            if status_match:
+                status_text = status_match.group(1).strip()
+                logger.debug(f"[Dev Agent story] Found status: '{status_text}'")
+                return status_text
+            else:
+                logger.warning(f"[Dev Agent] Status section not found in {story_path}")
+                return None
+
+        except Exception as e:
+            logger.error(f"[Dev Agent] Error checking story status: {e}")
+            return None
+

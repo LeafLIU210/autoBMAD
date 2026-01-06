@@ -256,6 +256,8 @@ class CodeQualityAgent:
             True if fixes were successfully applied, False otherwise
         """
         self.logger.info("Attempting to fix issues with Claude agents...")
+        self.logger.info(f"[DEBUG] Claude type: {type(Claude)}")
+        self.logger.info(f"[DEBUG] Claude is None: {Claude is None}")
 
         try:
             # Check if Claude SDK is available
@@ -278,6 +280,8 @@ class CodeQualityAgent:
             # Note: ClaudeSDKClient doesn't take api_key directly in the constructor
             # This is a simplified version for testing purposes
             claude: "Claude" = Claude()  # type: ignore[assignment]
+            self.logger.info(f"[DEBUG] Claude instance created: {claude}")
+            self.logger.info(f"[DEBUG] Claude attributes: {dir(claude)}")
 
             # Process each file with errors
             all_errors: List[Dict[str, Any]] = []
@@ -303,6 +307,13 @@ class CodeQualityAgent:
             # Create prompt for Claude
             prompt: str = self._create_fix_prompt(all_errors)
 
+            # DEBUG: Check if claude has messages attribute
+            if not hasattr(claude, 'messages'):
+                self.logger.error(f"[DEBUG] Claude instance does not have 'messages' attribute")
+                self.logger.error(f"[DEBUG] Available attributes: {[attr for attr in dir(claude) if not attr.startswith('_')]}")
+                self.logger.error("[FIX_ISSUE] Skipping automatic fix - Claude SDK API mismatch detected")
+                return False
+
             # Send to Claude for fixes
             response: Any = await claude.messages.create(  # type: ignore[assignment]
                 model="claude-3-5-sonnet-20241022",
@@ -322,8 +333,16 @@ class CodeQualityAgent:
 
             return True
 
+        except AttributeError as e:
+            self.logger.error(f"[DEBUG] AttributeError in fix_issues: {e}")
+            self.logger.error(f"[DEBUG] Error type: {type(e)}")
+            self.logger.error(f"[FIX_ISSUE] Claude SDK API mismatch - 'messages' attribute not found")
+            self.logger.error(f"[FIX_ISSUE] This indicates incorrect SDK usage. Skipping automatic fix.")
+            return False
         except Exception as e:
             self.logger.error(f"Failed to invoke Claude agents: {e}")
+            self.logger.error(f"[DEBUG] Exception type: {type(e)}")
+            self.logger.error(f"[DEBUG] Exception details: {e.__dict__}")
             return False
 
     def _create_fix_prompt(self, errors: List[Dict[str, Any]]) -> str:

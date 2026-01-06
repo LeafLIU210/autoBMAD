@@ -431,7 +431,7 @@ class SMAgent:
         # Get relative path from current directory
         epic_rel_path = str(Path(epic_path))
 
-        prompt = f"@.bmad-core/agents/sm.md *draft {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from 'Draft' to 'Ready for Development'."
+        prompt = f"@.bmad-core/agents/sm.md *draft {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from 'Draft' to 'Approved'."
 
         logger.debug(f"Built prompt: {prompt}")
         return prompt
@@ -446,9 +446,9 @@ class SMAgent:
         Returns:
             True if successful, False otherwise
         """
-        max_retries = 3
+        max_retries = 1
         retry_delay = 15
-        timeout_seconds = 900
+        timeout_seconds = 1200
 
         for attempt in range(max_retries):
             try:
@@ -511,7 +511,7 @@ class SMAgent:
             cwd=str(Path.cwd())
         )
 
-        sdk = SafeClaudeSDK(prompt, options, timeout=900.0)
+        sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
         return await sdk.execute()
 
     async def _verify_story_files(self, story_ids: List[str], epic_path: str) -> Tuple[bool, List[str]]:
