@@ -1,7 +1,9 @@
 """Bubble sort algorithm implementation."""
 
+from typing import List, Iterable, Any
 
-def bubble_sort(arr):
+
+def bubble_sort(arr: List[Any]) -> List[Any]:
     """
     Sort a list using the bubble sort algorithm.
 
@@ -13,6 +15,9 @@ def bubble_sort(arr):
 
     Returns:
         The sorted list (same object, modified in place)
+
+    Raises:
+        TypeError: If arr is None or not iterable
 
     Time Complexity: O(n^2) in worst and average case
     Space Complexity: O(1) - sorts in place
@@ -39,6 +44,15 @@ def bubble_sort(arr):
         >>> bubble_sort([-1, -3, -2, 0, 2])
         [-3, -2, -1, 0, 2]
     """
+    # Input validation
+    if arr is None:
+        raise TypeError("Input cannot be None")
+    try:
+        # Check if iterable by attempting to iterate
+        iter(arr)
+    except TypeError:
+        raise TypeError("Input must be iterable")
+
     if len(arr) <= 1:
         return arr
 

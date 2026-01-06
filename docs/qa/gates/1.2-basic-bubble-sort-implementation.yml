@@ -1,0 +1,20 @@
+schema: 1
+story: '1.2'
+gate: CONCERNS
+status_reason: 'Functionally complete with 243 passing tests. Minor code quality issues (unused import, deprecated typing) and AC#1 wording discrepancy on copy vs in-place behavior.'
+reviewer: 'Quinn'
+updated: '2026-01-06T12:00:00Z'
+top_issues:
+  - id: 'REQ-001'
+    severity: medium
+    finding: 'AC#1 states "returns a sorted copy" but implementation modifies in-place and returns same object'
+    suggested_action: 'Either update AC wording to match implementation, or modify implementation to create copy first'
+  - id: 'MNT-001'
+    severity: low
+    finding: 'Unused import Iterable in typing imports'
+    suggested_action: 'Remove unused Iterable import from line 3'
+  - id: 'MNT-002'
+    severity: low
+    finding: 'Deprecated typing.List usage'
+    suggested_action: 'Use built-in list type hint for Python 3.9+ instead of typing.List'
+waiver: { active: false }

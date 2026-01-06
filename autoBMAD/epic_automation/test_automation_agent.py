@@ -125,7 +125,7 @@ class TestAutomationAgent:
 
     async def fix_tests(self, failures: List[Dict[str, Any]]) -> bool:
         self.logger.info(f"Attempting to fix {len(failures)} failed tests")
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(1.0)
         return True
 
     async def invoke_debugpy(self, test_file: str, error_details: Dict[str, Any]) -> Dict[str, Any]:

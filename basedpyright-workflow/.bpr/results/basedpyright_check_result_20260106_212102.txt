@@ -1,0 +1,43 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-06 21:21:04
+检查目录: ..\autoBMAD\epic_automation
+Python文件数量: 16
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. ..\autoBMAD\epic_automation\__init__.py
+  2. ..\autoBMAD\epic_automation\agents.py
+  3. ..\autoBMAD\epic_automation\code_quality_agent.py
+  4. ..\autoBMAD\epic_automation\dev_agent.py
+  5. ..\autoBMAD\epic_automation\epic_driver.py
+  6. ..\autoBMAD\epic_automation\init_db.py
+  7. ..\autoBMAD\epic_automation\log_manager.py
+  8. ..\autoBMAD\epic_automation\migrations\migration_001_add_quality_gates.py
+  9. ..\autoBMAD\epic_automation\qa_agent.py
+ 10. ..\autoBMAD\epic_automation\qa_tools_integration.py
+ 11. ..\autoBMAD\epic_automation\sdk_session_manager.py
+ 12. ..\autoBMAD\epic_automation\sdk_wrapper.py
+ 13. ..\autoBMAD\epic_automation\sm_agent.py
+ 14. ..\autoBMAD\epic_automation\state_manager.py
+ 15. ..\autoBMAD\epic_automation\test_automation_agent.py
+ 16. ..\autoBMAD\epic_automation\test_logging.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:794:44 - error: "c" 参数的类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:794:47 - error: 该 `lambda` 的返回类型 "Unknown | Literal[True]" 部分未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:794:59 - error: "strip" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:794:59 - error: "startswith" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:795:35 - error: "c" 参数的类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:795:50 - error: "lower" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:796:42 - error: "c" 参数的类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:796:49 - error: "split" 类型未知 (reportUnknownMemberType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:796:49 - error: 参数类型未知
+    实参对应于 "len" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+9 errors, 0 warnings, 0 notes
+

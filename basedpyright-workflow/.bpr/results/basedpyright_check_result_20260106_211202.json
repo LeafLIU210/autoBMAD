@@ -1,0 +1,436 @@
+{
+  "version": "1.37.0",
+  "time": "1767705125144",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "`None` 不支持调用",
+      "range": {
+        "start": {
+          "line": 503,
+          "character": 22
+        },
+        "end": {
+          "line": 506,
+          "character": 13
+        }
+      },
+      "rule": "reportOptionalCall"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"story_path\" 可能未绑定",
+      "range": {
+        "start": {
+          "line": 716,
+          "character": 63
+        },
+        "end": {
+          "line": 716,
+          "character": 73
+        }
+      },
+      "rule": "reportPossiblyUnboundVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 742,
+          "character": 20
+        },
+        "end": {
+          "line": 742,
+          "character": 41
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 744,
+          "character": 20
+        },
+        "end": {
+          "line": 744,
+          "character": 40
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 748,
+          "character": 63
+        },
+        "end": {
+          "line": 748,
+          "character": 77
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 748,
+          "character": 94
+        },
+        "end": {
+          "line": 748,
+          "character": 107
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"essential_elements\" 的类型部分未知\n  \"essential_elements\" 为 \"list[tuple[str, (c: Unknown) -> (Unknown | Literal[True])] | tuple[str, (c: Unknown) -> bool]]\" 类型",
+      "range": {
+        "start": {
+          "line": 791,
+          "character": 12
+        },
+        "end": {
+          "line": 791,
+          "character": 30
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"c\" 参数的类型未知",
+      "range": {
+        "start": {
+          "line": 792,
+          "character": 43
+        },
+        "end": {
+          "line": 792,
+          "character": 44
+        }
+      },
+      "rule": "reportUnknownLambdaType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "该 `lambda` 的返回类型 \"Unknown | Literal[True]\" 部分未知",
+      "range": {
+        "start": {
+          "line": 792,
+          "character": 46
+        },
+        "end": {
+          "line": 792,
+          "character": 83
+        }
+      },
+      "rule": "reportUnknownLambdaType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"strip\" 类型未知",
+      "range": {
+        "start": {
+          "line": 792,
+          "character": 58
+        },
+        "end": {
+          "line": 792,
+          "character": 65
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"startswith\" 类型未知",
+      "range": {
+        "start": {
+          "line": 792,
+          "character": 58
+        },
+        "end": {
+          "line": 792,
+          "character": 78
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"c\" 参数的类型未知",
+      "range": {
+        "start": {
+          "line": 793,
+          "character": 34
+        },
+        "end": {
+          "line": 793,
+          "character": 35
+        }
+      },
+      "rule": "reportUnknownLambdaType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"lower\" 类型未知",
+      "range": {
+        "start": {
+          "line": 793,
+          "character": 49
+        },
+        "end": {
+          "line": 793,
+          "character": 56
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"c\" 参数的类型未知",
+      "range": {
+        "start": {
+          "line": 794,
+          "character": 41
+        },
+        "end": {
+          "line": 794,
+          "character": 42
+        }
+      },
+      "rule": "reportUnknownLambdaType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"split\" 类型未知",
+      "range": {
+        "start": {
+          "line": 794,
+          "character": 48
+        },
+        "end": {
+          "line": 794,
+          "character": 55
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "参数类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参",
+      "range": {
+        "start": {
+          "line": 794,
+          "character": 48
+        },
+        "end": {
+          "line": 794,
+          "character": 57
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"check_func\" 的类型部分未知\n  \"check_func\" 为 \"((c: Unknown) -> (Unknown | Literal[True])) | ((c: Unknown) -> bool)\" 类型",
+      "range": {
+        "start": {
+          "line": 798,
+          "character": 30
+        },
+        "end": {
+          "line": 798,
+          "character": 40
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"append\" 的类型部分未知\n  \"append\" 为 \"(object: Unknown, /) -> None\" 类型",
+      "range": {
+        "start": {
+          "line": 800,
+          "character": 20
+        },
+        "end": {
+          "line": 800,
+          "character": 45
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 806,
+          "character": 23
+        },
+        "end": {
+          "line": 806,
+          "character": 41
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"story_path\" 可能未绑定",
+      "range": {
+        "start": {
+          "line": 826,
+          "character": 66
+        },
+        "end": {
+          "line": 826,
+          "character": 76
+        }
+      },
+      "rule": "reportPossiblyUnboundVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"story_path\" 可能未绑定",
+      "range": {
+        "start": {
+          "line": 855,
+          "character": 61
+        },
+        "end": {
+          "line": 855,
+          "character": 71
+        }
+      },
+      "rule": "reportPossiblyUnboundVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"story_path\" 可能未绑定",
+      "range": {
+        "start": {
+          "line": 881,
+          "character": 71
+        },
+        "end": {
+          "line": 881,
+          "character": 81
+        }
+      },
+      "rule": "reportPossiblyUnboundVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"object\" 类型的实参无法赋值给函数 \"wait_for\" 中 \"_FutureLike[_T@wait_for]\" 类型的形参 \"fut\"\n  \"object\" 类型与 \"_FutureLike[_T@wait_for]\" 类型不兼容\n    \"object\" 与 Protocol 类 \"Awaitable[_T@wait_for]\" 不兼容\n      \"__await__\" 不存在\n    \"object\" 与 \"Future[_T@wait_for]\" 不兼容\n    \"object\" 与 Protocol 类 \"Generator[Any, None, _T@wait_for]\" 不兼容\n      \"__next__\" 不存在\n      \"send\" 不存在\n      \"throw\" 不存在\n  ...",
+      "range": {
+        "start": {
+          "line": 525,
+          "character": 51
+        },
+        "end": {
+          "line": 525,
+          "character": 66
+        }
+      },
+      "rule": "reportArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "条件的计算结果始终为 `False`，因为类型 \"SDKSessionManager\" 和 \"None\" 之间不存在交集",
+      "range": {
+        "start": {
+          "line": 517,
+          "character": 11
+        },
+        "end": {
+          "line": 517,
+          "character": 34
+        }
+      },
+      "rule": "reportUnnecessaryComparison"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "severity": "error",
+      "message": "`None` 不支持调用",
+      "range": {
+        "start": {
+          "line": 523,
+          "character": 22
+        },
+        "end": {
+          "line": 526,
+          "character": 13
+        }
+      },
+      "rule": "reportOptionalCall"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 25,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.109
+  },
+  "metadata": {
+    "check_time": "2026-01-06T21:12:05.212895",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "..\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

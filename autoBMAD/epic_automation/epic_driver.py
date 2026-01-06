@@ -11,7 +11,7 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 # Import log manager
 from autoBMAD.epic_automation.log_manager import (
@@ -606,6 +606,18 @@ class EpicDriver:
                 logger.info(f"Story already completed: {story_path}")
                 return True
 
+            # Additional check: if story document status is "Ready for Done", skip processing
+            if await self._is_story_ready_for_done(story_path):
+                logger.info(f"Story document status is Ready for Done: {story_path}")
+                # Update state to completed if not already
+                if not existing_status or existing_status.get('status') != 'completed':
+                    await self.state_manager.update_story_status(
+                        story_path=story_path,
+                        status="completed",
+                        phase="skip"
+                    )
+                return True
+
             # Execute Dev-QA Loop (SM phase removed - stories already created by parse_epic)
             iteration = 1
             max_dev_qa_cycles = 10  # Maximum Dev-QA cycles
@@ -633,7 +645,7 @@ class EpicDriver:
                 iteration += 1
 
                 # Small delay between cycles
-                await asyncio.sleep(2)
+                await asyncio.sleep(1.0)
 
             # If we reach here, max cycles reached
             logger.warning(f"Reached maximum Dev-QA cycles ({max_dev_qa_cycles}) for {story_path}")
@@ -714,6 +726,7 @@ class EpicDriver:
             return True  # Always return True to allow processing to continue
 
         except Exception as e:
+            story_path = story.get('path', 'unknown')
             logger.error(f"State consistency check failed for {story_path}: {e}")
             return True  # Return True to allow processing to continue despite errors
 
@@ -734,8 +747,8 @@ class EpicDriver:
                 # If no expected files specified, check for basic structure
                 expected_files = ['src', 'tests', 'docs']
             
-            missing_files = []
-            existing_files = []
+            missing_files: list[str] = []
+            existing_files: list[str] = []
             
             for file_path in expected_files:
                 path = Path(file_path)
@@ -746,7 +759,7 @@ class EpicDriver:
             
             # Log status but be permissive
             if missing_files:
-                logger.info(f"Expected files check: found {len(existing_files)}, missing {len(missing_files)} for {story.get('path', 'unknown')}")
+                logger.info(f"Expected files check: found {str(len(existing_files))}, missing {str(len(missing_files))} for {story.get('path', 'unknown')}")
                 logger.debug(f"Missing files: {missing_files}")
             else:
                 logger.debug(f"All expected files found for {story.get('path', 'unknown')}")
@@ -788,16 +801,30 @@ class EpicDriver:
                 logger.warning(f"Story {story_path} appears too short ({len(content)} chars)")
                 return False
             
+            # Helper functions for checking essential story elements
+            def has_markdown_headers(content: str) -> bool:
+                """Check if content has markdown headers."""
+                return '#' in content or content.strip().startswith('#')
+
+            def mentions_status(content: str) -> bool:
+                """Check if content mentions status."""
+                return 'status' in content.lower()
+
+            def has_substantial_content(content: str) -> bool:
+                """Check if content has substantial text."""
+                return len(content.split()) > 20
+
             # Check for essential story elements (be flexible about formatting)
-            essential_elements = [
-                ('title or header', lambda c: '#' in c or c.strip().startswith('#')),  # Has markdown headers
-                ('status', lambda c: 'status' in c.lower()),  # Mentions status
-                ('story content', lambda c: len(c.split()) > 20),  # Has substantial content
+            essential_elements: list[tuple[str, Callable[[str], bool]]] = [
+                ('title or header', has_markdown_headers),  # Has markdown headers
+                ('status', mentions_status),  # Mentions status
+                ('story content', has_substantial_content),  # Has substantial content
             ]
             
-            missing_essentials = []
+            missing_essentials: list[str] = []
             for element_name, check_func in essential_elements:
-                if not check_func(content):
+                check_func_cast = cast(Callable[[str], bool], check_func)
+                if not check_func_cast(content):
                     missing_essentials.append(element_name)
             
             if missing_essentials:
@@ -824,6 +851,7 @@ class EpicDriver:
             return True  # Be permissive - allow most stories to proceed
 
         except Exception as e:
+            story_path = story.get('path', 'unknown')
             logger.error(f"Story integrity validation failed for {story_path}: {e}")
             return True  # Return True to allow processing to continue
 
@@ -853,6 +881,7 @@ class EpicDriver:
             self.log_manager.log_state_resync(story_path, expected_status)
 
         except Exception as e:
+            story_path = story.get('path', 'unknown')
             logger.error(f"Failed to resync story state for {story_path}: {e}")
 
     async def _handle_graceful_cancellation(self, story: "dict[str, Any]") -> None:
@@ -879,6 +908,7 @@ class EpicDriver:
             self.log_manager.log_cancellation(f"Story processing cancelled for {story_path}")
 
         except Exception as e:
+            story_path = story.get('path', 'unknown')
             logger.error(f"Failed to handle graceful cancellation for {story_path}: {e}")
 
     async def execute_dev_qa_cycle(self, stories: "list[dict[str, Any]]") -> bool:

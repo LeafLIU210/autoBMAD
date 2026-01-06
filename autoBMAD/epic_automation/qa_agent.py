@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Any
+from typing import TYPE_CHECKING, Any
 from enum import Enum
 import re
 import time
@@ -19,14 +19,15 @@ import time
 # Import SafeClaudeSDK wrapper
 from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
+# Import SDK session manager for isolated execution
+from .sdk_session_manager import get_session_manager, SDKErrorType
+
 # Import Claude SDK types
 try:
-    from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+    from claude_agent_sdk import ClaudeAgentOptions
 except ImportError:
     # For development without SDK installed
-    query = None
     ClaudeAgentOptions = None
-    ResultMessage = None
 
 # Type annotations for QA tools
 if TYPE_CHECKING:
@@ -128,7 +129,7 @@ class QAAgent:
                     return fallback_result
 
                 # Create dev prompt for fixing
-                dev_prompt = f"*review-qa {' '.join(gate_paths)} 根据qa gate文件执行修复"
+                dev_prompt = f"*review-qa {' '.join(gate_paths)} Fix based on QA gate file findings"
 
                 logger.info(f"{self.name} QA found issues, needs fixing")
                 return {
@@ -161,15 +162,15 @@ class QAAgent:
 
 
 
-    # ========== SIMPLIFIED: Removed _apply_qa_guidance (奥卡姆剃刀原则) ==========
+    # ========== SIMPLIFIED: Removed _apply_qa_guidance (Occam's Razor Principle) ==========
     # Original method removed - AI-driven QA review replaces this complex logic
     # The new _execute_qa_review() method handles all guidance through Claude SDK
 
-    # ========== SIMPLIFIED: Removed _run_qa_tools (奥卡姆剃刀原则) ==========
+    # ========== SIMPLIFIED: Removed _run_qa_tools (Occam's Razor Principle) ==========
     # Original method removed - BasedPyright and Fixtest tools replaced by AI-driven QA review
     # The new _execute_qa_review() method uses Claude SDK for intelligent quality assessment
 
-    # ========== SIMPLIFIED: Removed _calculate_qa_result (奥卡姆剃刀原则) ==========
+    # ========== SIMPLIFIED: Removed _calculate_qa_result (Occam's Razor Principle) ==========
     # Original method removed - Complex calculation replaced by AI-driven decision
     # The new _execute_qa_review() and _check_story_status() methods handle all decisions through AI
 
@@ -213,19 +214,22 @@ class QAAgent:
 
         return "\n".join(report_lines)
 
-    # ========== SIMPLIFIED: Removed _run_test_suite (奥卡姆剃刀原则) ==========
+    # ========== SIMPLIFIED: Removed _run_test_suite (Occam's Razor Principle) ==========
     # Original method removed - Pytest execution replaced by AI-driven QA review
     # The new _execute_qa_review() method uses Claude SDK for comprehensive testing
 
-    # ========== SIMPLIFIED: Removed _update_qa_status (奥卡姆剃刀原则) ==========
+    # ========== SIMPLIFIED: Removed _update_qa_status (Occam's Razor Principle) ==========
     # Original method removed - Status updates handled by Claude SDK in _execute_qa_review()
     # The new _check_story_status() method reads status, AI updates it
 
-    # ========== NEW: AI-Driven QA Methods (奥卡姆剃刀原则 - 极简方案) ==========
+    # ========== NEW: AI-Driven QA Methods (Occam's Razor Principle - Minimal Solution) ==========
 
     async def _execute_qa_review(self, story_path: str) -> bool:
         """
-        Execute AI-driven QA review using safe SDK wrapper.
+        Execute AI-driven QA review using safe SDK wrapper with session isolation.
+
+        Uses SDKSessionManager to ensure SDK calls are isolated from other agents,
+        preventing cancel scope propagation issues.
 
         Args:
             story_path: Path to the story file
@@ -243,8 +247,9 @@ class QAAgent:
             # Build the prompt for Claude SDK
             prompt = (
                 f'@.bmad-core\\agents\\qa.md *review {story_path} '
-                '审查故事文档，更新故事文档status。'
-                f'*gate {story_path} 创建qa gate文件到 @docs\\gates\\'
+                'Review story document and update story document status.'
+                f'*gate {story_path} Create or update QA gate file at @docs\\gates\\'
+                'If the story document review passes with no CONCERNS, update status to "Ready for Done"'
             )
 
             # Create ClaudeAgentOptions for SDK
@@ -252,14 +257,40 @@ class QAAgent:
                 logger.warning("Claude Agent SDK not available - QA review skipped")
                 return True
 
-            options = ClaudeAgentOptions(
-                permission_mode="bypassPermissions",
-                cwd=str(Path.cwd())
+            # Get session manager for isolated execution
+            session_manager = get_session_manager()
+
+            async def sdk_call() -> bool:
+                """Inner SDK call wrapped for isolation"""
+                if ClaudeAgentOptions is None:
+                    logger.warning("Claude Agent SDK not available - QA review skipped")
+                    return False
+                options = ClaudeAgentOptions(
+                    permission_mode="bypassPermissions",
+                    cwd=str(Path.cwd())
+                )
+                sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
+                return await sdk.execute()
+
+            # Execute with session isolation to prevent cancel scope propagation
+            result = await session_manager.execute_isolated(
+                agent_name="QAAgent",
+                sdk_func=sdk_call,
+                timeout=1200.0
             )
 
-            # Use SafeClaudeSDK with valid options
-            sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
-            return await sdk.execute()
+            if result.success:
+                logger.info(f"{self.name} QA review succeeded in {result.duration_seconds:.1f}s")
+                return True
+            elif result.error_type == SDKErrorType.CANCELLED:
+                logger.info(f"{self.name} QA review cancelled for {story_path}")
+                return False
+            elif result.error_type == SDKErrorType.TIMEOUT:
+                logger.warning(f"{self.name} QA review timed out for {story_path}")
+                return False
+            else:
+                logger.warning(f"{self.name} QA review failed: {result.error_message}")
+                return False
 
         except Exception as e:
             logger.error(f"Failed to execute QA review: {e}")
@@ -293,7 +324,7 @@ class QAAgent:
             # Process results
             passed_checks = 0
             total_checks = len(results)
-            failure_reasons = []
+            failure_reasons: list[str] = []
             
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
@@ -313,7 +344,7 @@ class QAAgent:
                 'passed': overall_passed,
                 'needs_fix': needs_fix,
                 'gate_paths': [],
-                'dev_prompt': f'*review-qa 根据基础QA检查结果执行修复: {", ".join(failure_reasons)}' if failure_reasons else '',
+                'dev_prompt': f'*review-qa Fix based on basic QA check results: {", ".join(failure_reasons)}' if failure_reasons else '',  # type: ignore[arg-type]
                 'fallback_review': True,
                 'checks_passed': passed_checks,
                 'total_checks': total_checks
@@ -325,7 +356,7 @@ class QAAgent:
                 'passed': False,
                 'needs_fix': True,
                 'gate_paths': [],
-                'dev_prompt': f'*review-qa 基础QA检查失败: {str(e)}',
+                'dev_prompt': f'*review-qa Basic QA check failed: {str(e)}',
                 'fallback_review': True,
                 'error': str(e)
             }
@@ -352,7 +383,7 @@ class QAAgent:
                 return {'passed': False, 'reason': 'No Python files found in source directory'}
             
             # Basic checks on Python files
-            issues = []
+            issues: list[str] = []
             total_files = len(python_files)
             files_with_docstrings = 0
             files_with_type_hints = 0
@@ -382,7 +413,7 @@ class QAAgent:
             type_hint_ratio = files_with_type_hints / total_files if total_files > 0 else 0
             
             # Basic quality threshold: at least 50% of files should have docstrings
-            passed = docstring_ratio >= 0.5 and len(issues) < total_files * 0.3
+            passed = docstring_ratio >= 0.5 and len(issues) < total_files * 0.3  # type: ignore[return-value]
             
             return {
                 'passed': passed,
@@ -550,7 +581,7 @@ class QAAgent:
         """
         try:
             gates_dir = Path("docs/qa/gates")
-            # 自动创建目录（如果不存在）
+            # Auto-create directory if it doesn't exist
             gates_dir.mkdir(parents=True, exist_ok=True)
 
             # Find all markdown files in gates directory

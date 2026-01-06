@@ -9,6 +9,14 @@ from .code_quality_agent import CodeQualityAgent
 from .qa_tools_integration import QAStatus, QAError, BasedPyrightWorkflowRunner, FixtestWorkflowRunner, QAAutomationWorkflow
 from .test_automation_agent import TestAutomationAgent
 from .agents import BaseAgent, AgentConfig
+from .sdk_session_manager import (
+    SDKSessionManager,
+    SDKExecutionResult,
+    SDKErrorType,
+    IsolatedSDKContext,
+    get_session_manager,
+    reset_session_manager,
+)
 
 __all__ = [
     'SMAgent',
@@ -25,4 +33,11 @@ __all__ = [
     'TestAutomationAgent',
     'BaseAgent',
     'AgentConfig',
+    # SDK Session Manager
+    'SDKSessionManager',
+    'SDKExecutionResult',
+    'SDKErrorType',
+    'IsolatedSDKContext',
+    'get_session_manager',
+    'reset_session_manager',
 ]

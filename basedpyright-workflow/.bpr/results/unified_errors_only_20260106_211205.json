@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260106_211202.txt",
+    "extraction_time": "2026-01-06T21:12:05.419616",
+    "total_files_with_errors": 4,
+    "total_errors": 25,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportOptionalCall": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 504,
+          "column": 23,
+          "message": "`None` 不支持调用 (reportOptionalCall)",
+          "rule": "reportOptionalCall"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 21,
+      "errors_by_rule": {
+        "reportPossiblyUnboundVariable": 4,
+        "unknown": 9,
+        "reportUnknownLambdaType": 4,
+        "reportUnknownMemberType": 4
+      },
+      "errors_by_tool": {
+        "basedpyright": 21
+      },
+      "errors": [
+        {
+          "line": 717,
+          "column": 64,
+          "message": "\"story_path\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 743,
+          "column": 21,
+          "message": "\"append\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 745,
+          "column": 21,
+          "message": "\"append\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 749,
+          "column": 64,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 749,
+          "column": 95,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 792,
+          "column": 13,
+          "message": "\"essential_elements\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 793,
+          "column": 44,
+          "message": "\"c\" 参数的类型未知 (reportUnknownLambdaType)",
+          "rule": "reportUnknownLambdaType"
+        },
+        {
+          "line": 793,
+          "column": 47,
+          "message": "该 `lambda` 的返回类型 \"Unknown | Literal[True]\" 部分未知 (reportUnknownLambdaType)",
+          "rule": "reportUnknownLambdaType"
+        },
+        {
+          "line": 793,
+          "column": 59,
+          "message": "\"strip\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 793,
+          "column": 59,
+          "message": "\"startswith\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 794,
+          "column": 35,
+          "message": "\"c\" 参数的类型未知 (reportUnknownLambdaType)",
+          "rule": "reportUnknownLambdaType"
+        },
+        {
+          "line": 794,
+          "column": 50,
+          "message": "\"lower\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 795,
+          "column": 42,
+          "message": "\"c\" 参数的类型未知 (reportUnknownLambdaType)",
+          "rule": "reportUnknownLambdaType"
+        },
+        {
+          "line": 795,
+          "column": 49,
+          "message": "\"split\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 795,
+          "column": 49,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 799,
+          "column": 31,
+          "message": "\"check_func\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 801,
+          "column": 21,
+          "message": "\"append\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 807,
+          "column": 24,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 827,
+          "column": 67,
+          "message": "\"story_path\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 856,
+          "column": 62,
+          "message": "\"story_path\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 882,
+          "column": 72,
+          "message": "\"story_path\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 526,
+          "column": 52,
+          "message": "\"object\" 类型的实参无法赋值给函数 \"wait_for\" 中 \"_FutureLike[_T@wait_for]\" 类型的形参 \"fut\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportUnnecessaryComparison": 1,
+        "reportOptionalCall": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 518,
+          "column": 12,
+          "message": "条件的计算结果始终为 `False`，因为类型 \"SDKSessionManager\" 和 \"None\" 之间不存在交集 (reportUnnecessaryComparison)",
+          "rule": "reportUnnecessaryComparison"
+        },
+        {
+          "line": 524,
+          "column": 23,
+          "message": "`None` 不支持调用 (reportOptionalCall)",
+          "rule": "reportOptionalCall"
+        }
+      ]
+    }
+  ]
+}

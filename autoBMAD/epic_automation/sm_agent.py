@@ -15,6 +15,9 @@ import re
 # Import SafeClaudeSDK wrapper
 from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
+# Import SDK session manager for isolated execution
+from .sdk_session_manager import get_session_manager, SDKErrorType
+
 try:
     from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
 except ImportError:
@@ -447,7 +450,7 @@ class SMAgent:
             True if successful, False otherwise
         """
         max_retries = 1
-        retry_delay = 15
+        retry_delay = 1.0
         timeout_seconds = 1200
 
         for attempt in range(max_retries):
@@ -476,7 +479,7 @@ class SMAgent:
                 logger.warning(f"[SM Agent] Call timeout (>{timeout_seconds} seconds), attempt {attempt + 1}/{max_retries}")
                 if attempt < max_retries - 1:
                     logger.info(f"[SM Agent] Waiting {retry_delay} seconds before retry...")
-                    await asyncio.sleep(retry_delay)
+                    await asyncio.sleep(1.0)
                 else:
                     logger.error(f"[SM Agent] Call failed, reached max retries ({max_retries})")
                     return False
@@ -485,7 +488,7 @@ class SMAgent:
                 logger.error(f"[SM Agent] Call exception: {type(e).__name__}: {e}")
                 if attempt < max_retries - 1:
                     logger.info(f"[SM Agent] Waiting {retry_delay} seconds before retry...")
-                    await asyncio.sleep(retry_delay)
+                    await asyncio.sleep(1.0)
                 else:
                     logger.error("[SM Agent] Call failed, reached max retries")
                     return False
@@ -494,7 +497,10 @@ class SMAgent:
 
     async def _execute_sdk_with_logging(self, prompt: str) -> bool:
         """
-        Execute SDK call with safe wrapper and logging.
+        Execute SDK call with safe wrapper, session isolation, and logging.
+
+        Uses SDKSessionManager to ensure SDK calls are isolated from other agents,
+        preventing cancel scope propagation issues.
 
         Args:
             prompt: The prompt to send to Claude
@@ -506,13 +512,43 @@ class SMAgent:
             logger.error("Claude Agent SDK not installed. Please install claude-agent-sdk")
             return False
 
-        options = ClaudeAgentOptions(
-            permission_mode="bypassPermissions",
-            cwd=str(Path.cwd())
+        # Get session manager for isolated execution
+        session_manager = get_session_manager()
+
+        async def sdk_call() -> bool:
+            """Inner SDK call wrapped for isolation"""
+            if ClaudeAgentOptions is None:
+                logger.error("ClaudeAgentOptions is not available")
+                return False
+
+            options = ClaudeAgentOptions(
+                permission_mode="bypassPermissions",
+                cwd=str(Path.cwd())
+            )
+            sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
+            # Execute SDK call and ensure it returns a bool
+            result = await sdk.execute()
+            return bool(result)
+
+        # Execute with session isolation
+        result = await session_manager.execute_isolated(
+            agent_name="SMAgent",
+            sdk_func=sdk_call,
+            timeout=1200.0
         )
 
-        sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
-        return await sdk.execute()
+        if result.success:
+            logger.info(f"[SM Agent] SDK call succeeded in {result.duration_seconds:.1f}s")
+            return True
+        elif result.error_type == SDKErrorType.CANCELLED:
+            logger.info("[SM Agent] SDK call cancelled")
+            return False
+        elif result.error_type == SDKErrorType.TIMEOUT:
+            logger.warning("[SM Agent] SDK call timed out")
+            return False
+        else:
+            logger.warning(f"[SM Agent] SDK call failed: {result.error_message}")
+            return False
 
     async def _verify_story_files(self, story_ids: List[str], epic_path: str) -> Tuple[bool, List[str]]:
         """

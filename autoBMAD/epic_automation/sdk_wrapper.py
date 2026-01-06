@@ -111,7 +111,7 @@ class SDKMessageTracker:
         # Only create task if not already created
         if self._display_task is None or self._display_task.done():
             self._stop_event.clear()  # Reset stop event
-            self._display_task = asyncio.ensure_future(self._periodic_display())
+            self._display_task = asyncio.create_task(self._periodic_display())
 
     async def stop_periodic_display(self, timeout: float = 1.0):
         """Stop the periodic display using Event signaling instead of task cancellation."""
@@ -386,7 +386,7 @@ class SafeClaudeSDK:
 
             # Iterate through the generator directly (not using async with)
             message_count = 0
-            start_time = asyncio.get_event_loop().time()
+            start_time = asyncio.get_running_loop().time()
 
             async for message in generator:
                 message_count += 1
@@ -417,7 +417,7 @@ class SafeClaudeSDK:
                         return True
 
             # If we get here, no ResultMessage was received
-            total_elapsed = asyncio.get_event_loop().time() - start_time
+            total_elapsed = asyncio.get_running_loop().time() - start_time
 
             # Stop periodic display
             await self.message_tracker.stop_periodic_display()
@@ -471,6 +471,8 @@ class SafeClaudeSDK:
                 if display_task and not display_task.done():
                     try:
                         # Wait briefly for natural task exit via Event signal
+                        # Type assertion: display_task is known to be a Task[None] after the check
+                        assert display_task is not None
                         await asyncio.wait_for(display_task, timeout=0.5)
                     except asyncio.TimeoutError:
                         # Task will exit on next event check since stop_event is set
@@ -507,32 +509,41 @@ class SafeClaudeSDK:
                 logger.debug(f"Error during cleanup: {cleanup_error}")
             raise
         finally:
-            # Final cleanup to ensure periodic display is stopped
+            # Final cleanup to ensure periodic display is stopped and cancel scope is isolated
+            # Step 1: Stop message tracker first
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception:
+                pass
+
+            # Step 2: Close the async generator with timeout
             if generator is not None:
                 try:
-                    # Async generator cleanup - using getattr to avoid attribute errors
-                    aclose_method = getattr(generator, 'aclose', None)  # type: ignore
-                    if aclose_method is not None:
+                    aclose_method = getattr(generator, 'aclose', None)
+                    if aclose_method is not None and callable(aclose_method):
                         try:
-                            # Check if event loop is still running before attempting cleanup
-                            loop = asyncio.get_event_loop()
-                            if not loop.is_closed():
-                                await aclose_method()
-                            else:
-                                logger.debug("Event loop closed, skipping generator cleanup")
+                            # Use wait_for to prevent hanging on cleanup
+                            # Cast to Any to bypass type checking for SDK internal method
+                            await asyncio.wait_for(aclose_method(), timeout=2.0)  # type: ignore[arg-type]
+                        except asyncio.TimeoutError:
+                            logger.debug("Generator cleanup timed out (ignored)")
+                        except asyncio.CancelledError:
+                            logger.debug("Generator cleanup cancelled (ignored)")
                         except RuntimeError as e:
                             error_msg = str(e)
                             if "cancel scope" in error_msg or "Event loop is closed" in error_msg:
-                                # Expected during cleanup - log as debug
                                 logger.debug(f"Expected cleanup error (ignored): {e}")
                             else:
-                                # Unexpected error - log as warning
                                 logger.warning(f"Unexpected error during generator cleanup: {e}")
                         except Exception as e:
-                            # Other exceptions during cleanup - log as debug
                             logger.debug(f"Generator cleanup exception (ignored): {e}")
                 except Exception:
-                    pass  # Generator may already be closed
+                    pass
+
+            # Step 3: Critical - Add cleanup delay for anyio cancel scope isolation
+            # This prevents cancel signals from propagating to subsequent SDK calls
+            # Increased delay to ensure cancel scope fully cleans up
+            await asyncio.sleep(1.0)
 
     async def _check_work_completed(self) -> bool:
         """

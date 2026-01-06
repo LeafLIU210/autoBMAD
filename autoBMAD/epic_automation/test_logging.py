@@ -60,11 +60,11 @@ async def test_sdk_messages():
 
     # Simulate SDK messages
     log_manager.write_sdk_message("Using tool: Read", "TOOL_USE")
-    await asyncio.sleep(1)
+    await asyncio.sleep(1.0)
     log_manager.write_sdk_message("[Thinking] Now I understand the task...", "THINKING")
-    await asyncio.sleep(1)
+    await asyncio.sleep(1.0)
     log_manager.write_sdk_message("[User sent 1 content blocks]", "USER")
-    await asyncio.sleep(1)
+    await asyncio.sleep(1.0)
     log_manager.write_sdk_message("[Tool result] File read successfully", "TOOL_RESULT")
 
     print("[OK] SDK messages written")

@@ -1,0 +1,12 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260106_220449.txt",
+    "extraction_time": "2026-01-06T22:04:52.423509",
+    "total_files_with_errors": 0,
+    "total_errors": 0,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": []
+}

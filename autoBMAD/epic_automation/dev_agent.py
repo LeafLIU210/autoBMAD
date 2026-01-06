@@ -9,13 +9,16 @@ Uses Claude Code CLI for actual implementation.
 import logging
 import subprocess
 import asyncio
-from typing import Dict, Any, Optional, List, cast, TYPE_CHECKING
+from typing import Any, cast, TYPE_CHECKING
+from typing import Dict, List, Optional  # For compatibility with older Python versions
 import re
 from pathlib import Path
 
 if TYPE_CHECKING:
-    from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
-    from autoBMAD.epic_automation.log_manager import LogManager
+    from claude_agent_sdk import query, ClaudeAgentOptions
+
+# Import LogManager for runtime use
+from autoBMAD.epic_automation.log_manager import LogManager
 
 try:
     from claude_agent_sdk import query as _query, ClaudeAgentOptions as _ClaudeAgentOptions, ResultMessage as _ResultMessage
@@ -25,19 +28,31 @@ except ImportError:
     _ClaudeAgentOptions = None
     _ResultMessage = None
 
+# Import SDK session manager for isolated execution
+from .sdk_session_manager import get_session_manager, SDKErrorType
+
 # Export for use in code
 query = _query
 ClaudeAgentOptions = _ClaudeAgentOptions  # type: ignore[assignment]
 ResultMessage = _ResultMessage
 
 # Import SafeClaudeSDK wrapper
-from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
+try:
+    from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
+except ImportError:
+    # For development without SDK installed
+    SafeClaudeSDK = None
 
 logger = logging.getLogger(__name__)
 
 
 class DevAgent:
     """Development agent for handling implementation tasks."""
+
+    name: str
+    use_claude: bool
+    _current_story_path: Optional[str]
+    _claude_available: bool
 
     def __init__(self, use_claude: bool = True):
         """
@@ -49,7 +64,7 @@ class DevAgent:
         """
         self.name = "Dev Agent"
         self.use_claude = use_claude
-        self._current_story_path: Optional[str] = None
+        self._current_story_path = None
         self._claude_available = self._check_claude_available() if use_claude else False
         logger.info(f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})")
 
@@ -84,7 +99,7 @@ class DevAgent:
             
             # 检查编码问题（非ASCII字符）
             try:
-                prompt.encode('ascii')
+                _ = prompt.encode('ascii')
             except UnicodeEncodeError:
                 logger.warning("[Prompt Validation] Prompt contains non-ASCII characters")
             
@@ -361,6 +376,8 @@ class DevAgent:
         try:
             # In a real implementation, this would parse guidance and apply it
             # For now, we just acknowledge it
+            _ = requirements  # Mark as intentionally unused for now
+            _ = guidance  # Mark as intentionally unused for now
             return True
         except Exception as e:
             logger.error(f"Failed to apply dev guidance: {e}")
@@ -374,20 +391,27 @@ class DevAgent:
             # Check if SDK is available
             if query is None or ClaudeAgentOptions is None:
                 raise RuntimeError(
-                    "Claude Agent SDK is required but not available. "
+                    "Claude Agent SDK is required but not available. " +
                     "Please install and configure claude-agent-sdk."
                 )
 
             # Get story path
             story_path = requirements.get('story_path', self._current_story_path or '')
 
-            # Check if story status is already "Ready for Review"
+            # Check if story status is already completed
             if story_path:
                 story_status = await self._check_story_status(story_path)
-                if story_status == "Ready for Review":
+
+                # Check for "Ready for Done" or "Done" status - skip entire dev-qa cycle
+                if story_status and ('ready for done' in story_status.lower() or story_status.lower() == 'done'):
+                    logger.info(f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle")
+                    return True
+
+                # Check for "Ready for Review" status - skip dev but notify QA
+                elif story_status == "Ready for Review":
                     logger.info(f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls")
                     # Development is considered complete, notify QA agent directly
-                    await self._notify_qa_agent(story_path)
+                    _ = await self._notify_qa_agent(story_path)
                     return True
                 elif story_status:
                     logger.info(f"[Dev Agent] Story status: {story_status}, proceeding with development")
@@ -413,7 +437,7 @@ class DevAgent:
 
             if result:
                 # Development completed successfully, notify QA agent
-                await self._notify_qa_agent(story_path)
+                _ = await self._notify_qa_agent(story_path)
                 logger.info(f"Development tasks completed successfully for: {requirements.get('title', 'Unknown')}")
                 return True
             else:
@@ -450,7 +474,7 @@ class DevAgent:
                 logger.info(f"{self.name} QA feedback handling completed successfully")
 
                 # After fixing, notify QA again for re-review
-                await self._notify_qa_agent(story_path)
+                _ = await self._notify_qa_agent(story_path)
 
                 return True
             else:
@@ -461,9 +485,12 @@ class DevAgent:
             logger.error(f"Failed to handle QA feedback: {e}")
             return False
 
-    async def _execute_single_claude_sdk(self, prompt: str, story_path: str, log_manager: "Optional[LogManager]" = None) -> bool:
+    async def _execute_single_claude_sdk(self, prompt: str, story_path: str, log_manager: Optional[LogManager] = None) -> bool:
         """
-        Execute Claude SDK call with safe wrapper and detailed diagnostics.
+        Execute Claude SDK call with safe wrapper, isolation, and detailed diagnostics.
+
+        Uses SDKSessionManager to ensure SDK calls are isolated from other agents,
+        preventing cancel scope propagation issues.
 
         Args:
             prompt: Prompt for the SDK call
@@ -483,43 +510,61 @@ class DevAgent:
             logger.error(f"[Dev Agent] Invalid prompt format for {story_path}")
             return False
 
-        options = ClaudeAgentOptions(
-            permission_mode="bypassPermissions",
-            cwd=str(Path.cwd())
-        )
+        # Get session manager for isolated execution
+        session_manager = get_session_manager()
+
+        async def sdk_call() -> bool:
+            """Inner SDK call wrapped for isolation"""
+            if SafeClaudeSDK is None:
+                logger.error("[Dev Agent] SafeClaudeSDK not available")
+                return False
+            # Safe to call ClaudeAgentOptions since we already checked it's not None
+            # Use assert to satisfy type checker
+            assert ClaudeAgentOptions is not None, "ClaudeAgentOptions should not be None"
+            options = ClaudeAgentOptions(
+                permission_mode="bypassPermissions",
+                cwd=str(Path.cwd())
+            )
+            sdk = SafeClaudeSDK(prompt, options, timeout=1200.0, log_manager=log_manager)
+            return await sdk.execute()
 
         max_retries = 1
-        retry_delay = 15  # 15 seconds between retries
+        retry_delay = 1.0  # 1.0 second between retries
 
         for attempt in range(max_retries):
             try:
                 logger.info(f"[Dev Agent] SDK call attempt {attempt + 1}/{max_retries} for {story_path}")
                 logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
 
-                # Use safe wrapper with detailed timing
-                start_time = asyncio.get_event_loop().time()
-                sdk = SafeClaudeSDK(prompt, options, timeout=1200.0, log_manager=log_manager)
-                result = await sdk.execute()
-                elapsed = asyncio.get_event_loop().time() - start_time
+                # Execute with session isolation
+                result = await session_manager.execute_isolated(
+                    agent_name="DevAgent",
+                    sdk_func=sdk_call,
+                    timeout=1200.0
+                )
 
-                if result:
-                    logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {elapsed:.1f}s")
+                if result.success:
+                    logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {result.duration_seconds:.1f}s")
                     return True
-                else:
-                    logger.warning(f"[Dev Agent] SDK call failed (attempt {attempt + 1}) after {elapsed:.1f}s")
+                elif result.error_type == SDKErrorType.CANCELLED:
+                    logger.info(f"[Dev Agent] SDK call cancelled for {story_path}")
+                    return False  # Don't retry on cancellation
+                elif result.error_type == SDKErrorType.TIMEOUT:
+                    logger.warning(f"[Dev Agent] SDK call timed out for {story_path}")
                     if attempt < max_retries - 1:
                         logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                        await asyncio.sleep(retry_delay)
+                        await asyncio.sleep(1.0)
+                else:
+                    logger.warning(f"[Dev Agent] SDK call failed (attempt {attempt + 1}): {result.error_message}")
+                    if attempt < max_retries - 1:
+                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
+                        await asyncio.sleep(1.0)
 
-            except TimeoutError as e:
-                logger.error(f"[Dev Agent] SDK timeout error (attempt {attempt + 1}): {str(e)}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
             except Exception as e:
                 logger.error(f"[Dev Agent] SDK call exception (attempt {attempt + 1}): {type(e).__name__}: {str(e)}")
                 if attempt < max_retries - 1:
                     logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                    await asyncio.sleep(retry_delay)
+                    await asyncio.sleep(1.0)
 
         logger.error(f"[Dev Agent] All {max_retries} attempts failed for {story_path}")
         return False
@@ -582,6 +627,8 @@ class DevAgent:
     async def _update_story_completion(self, story_content: str, requirements: Dict[str, Any]) -> None:
         """Update story file with completion information."""
         logger.info("Updating story file with completion")
+        _ = story_content  # Mark as intentionally unused - reading file directly
+        _ = requirements  # Mark as intentionally unused - requirements already processed
 
         try:
             if not self._current_story_path:
@@ -614,7 +661,7 @@ class DevAgent:
                     content = re.sub(dev_record_pattern, rf'{file_list_section}\1', content)
 
             # Write updated content
-            with open(story_path, 'w', encoding='utf-8') as f:
+            with open(story_path, 'w', encoding='utf-8') as f:  # type: ignore[assignment]
                 f.write(content)
 
             logger.info(f"Updated story file: {story_path}")
@@ -630,7 +677,7 @@ class DevAgent:
             story_path: Path to the story file
 
         Returns:
-            Status string (e.g., "Ready for Review", "Approved", "Draft")
+            Status string (e.g., "Ready for Review", "Ready for Done", "Done", "Approved", "Draft")
             or None if not found/error
         """
         try:
