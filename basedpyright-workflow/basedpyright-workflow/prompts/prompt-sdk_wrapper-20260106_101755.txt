@@ -1,0 +1,35 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py
+
+BasedPyright type errors (24):  Line 127, Col 24: [reportUnnecessaryIsInstance] "list[ContentBlock]" 一定是 "list[Unknown]" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 154, Col 53: [reportUnnecessaryIsInstance] "dict[str, Any]" 一定是 "dict[Unknown, Unknown]" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 210, Col 25: [reportUnknownVariableType] "block" 类型未知 (reportUnknownVariableType)
+  Line 210, Col 34: [unknown] "content" 的类型部分未知
+  Line 211, Col 25: [reportUnknownVariableType] "block_type" 类型未知 (reportUnknownVariableType)
+  Line 211, Col 43: [reportUnknownMemberType] "__class__" 类型未知 (reportUnknownMemberType)
+  Line 211, Col 43: [reportUnknownMemberType] "__name__" 类型未知 (reportUnknownMemberType)
+  Line 212, Col 66: [unknown] 参数类型未知
+  Line 212, Col 85: [reportUnknownMemberType] "text" 类型未知 (reportUnknownMemberType)
+  Line 214, Col 72: [unknown] 参数类型未知
+  Line 214, Col 95: [reportUnknownMemberType] "thinking" 类型未知 (reportUnknownMemberType)
+  Line 219, Col 71: [unknown] 参数类型未知
+  Line 220, Col 59: [unknown] 参数类型未知
+  Line 222, Col 74: [unknown] 参数类型未知
+  Line 223, Col 52: [unknown] 参数类型未知
+  Line 228, Col 86: [unknown] 部分参数的类型未知
+  Line 252, Col 46: [unknown] "content" 的类型部分未知
+  Line 252, Col 46: [unknown] 部分参数的类型未知
+  Line 294, Col 56: [reportUnnecessaryIsInstance] "list[ContentBlock]" 一定是 "list[Unknown]" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 330, Col 29: [reportUnknownVariableType] "block" 类型未知 (reportUnknownVariableType)
+  Line 330, Col 38: [unknown] "content" 的类型部分未知
+  Line 331, Col 29: [reportUnknownVariableType] "block_type" 类型未知 (reportUnknownVariableType)
+  Line 331, Col 47: [reportUnknownMemberType] "__class__" 类型未知 (reportUnknownMemberType)
+  Line 331, Col 47: [reportUnknownMemberType] "__name__" 类型未知 (reportUnknownMemberType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

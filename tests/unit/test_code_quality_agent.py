@@ -58,7 +58,7 @@ class TestCodeQualityAgent:
     @pytest.mark.asyncio
     async def test_run_basedpyright_check_success(self, quality_agent):
         """Test basedpyright check execution with success."""
-        with patch('basedpyright_workflow.run_basedpyright_check') as mock_check:
+        with patch('autoBMAD.epic_automation.code_quality_agent.run_basedpyright_check') as mock_check:
             mock_check.return_value = {
                 'success': True,
                 'errors': {},
@@ -82,7 +82,7 @@ class TestCodeQualityAgent:
     @pytest.mark.asyncio
     async def test_run_basedpyright_check_with_errors(self, quality_agent):
         """Test basedpyright check execution with errors."""
-        with patch('basedpyright_workflow.run_basedpyright_check') as mock_check:
+        with patch('autoBMAD.epic_automation.code_quality_agent.run_basedpyright_check') as mock_check:
             mock_check.return_value = {
                 'success': False,
                 'errors': {
@@ -117,7 +117,7 @@ class TestCodeQualityAgent:
     @pytest.mark.asyncio
     async def test_run_ruff_check_success(self, quality_agent):
         """Test ruff check execution with success."""
-        with patch('basedpyright_workflow.run_ruff_check') as mock_check:
+        with patch('autoBMAD.epic_automation.code_quality_agent.run_ruff_check') as mock_check:
             mock_check.return_value = {
                 'success': True,
                 'errors': {},
@@ -142,7 +142,7 @@ class TestCodeQualityAgent:
     @pytest.mark.asyncio
     async def test_run_ruff_check_with_errors(self, quality_agent):
         """Test ruff check execution with errors."""
-        with patch('basedpyright_workflow.run_ruff_check') as mock_check:
+        with patch('autoBMAD.epic_automation.code_quality_agent.run_ruff_check') as mock_check:
             mock_check.return_value = {
                 'success': False,
                 'errors': {
@@ -184,7 +184,7 @@ class TestCodeQualityAgent:
     async def test_fix_issues_with_api_key(self, quality_agent):
         """Test fix_issues with API key (mocked)."""
         with patch('os.environ.get') as mock_get, \
-             patch('claude_agent_sdk.Claude') as mock_claude:
+             patch('autoBMAD.epic_automation.code_quality_agent.Claude') as mock_claude:
 
             # Mock API key
             mock_get.side_effect = lambda x: "test-api-key" if x == "ANTHROPIC_API_KEY" else None

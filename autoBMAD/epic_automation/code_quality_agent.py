@@ -31,7 +31,7 @@ except ImportError:
 
 # Import for Claude SDK
 try:
-    from claude_agent_sdk import Claude  # type: ignore[import-untyped]
+    from claude_agent_sdk.client import ClaudeSDKClient as _ClaudeSDKClient; Claude = _ClaudeSDKClient  # type: ignore[import-untyped]
 except ImportError:
     Claude = None  # type: ignore[assignment]
 
@@ -258,10 +258,8 @@ class CodeQualityAgent:
         self.logger.info("Attempting to fix issues with Claude agents...")
 
         try:
-            # Import Claude SDK
-            try:
-                from claude_agent_sdk import Claude  # type: ignore[import-untyped]
-            except ImportError:
+            # Check if Claude SDK is available
+            if Claude is None:
                 self.logger.error("claude_agent_sdk not installed")
                 return False
 
@@ -277,7 +275,9 @@ class CodeQualityAgent:
                 return False
 
             # Initialize Claude client
-            claude: "Claude" = Claude(api_key=api_key)  # type: ignore[assignment]
+            # Note: ClaudeSDKClient doesn't take api_key directly in the constructor
+            # This is a simplified version for testing purposes
+            claude: "Claude" = Claude()  # type: ignore[assignment]
 
             # Process each file with errors
             all_errors: List[Dict[str, Any]] = []

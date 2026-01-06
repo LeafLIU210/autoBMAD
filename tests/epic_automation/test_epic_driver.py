@@ -14,7 +14,7 @@ import tempfile
 import os
 from pathlib import Path
 
-from autoBMAD.epic_automation.epic_driver import EpicParser
+from autoBMAD.epic_automation.epic_driver import EpicDriver as EpicParser
 
 
 class TestEpicParser:

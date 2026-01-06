@@ -1,0 +1,22 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents.py
+
+BasedPyright type errors (11):  Line 448, Col 17: [unknown] "append" 的类型部分未知
+  Line 455, Col 17: [unknown] "append" 的类型部分未知
+  Line 462, Col 17: [unknown] "append" 的类型部分未知
+  Line 479, Col 21: [unknown] "append" 的类型部分未知
+  Line 486, Col 21: [unknown] "append" 的类型部分未知
+  Line 493, Col 21: [unknown] "append" 的类型部分未知
+  Line 604, Col 17: [unknown] "append" 的类型部分未知
+  Line 609, Col 17: [unknown] "append" 的类型部分未知
+  Line 617, Col 17: [unknown] "append" 的类型部分未知
+  Line 622, Col 17: [unknown] "append" 的类型部分未知
+  Line 627, Col 16: [reportUnknownVariableType] 返回类型 "list[Unknown]" 部分未知 (reportUnknownVariableType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

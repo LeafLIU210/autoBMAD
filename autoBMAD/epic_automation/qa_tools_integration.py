@@ -526,7 +526,7 @@ class QAAutomationWorkflow:
         logger.info("Starting QA checks with Both Tools")
 
         # Track all tasks to prevent task leaks
-        tasks = []
+        tasks: List[asyncio.Task[Dict[str, Any]]] = []
 
         # Run both checks in parallel
         basedpyright_task = asyncio.create_task(

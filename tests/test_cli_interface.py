@@ -82,7 +82,7 @@ class TestCLIInterface:
             verbose=True,
             concurrent=False
         )
-        assert driver.epic_path == Path('docs/epics/my-epic.md')
+        assert driver.epic_path == Path('docs/epics/my-epic.md').resolve()
         assert driver.max_iterations == 5
         assert driver.retry_failed == True
         assert driver.verbose == True
@@ -91,7 +91,7 @@ class TestCLIInterface:
     def test_epic_driver_default_initialization(self):
         """Test EpicDriver initialization with default values."""
         driver = EpicDriver(epic_path='docs/epics/my-epic.md')
-        assert driver.epic_path == Path('docs/epics/my-epic.md')
+        assert driver.epic_path == Path('docs/epics/my-epic.md').resolve()
         assert driver.max_iterations == 3  # default
         assert driver.retry_failed == False  # default
         assert driver.verbose == False  # default

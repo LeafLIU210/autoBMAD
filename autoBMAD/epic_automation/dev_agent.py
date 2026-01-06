@@ -29,6 +29,9 @@ query = _query
 ClaudeAgentOptions = _ClaudeAgentOptions  # type: ignore[assignment]
 ResultMessage = _ResultMessage
 
+# Import SafeClaudeSDK wrapper
+from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,6 +73,48 @@ class DevAgent:
 
         # Return the query generator directly
         return query(prompt=prompt, options=options)
+
+    def _validate_prompt_format(self, prompt: str) -> bool:
+        """Validate prompt format for BMAD commands."""
+        try:
+            # 基本格式检查
+            if not prompt or len(prompt.strip()) == 0:
+                logger.error("[Prompt Validation] Empty prompt")
+                return False
+            
+            # BMAD命令格式检查
+            if not prompt.startswith('@'):
+                logger.warning(f"[Prompt Validation] Prompt doesn't start with @: {prompt[:50]}...")
+            
+            # 检查是否包含develop-story命令
+            if '*develop-story' not in prompt:
+                logger.warning(f"[Prompt Validation] Missing *develop-story command: {prompt[:100]}...")
+            
+            # 检查文件路径格式
+            if '"' in prompt:
+                # 提取引号内的路径
+                import re
+                path_matches = re.findall(r'"([^"]+)"', prompt)
+                for path in path_matches:
+                    if not path.endswith('.md'):
+                        logger.warning(f"[Prompt Validation] Non-markdown file path: {path}")
+                    # 检查路径是否存在
+                    from pathlib import Path
+                    if not Path(path).exists():
+                        logger.warning(f"[Prompt Validation] Story file not found: {path}")
+            
+            # 检查编码问题（非ASCII字符）
+            try:
+                prompt.encode('ascii')
+            except UnicodeEncodeError:
+                logger.warning("[Prompt Validation] Prompt contains non-ASCII characters")
+            
+            logger.info(f"[Prompt Validation] Prompt format validation passed")
+            return True
+            
+        except Exception as e:
+            logger.error(f"[Prompt Validation] Validation error: {str(e)}")
+            return False
 
     def _check_claude_available(self) -> bool:
         """Check if Claude Code CLI is available with retry logic."""
@@ -349,9 +394,10 @@ class DevAgent:
         try:
             # Check if SDK is available
             if query is None or ClaudeAgentOptions is None:
-                logger.warning("Claude Agent SDK not available - using simulation mode")
-                logger.info(f"Simulated development of: {requirements.get('title', 'Unknown')}")
-                return True
+                raise RuntimeError(
+                    "Claude Agent SDK is required but not available. "
+                    "Please install and configure claude-agent-sdk."
+                )
 
             # Get story path
             story_path = requirements.get('story_path', self._current_story_path or '')
@@ -365,7 +411,7 @@ class DevAgent:
 
             # Normal development mode - execute three independent SDK calls
             logger.info(f"{self.name} Executing normal development with triple SDK calls")
-            base_prompt = f'@.bmad-core\\agents\\dev.md *develop-story "{story_path}" 创建或完善测试套件 @tests\\，执行测试驱动开发，直至所有测试完全通过'
+            base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create and improve test suites @tests/, perform test-driven development until all tests pass completely'
 
             # Execute three independent calls
             result = await self._execute_triple_claude_calls(base_prompt, story_path)
@@ -400,7 +446,7 @@ class DevAgent:
             logger.info(f"{self.name} handling QA feedback for: {story_path}")
 
             # Build prompt for QA feedback
-            prompt = f'@.bmad-core\\agents\\dev.md {qa_prompt}'
+            prompt = f'@.bmad-core/agents/dev.md {qa_prompt}'
 
             # Execute three independent SDK calls for fixing
             result = await self._execute_triple_claude_calls(prompt, story_path)
@@ -435,7 +481,7 @@ class DevAgent:
             logger.info(f"{self.name} executing triple Claude SDK calls for: {story_path}")
 
             # Build the combined prompt
-            base_prompt = f'@.bmad-core\\agents\\dev.md {qa_prompt}'
+            base_prompt = f'@.bmad-core/agents/dev.md {qa_prompt}'
 
             # Execute three independent calls (not retries - three separate calls)
             for i in range(3):
@@ -469,7 +515,7 @@ class DevAgent:
 
     async def _execute_single_claude_sdk(self, prompt: str, story_path: str) -> bool:
         """
-        Execute a single Claude SDK call with timeout and retry mechanism.
+        Execute Claude SDK call with safe wrapper and detailed diagnostics.
 
         Args:
             prompt: Prompt for the SDK call
@@ -480,8 +526,13 @@ class DevAgent:
         """
         # Check if SDK classes are available
         if ClaudeAgentOptions is None or query is None:
-            logger.warning("Claude Agent SDK not available - using simulation mode")
+            logger.warning("[Dev Agent] Claude Agent SDK not available - using simulation mode")
             return True
+
+        # 预检提示词格式
+        if not self._validate_prompt_format(prompt):
+            logger.error(f"[Dev Agent] Invalid prompt format for {story_path}")
+            return False
 
         options = ClaudeAgentOptions(
             permission_mode="bypassPermissions",
@@ -490,66 +541,36 @@ class DevAgent:
 
         max_retries = 3
         retry_delay = 30  # 30 seconds between retries
-        sdk_timeout = 300  # 5 minutes timeout per call
 
         for attempt in range(max_retries):
             try:
                 logger.info(f"[Dev Agent] SDK call attempt {attempt + 1}/{max_retries} for {story_path}")
+                logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
 
-                message_count = 0
-                try:
-                    # Get the query generator directly (not as context manager)
-                    query_generator = self.claude_sdk_query(prompt, options)
+                # Use safe wrapper with detailed timing
+                start_time = asyncio.get_event_loop().time()
+                sdk = SafeClaudeSDK(prompt, options, timeout=900.0)
+                result = await sdk.execute()
+                elapsed = asyncio.get_event_loop().time() - start_time
 
-                    # Use asyncio.wait_for for timeout control (compatible with Python 3.7+)
-                    # Wrap the async iteration in a task and wait for it with timeout
-                    async def process_messages():
-                        # Allow access to message_count from outer scope
-                        nonlocal message_count
-                        async for message in query_generator:
-                            message_count += 1
-                            if ResultMessage is not None and isinstance(message, ResultMessage):
-                                if message.is_error:
-                                    logger.error(f"[Dev Agent] SDK call failed: {message.result}")
-                                    raise RuntimeError(f"SDK error: {message.result}")
-                                else:
-                                    result_str = message.result if message.result is not None else ""
-                                    logger.info(f"[Dev Agent] SDK call succeeded: {result_str[:200]}...")
-                                    return True
-
-                        # If we received messages without ResultMessage, consider success
-                        if message_count > 0:
-                            logger.info(f"[Dev Agent] SDK call completed with {message_count} messages")
-                            return True
-
-                        logger.warning(f"[Dev Agent] No messages received for: {story_path}")
-                        raise RuntimeError("No messages received from SDK")
-
-                    # Wait for the task with timeout
-                    await asyncio.wait_for(process_messages(), timeout=sdk_timeout)
-                    # If we get here without returning, the function returned True
+                if result:
+                    logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {elapsed:.1f}s")
                     return True
-
-                except asyncio.TimeoutError:
-                    logger.error(f"[Dev Agent] SDK call timeout (attempt {attempt + 1}/{max_retries})")
+                else:
+                    logger.warning(f"[Dev Agent] SDK call failed (attempt {attempt + 1}) after {elapsed:.1f}s")
                     if attempt < max_retries - 1:
                         logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
                         await asyncio.sleep(retry_delay)
-                    continue
 
-                except asyncio.CancelledError:
-                    logger.warning(f"[Dev Agent] SDK call cancelled (attempt {attempt + 1}/{max_retries})")
-                    if attempt < max_retries - 1:
-                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                        await asyncio.sleep(retry_delay)
-                    continue
-
+            except TimeoutError as e:
+                logger.error(f"[Dev Agent] SDK timeout error (attempt {attempt + 1}): {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
             except Exception as e:
-                logger.error(f"[Dev Agent] SDK call exception: {str(e)} (attempt {attempt + 1}/{max_retries})")
+                logger.error(f"[Dev Agent] SDK call exception (attempt {attempt + 1}): {type(e).__name__}: {str(e)}")
                 if attempt < max_retries - 1:
                     logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
                     await asyncio.sleep(retry_delay)
-                continue
 
         logger.error(f"[Dev Agent] All {max_retries} attempts failed for {story_path}")
         return False
@@ -649,7 +670,7 @@ class DevAgent:
                             else:
                                 # Ensure result is not None before slicing
                                 result_str = message.result if message.result is not None else ""
-                                logger.info(f"[Dev Agent] SDK调用成功: {result_str[:200]}...")
+                                logger.info(f"[Dev Agent] SDK调用成功: {result_str}...")
                                 return True
 
                     # If we received messages, break from retry loop

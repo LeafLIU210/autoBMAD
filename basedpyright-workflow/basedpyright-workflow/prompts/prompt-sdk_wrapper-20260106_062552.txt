@@ -1,0 +1,45 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py
+
+BasedPyright type errors (34):  Line 38, Col 37: [reportUnknownParameterType] "options" 参数的类型未知 (reportUnknownParameterType)
+  Line 38, Col 46: [reportInvalidTypeForm] 类型表达式中不允许使用变量 (reportInvalidTypeForm)
+  Line 40, Col 9: [reportUnknownMemberType] "options" 类型未知 (reportUnknownMemberType)
+  Line 81, Col 25: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 81, Col 59: [reportUnknownMemberType] "options" 类型未知 (reportUnknownMemberType)
+  Line 81, Col 59: [unknown] 参数类型未知
+  Line 84, Col 24: [unknown] "AsyncIterator[Message]" 类型的对象不能用于 `async with` 语句，因为它未实现 "__aenter__"
+  Line 84, Col 24: [unknown] "AsyncIterator[Message]" 类型的对象不能用于 `with` 语句，因为它未实现 "__aexit__"
+  Line 88, Col 44: [unknown] "type[ResultMessage] | None" 类型的实参无法赋值给函数 "isinstance" 中 "_ClassInfo" 类型的形参 "class_or_tuple"
+  Line 88, Col 44: [unknown] `isinstance` 的第二个参数必须是单个类或由多个类构成的元组
+  Line 89, Col 28: [unknown] "is_error" 的类型部分未知
+  Line 89, Col 36: [unknown] 无法访问 "UserMessage" 类的 "is_error" 属性
+  Line 89, Col 36: [unknown] 无法访问 "AssistantMessage" 类的 "is_error" 属性
+  Line 89, Col 36: [unknown] 无法访问 "SystemMessage" 类的 "is_error" 属性
+  Line 89, Col 36: [unknown] 无法访问 "StreamEvent" 类的 "is_error" 属性
+  Line 90, Col 63: [unknown] "result" 的类型部分未知
+  Line 90, Col 71: [unknown] 无法访问 "UserMessage" 类的 "result" 属性
+  Line 90, Col 71: [unknown] 无法访问 "AssistantMessage" 类的 "result" 属性
+  Line 90, Col 71: [unknown] 无法访问 "SystemMessage" 类的 "result" 属性
+  Line 90, Col 71: [unknown] 无法访问 "StreamEvent" 类的 "result" 属性
+  Line 93, Col 29: [unknown] "result_preview" 的类型部分未知
+  Line 93, Col 46: [unknown] "result" 的类型部分未知
+  Line 93, Col 54: [unknown] 无法访问 "UserMessage" 类的 "result" 属性
+  Line 93, Col 54: [unknown] 无法访问 "AssistantMessage" 类的 "result" 属性
+  Line 93, Col 54: [unknown] 无法访问 "SystemMessage" 类的 "result" 属性
+  Line 93, Col 54: [unknown] 无法访问 "StreamEvent" 类的 "result" 属性
+  Line 93, Col 70: [unknown] "result" 的类型部分未知
+  Line 93, Col 78: [unknown] 无法访问 "UserMessage" 类的 "result" 属性
+  Line 93, Col 78: [unknown] 无法访问 "AssistantMessage" 类的 "result" 属性
+  Line 93, Col 78: [unknown] 无法访问 "SystemMessage" 类的 "result" 属性
+  Line 93, Col 78: [unknown] 无法访问 "StreamEvent" 类的 "result" 属性
+  Line 134, Col 5: [reportUnknownParameterType] "options" 参数的类型未知 (reportUnknownParameterType)
+  Line 134, Col 14: [reportInvalidTypeForm] 类型表达式中不允许使用变量 (reportInvalidTypeForm)
+  Line 144, Col 33: [unknown] 参数类型未知
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

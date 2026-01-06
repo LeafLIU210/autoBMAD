@@ -1,11 +1,11 @@
 {
-  "test_automation_id": "test-auto-20260105-132631",
-  "epic_id": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmphzcmqvg1\\test_epic.md",
-  "timestamp": "2026-01-05T13:26:31.363616",
+  "test_automation_id": "test-auto-20260106-103404",
+  "epic_id": "test-epic-integration",
+  "timestamp": "2026-01-06T10:34:03.449699",
   "summary": {
-    "passed": 1,
-    "total": 1,
-    "collected": 1
+    "passed": 2,
+    "total": 2,
+    "collected": 2
   },
   "failed_tests": [],
   "retry_history": [],

@@ -182,3 +182,221 @@ class TestCICDPipeline:
                 content = workflow_file.read_text(encoding='utf-8').lower()
                 assert "test" in content or "pytest" in content, \
                     f"{workflow_file.name}必须包含测试作业"
+
+
+class TestPackageStructureComprehensive:
+    """综合测试包结构 - 扩展测试覆盖"""
+
+    def test_src_init_is_valid_python(self):
+        """验证src/__init__.py是有效的Python文件"""
+        init_file = PROJECT_ROOT / "src" / "__init__.py"
+        assert init_file.exists(), "src/__init__.py必须存在"
+        # 尝试编译文件以验证语法正确性
+        try:
+            with open(init_file, 'r', encoding='utf-8') as f:
+                compile(f.read(), str(init_file), 'exec')
+        except SyntaxError as e:
+            pytest.fail(f"src/__init__.py包含语法错误: {e}")
+
+    def test_tests_init_is_valid_python(self):
+        """验证tests/__init__.py是有效的Python文件"""
+        init_file = PROJECT_ROOT / "tests" / "__init__.py"
+        assert init_file.exists(), "tests/__init__.py必须存在"
+        # 尝试编译文件以验证语法正确性
+        try:
+            with open(init_file, 'r', encoding='utf-8') as f:
+                compile(f.read(), str(init_file), 'exec')
+        except SyntaxError as e:
+            pytest.fail(f"tests/__init__.py包含语法错误: {e}")
+
+    def test_autoBMAD_package_exists(self):
+        """验证autoBMAD包存在（主要包）"""
+        autoBMAD_dir = PROJECT_ROOT / "autoBMAD"
+        assert autoBMAD_dir.exists(), "autoBMAD主包目录必须存在"
+        assert autoBMAD_dir.is_dir(), "autoBMAD必须是一个目录"
+
+    def test_autoBMAD_is_python_package(self):
+        """验证autoBMAD是有效的Python包"""
+        autoBMAD_dir = PROJECT_ROOT / "autoBMAD"
+        init_file = autoBMAD_dir / "__init__.py"
+        assert init_file.exists(), "autoBMAD目录必须包含__init__.py文件"
+
+    def test_autoBMAD_has_subpackages(self):
+        """验证autoBMAD包含子包"""
+        autoBMAD_dir = PROJECT_ROOT / "autoBMAD"
+        subdirs = [d for d in autoBMAD_dir.iterdir() if d.is_dir() and not d.name.startswith('.')]
+        assert len(subdirs) > 0, "autoBMAD应该包含至少一个子包或模块"
+
+    def test_python_version_compatibility(self):
+        """验证Python版本兼容性"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+        assert "requires-python" in content, "pyproject.toml必须指定Python版本要求"
+        assert ">=" in content or ">" in content, "Python版本要求应该使用>=或>"
+
+    def test_license_file_exists(self):
+        """验证许可证文件存在"""
+        license_file = PROJECT_ROOT / "LICENSE"
+        assert license_file.exists() or (PROJECT_ROOT / "LICENSE.txt").exists(), \
+            "必须存在LICENSE或LICENSE.txt文件"
+
+
+class TestPyProjectTOMLComprehensive:
+    """全面测试pyproject.toml配置"""
+
+    def test_pyproject_has_build_system(self):
+        """验证pyproject.toml包含构建系统配置"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+        assert "[build-system]" in content, "pyproject.toml必须包含[build-system]部分"
+
+    def test_pyproject_has_project_metadata(self):
+        """验证项目元数据完整"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+
+        required_metadata = ["name", "version", "description"]
+        for field in required_metadata:
+            assert field in content, f"pyproject.toml必须包含{field}字段"
+
+    def test_pyproject_has_optional_dependencies(self):
+        """验证可选依赖配置"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+        assert "[project.optional-dependencies]" in content, \
+            "pyproject.toml应该包含[project.optional-dependencies]部分"
+
+    def test_pyproject_has_pytest_config(self):
+        """验证pytest配置存在"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+        assert "[tool.pytest.ini_options]" in content, \
+            "pyproject.toml必须包含pytest配置"
+
+    def test_pyproject_has_test_dependencies(self):
+        """验证测试依赖完整"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+
+        # 检查是否包含pytest
+        assert "pytest" in content.lower(), "必须包含pytest测试框架"
+
+        # 检查是否包含覆盖率工具
+        assert "pytest-cov" in content.lower() or "coverage" in content.lower(), \
+            "应该包含代码覆盖率工具"
+
+    def test_pyproject_package_mapping(self):
+        """验证包映射配置"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+
+        # 检查包映射（通常在[tool.hatch.build.targets.wheel]中）
+        assert "[tool.hatch.build.targets.wheel]" in content, \
+            "应该包含包映射配置"
+
+
+class TestDocumentationComprehensive:
+    """全面测试文档完整性"""
+
+    def test_readme_has_substantial_content(self):
+        """验证README.md包含实质性内容"""
+        readme_file = PROJECT_ROOT / "README.md"
+        content = readme_file.read_text(encoding='utf-8')
+        assert len(content) > 500, "README.md应该包含至少500字符的实质性内容"
+
+    def test_readme_has_project_description(self):
+        """验证README包含项目描述"""
+        readme_file = PROJECT_ROOT / "README.md"
+        content = readme_file.read_text(encoding='utf-8').lower()
+
+        # 检查项目描述相关关键词
+        description_keywords = ["template", "项目", "pyqt", "application", "开发"]
+        has_description = any(keyword in content for keyword in description_keywords)
+        assert has_description, "README应该包含项目描述"
+
+    def test_readme_has_installation_instructions(self):
+        """验证安装说明详细"""
+        readme_file = PROJECT_ROOT / "README.md"
+        content = readme_file.read_text(encoding='utf-8').lower()
+
+        # 检查安装步骤
+        installation_indicators = ["pip", "install", "setup.py", "pyproject.toml"]
+        has_installation = any(indicator in content for indicator in installation_indicators)
+        assert has_installation, "README应该包含安装步骤"
+
+    def test_readme_has_usage_examples(self):
+        """验证使用示例存在"""
+        readme_file = PROJECT_ROOT / "README.md"
+        content = readme_file.read_text(encoding='utf-8').lower()
+
+        # 检查代码示例或使用说明
+        example_indicators = ["example", "usage", "```", "code", "sample"]
+        has_examples = any(indicator in content for indicator in example_indicators)
+        assert has_examples, "README应该包含使用示例"
+
+
+class TestGitRepositoryComprehensive:
+    """全面测试Git仓库配置"""
+
+    def test_gitignore_comprehensive(self):
+        """验证.gitignore包含完整的Python忽略模式"""
+        gitignore_file = PROJECT_ROOT / ".gitignore"
+        content = gitignore_file.read_text(encoding='utf-8').lower()
+
+        # 检查常见的Python忽略模式
+        required_patterns = ["__pycache__", "*.pyc", "*.pyo", "*.pyd", ".pytest_cache"]
+        for pattern in required_patterns:
+            assert pattern in content, f".gitignore必须包含{pattern}模式"
+
+    def test_gitignore_has_env_patterns(self):
+        """验证.gitignore包含环境文件模式"""
+        gitignore_file = PROJECT_ROOT / ".gitignore"
+        content = gitignore_file.read_text(encoding='utf-8').lower()
+
+        env_patterns = [".env", "venv", ".venv", "env"]
+        has_env_patterns = any(pattern in content for pattern in env_patterns)
+        assert has_env_patterns, ".gitignore应该包含环境文件模式"
+
+    def test_gitignore_has_build_patterns(self):
+        """验证.gitignore包含构建文件模式"""
+        gitignore_file = PROJECT_ROOT / ".gitignore"
+        content = gitignore_file.read_text(encoding='utf-8').lower()
+
+        build_patterns = ["build", "dist", "*.egg-info"]
+        has_build_patterns = any(pattern in content for pattern in build_patterns)
+        assert has_build_patterns, ".gitignore应该包含构建文件模式"
+
+
+class TestQualityAssurance:
+    """测试质量保证和代码标准"""
+
+    def test_pyproject_has_linting_config(self):
+        """验证代码检查配置存在"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+
+        # 检查是否包含代码检查工具配置
+        has_black = "[tool.black]" in content
+        has_isort = "[tool.isort]" in content
+        has_ruff = "ruff" in content.lower()
+
+        assert has_black or has_isort or has_ruff, \
+            "应该至少包含一种代码格式化工具配置（black, isort, 或 ruff）"
+
+    def test_pyproject_has_type_hints_config(self):
+        """验证类型提示配置"""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        content = pyproject_file.read_text(encoding='utf-8')
+
+        # 检查mypy或类似工具配置
+        has_mypy = "[tool.mypy]" in content
+        has_pyright = "pyright" in content.lower()
+
+        assert has_mypy or has_pyright, \
+            "应该包含类型检查工具配置（mypy或pyright）"
+
+    def test_autoBMAD_has_typed_marker(self):
+        """验证autoBMAD包包含py.typed标记文件"""
+        typed_file = PROJECT_ROOT / "autoBMAD" / "py.typed"
+        assert typed_file.exists(), \
+            "autoBMAD包应该包含py.typed文件以支持类型提示"

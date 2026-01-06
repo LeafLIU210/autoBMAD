@@ -35,21 +35,37 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies including quality gate tools
 pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
 
+# Install Claude Agent SDK
+pip install claude-agent-sdk
+
+# Configure environment variables
+# Windows PowerShell:
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+
+
 # Verify installation
 python autoBMAD/epic_automation/epic_driver.py --help
 ```
 
 ### Basic Usage with Complete 5-Phase Workflow
+export ANTHROPIC_LOG=debug
+source venv/Scripts/activate
+PYTHONPATH=/d/GITHUB/pytQt_template python /d/GITHUB/pytQt_template/autoBMAD/epic_automation/epic_driver.py docs/epics/epic-1-core-algorithm-foundation.md --verbose --max-iterations 2 --source-dir src --test-dir tests --skip-quality --skip-tests
+PYTHONPATH=/d/GITHUB/pytQt_template python /d/GITHUB/pytQt_template/autoBMAD/epic_automation/epic_driver.py docs/epics/epic-1-core-algorithm-foundation.md --verbose --max-iterations 2 --source-dir src --test-dir tests --skip-quality --skip-tests
 
 ```bash
-# Process an epic through all 5 phases
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+# Activate virtual environment
+.venv\Scripts\activate  # On Windows
+source venv/bin/activate  # On Linux/macOS
+
+# Run epic driver with environment variables configured
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
 # Skip quality gates (for faster development)
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
 
 # Skip test automation (for quick validation)
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
 ```
 
 ## Complete Workflow
@@ -195,19 +211,31 @@ pytest tests/ --pdb
    pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
    ```
 
-3. **Create task guidance files** in `.bmad-core/tasks/`:
+3. **Install Claude Agent SDK**:
+   ```bash
+   pip install claude-agent-sdk
+   ```
+
+4. **Configure environment variables**:
+   ```bash
+   # Windows PowerShell:
+   $env:ANTHROPIC_API_KEY="your_api_key_here"
+
+   # Linux/macOS:
+   export ANTHROPIC_API_KEY="your_api_key_here"
+   ```
+
+5. **Create task guidance files** in `.bmad-core/tasks/`:
    ```bash
    mkdir -p .bmad-core/tasks
    # Copy the task guidance files (see Task Guidance Files section below)
    ```
 
-4. **Ensure Claude SDK is configured** in your environment
-
-5. **Verify the setup** by running the help command:
+6. **Verify the setup** by running the help command:
    ```bash
    cd /your/project
    source venv/Scripts/activate
-   python autoBMAD/epic_automation/epic_driver.py --help
+   PYTHONPATH=autoBMAD python -m epic_automation.epic_driver --help
    ```
 
 ### Configuration
@@ -346,7 +374,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 #### Example 1: Complete Workflow with Quality Gates
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --verbose
 ```
 
 This will process all stories in `my-epic.md` through the complete 5-phase workflow:
@@ -359,7 +387,7 @@ This will process all stories in `my-epic.md` through the complete 5-phase workf
 #### Example 2: Skip Quality Gates (Faster Development)
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
 ```
 
 Processes stories through SM-Dev-QA cycle and test automation, but skips quality gates for faster iteration during development.
@@ -367,7 +395,7 @@ Processes stories through SM-Dev-QA cycle and test automation, but skips quality
 #### Example 3: Skip Test Automation (Quick Validation)
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
 ```
 
 Processes stories through SM-Dev-QA cycle and quality gates, but skips test automation for quick validation without running tests.
@@ -375,7 +403,7 @@ Processes stories through SM-Dev-QA cycle and quality gates, but skips test auto
 #### Example 4: Skip Both Quality Gates and Tests
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-quality --skip-tests
 ```
 
 Processes only the SM-Dev-QA cycle, skipping both quality gates and test automation for maximum speed during initial development.
@@ -383,7 +411,7 @@ Processes only the SM-Dev-QA cycle, skipping both quality gates and test automat
 #### Example 5: Enable Automatic Retry
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --retry-failed --verbose
 ```
 
 Enables automatic retry of failed stories and provides detailed logging output.
@@ -618,7 +646,7 @@ WARNING - Concurrent processing is experimental and not yet implemented
 For detailed debugging, run with maximum verbosity:
 
 ```bash
-python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose --max-iterations 1
+PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --verbose --max-iterations 1
 ```
 
 This will:

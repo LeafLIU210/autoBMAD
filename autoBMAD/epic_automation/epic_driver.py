@@ -97,10 +97,10 @@ class EpicDriver:
 
         # Import agent classes
         try:
-            from sm_agent import SMAgent  # type: ignore
-            from dev_agent import DevAgent  # type: ignore
-            from qa_agent import QAAgent  # type: ignore
-            from state_manager import StateManager  # type: ignore
+            from autoBMAD.epic_automation.sm_agent import SMAgent  # type: ignore
+            from autoBMAD.epic_automation.dev_agent import DevAgent  # type: ignore
+            from autoBMAD.epic_automation.qa_agent import QAAgent  # type: ignore
+            from autoBMAD.epic_automation.state_manager import StateManager  # type: ignore
 
             self.sm_agent = SMAgent()
             self.dev_agent = DevAgent(use_claude=use_claude)

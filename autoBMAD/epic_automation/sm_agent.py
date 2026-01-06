@@ -12,6 +12,9 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 import re
 
+# Import SafeClaudeSDK wrapper
+from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
+
 try:
     from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
 except ImportError:
@@ -445,7 +448,7 @@ class SMAgent:
         """
         max_retries = 3
         retry_delay = 15
-        timeout_seconds = 300
+        timeout_seconds = 900
 
         for attempt in range(max_retries):
             try:
@@ -454,8 +457,10 @@ class SMAgent:
 
                 # Check if SDK is available
                 if query is None or ClaudeAgentOptions is None:
-                    logger.error("Claude Agent SDK not installed. Please install claude-agent-sdk")
-                    return False
+                    raise RuntimeError(
+                        "Claude Agent SDK is required but not available. "
+                        "Please install claude-agent-sdk."
+                    )
 
                 # Use asyncio.wait_for to implement timeout
                 result = await asyncio.wait_for(
@@ -489,7 +494,7 @@ class SMAgent:
 
     async def _execute_sdk_with_logging(self, prompt: str) -> bool:
         """
-        Execute SDK call and record detailed logs.
+        Execute SDK call with safe wrapper and logging.
 
         Args:
             prompt: The prompt to send to Claude
@@ -497,37 +502,17 @@ class SMAgent:
         Returns:
             bool - Whether the execution was successful
         """
-        # Check if SDK is available
         if query is None or ClaudeAgentOptions is None or ResultMessage is None:
             logger.error("Claude Agent SDK not installed. Please install claude-agent-sdk")
             return False
 
-        # Set up options
         options = ClaudeAgentOptions(
             permission_mode="bypassPermissions",
             cwd=str(Path.cwd())
         )
 
-        message_count = 0
-        async for message in query(prompt=prompt, options=options):
-            message_count += 1
-
-            # Use isinstance() for proper message type checking
-            if isinstance(message, ResultMessage):
-                # Check if the result is an error
-                if message.is_error:
-                    logger.error(f"[SM Agent] Error result received: {message.result}")
-                    return False
-                else:
-                    logger.info(f"[SM Agent] Success result received: {message.result[:200] if message.result else 'No content'}...")
-                    return True
-
-            # Log other message types for debugging
-            message_type = type(message).__name__
-            logger.debug(f"[SM Agent] Message {message_count}: type={message_type}")
-
-        logger.warning("[SM Agent] SDK call completed but no ResultMessage received")
-        return False
+        sdk = SafeClaudeSDK(prompt, options, timeout=900.0)
+        return await sdk.execute()
 
     async def _verify_story_files(self, story_ids: List[str], epic_path: str) -> Tuple[bool, List[str]]:
         """

@@ -13,8 +13,26 @@ from pathlib import Path
 from typing import Any, Union
 import logging
 import uuid
+from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+
+class StoryStatus(Enum):
+    """Story status enumeration."""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    REVIEW = "review"
+    PASS = "pass"
+    FAIL = "fail"
+
+
+class QAResult(Enum):
+    """QA result enumeration."""
+    PASS = "PASS"
+    CONCERNS = "CONCERNS"
+    FAIL = "FAIL"
+    WAIVED = "WAIVED"
 
 
 class StateManager:

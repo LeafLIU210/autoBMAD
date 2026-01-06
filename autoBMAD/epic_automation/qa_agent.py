@@ -12,6 +12,16 @@ from typing import Dict, Any, Optional, List, Union, TYPE_CHECKING
 from enum import Enum
 import re
 
+# Import SafeClaudeSDK wrapper
+from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
+
+# Type annotations for Claude SDK (only available when SDK is installed)
+if TYPE_CHECKING:
+    try:
+        from claude_agent_sdk import query, ClaudeAgentOptions  # type: ignore[reportUnusedImport]
+    except ImportError:
+        pass
+
 # Type annotations for QA tools
 if TYPE_CHECKING:
     from .qa_tools_integration import QAAutomationWorkflow, QAStatus  # type: ignore[reportUnusedImport]
@@ -333,7 +343,7 @@ class QAAgent:
 
     async def _execute_qa_review(self, story_path: str) -> bool:
         """
-        Execute AI-driven QA review using Claude SDK.
+        Execute AI-driven QA review using safe SDK wrapper.
 
         Args:
             story_path: Path to the story file
@@ -351,41 +361,25 @@ class QAAgent:
             # Build the prompt for Claude SDK
             prompt = f'@.bmad-core\\agents\\qa.md *review {story_path} 审查故事文档，更新故事文档status。*gate {story_path} 创建qa gate文件到 @docs\\gates\\'
 
-            # Execute SDK call (following dev_agent pattern)
-            # Note: This uses a simplified approach since QA doesn't need retries
-            # The QA review is a one-time operation per story
-            logger.info(f"[QA Agent] Executing Claude SDK call for QA review")
+            # Import query and ClaudeAgentOptions from sdk_wrapper
+            sdk_wrapper = __import__('epic_automation.sdk_wrapper', fromlist=['query', 'ClaudeAgentOptions'])
+            query = getattr(sdk_wrapper, 'query', None)
+            ClaudeAgentOptions = getattr(sdk_wrapper, 'ClaudeAgentOptions', None)
 
-            # Try to use SDK if available
-            try:
-                from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
-
-                options = ClaudeAgentOptions(
-                    permission_mode="bypassPermissions",
-                    cwd=str(Path.cwd())
+            # Use safe wrapper
+            if query is None or ClaudeAgentOptions is None:
+                raise RuntimeError(
+                    "Claude Agent SDK is required but not available. "
+                    "Please install claude-agent-sdk."
                 )
 
-                message_count = 0
-                async for message in query(prompt=prompt, options=options):
-                    message_count += 1
-                    if isinstance(message, ResultMessage):
-                        if message.is_error:
-                            logger.error(f"[QA Agent] SDK call failed: {message.result}")
-                            return False
-                        else:
-                            logger.info(f"[QA Agent] SDK call succeeded: {message.result[:200] if message.result else 'No content'}...")
-                            return True
+            options = ClaudeAgentOptions(
+                permission_mode="bypassPermissions",
+                cwd=str(Path.cwd())
+            )
 
-                if message_count == 0:
-                    logger.warning("[QA Agent] No messages received from SDK")
-                    return False
-
-            except ImportError:
-                # SDK not available, simulate success
-                logger.warning("Claude Agent SDK not available - simulating QA review")
-                logger.info(f"[QA Agent] Simulated review for: {story_path}")
-
-            return True
+            sdk = SafeClaudeSDK(prompt, options, timeout=900.0)
+            return await sdk.execute()
 
         except Exception as e:
             logger.error(f"Failed to execute QA review: {e}")

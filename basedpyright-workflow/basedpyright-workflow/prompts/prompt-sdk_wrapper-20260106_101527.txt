@@ -1,0 +1,46 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py
+
+BasedPyright type errors (35):  Line 11, Col 47: [reportUnusedImport] "Union" 导入项未使用 (reportUnusedImport)
+  Line 127, Col 24: [reportUnnecessaryIsInstance] "list[ContentBlock]" 一定是 "list[Unknown]" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 154, Col 53: [reportUnnecessaryIsInstance] "dict[str, Any]" 一定是 "dict[Unknown, Unknown]" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 173, Col 42: [unknown] "type[ResultMessage] | None" 类型的实参无法赋值给函数 "isinstance" 中 "_ClassInfo" 类型的形参 "class_or_tuple"
+  Line 173, Col 42: [unknown] `isinstance` 的第二个参数必须是单个类或由多个类构成的元组
+  Line 175, Col 28: [unknown] "is_error" 的类型部分未知
+  Line 175, Col 36: [unknown] 无法访问 "AssistantMessage" 类的 "is_error" 属性
+  Line 175, Col 36: [unknown] 无法访问 "SystemMessage" 类的 "is_error" 属性
+  Line 175, Col 36: [unknown] 无法访问 "UserMessage" 类的 "is_error" 属性
+  Line 210, Col 25: [reportUnknownVariableType] "block" 类型未知 (reportUnknownVariableType)
+  Line 210, Col 34: [unknown] "content" 的类型部分未知
+  Line 211, Col 25: [reportUnknownVariableType] "block_type" 类型未知 (reportUnknownVariableType)
+  Line 211, Col 38: [reportUnknownMemberType] "__class__" 类型未知 (reportUnknownMemberType)
+  Line 211, Col 38: [reportUnknownMemberType] "__name__" 类型未知 (reportUnknownMemberType)
+  Line 212, Col 66: [unknown] 参数类型未知
+  Line 212, Col 85: [reportUnknownMemberType] "text" 类型未知 (reportUnknownMemberType)
+  Line 214, Col 72: [unknown] 参数类型未知
+  Line 214, Col 95: [reportUnknownMemberType] "thinking" 类型未知 (reportUnknownMemberType)
+  Line 219, Col 71: [unknown] 参数类型未知
+  Line 220, Col 59: [unknown] 参数类型未知
+  Line 222, Col 74: [unknown] 参数类型未知
+  Line 223, Col 52: [unknown] 参数类型未知
+  Line 228, Col 86: [unknown] 部分参数的类型未知
+  Line 250, Col 38: [reportUnnecessaryCast] 当前已为 "str" 类型，不需要调用 `cast` (reportUnnecessaryCast)
+  Line 252, Col 46: [unknown] "content" 的类型部分未知
+  Line 252, Col 46: [unknown] 部分参数的类型未知
+  Line 263, Col 28: [reportUnnecessaryIsInstance] "str" 一定是 "str" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 294, Col 56: [reportUnnecessaryIsInstance] "list[ContentBlock]" 一定是 "list[Unknown]" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 309, Col 42: [unknown] "type[ResultMessage] | None" 类型的实参无法赋值给函数 "isinstance" 中 "_ClassInfo" 类型的形参 "class_or_tuple"
+  Line 309, Col 42: [unknown] `isinstance` 的第二个参数必须是单个类或由多个类构成的元组
+  Line 330, Col 29: [reportUnknownVariableType] "block" 类型未知 (reportUnknownVariableType)
+  Line 330, Col 38: [unknown] "content" 的类型部分未知
+  Line 331, Col 29: [reportUnknownVariableType] "block_type" 类型未知 (reportUnknownVariableType)
+  Line 331, Col 42: [reportUnknownMemberType] "__class__" 类型未知 (reportUnknownMemberType)
+  Line 331, Col 42: [reportUnknownMemberType] "__name__" 类型未知 (reportUnknownMemberType)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.
