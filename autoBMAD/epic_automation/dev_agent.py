@@ -15,6 +15,7 @@ from pathlib import Path
 
 if TYPE_CHECKING:
     from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+    from autoBMAD.epic_automation.log_manager import LogManager
 
 try:
     from claude_agent_sdk import query as _query, ClaudeAgentOptions as _ClaudeAgentOptions, ResultMessage as _ResultMessage
@@ -402,11 +403,14 @@ class DevAgent:
             # Get story path
             story_path = requirements.get('story_path', self._current_story_path or '')
 
+            # Get log_manager from epic_driver context if available
+            log_manager = getattr(self, '_log_manager', None)
+
             # Check if this is a QA feedback mode (requirements contains qa_prompt)
             if 'qa_prompt' in requirements:
                 # Handle QA feedback mode - execute three independent calls
                 logger.info(f"{self.name} Handling QA feedback with triple SDK calls")
-                result = await self._execute_triple_claude_calls(requirements['qa_prompt'], story_path)
+                result = await self._execute_triple_claude_calls(requirements['qa_prompt'], story_path, log_manager)
                 return result
 
             # Normal development mode - execute three independent SDK calls
@@ -414,7 +418,7 @@ class DevAgent:
             base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create and improve test suites @tests/, perform test-driven development until all tests pass completely'
 
             # Execute three independent calls
-            result = await self._execute_triple_claude_calls(base_prompt, story_path)
+            result = await self._execute_triple_claude_calls(base_prompt, story_path, log_manager)
 
             if result:
                 # Development completed successfully, notify QA agent
@@ -466,13 +470,14 @@ class DevAgent:
             logger.error(f"Failed to handle QA feedback: {e}")
             return False
 
-    async def _execute_triple_claude_calls(self, qa_prompt: str, story_path: str) -> bool:
+    async def _execute_triple_claude_calls(self, qa_prompt: str, story_path: str, log_manager: "Optional[LogManager]" = None) -> bool:
         """
         Execute three independent Claude SDK calls with bypasspermissions.
 
         Args:
             qa_prompt: Prompt from QA agent
             story_path: Path to the story file
+            log_manager: LogManager instance for logging
 
         Returns:
             True if all three calls succeeded, False otherwise
@@ -494,7 +499,7 @@ class DevAgent:
 
                     # Execute the SDK call without retry logic (these are independent calls)
                     # Use the existing _execute_claude_sdk but call it three times independently
-                    result = await self._execute_single_claude_sdk(round_prompt, story_path)
+                    result = await self._execute_single_claude_sdk(round_prompt, story_path, log_manager)
 
                     if not result:
                         logger.error(f"[Dev Agent] {round_number}/3 call failed for {story_path}")
@@ -513,13 +518,14 @@ class DevAgent:
             logger.error(f"Failed to execute triple Claude SDK calls: {e}")
             return False
 
-    async def _execute_single_claude_sdk(self, prompt: str, story_path: str) -> bool:
+    async def _execute_single_claude_sdk(self, prompt: str, story_path: str, log_manager: "Optional[LogManager]" = None) -> bool:
         """
         Execute Claude SDK call with safe wrapper and detailed diagnostics.
 
         Args:
             prompt: Prompt for the SDK call
             story_path: Path to the story file
+            log_manager: LogManager instance for logging
 
         Returns:
             True if successful, False otherwise
@@ -549,7 +555,7 @@ class DevAgent:
 
                 # Use safe wrapper with detailed timing
                 start_time = asyncio.get_event_loop().time()
-                sdk = SafeClaudeSDK(prompt, options, timeout=900.0)
+                sdk = SafeClaudeSDK(prompt, options, timeout=900.0, log_manager=log_manager)
                 result = await sdk.execute()
                 elapsed = asyncio.get_event_loop().time() - start_time
 

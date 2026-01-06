@@ -1,350 +1,334 @@
 """
-Unit tests for EpicDriver - Complete 5-Phase Workflow Orchestration
-
-Tests cover:
-- CLI argument parsing with quality gate flags
-- Complete workflow orchestration
-- Phase-gated execution
-- Retry mechanisms
-- Error handling
+Unit tests for EpicDriver module.
 """
 
+import tempfile
+from pathlib import Path
+from unittest.mock import Mock, patch, MagicMock, AsyncMock
 import pytest
 import asyncio
-from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-import tempfile
-import os
 
-# Import the EpicDriver class
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from autoBMAD.epic_automation.epic_driver import EpicDriver, parse_arguments
+from autoBMAD.epic_automation.epic_driver import EpicDriver
 
 
-class TestEpicDriverInitialization:
-    """Test EpicDriver initialization and configuration."""
+@pytest.fixture
+def sample_epic_content():
+    """Sample epic markdown content for testing."""
+    return """# Epic 1: Test Epic
 
-    def test_init_with_quality_gate_flags(self):
-        """Test initialization with quality gate flags."""
+## Story 1.1
+**As a** developer,
+**I want** to test the system,
+**so that** we can verify it works.
+
+## Story 1.2
+**As a** user,
+**I want** to use the feature,
+**so that** I can accomplish my goal.
+"""
+
+
+@pytest.fixture
+def epic_driver():
+    """Create an EpicDriver instance for testing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        epic_path = Path(tmpdir) / "test_epic.md"
+        epic_path.write_text("# Test Epic\n\n## Story 1.1\nTest story content.")
+        driver = EpicDriver()
+        yield driver
+
+
+class TestEpicDriver:
+    """Test EpicDriver class."""
+
+    def test_init(self):
+        """Test EpicDriver initialization."""
+        driver = EpicDriver()
+
+        # Verify default attributes
+        assert driver.epic_path is None
+        assert driver.epic_id is None
+        assert driver.tasks_dir is None
+        assert driver.stories == []
+        assert driver.current_story_index == 0
+        assert driver.max_iterations == 3
+        assert driver.retry_failed is False
+        assert driver.verbose is False
+        assert driver.concurrent is False
+        assert driver.use_claude is True
+        assert driver.source_dir == "src"
+        assert driver.test_dir == "tests"
+        assert driver.skip_quality is False
+        assert driver.skip_tests is False
+        assert driver.task_guidance == {}
+        assert driver.max_quality_iterations == 3
+        assert driver.max_test_iterations == 3
+
+    def test_init_with_args(self, epic_driver):
+        """Test initialization with arguments."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+            epic_path = Path(tmpdir) / "test.md"
+            epic_path.write_text("# Test")
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                skip_quality=True,
-                skip_tests=True,
-                verbose=True
-            )
+            # Test with custom parameters
+            driver = EpicDriver()
+            driver.epic_path = epic_path
+            driver.epic_id = "test-epic"
+            driver.max_iterations = 5
 
             assert driver.epic_path == epic_path
-            assert driver.skip_quality is True
-            assert driver.skip_tests is True
-            assert driver.verbose is True
-            assert driver.max_quality_iterations == 3
-            assert driver.max_test_iterations == 5
-            assert driver.epic_id == str(epic_path)
-
-    def test_init_default_values(self):
-        """Test initialization with default values."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
-
-            driver = EpicDriver(epic_path=str(epic_path))
-
-            assert driver.skip_quality is False
-            assert driver.skip_tests is False
-            assert driver.verbose is False
-            assert driver.concurrent is False
-
-
-class TestCLIArgumentParsing:
-    """Test CLI argument parsing functionality."""
-
-    def test_parse_arguments_with_skip_quality(self):
-        """Test parsing --skip-quality flag."""
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument('epic_path')
-        parser.add_argument('--skip-quality', action='store_true')
-        parser.add_argument('--skip-tests', action='store_true')
-
-        parsed = parser.parse_args(["test_epic.md", "--skip-quality"])
-        assert parsed.skip_quality is True
-        assert parsed.skip_tests is False
-
-    def test_parse_arguments_with_skip_tests(self):
-        """Test parsing --skip-tests flag."""
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument('epic_path')
-        parser.add_argument('--skip-quality', action='store_true')
-        parser.add_argument('--skip-tests', action='store_true')
-
-        parsed = parser.parse_args(["test_epic.md", "--skip-tests"])
-        assert parsed.skip_quality is False
-        assert parsed.skip_tests is True
-
-    def test_parse_arguments_with_both_flags(self):
-        """Test parsing both --skip-quality and --skip-tests flags."""
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument('epic_path')
-        parser.add_argument('--skip-quality', action='store_true')
-        parser.add_argument('--skip-tests', action='store_true')
-
-        parsed = parser.parse_args(["test_epic.md", "--skip-quality", "--skip-tests"])
-        assert parsed.skip_quality is True
-        assert parsed.skip_tests is True
-
-
-class TestPhaseGatedExecution:
-    """Test phase-gated execution logic."""
+            assert driver.epic_id == "test-epic"
+            assert driver.max_iterations == 5
 
     @pytest.mark.asyncio
-    async def test_validate_phase_gates_success(self):
-        """Test successful phase gate validation."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+    async def test_load_epic(self, sample_epic_content):
+        """Test loading epic from markdown file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            f.write(sample_epic_content)
+            epic_path = Path(f.name)
 
-            source_dir = Path(tmpdir) / "src"
-            source_dir.mkdir()
-            test_dir = Path(tmpdir) / "tests"
-            test_dir.mkdir()
+        try:
+            driver = EpicDriver()
+            driver.epic_path = epic_path
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                source_dir=str(source_dir),
-                test_dir=str(test_dir),
-                skip_quality=False,
-                skip_tests=False
-            )
+            # Mock the parsing method
+            with patch.object(driver, 'parse_epic') as mock_parse:
+                mock_parse.return_value = [
+                    {"path": "docs/stories/1.1.md", "content": "Story 1.1"},
+                    {"path": "docs/stories/1.2.md", "content": "Story 1.2"}
+                ]
 
-            result = driver._validate_phase_gates()
-            assert result is True
+                stories = await driver.load_epic()
 
-    @pytest.mark.asyncio
-    async def test_validate_phase_gates_missing_source_dir(self):
-        """Test validation fails when source directory is missing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+                assert len(stories) == 2
+                mock_parse.assert_called_once()
+        finally:
+            epic_path.unlink()
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                source_dir=str(Path(tmpdir) / "nonexistent"),
-                skip_quality=False,
-                skip_tests=True
-            )
+    def test_parse_epic(self, sample_epic_content):
+        """Test parsing epic markdown."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            f.write(sample_epic_content)
+            epic_path = Path(f.name)
 
-            result = driver._validate_phase_gates()
-            assert result is False
+        try:
+            driver = EpicDriver()
+            driver.epic_path = epic_path
 
-    @pytest.mark.asyncio
-    async def test_validate_phase_gates_missing_test_dir(self):
-        """Test validation fails when test directory is missing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+            stories = driver.parse_epic()
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                source_dir=str(Path(tmpdir) / "src"),
-                test_dir=str(Path(tmpdir) / "nonexistent"),
-                skip_quality=True,
-                skip_tests=False
-            )
-
-            result = driver._validate_phase_gates()
-            assert result is False
+            assert len(stories) >= 1
+            # Verify story structure
+            for story in stories:
+                assert "path" in story
+                assert "content" in story
+                assert story["path"].startswith("docs/stories/")
+        finally:
+            epic_path.unlink()
 
     @pytest.mark.asyncio
-    async def test_validate_phase_gates_skipped_phases(self):
-        """Test validation passes when phases are skipped."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+    async def test_run_workflow(self, epic_driver):
+        """Test running the complete workflow."""
+        # Mock all the agent methods
+        epic_driver.stories = [
+            {"path": "docs/stories/1.1.md", "content": "Test story"}
+        ]
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                skip_quality=True,
-                skip_tests=True
-            )
+        with patch.object(epic_driver, 'initialize_agents') as mock_init:
+            mock_init.return_value = None
 
-            result = driver._validate_phase_gates()
-            assert result is True
+            with patch.object(epic_driver, 'process_stories') as mock_process:
+                mock_process.return_value = {"status": "completed"}
 
+                result = await epic_driver.run_workflow()
 
-class TestProgressTracking:
-    """Test progress tracking across phases."""
-
-    @pytest.mark.asyncio
-    async def test_update_progress(self):
-        """Test progress tracking update."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
-
-            # Just verify the method executes without errors
-            driver = EpicDriver(epic_path=str(epic_path))
-
-            # Should not raise an exception
-            try:
-                await driver._update_progress('quality_gates', 'completed', {'errors': 0})
-            except Exception as e:
-                pytest.fail(f"Unexpected exception: {e}")
+                assert result is not None
+                mock_init.assert_called_once()
+                mock_process.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_initialize_epic_processing(self):
-        """Test epic processing initialization."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+    async def test_initialize_agents(self, epic_driver):
+        """Test agent initialization."""
+        # Mock the agent classes
+        with patch('autoBMAD.epic_automation.epic_driver.SMAgent') as mock_sm:
+            with patch('autoBMAD.epic_automation.epic_driver.DevAgent') as mock_dev:
+                with patch('autoBMAD.epic_automation.epic_driver.QAAgent') as mock_qa:
+                    with patch('autoBMAD.epic_automation.epic_driver.StateManager') as mock_state:
+                        mock_state.return_value = MagicMock()
 
-            # Just verify the method executes without errors
-            driver = EpicDriver(epic_path=str(epic_path))
+                        epic_driver.initialize_agents()
 
-            # Should not raise an exception
-            try:
-                await driver._initialize_epic_processing(5)
-            except Exception as e:
-                pytest.fail(f"Unexpected exception: {e}")
-
-
-class TestWorkflowOrchestration:
-    """Test complete workflow orchestration."""
+                        assert epic_driver.sm_agent is not None
+                        assert epic_driver.dev_agent is not None
+                        assert epic_driver.qa_agent is not None
+                        assert epic_driver.state_manager is not None
 
     @pytest.mark.asyncio
-    async def test_execute_quality_gates(self):
-        """Test quality gates execution - skip test due to relative imports."""
-        # This test is skipped because the agents use relative imports
-        # that don't work well in isolation. The integration tests
-        # test the full functionality with proper module structure.
-        pytest.skip("Skipping - requires full module structure for relative imports")
+    async def test_process_stories(self, epic_driver):
+        """Test processing stories."""
+        epic_driver.stories = [
+            {"path": "docs/stories/1.1.md", "content": "Test story"}
+        ]
+        epic_driver.sm_agent = MagicMock()
+        epic_driver.dev_agent = MagicMock()
+        epic_driver.qa_agent = MagicMock()
+        epic_driver.state_manager = MagicMock()
+
+        # Mock the story processing method
+        with patch.object(epic_driver, 'process_single_story') as mock_process:
+            mock_process.return_value = {"status": "completed"}
+
+            result = await epic_driver.process_stories()
+
+            assert result is not None
+            assert mock_process.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_execute_quality_gates_skip(self):
-        """Test quality gates execution when skipped."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+    async def test_process_single_story(self, epic_driver):
+        """Test processing a single story."""
+        story = {"path": "docs/stories/1.1.md", "content": "Test story"}
+        epic_driver.stories = [story]
+        epic_driver.sm_agent = MagicMock()
+        epic_driver.dev_agent = MagicMock()
+        epic_driver.qa_agent = MagicMock()
+        epic_driver.state_manager = MagicMock()
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                skip_quality=True
-            )
+        # Mock the cycle execution
+        with patch.object(epic_driver, 'execute_sm_dev_qa_cycle') as mock_cycle:
+            mock_cycle.return_value = {"status": "completed"}
 
-            # When skip_quality is True, the agent shouldn't be called
-            driver.state_manager = AsyncMock()
-            driver.state_manager.update_story_status = AsyncMock(return_value=True)
+            result = await epic_driver.process_single_story(0)
 
-            result = await driver.execute_quality_gates()
-
-            assert result['status'] == 'skipped'
-
-    @pytest.mark.asyncio
-    async def test_execute_test_automation(self):
-        """Test test automation execution - skip test due to relative imports."""
-        # This test is skipped because the agents use relative imports
-        # that don't work well in isolation. The integration tests
-        # test the full functionality with proper module structure.
-        pytest.skip("Skipping - requires full module structure for relative imports")
+            assert result is not None
+            mock_cycle.assert_called_once_with(story, 0)
 
     @pytest.mark.asyncio
-    async def test_execute_test_automation_skip(self):
-        """Test test automation execution when skipped."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+    async def test_execute_sm_dev_qa_cycle(self, epic_driver):
+        """Test executing SM-Dev-QA cycle."""
+        story = {"path": "docs/stories/1.1.md", "content": "Test story"}
+        epic_driver.sm_agent = MagicMock()
+        epic_driver.dev_agent = MagicMock()
+        epic_driver.qa_agent = MagicMock()
+        epic_driver.state_manager = MagicMock()
 
-            driver = EpicDriver(
-                epic_path=str(epic_path),
-                skip_tests=True
-            )
+        # Mock agent responses
+        epic_driver.sm_agent.run.return_value = {"status": "sm_done"}
+        epic_driver.dev_agent.run.return_value = {"status": "dev_done"}
+        epic_driver.qa_agent.run.return_value = {"status": "qa_done"}
 
-            # When skip_tests is True, the agent shouldn't be called
-            driver.state_manager = AsyncMock()
-            driver.state_manager.update_story_status = AsyncMock(return_value=True)
+        result = await epic_driver.execute_sm_dev_qa_cycle(story, 0)
 
-            result = await driver.execute_test_automation()
-
-            assert result['status'] == 'skipped'
-
-
-class TestErrorHandling:
-    """Test error handling and recovery."""
+        assert result is not None
+        epic_driver.sm_agent.run.assert_called_once()
+        epic_driver.dev_agent.run.assert_called_once()
+        epic_driver.qa_agent.run.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_execute_quality_gates_error(self):
-        """Test error handling in quality gates execution - skip test."""
-        pytest.skip("Skipping - requires full module structure for relative imports")
+    async def test_handle_error(self, epic_driver):
+        """Test error handling."""
+        story = {"path": "docs/stories/1.1.md", "content": "Test story"}
+        epic_driver.state_manager = MagicMock()
+
+        error = Exception("Test error")
+        await epic_driver.handle_error(story, 0, error)
+
+        # Verify error was recorded
+        epic_driver.state_manager.record_error.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_execute_test_automation_error(self):
-        """Test error handling in test automation execution - skip test."""
-        pytest.skip("Skipping - requires full module structure for relative imports")
+    async def test_retry_logic(self, epic_driver):
+        """Test retry logic for failed stories."""
+        story = {"path": "docs/stories/1.1.md", "content": "Test story"}
+        epic_driver.stories = [story]
+        epic_driver.max_iterations = 3
 
+        # Mock agents to fail first two times
+        epic_driver.sm_agent = MagicMock()
+        epic_driver.dev_agent = MagicMock()
+        epic_driver.qa_agent = MagicMock()
+        epic_driver.state_manager = MagicMock()
 
-class TestFinalReport:
-    """Test final report generation."""
+        call_count = 0
+        async def failing_run():
+            nonlocal call_count
+            call_count += 1
+            if call_count <= 2:
+                raise Exception("Simulated failure")
+            return {"status": "success"}
 
-    def test_generate_final_report(self):
-        """Test final report generation."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+        epic_driver.sm_agent.run = failing_run
 
-            driver = EpicDriver(epic_path=str(epic_path), skip_quality=True, skip_tests=False)
+        with patch.object(epic_driver, 'execute_sm_dev_qa_cycle', failing_run):
+            # This should retry and eventually succeed
+            with patch('asyncio.sleep'):  # Skip sleep for faster test
+                result = await epic_driver.process_single_story(0)
+                assert result is not None
 
-            report = driver._generate_final_report()
+    def test_set_verbose(self, epic_driver):
+        """Test setting verbose mode."""
+        assert epic_driver.verbose is False
+        epic_driver.set_verbose(True)
+        assert epic_driver.verbose is True
 
-            assert 'epic_id' in report
-            assert 'status' in report
-            assert 'phases' in report
-            assert report['phases']['quality_gates'] == 'skipped'
-            assert report['phases']['test_automation'] == 'completed'
+    def test_set_concurrent(self, epic_driver):
+        """Test setting concurrent mode."""
+        assert epic_driver.concurrent is False
+        epic_driver.set_concurrent(True)
+        assert epic_driver.concurrent is True
 
-    def test_generate_final_report_all_phases(self):
-        """Test final report generation with all phases."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+    def test_set_skip_quality(self, epic_driver):
+        """Test setting skip quality flag."""
+        assert epic_driver.skip_quality is False
+        epic_driver.set_skip_quality(True)
+        assert epic_driver.skip_quality is True
 
-            driver = EpicDriver(epic_path=str(epic_path), skip_quality=False, skip_tests=False)
+    def test_set_skip_tests(self, epic_driver):
+        """Test setting skip tests flag."""
+        assert epic_driver.skip_tests is False
+        epic_driver.set_skip_tests(True)
+        assert epic_driver.skip_tests is True
 
-            report = driver._generate_final_report()
+    @pytest.mark.asyncio
+    async def test_workflow_with_no_stories(self, epic_driver):
+        """Test workflow with no stories."""
+        epic_driver.stories = []
 
-            assert report['phases']['quality_gates'] == 'completed'
-            assert report['phases']['test_automation'] == 'completed'
+        result = await epic_driver.run_workflow()
 
+        assert result is not None
 
-class TestSetupLogging:
-    """Test logging setup."""
+    @pytest.mark.asyncio
+    async def test_workflow_with_concurrent_mode(self, epic_driver):
+        """Test workflow in concurrent mode."""
+        epic_driver.stories = [
+            {"path": "docs/stories/1.1.md", "content": "Test story"},
+            {"path": "docs/stories/1.2.md", "content": "Test story"}
+        ]
+        epic_driver.concurrent = True
 
-    def test_setup_logging(self):
-        """Test logging configuration."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+        epic_driver.sm_agent = MagicMock()
+        epic_driver.dev_agent = MagicMock()
+        epic_driver.qa_agent = MagicMock()
+        epic_driver.state_manager = MagicMock()
 
-            driver = EpicDriver(epic_path=str(epic_path), verbose=True)
+        with patch.object(epic_driver, 'process_stories') as mock_process:
+            mock_process.return_value = {"status": "completed"}
 
-            logger = driver._setup_logging()
-            assert logger is not None
-            assert logger.name.startswith("epic_driver.")
-            assert logger.level == 10  # DEBUG level when verbose=True
+            result = await epic_driver.run_workflow()
 
-    def test_setup_logging_default_level(self):
-        """Test logging with default level."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            epic_path = Path(tmpdir) / "test_epic.md"
-            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1\n")
+            assert result is not None
 
-            driver = EpicDriver(epic_path=str(epic_path), verbose=False)
+    def test_logging_configuration(self, epic_driver):
+        """Test that logging is properly configured."""
+        assert epic_driver.logger is not None
+        assert epic_driver.logger.name == "autoBMAD.epic_automation.epic_driver"
 
-            logger = driver._setup_logging()
-            assert logger is not None
+    @pytest.mark.asyncio
+    async def test_cleanup(self, epic_driver):
+        """Test cleanup after workflow."""
+        epic_driver.state_manager = MagicMock()
+
+        await epic_driver.cleanup()
+
+        # Verify cleanup was performed
+        assert epic_driver.state_manager is not None

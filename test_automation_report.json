@@ -1,14 +1,27 @@
 {
-  "test_automation_id": "test-auto-20260106-103404",
-  "epic_id": "test-epic-integration",
-  "timestamp": "2026-01-06T10:34:03.449699",
+  "test_automation_id": "test-auto-20260106-105947",
+  "epic_id": "test-epic-001",
+  "timestamp": "2026-01-06T10:59:47.302089",
   "summary": {
-    "passed": 2,
-    "total": 2,
-    "collected": 2
+    "total_tests": 0,
+    "passed": 0,
+    "failed": 0,
+    "error": 0,
+    "skipped": 0,
+    "execution_time": 0.0
   },
-  "failed_tests": [],
+  "failed_tests": [
+    {
+      "test_file": "test_example.py",
+      "test_name": "test_fail",
+      "failure_type": "failed",
+      "error_message": "",
+      "traceback": [],
+      "fix_attempts": 0,
+      "debugpy_invoked": false
+    }
+  ],
   "retry_history": [],
   "debugpy_sessions": [],
-  "status": "completed"
+  "status": "failed"
 }

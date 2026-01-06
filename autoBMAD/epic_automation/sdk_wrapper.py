@@ -8,7 +8,7 @@ cancel scope errors and ensure proper cleanup of async generators.
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, Optional, cast
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 import time
@@ -16,27 +16,24 @@ import time
 # Type aliases for SDK classes
 try:
     from claude_agent_sdk import query, ResultMessage
-    query: Any = None  # type: ignore
-    ResultMessage: Any = None  # type: ignore
+    _query = query
+    _ResultMessage = ResultMessage
     _sdk_available = True  # type: ignore
 except ImportError:
-    query: Any = None  # type: ignore
-    ResultMessage: Any = None  # type: ignore  # type: ignore
+    _query = None  # type: ignore
+    _ResultMessage = None  # type: ignore  # type: ignore
     _sdk_available = False  # type: ignore
+
+# Re-export with proper types
+query = _query
+ResultMessage = _ResultMessage
 
 # Import Claude SDK types for proper type checking
 try:
     from claude_agent_sdk import (
-        SystemMessage, AssistantMessage, UserMessage, 
+        SystemMessage, AssistantMessage, UserMessage,
         TextBlock, ThinkingBlock, ToolUseBlock, ToolResultBlock
     )
-    SystemMessage: Any = None  # type: ignore
-    AssistantMessage: Any = None  # type: ignore
-    UserMessage: Any = None  # type: ignore
-    TextBlock: Any = None  # type: ignore
-    ThinkingBlock: Any = None  # type: ignore
-    ToolUseBlock: Any = None  # type: ignore
-    ToolResultBlock: Any = None  # type: ignore
     _claude_types_available = True
 except ImportError:
     # Fallback types for when SDK is not available
@@ -58,20 +55,28 @@ logger = logging.getLogger(__name__)
 
 class SDKMessageTracker:
     """Tracks latest SDK message and periodically displays it."""
-    
-    def __init__(self):
-        self.latest_message: str | None = None
+
+    def __init__(self, log_manager: Optional[Any] = None):
+        self.latest_message: Optional[str] = None
         self.message_type: str = "INFO"
         self.message_count: int = 0
         self.start_time: float = time.time()
         self._stop_event: asyncio.Event = asyncio.Event()
         self._display_task: Optional[asyncio.Task[None]] = None
+        self.log_manager = log_manager
     
     def update_message(self, message: str, msg_type: str = "INFO"):
         """Update the latest message and its type."""
         self.latest_message = message
         self.message_type = msg_type
         self.message_count += 1
+
+        # Write to log file if log_manager is available
+        if self.log_manager:
+            try:
+                self.log_manager.write_sdk_message(message, msg_type)
+            except Exception as e:
+                logger.debug(f"Failed to write SDK message to log: {e}")
     
     def get_elapsed_time(self) -> float:
         """Get elapsed time since start."""
@@ -98,12 +103,12 @@ class SDKMessageTracker:
                 if self.latest_message:
                     elapsed = self.get_elapsed_time()
                     # Clean display format: [Type] Message content
-                    print(f"[{self.message_type}] {self.latest_message} (after {elapsed:.1f}s)")
+                    logger.info(f"[{self.message_type}] {self.latest_message} (after {elapsed:.1f}s)")
     
     def display_final_summary(self):
         """Display final summary when complete."""
         elapsed = self.get_elapsed_time()
-        print(f"[COMPLETE] SDK execution finished with {self.message_count} messages in {elapsed:.1f}s")
+        logger.info(f"[COMPLETE] SDK execution finished with {self.message_count} messages in {elapsed:.1f}s")
 
 
 class SafeClaudeSDK:
@@ -119,255 +124,150 @@ class SafeClaudeSDK:
         timeout: Optional timeout in seconds (default: 300.0)
     """
 
-    def __init__(self, prompt: str, options: Any, timeout: float | None = 900.0):
+    def __init__(self, prompt: str, options: Any, timeout: Optional[float] = 900.0, log_manager: Optional[Any] = None):
         self.prompt: str = prompt
         self.options: Any = options
-        self.timeout: float | None = timeout
-        self._generator: Any | None = None
-        self.message_tracker: SDKMessageTracker = SDKMessageTracker()
+        self.timeout: Optional[float] = timeout
+        self._generator: Optional[Any] = None
+        self.message_tracker: SDKMessageTracker = SDKMessageTracker(log_manager)
+        self.log_manager = log_manager
 
-    def _extract_message_content(self, message: Any) -> str | None:
-        """Extract actual content from Claude SDK messages based on official types."""
+    def _extract_message_content(self, message: Any) -> Optional[str]:
+        """Extract actual content from Claude SDK messages - unified method."""
         try:
-            # Use proper type checking when Claude types are available
-            if CLAUDE_TYPES_AVAILABLE and AssistantMessage is not None:
-                # Handle AssistantMessage - Claude's actual responses
-                if isinstance(message, AssistantMessage) and hasattr(message, 'content'):
-                    if isinstance(message.content, list):  # Type is list[ContentBlock]
-                        content_parts: list[str] = []
-                        for block in message.content:
-                            block_obj: Any = block
-                            block_obj: Any = block
-                            if TextBlock is not None and isinstance(block_obj, TextBlock) and block_obj.text:
-                                text_content: str = block_obj.text.strip()
-                                content_parts.append(text_content)
-                            elif ThinkingBlock is not None and isinstance(block, ThinkingBlock) and block.thinking:
-                                # Show brief preview of thinking
-                                thinking_text = block.thinking.strip()
-                                preview: str = thinking_text[:150] + "..." if len(thinking_text) > 150 else thinking_text
-                                content_parts.append(f"[Thinking] {preview}")
-                            elif ToolUseBlock is not None and isinstance(block, ToolUseBlock) and hasattr(block, 'name'):
-                                tool_name: str = cast(str, getattr(block_obj, 'name', 'unknown'))
-                                content_parts.append(f"[Using tool: {tool_name}]")
-                            elif ToolResultBlock is not None and isinstance(block, ToolResultBlock) and hasattr(block, 'content'):
-                                tool_content: Any = block_obj.content
-                                if tool_content:
-                                    if isinstance(tool_content, str) and tool_content.strip():
-                                        content_parts.append(f"[Tool result] {tool_content.strip()}")
-                                    elif isinstance(tool_content, list) and tool_content:
-                                        content_parts.append(f"[Tool completed with {len(tool_content)} results]")
-                        
-                        if content_parts:
-                            return " ".join(content_parts)
-                
-                # Handle SystemMessage - System initialization/info
-                elif SystemMessage is not None and isinstance(message, SystemMessage) and hasattr(message, 'subtype'):
-                    subtype = getattr(message, 'subtype', 'unknown')
-                    if hasattr(message, 'data') and isinstance(message.data, dict):  # Type is dict[str, Any]
-                        # Extract relevant system info
-                        if subtype == 'init':
-                            session_id: str = cast(str, message.data.get('session_id', 'unknown'))
-                            model: str = cast(str, message.data.get('model', 'unknown'))
-                            return f"[System initialized] Model: {model}, Session: {session_id[:8]}..."
-                        elif subtype == 'tool':
-                            tool_name: str = cast(str, message.data.get('tool', 'unknown'))
-                            return f"[System] Tool: {tool_name}"
-                    return f"[System] {subtype}"
-                
-                # Handle UserMessage - User inputs (rare in query mode)
-                elif UserMessage is not None and isinstance(message, UserMessage) and hasattr(message, 'content'):
-                    if isinstance(message.content, str) and message.content.strip():
-                        return f"[User] {message.content.strip()[:100]}..."
-                    elif isinstance(message.content, list):
-                        return f"[User sent {len(message.content)} content blocks]"
-                
-                # Handle ResultMessage - Final results
-                elif ResultMessage is not None and isinstance(message, ResultMessage):
-                    if hasattr(message, 'is_error'):
-                        if message.is_error:
-                            error_result = getattr(message, 'result', 'Unknown error')
-                            return f"[Error] {error_result}"
-                        else:
-                            success_result = getattr(message, 'result', 'Success')
-                            # Truncate long results
-                            if isinstance(success_result, str) and len(success_result) > 200:
-                                return f"[Success] {success_result[:200]}..."
-                            else:
-                                return f"[Success] {success_result}"
-                    
-                    # Also show basic stats
-                    if hasattr(message, 'num_turns'):
-                        turns = getattr(message, 'num_turns', 0)
-                        duration = getattr(message, 'duration_ms', 0) / 1000
-                        return f"[Complete] {turns} turns, {duration:.1f}s"
-            
-            # Fallback for when SDK types are not available or for dynamic access
-            else:
-                return self._extract_message_content_fallback(message)
-                
-        except Exception as e:
-            logger.debug(f"Failed to extract message content from {message.__class__.__name__}: {e}")
-        
-        return None
-    
-    def _extract_message_content_fallback(self, message: Any) -> str | None:
-        """Fallback method for extracting content when SDK types are not available."""
-        try:
-            msg_class = message.__class__.__name__
-            
+            # Get message class name for unified handling
+            msg_class = message.__class__.__name__ if hasattr(message, '__class__') else 'Unknown'
+
             # Handle AssistantMessage - Claude's actual responses
             if msg_class == 'AssistantMessage' and hasattr(message, 'content'):
-                if isinstance(message.content, list):
-                    content_parts: list[str] = []
-                    for block in message.content:  # Type is ContentBlock
-                        block_obj: Any = block
-                        block_obj: Any = block
-                        block_type: str = block.__class__.__name__
-                        if block_type == 'TextBlock' and hasattr(block, 'text') and block.text:
-                            content_parts.append(cast(str, block.text).strip())
-                        elif block_type == 'ThinkingBlock' and hasattr(block, 'thinking') and block.thinking:
-                            # Show brief preview of thinking
-                            thinking_text = cast(str, block.thinking).strip()
-                            preview: str = thinking_text[:150] + "..." if len(thinking_text) > 150 else thinking_text
-                            content_parts.append(f"[Thinking] {preview}")
-                        elif block_type == 'ToolUseBlock' and hasattr(block, 'name'):
-                            tool_name = cast(str, getattr(block, 'name', 'unknown'))
-                            content_parts.append(f"[Using tool: {tool_name}]")
-                        elif block_type == 'ToolResultBlock' and hasattr(block, 'content'):
-                            tool_content = getattr(block, 'content')
-                            if tool_content:
-                                if isinstance(tool_content, str) and tool_content.strip():
-                                    content_parts.append(f"[Tool result] {tool_content.strip()}")
-                                elif isinstance(tool_content, list) and tool_content:
-                                    content_parts.append(f"[Tool completed with {len(tool_content)} results]")
-                    
-                    if content_parts:
-                        return " ".join(content_parts)
-            
+                return self._extract_assistant_content(message)
             # Handle SystemMessage - System initialization/info
-            elif msg_class == 'SystemMessage' and hasattr(message, 'subtype'):
-                subtype = cast(str, getattr(message, 'subtype', 'unknown'))
-                if hasattr(message, 'data') and isinstance(message.data, dict):
-                    # Extract relevant system info
-                    if subtype == 'init':
-                        session_id = cast(dict[str, Any], message.data).get('session_id', 'unknown')
-                        model = cast(dict[str, Any], message.data).get('model', 'unknown')
-                        return f"[System initialized] Model: {model}, Session: {session_id[:8]}..."
-                    elif subtype == 'tool':
-                        tool_name = cast(dict[str, Any], message.data).get('tool', 'unknown')
-                        return f"[System] Tool: {tool_name}"
-                return f"[System] {subtype}"
-            
-            # Handle UserMessage - User inputs (rare in query mode)
-            elif msg_class == 'UserMessage' and hasattr(message, 'content'):
-                if isinstance(message.content, str) and message.content.strip():
-                    return f"[User] {message.content.strip()[:100]}..."
-                elif isinstance(message.content, list):
-                    return f"[User sent {len(message.content)} content blocks]"
-            
+            elif msg_class == 'SystemMessage':
+                return self._extract_system_content(message)
+            # Handle UserMessage - User inputs
+            elif msg_class == 'UserMessage':
+                return self._extract_user_content(message)
             # Handle ResultMessage - Final results
             elif msg_class == 'ResultMessage':
-                if hasattr(message, 'is_error'):
-                    if message.is_error:
-                        error_result = cast(str, getattr(message, 'result', 'Unknown error'))
-                        return f"[Error] {error_result}"
-                    else:
-                        success_result = cast(str, getattr(message, 'result', 'Success'))
-                        # Truncate long results
-                        if len(success_result) > 200:
-                            return f"[Success] {success_result[:200]}..."
-                        else:
-                            return f"[Success] {success_result}"
-                
-                # Also show basic stats
-                if hasattr(message, 'num_turns'):
-                    turns = cast(int, getattr(message, 'num_turns', 0))
-                    duration = cast(int, getattr(message, 'duration_ms', 0)) / 1000
-                    return f"[Complete] {turns} turns, {duration:.1f}s"
-            
+                return self._extract_result_content(message)
+
         except Exception as e:
-            logger.debug(f"Failed to extract message content from {message.__class__.__name__} (fallback): {e}")
-        
+            logger.debug(f"Failed to extract message content: {e}")
+        return None
+
+    def _extract_assistant_content(self, message: Any) -> Optional[str]:
+        """Extract content from AssistantMessage."""
+        if not hasattr(message, 'content') or not isinstance(message.content, list):
+            return None
+
+        content_parts: list[str] = []
+        for block in message.content:
+            block_item: Any = block
+            block_type: str = block_item.__class__.__name__
+
+            if block_type == 'TextBlock' and hasattr(block_item, 'text') and block_item.text:
+                content_parts.append(block_item.text.strip())
+            elif block_type == 'ThinkingBlock' and hasattr(block_item, 'thinking') and block_item.thinking:
+                thinking_text = block_item.thinking.strip()
+                preview = thinking_text[:150] + "..." if len(thinking_text) > 150 else thinking_text
+                content_parts.append(f"[Thinking] {preview}")
+            elif block_type == 'ToolUseBlock' and hasattr(block_item, 'name'):
+                tool_name = getattr(block_item, 'name', 'unknown')
+                content_parts.append(f"[Using tool: {tool_name}]")
+            elif block_type == 'ToolResultBlock' and hasattr(block_item, 'content'):
+                tool_content = getattr(block_item, 'content')
+                if tool_content:
+                    if isinstance(tool_content, str) and tool_content.strip():
+                        content_parts.append(f"[Tool result] {tool_content.strip()}")
+                    elif isinstance(tool_content, list) and tool_content:
+                        content_parts.append(f"[Tool completed with {len(tool_content)} results]")
+
+        return " ".join(content_parts) if content_parts else None
+
+    def _extract_system_content(self, message: Any) -> Optional[str]:
+        """Extract content from SystemMessage."""
+        if not hasattr(message, 'subtype'):
+            return None
+
+        subtype = getattr(message, 'subtype', 'unknown')
+        if hasattr(message, 'data') and isinstance(message.data, dict):
+            if subtype == 'init':
+                session_id = message.data.get('session_id', 'unknown')
+                model = message.data.get('model', 'unknown')
+                return f"[System initialized] Model: {model}, Session: {str(session_id)[:8]}..."
+            elif subtype == 'tool':
+                tool_name = message.data.get('tool', 'unknown')
+                return f"[System] Tool: {tool_name}"
+        return f"[System] {subtype}"
+
+    def _extract_user_content(self, message: Any) -> Optional[str]:
+        """Extract content from UserMessage."""
+        if not hasattr(message, 'content'):
+            return None
+
+        content = message.content
+        if isinstance(content, str) and content.strip():
+            return f"[User] {content.strip()[:100]}..."
+        elif isinstance(content, list):
+            return f"[User sent {len(content)} content blocks]"
+        return None
+
+    def _extract_result_content(self, message: Any) -> Optional[str]:
+        """Extract content from ResultMessage."""
+        if hasattr(message, 'is_error'):
+            if message.is_error:
+                error_result = getattr(message, 'result', 'Unknown error')
+                return f"[Error] {error_result}"
+            else:
+                success_result = getattr(message, 'result', 'Success')
+                if isinstance(success_result, str) and len(success_result) > 200:
+                    return f"[Success] {success_result[:200]}..."
+                else:
+                    return f"[Success] {success_result}"
+
+        if hasattr(message, 'num_turns'):
+            turns = getattr(message, 'num_turns', 0)
+            duration = getattr(message, 'duration_ms', 0) / 1000
+            return f"[Complete] {turns} turns, {duration:.1f}s"
         return None
     
     def _classify_message_type(self, message: Any) -> str:
-        """Classify the type of message from Claude SDK based on official types."""
+        """Classify the type of message from Claude SDK - simplified."""
         try:
-            # Use proper type checking when Claude types are available
-            if CLAUDE_TYPES_AVAILABLE and SystemMessage is not None:
-                if isinstance(message, SystemMessage):
-                    subtype = getattr(message, 'subtype', 'unknown')
-                    if subtype == 'init':
-                        return 'INIT'
-                    elif subtype == 'tool':
-                        return 'TOOL'
-                    else:
-                        return 'SYSTEM'
-                
-                elif AssistantMessage is not None and isinstance(message, AssistantMessage):
-                    if hasattr(message, 'content') and isinstance(message.content, list):  # Type is list[ContentBlock]
-                        for block in message.content:
-                            block_obj: Any = block
-                            block_obj: Any = block
-                            if ThinkingBlock is not None and isinstance(block_obj, ThinkingBlock):
-                                return 'THINKING'
-                            elif TextBlock is not None and isinstance(block, TextBlock):
-                                return 'ASSISTANT'
-                            elif ToolUseBlock is not None and isinstance(block, ToolUseBlock):
-                                return 'TOOL_USE'
-                            elif ToolResultBlock is not None and isinstance(block, ToolResultBlock):
-                                return 'TOOL_RESULT'
-                    return 'ASSISTANT'
-                
-                elif UserMessage is not None and isinstance(message, UserMessage):
-                    return 'USER'
-                
-                elif ResultMessage is not None and isinstance(message, ResultMessage):
-                    if hasattr(message, 'is_error') and message.is_error:
-                        return 'ERROR'
-                    else:
-                        return 'SUCCESS'
-            
-            # Fallback for when SDK types are not available
-            else:
-                msg_class = message.__class__.__name__
-                
-                if msg_class == 'SystemMessage':
-                    subtype = cast(str, getattr(message, 'subtype', 'unknown'))
-                    if subtype == 'init':
-                        return 'INIT'
-                    elif subtype == 'tool':
-                        return 'TOOL'
-                    else:
-                        return 'SYSTEM'
-                
-                elif msg_class == 'AssistantMessage':
-                    if hasattr(message, 'content') and isinstance(message.content, list):
-                        for block in message.content:  # Type is ContentBlock
-                            block_obj: Any = block
-                            block_obj: Any = block
-                            block_type: str = block.__class__.__name__
-                            if block_type == 'ThinkingBlock':
-                                return 'THINKING'
-                            elif block_type == 'TextBlock':
-                                return 'ASSISTANT'
-                            elif block_type == 'ToolUseBlock':
-                                return 'TOOL_USE'
-                            elif block_type == 'ToolResultBlock':
-                                return 'TOOL_RESULT'
-                    return 'ASSISTANT'
-                
-                elif msg_class == 'UserMessage':
-                    return 'USER'
-                
-                elif msg_class == 'ResultMessage':
-                    if hasattr(message, 'is_error') and cast(bool, getattr(message, 'is_error', False)):
-                        return 'ERROR'
-                    else:
-                        return 'SUCCESS'
-            
+            msg_class = message.__class__.__name__ if hasattr(message, '__class__') else 'Unknown'
+
+            if msg_class == 'SystemMessage':
+                subtype = getattr(message, 'subtype', 'unknown')
+                if subtype == 'init':
+                    return 'INIT'
+                elif subtype == 'tool':
+                    return 'TOOL'
+                return 'SYSTEM'
+
+            elif msg_class == 'AssistantMessage':
+                if hasattr(message, 'content') and isinstance(message.content, list):
+                    for block in message.content:
+                        block_type = block.__class__.__name__
+                        if block_type == 'ThinkingBlock':
+                            return 'THINKING'
+                        elif block_type == 'TextBlock':
+                            return 'ASSISTANT'
+                        elif block_type == 'ToolUseBlock':
+                            return 'TOOL_USE'
+                        elif block_type == 'ToolResultBlock':
+                            return 'TOOL_RESULT'
+                return 'ASSISTANT'
+
+            elif msg_class == 'UserMessage':
+                return 'USER'
+
+            elif msg_class == 'ResultMessage':
+                if hasattr(message, 'is_error') and message.is_error:
+                    return 'ERROR'
+                return 'SUCCESS'
+
             return 'INFO'
-                
+
         except Exception as e:
             logger.debug(f"Failed to classify message type: {e}")
             return 'INFO'
@@ -508,16 +408,17 @@ class SafeClaudeSDK:
 async def safe_claude_sdk(
     prompt: str,
     options: Any,
-    timeout: float | None = 900.0
+    timeout: Optional[float] = 900.0,
+    log_manager: Optional[Any] = None
 ) -> AsyncIterator[SafeClaudeSDK]:
     """
     Async context manager for safe Claude SDK execution.
 
     Usage:
-        async with safe_claude_sdk(prompt, options) as sdk:
+        async with safe_claude_sdk(prompt, options, log_manager=log_manager) as sdk:
             success = await sdk.execute()
     """
-    sdk = SafeClaudeSDK(prompt, options, timeout)
+    sdk = SafeClaudeSDK(prompt, options, timeout, log_manager)
     try:
         yield sdk
     finally:

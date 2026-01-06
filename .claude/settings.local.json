@@ -40,7 +40,8 @@
       "Bash(sqlite3:*)",
       "Bash(python3:*)",
       "Bash(cp:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(pytest:*)"
     ]
   }
 }

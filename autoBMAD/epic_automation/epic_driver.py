@@ -7,11 +7,19 @@ Reads epic markdown files and drives SM-Dev-QA cycle.
 
 import argparse
 import asyncio
+import logging
 import re
 import sys
 from pathlib import Path
-from typing import Any, cast
-import logging
+from typing import Any, Optional, cast
+
+# Import log manager
+from autoBMAD.epic_automation.log_manager import (
+    LogManager,
+    cleanup_logging,
+    init_logging,
+    setup_dual_write,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -47,6 +55,7 @@ class EpicDriver:
     qa_agent: Any
     state_manager: Any
     logger: logging.Logger
+    log_manager: LogManager
 
     def __init__(self, epic_path: str, tasks_dir: str = ".bmad-core/tasks",
                  max_iterations: int = 3, retry_failed: bool = False,
@@ -95,12 +104,19 @@ class EpicDriver:
         self.max_quality_iterations = 3
         self.max_test_iterations = 5
 
+        # Initialize log manager
+        self.log_manager = LogManager()
+        init_logging(self.log_manager)
+        setup_dual_write(self.log_manager)
+
         # Import agent classes
         try:
-            from autoBMAD.epic_automation.sm_agent import SMAgent  # type: ignore
             from autoBMAD.epic_automation.dev_agent import DevAgent  # type: ignore
             from autoBMAD.epic_automation.qa_agent import QAAgent  # type: ignore
-            from autoBMAD.epic_automation.state_manager import StateManager  # type: ignore
+            from autoBMAD.epic_automation.sm_agent import SMAgent  # type: ignore
+            from autoBMAD.epic_automation.state_manager import (
+                StateManager,  # type: ignore
+            )
 
             self.sm_agent = SMAgent()
             self.dev_agent = DevAgent(use_claude=use_claude)
@@ -112,7 +128,7 @@ class EpicDriver:
                 level=logging.ERROR,
                 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
-            logger = logging.getLogger(__name__)
+            # Use module-level logger instead of creating a new local variable
             logger.error(f"Failed to import agent classes: {e}")
             sys.exit(1)
 
@@ -122,14 +138,15 @@ class EpicDriver:
     def _setup_logging(self) -> logging.Logger:
         """Set up logging configuration."""
         logger = logging.getLogger(f"epic_driver.{self.epic_path.name}")
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-            logger.setLevel(logging.DEBUG if self.verbose else logging.INFO)
+
+        # Note: Logging is already initialized by log_manager in __init__
+        # This method is kept for compatibility but doesn't add new handlers
+        logger.setLevel(logging.DEBUG if self.verbose else logging.INFO)
+
+        # Log that logging is configured
+        if self.log_manager and self.log_manager.get_current_log_path():
+            logger.info(f"Logging configured. Log file: {self.log_manager.get_current_log_path()}")
+
         return logger
 
     async def load_task_guidance(self) -> None:
@@ -163,7 +180,7 @@ class EpicDriver:
             return []
 
         try:
-            with open(self.epic_path, 'r', encoding='utf-8') as f:
+            with open(self.epic_path, encoding='utf-8') as f:
                 content = f.read()
 
             # Step 1: Extract story IDs from Epic document
@@ -189,7 +206,8 @@ class EpicDriver:
                 elif (autoBMAD_dir.parent / "autoBMAD").exists():
                     stories_dir = autoBMAD_dir.parent / "autoBMAD" / "stories"
 
-            logger.debug(f"Searching for story files in: {stories_dir}")
+            logger.info(f"Searching for story files in: {stories_dir}")
+            logger.debug(f"Stories directory exists: {stories_dir.exists()}")
 
             stories: list[dict[str, Any]] = []
             found_stories: list[str] = []
@@ -197,32 +215,29 @@ class EpicDriver:
             # Pre-check: collect all existing story files to avoid redundant checks
             existing_stories: set[str] = set()
             if stories_dir.exists():
-                for story_file in stories_dir.glob("*.md"):
+                story_files = list(stories_dir.glob("*.md"))
+                logger.info(f"Found {len(story_files)} markdown files in stories directory")
+                for story_file in story_files:
                     match = re.match(r'^(\d+(?:\.\d+)?)-', story_file.name)
                     if match:
                         existing_stories.add(match.group(1))
+                        logger.debug(f"Existing story file: {story_file.name} (ID: {match.group(1)})")
+            else:
+                logger.warning(f"Stories directory does not exist: {stories_dir}")
 
             if stories_dir.exists():
-                # Find all story files matching pattern 001.*.md, 002.*.md, etc.
-                story_files = list(stories_dir.glob("*.md"))
-                logger.debug(f"Found {len(story_files)} markdown files in stories directory")
-
-                # Create a mapping of story numbers to files
-                story_file_map: dict[str, Path] = {}
-                for story_file in story_files:
-                    # Extract story number from filename: 001-xxx.md -> 001
-                    match = re.match(r'^(\d+(?:\.\d+)?)-', story_file.name)
-                    if match:
-                        story_number = match.group(1)
-                        story_file_map[story_number] = story_file
-
-                # Match story IDs to files
+                # Match story IDs to files using fallback logic
+                logger.info(f"Matching {len(story_ids)} story IDs to files")
                 for story_id in story_ids:
                     # Extract story number: "001" or "001: Title" -> "001"
                     story_number = story_id.split(':')[0].strip()
+                    logger.debug(f"Looking for story number: {story_number} (ID: {story_id})")
 
-                    if story_number in story_file_map:
-                        story_file: Path = story_file_map[story_number]
+                    # Use fallback matching to find story file
+                    story_file = self._find_story_file_with_fallback(stories_dir, story_number)
+
+                    if story_file:
+                        logger.info(f"[Match Success] {story_id} -> {story_file.name}")
                         stories.append({
                             'id': story_id,
                             'path': str(story_file.resolve()),
@@ -232,28 +247,32 @@ class EpicDriver:
                         logger.info(f"Found story: {story_id} at {story_file}")
                     else:
                         # Story file not found
+                        logger.warning(f"[Match Failed] {story_id} (number: {story_number})")
                         # Additional check: verify if file really doesn't exist (race condition protection)
                         if story_number not in existing_stories:
                             # Try to create missing story file using SM Agent
-                            story_filename = f"{story_number}.md"
-                            story_path: Path = stories_dir / story_filename
+                            logger.info(f"Creating missing story file for ID: {story_id}")
                             if await self.sm_agent.create_stories_from_epic(str(self.epic_path)):
-                                stories.append({
-                                    'id': story_id,
-                                    'path': str(story_path.resolve()),
-                                    'name': story_path.name
-                                })
-                                found_stories.append(story_id)
-                                logger.info(f"Created story: {story_id} at {story_path}")
+                                # After creation, try to find the file again
+                                created_story_file = self._find_story_file_with_fallback(stories_dir, story_number)
+                                if created_story_file:
+                                    stories.append({
+                                        'id': story_id,
+                                        'path': str(created_story_file.resolve()),
+                                        'name': created_story_file.name
+                                    })
+                                    found_stories.append(story_id)
+                                    logger.info(f"Created story: {story_id} at {created_story_file}")
+                                else:
+                                    logger.error(f"Story file not found after creation for ID: {story_id}")
                             else:
                                 logger.error(f"Failed to create story: {story_id}")
                             logger.warning(f"Story file not found for ID: {story_id} (looking for {stories_dir}/*{story_number}*.md)")
                         else:
-                            # File exists but not in map (might be a race condition or different naming)
-                            logger.info(f"Story file exists but not matched: {story_number}")
-
+                            # File exists but not matched (should not happen with new logic)
+                            logger.warning(f"Story file exists but could not be matched: {story_number} in {stories_dir}")
             else:
-                logger.warning(f"Stories directory not found: {stories_dir}")
+                logger.error(f"Cannot match stories: stories directory does not exist: {stories_dir}")
                 logger.info("Tried searching in:")
                 logger.info(f"  - {self.epic_path.parent.parent / 'docs-copy' / 'stories'}")
                 logger.info(f"  - {self.epic_path.parent / 'docs' / 'stories'}")
@@ -327,6 +346,41 @@ class EpicDriver:
 
         return unique_story_ids
 
+    def _find_story_file_with_fallback(self, stories_dir: Path, story_number: str) -> Optional[Path]:
+        """
+        Find story file with fallback matching logic.
+
+        Tries multiple filename patterns:
+        1. Exact match: {story_number}.md
+        2. Descriptive match: {story_number}-*.md
+
+        Args:
+            stories_dir: Directory containing story files
+            story_number: Story number (e.g., "1.1", "1.2")
+
+        Returns:
+            Path to the story file if found, None otherwise
+        """
+        # Pattern 1: Exact match (e.g., 1.1.md)
+        exact_match = stories_dir / f"{story_number}.md"
+        if exact_match.exists():
+            logger.debug(f"[File Match] Found exact match for {story_number}: {exact_match}")
+            return exact_match
+
+        # Pattern 2: Descriptive match (e.g., 1.1-description.md)
+        pattern_match = list(stories_dir.glob(f"{story_number}-*.md"))
+        if pattern_match:
+            logger.debug(f"[File Match] Found descriptive match for {story_number}: {pattern_match[0]}")
+            return pattern_match[0]
+
+        # Pattern 3: Alternative format (e.g., 1.1.description.md)
+        alt_pattern_match = list(stories_dir.glob(f"{story_number}.*.md"))
+        if alt_pattern_match:
+            logger.debug(f"[File Match] Found alt pattern match for {story_number}: {alt_pattern_match[0]}")
+            return alt_pattern_match[0]
+
+        logger.debug(f"[File Match] No match found for story number: {story_number}")
+        return None
 
     async def execute_sm_phase(self, story_path: str) -> bool:
         """Execute SM (Story Master) phase for a story.
@@ -344,7 +398,7 @@ class EpicDriver:
             guidance = self.task_guidance.get("sm_agent", "")
 
             # Read story content
-            with open(story_path, 'r', encoding='utf-8') as f:
+            with open(story_path, encoding='utf-8') as f:
                 story_content = f.read()
 
             # Execute SM phase with story_path parameter
@@ -397,8 +451,11 @@ class EpicDriver:
             guidance = self.task_guidance.get("dev_agent", "")
 
             # Read story content
-            with open(story_path, 'r', encoding='utf-8') as f:
+            with open(story_path, encoding='utf-8') as f:
                 story_content = f.read()
+
+            # Set log_manager to dev_agent for SDK logging
+            self.dev_agent._log_manager = self.log_manager
 
             # Execute Dev phase with story_path parameter
             result: bool = await self.dev_agent.execute(story_content, guidance, story_path)
@@ -451,11 +508,11 @@ class EpicDriver:
 
         try:
             # Read story content
-            with open(story_path, 'r', encoding='utf-8') as f:
+            with open(story_path, encoding='utf-8') as f:
                 story_content = f.read()
 
             # Execute QA phase with tools integration
-            qa_result: "dict[str, Any]" = await self.qa_agent.execute(
+            qa_result: dict[str, Any] = await self.qa_agent.execute(
                 story_content,
                 task_guidance=guidance,
                 use_qa_tools=True,
@@ -507,7 +564,7 @@ class EpicDriver:
 
         try:
             # Check if story already completed
-            existing_status: "dict[str, Any]" = await self.state_manager.get_story_status(story_path)
+            existing_status: dict[str, Any] = await self.state_manager.get_story_status(story_path)
             if existing_status and existing_status.get('status') == 'completed':
                 logger.info(f"Story already completed: {story_path}")
                 return True
@@ -564,7 +621,7 @@ class EpicDriver:
     async def _is_story_ready_for_done(self, story_path: str) -> bool:
         """Check if story is ready for done based on status."""
         try:
-            with open(story_path, 'r', encoding='utf-8') as f:
+            with open(story_path, encoding='utf-8') as f:
                 content = f.read()
 
             # Check for Ready for Done status
@@ -629,7 +686,9 @@ class EpicDriver:
             return {'status': 'skipped'}
 
         try:
-            from autoBMAD.epic_automation.code_quality_agent import CodeQualityAgent  # type: ignore
+            from autoBMAD.epic_automation.code_quality_agent import (
+                CodeQualityAgent,  # type: ignore
+            )
 
             quality_agent: Any = cast(Any, CodeQualityAgent(
                 state_manager=self.state_manager,
@@ -641,7 +700,7 @@ class EpicDriver:
                 source_dir=self.source_dir,
                 skip_quality=self.skip_quality
             )
-            quality_results: "dict[str, Any]" = cast("dict[str, Any]", raw_results)
+            quality_results: dict[str, Any] = cast("dict[str, Any]", raw_results)
 
             # Update progress
             status: str = str(quality_results.get('status', 'failed'))
@@ -677,7 +736,9 @@ class EpicDriver:
             return {'status': 'skipped'}
 
         try:
-            from autoBMAD.epic_automation.test_automation_agent import TestAutomationAgent  # type: ignore
+            from autoBMAD.epic_automation.test_automation_agent import (
+                TestAutomationAgent,  # type: ignore
+            )
 
             test_agent: Any = cast(Any, TestAutomationAgent(
                 state_manager=self.state_manager,
@@ -689,7 +750,7 @@ class EpicDriver:
                 test_dir=self.test_dir,
                 skip_tests=self.skip_tests
             )
-            test_results: "dict[str, Any]" = cast("dict[str, Any]", raw_results)
+            test_results: dict[str, Any] = cast("dict[str, Any]", raw_results)
 
             # Update progress
             status: str = str(test_results.get('status', 'failed'))
@@ -882,7 +943,13 @@ class EpicDriver:
 
         except Exception as e:
             self.logger.error(f"Epic driver execution failed: {e}", exc_info=True)
+            # Write exception to log file
+            if self.log_manager:
+                self.log_manager.write_exception(e, "Epic Driver run()")
             return False
+        finally:
+            # Cleanup logging
+            cleanup_logging()
 
 
 def parse_arguments():
