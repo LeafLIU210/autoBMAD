@@ -169,8 +169,8 @@ class TestBubbleSortProperties:
 
         assert sorted_best == list(range(1, 101))
 
-    def test_memory_efficiency(self):
-        """Test that bubble sort sorts in place and doesn't create extra copies."""
+    def test_pure_function_property(self):
+        """Test that bubble sort is a pure function and doesn't modify input."""
         from src.bubble_sort import bubble_sort
 
         original = [5, 2, 8, 1, 9]
@@ -178,7 +178,9 @@ class TestBubbleSortProperties:
 
         result = bubble_sort(original)
 
-        # Should return the same object
-        assert id(result) == original_id
-        # Should modify the original list
-        assert result is original
+        # Should create a new list
+        assert id(result) != original_id
+        # Input should not be modified
+        assert original == [5, 2, 8, 1, 9]
+        # Result should be sorted
+        assert result == [1, 2, 5, 8, 9]

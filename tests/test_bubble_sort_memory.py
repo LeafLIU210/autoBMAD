@@ -11,20 +11,24 @@ import sys
 class TestBubbleSortMemory:
     """Memory efficiency test cases for bubble sort algorithm."""
 
-    def test_in_place_modification(self):
-        """Test that sorting happens in place without creating new list."""
+    def test_pure_function_behavior(self):
+        """Test that bubble sort does not modify the input list (pure function)."""
         from src.bubble_sort import bubble_sort
 
         original = [5, 3, 8, 1, 9, 2, 7, 4, 6]
-        original_id = id(original)
+        original_copy = original.copy()
 
         result = bubble_sort(original)
 
-        # Should return the same object
-        assert id(result) == original_id
+        # Input should not be modified
+        assert original == original_copy
+        assert original == [5, 3, 8, 1, 9, 2, 7, 4, 6]
 
-        # Should modify the original list
-        assert result is original
+        # Result should be sorted
+        assert result == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+        # Result should be a new list object
+        assert result is not original
 
     def test_no_additional_memory_allocation(self):
         """Test that sorting doesn't allocate additional memory proportional to input."""
@@ -127,7 +131,7 @@ class TestBubbleSortMemory:
         assert result == sorted(test_list)
 
     def test_memory_reuse(self):
-        """Test that the same memory is reused for sorting."""
+        """Test that bubble sort creates a new list (pure function)."""
         from src.bubble_sort import bubble_sort
 
         test_list = [5, 3, 8, 1, 9, 2, 7, 4, 6]
@@ -135,11 +139,14 @@ class TestBubbleSortMemory:
 
         result = bubble_sort(test_list)
 
-        # Should use same list object
-        assert id(result) == original_id
+        # Should create a new list object
+        assert id(result) != original_id
 
-        # Elements should be the same objects (no copying)
-        assert test_list == result
+        # Original should not be modified
+        assert test_list == [5, 3, 8, 1, 9, 2, 7, 4, 6]
+
+        # Result should be sorted
+        assert result == [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     def test_nested_list_handling(self):
         """Test that nested structures are handled correctly."""
@@ -153,8 +160,11 @@ class TestBubbleSortMemory:
         expected = [[1, 1], [1, 2], [2, 8], [3, 5]]
         assert result == expected
 
-        # Should still be in-place
-        assert id(result) == id(nested)
+        # Input should not be modified
+        assert nested == [[3, 5], [1, 2], [2, 8], [1, 1]]
+
+        # Should create a new list
+        assert id(result) != id(nested)
 
     def test_memory_pressure(self):
         """Test sorting under memory pressure conditions."""
@@ -162,14 +172,15 @@ class TestBubbleSortMemory:
 
         # Create a reasonably large list
         test_list = [i % 100 for i in range(10000)]
+        original = test_list.copy()
 
         result = bubble_sort(test_list)
 
         # Verify correctness
         assert result == sorted(test_list)
 
-        # Verify it's still the same object
-        assert id(result) == id(test_list)
+        # Verify input is not modified
+        assert test_list == original
 
         # Memory should be reasonable
         result_size = sys.getsizeof(result)
@@ -188,8 +199,11 @@ class TestBubbleSortMemory:
         expected = [(1, "a"), (1, "b"), (2, "c"), (3, "a")]
         assert result == expected
 
-        # Should be in-place
-        assert id(result) == id(tuples)
+        # Input should not be modified
+        assert tuples == [(3, "a"), (1, "b"), (2, "c"), (1, "a")]
+
+        # Should create a new list
+        assert id(result) != id(tuples)
 
     def test_mixed_type_sorting(self):
         """Test sorting with mixed types doesn't waste memory."""
@@ -203,8 +217,11 @@ class TestBubbleSortMemory:
         expected = sorted(mixed)
         assert result == expected
 
-        # Should be in-place
-        assert id(result) == id(mixed)
+        # Input should not be modified
+        assert mixed == [3.14, 1, 2.5, 0, -1, 3.0]
+
+        # Should create a new list
+        assert id(result) != id(mixed)
 
     def test_empty_and_single_element_memory(self):
         """Test memory handling for edge cases."""
@@ -212,15 +229,15 @@ class TestBubbleSortMemory:
 
         # Empty list
         empty = []
-        empty_id = id(empty)
         result_empty = bubble_sort(empty)
-        assert id(result_empty) == empty_id
+        assert result_empty == []
 
         # Single element
         single = [42]
-        single_id = id(single)
         result_single = bubble_sort(single)
-        assert id(result_single) == single_id
+        assert result_single == [42]
+        # For single element, it returns a new list (pure function)
+        assert id(result_single) != id(single)
 
     def test_gc_pressure(self):
         """Test that sorting doesn't create garbage for GC to collect."""

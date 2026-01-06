@@ -1,0 +1,116 @@
+{
+  "version": "1.37.0",
+  "time": "1767739093007",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"timeout_context\" 类型未知",
+      "range": {
+        "start": {
+          "line": 339,
+          "character": 12
+        },
+        "end": {
+          "line": 339,
+          "character": 27
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"timeout\" 类型未知",
+      "range": {
+        "start": {
+          "line": 339,
+          "character": 30
+        },
+        "end": {
+          "line": 339,
+          "character": 45
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"timeout\" 不是 \"asyncio\" 模块的已知属性",
+      "range": {
+        "start": {
+          "line": 339,
+          "character": 38
+        },
+        "end": {
+          "line": 339,
+          "character": 45
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "在 \"tuple\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式",
+      "range": {
+        "start": {
+          "line": 183,
+          "character": 9
+        },
+        "end": {
+          "line": 183,
+          "character": 14
+        }
+      },
+      "rule": "reportIndexIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "变量 \"story_id\" 未使用",
+      "range": {
+        "start": {
+          "line": 240,
+          "character": 20
+        },
+        "end": {
+          "line": 240,
+          "character": 28
+        }
+      },
+      "rule": "reportUnusedVariable"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 5,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.019
+  },
+  "metadata": {
+    "check_time": "2026-01-07T06:38:13.066143",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "..\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

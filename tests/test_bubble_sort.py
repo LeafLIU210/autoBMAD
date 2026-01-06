@@ -31,14 +31,18 @@ class TestBubbleSort:
 
         assert bubble_sort(input_list) == expected
 
-    def test_in_place_modification(self):
-        """Test that bubble sort modifies the list in place."""
+    def test_input_not_modified(self):
+        """Test that bubble sort does not modify the input list (pure function)."""
         from src.bubble_sort import bubble_sort
 
         original = [3, 1, 2]
         result = bubble_sort(original)
+        # Input should not be modified
+        assert original == [3, 1, 2]
+        # Result should be sorted
         assert result == [1, 2, 3]
-        assert result is original  # Should return the same list object
+        # Result should be a new list object
+        assert result is not original
 
     def test_preserves_original_values(self):
         """Test that bubble sort preserves all original values."""
@@ -72,3 +76,25 @@ class TestBubbleSort:
         from src.bubble_sort import bubble_sort
 
         assert bubble_sort(input_list) == expected
+
+    def test_none_input_raises_error(self):
+        """Test that None input raises TypeError."""
+        from src.bubble_sort import bubble_sort
+
+        with pytest.raises(TypeError, match="Input cannot be None"):
+            bubble_sort(None)
+
+    def test_non_iterable_input_raises_error(self):
+        """Test that non-iterable input (integer) raises TypeError."""
+        from src.bubble_sort import bubble_sort
+
+        with pytest.raises(TypeError, match="Input must be iterable"):
+            bubble_sort(42)
+
+    def test_non_comparable_types_raises_error(self):
+        """Test that non-comparable types raise appropriate error."""
+        from src.bubble_sort import bubble_sort
+
+        # This should raise TypeError when comparing incompatible types
+        with pytest.raises((TypeError, ValueError)):
+            bubble_sort([1, "string", 3])

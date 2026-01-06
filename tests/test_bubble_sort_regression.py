@@ -48,8 +48,10 @@ class TestBubbleSortRegression:
         result = bubble_sort(sorted_list)
 
         assert result == sorted_list
-        # With optimization, should only do one pass
-        assert result is sorted_list  # Should modify in place
+        # Input should not be modified
+        assert sorted_list == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        # Result should be a new list
+        assert id(result) != id(sorted_list)
 
     def test_regression_reverse_sorted_list(self):
         """Regression: Reverse sorted list should be sorted correctly.
@@ -195,11 +197,11 @@ class TestBubbleSortRegression:
         assert result[3][0] == 2
         assert result[4][0] == 2
 
-    def test_regression_in_place_modification(self):
-        """Regression: Function should modify list in place and return same object.
+    def test_regression_pure_function_behavior(self):
+        """Regression: Function should be pure and not modify input.
 
-        Bug: Some implementations might return a new list instead of modifying in place.
-        Fix: Should modify the original list and return it.
+        Bug: Some implementations might modify the input list.
+        Fix: Should create a new list without modifying the input.
         """
         from src.bubble_sort import bubble_sort
 
@@ -208,11 +210,12 @@ class TestBubbleSortRegression:
 
         result = bubble_sort(original)
 
-        # Should return the same object
-        assert result is original
-        assert id(result) == original_id
-        # Original should be modified
-        assert original == [1, 2, 3]
+        # Should return a new object
+        assert id(result) != original_id
+        # Input should not be modified
+        assert original == [3, 1, 2]
+        # Result should be sorted
+        assert result == [1, 2, 3]
 
     def test_regression_nearly_sorted_list(self):
         """Regression: Nearly sorted list should be handled efficiently.
@@ -226,8 +229,10 @@ class TestBubbleSortRegression:
         result = bubble_sort(nearly_sorted)
 
         assert result == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        # With optimization, should only do one pass
-        assert result is nearly_sorted  # Should modify in place
+        # Input should not be modified
+        assert nearly_sorted == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        # Should create a new list
+        assert id(result) != id(nearly_sorted)
 
     def test_regression_swap_optimization(self):
         """Regression: Swap detection optimization should work.

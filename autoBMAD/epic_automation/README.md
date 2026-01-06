@@ -187,7 +187,7 @@ pytest tests/ --pdb
 
 ### Requirements
 
-- Python 3.8 or higher
+- Python 3.12 or higher
 - Claude SDK (for AI agent functionality)
 - Basedpyright>=1.1.0 (for type checking)
 - Ruff>=0.1.0 (for linting)
@@ -304,7 +304,7 @@ The `.bmad-core/tasks/` directory contains task guidance files that customize th
 ### Dependencies
 
 **Required Dependencies:**
-- **Python 3.8+**: Core runtime
+- **Python 3.12+**: Core runtime
 - **claude_agent_sdk>=0.1.0**: For AI agent functionality (SM Agent story creation)
 - **Claude SDK**: Must be installed and configured in environment
 

@@ -98,7 +98,7 @@ python init_db.py --db-path /tmp/my_progress.db
 
 ## Requirements
 
-- Python 3.6+
+- Python 3.12+
 - SQLite3 (included with Python)
 
 ## Integration

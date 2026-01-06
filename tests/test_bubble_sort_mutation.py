@@ -17,8 +17,8 @@ class MutatedBubbleSort:
         """Create a mutation where swap logic is removed (broken)."""
         # This mutation removes the swap statement, leaving elements in place
         mutated = original_code.replace(
-            "arr[j], arr[j + 1] = arr[j + 1], arr[j]",
-            "# arr[j], arr[j + 1] = arr[j + 1]  # MUTATION: removed swap",
+            "result[j], result[j + 1] = result[j + 1], result[j]",
+            "# result[j], result[j + 1] = result[j + 1]  # MUTATION: removed swap",
         )
         return mutated
 
@@ -27,8 +27,8 @@ class MutatedBubbleSort:
         """Create a mutation where comparison is reversed (broken)."""
         # This mutation reverses the comparison, sorting in descending order
         mutated = original_code.replace(
-            "if arr[j] > arr[j + 1]:",
-            "if arr[j] < arr[j + 1]:  # MUTATION: reversed comparison",
+            "if result[j] > result[j + 1]:",
+            "if result[j] < result[j + 1]:  # MUTATION: reversed comparison",
         )
         return mutated
 
@@ -83,10 +83,11 @@ class TestBubbleSortMutation:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
-            # This should fail because elements are not swapped
+            # This should fail because elements are not swapped (pure function version)
             test_list = [3, 1, 2]
             result = module.bubble_sort(test_list)
-            assert result != [1, 2, 3], "Mutation should break the test"
+            # The result should not be correctly sorted OR input should be modified
+            assert result != [1, 2, 3] and test_list == [3, 1, 2], "Mutation should break the test"
         finally:
             os.unlink(temp_path)
 
@@ -104,10 +105,11 @@ class TestBubbleSortMutation:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
-            # This should fail because comparison is reversed
+            # This should fail because comparison is reversed (pure function version)
             test_list = [1, 2, 3]
             result = module.bubble_sort(test_list)
-            assert result != [1, 2, 3], "Mutation should break the test"
+            # The result should not be correctly sorted AND input should not be modified
+            assert result != [1, 2, 3] and test_list == [1, 2, 3], "Mutation should break the test"
         finally:
             os.unlink(temp_path)
 

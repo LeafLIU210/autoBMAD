@@ -4,16 +4,16 @@ State Manager - SQLite-based State Management
 Handles progress tracking and state persistence for BMAD automation.
 """
 
-import json
-import sqlite3
 import asyncio
+import json
+import logging
 import shutil
+import sqlite3
+import uuid
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any, Union
-import logging
-import uuid
-from enum import Enum
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +69,25 @@ class StateManager:
                 error_message TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                phase TEXT
+                phase TEXT,
+                version INTEGER DEFAULT 1
             )
         ''')
         cursor.fetchall()  # Acknowledge result for strict type checking
+
+        # Add version column if it doesn't exist (migration for existing databases)
+        try:
+            cursor.execute('SELECT version FROM stories LIMIT 1')
+            cursor.fetchall()
+        except sqlite3.OperationalError:
+            # version column doesn't exist, add it
+            logger.info("Adding version column to stories table")
+            cursor.execute('ALTER TABLE stories ADD COLUMN version INTEGER DEFAULT 1')
+            cursor.fetchall()
+
+            # Initialize version for existing records
+            cursor.execute('UPDATE stories SET version = 1 WHERE version IS NULL')
+            cursor.fetchall()
 
         # Create index on story_path for faster lookups
         cursor.execute('''
@@ -163,10 +178,12 @@ class StateManager:
         iteration: Union[int, None] = None,
         qa_result: Union["dict[str, Any]", None] = None,
         error: Union[str, None] = None,
-        epic_path: Union[str, None] = None
-    ) -> bool:
+        epic_path: Union[str, None] = None,
+        lock_timeout: float = 30.0,
+        expected_version: Union[int, None] = None
+    ) -> "tuple[bool, Union[int, None]]":
         """
-        Update or insert story status.
+        Update or insert story status with optimistic locking using unified lock management.
 
         Args:
             story_path: Path to the story file
@@ -176,112 +193,144 @@ class StateManager:
             qa_result: QA result dictionary
             error: Error message if any
             epic_path: Path to epic file
+            lock_timeout: Timeout for lock acquisition in seconds (default: 30.0)
+            expected_version: Expected version for optimistic locking (None to skip version check)
+
+        Returns:
+            Tuple of (success, current_version):
+            - success: True if update succeeded, False otherwise
+            - current_version: Current version number (for detecting conflicts)
+        """
+        try:
+            # Use async wait_for with timeout
+            await asyncio.wait_for(self._lock.acquire(), timeout=lock_timeout)
+            async with self._lock:
+                    def _update():
+                        conn = sqlite3.connect(self.db_path)
+                        cursor = conn.cursor()
+
+                        # Check if story exists
+                        cursor.execute(
+                            'SELECT id, version FROM stories WHERE story_path = ?',
+                            (story_path,)
+                        )
+                        existing = cursor.fetchone()
+
+                        qa_result_str = None
+                        if qa_result:
+                            # Clean qa_result to make it JSON serializable
+                            # Remove non-serializable objects like QAStatus enums
+                            def clean_for_json(obj: Any) -> Any:
+                                if hasattr(obj, 'value'):
+                                    return obj.value
+                                elif isinstance(obj, dict):
+                                    return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
+                                elif isinstance(obj, list):
+                                    return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
+                                else:
+                                    return obj
+
+                            cleaned_qa_result = clean_for_json(qa_result)
+                            qa_result_str = json.dumps(cleaned_qa_result)
+
+                        if existing:
+                            _story_id, current_version = existing
+
+                            # Optimistic locking: check version if expected_version is provided
+                            if expected_version is not None and current_version != expected_version:
+                                logger.warning(
+                                    f"Version conflict for {story_path}: "
+                                    f"expected {expected_version}, got {current_version}"
+                                )
+                                conn.close()
+                                return False, current_version
+
+                            # Update existing record
+                            # Fix: Use explicit NULL checks instead of COALESCE for proper handling of 0 and False
+                            cursor.execute('''
+                                UPDATE stories
+                                SET status = ?,
+                                    phase = ?,
+                                    iteration = ?,
+                                    qa_result = ?,
+                                    error_message = ?,
+                                    updated_at = CURRENT_TIMESTAMP,
+                                    version = version + 1
+                                WHERE story_path = ?
+                            ''', (
+                                status,
+                                phase,
+                                iteration,
+                                qa_result_str,
+                                error,
+                                story_path
+                            ))
+                            logger.info(f"Updated status for {story_path}: {status} (version {current_version + 1})")
+                        else:
+                            # Insert new record
+                            cursor.execute('''
+                                INSERT INTO stories
+                                (epic_path, story_path, status, phase, iteration, qa_result, error_message, version)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                            ''', (
+                                epic_path or '',
+                                story_path,
+                                status,
+                                phase,
+                                iteration or 0,
+                                qa_result_str,
+                                error
+                            ))
+                            logger.info(f"Inserted new record for {story_path}: {status} (version 1)")
+                            current_version = 1
+
+                        conn.commit()
+                        conn.close()
+                        return True, current_version
+
+                    return await asyncio.to_thread(_update)
+
+        except asyncio.TimeoutError:
+            logger.error(f"Lock timeout for {story_path} after {lock_timeout}s")
+            return False, None
+        except Exception as e:
+            logger.error(f"Failed to update story status for {story_path}: {e}")
+            return False, None
+
+    async def update_story_status_legacy(
+        self,
+        story_path: str,
+        status: str,
+        phase: Union[str, None] = None,
+        iteration: Union[int, None] = None,
+        qa_result: Union["dict[str, Any]", None] = None,
+        error: Union[str, None] = None,
+        epic_path: Union[str, None] = None,
+        lock_timeout: float = 30.0
+    ) -> bool:
+        """
+        Legacy update_story_status method for backward compatibility.
+
+        This method maintains the old boolean return type for existing code.
+
+        Args:
+            (same as update_story_status)
 
         Returns:
             True if successful, False otherwise
         """
-        async with self._lock:
-            try:
-                def _update():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    # Check if story exists
-                    cursor.execute(
-                        'SELECT id FROM stories WHERE story_path = ?',
-                        (story_path,)
-                    )
-                    existing = cursor.fetchone()
-
-                    qa_result_str = None
-                    if qa_result:
-                        # Clean qa_result to make it JSON serializable
-                        # Remove non-serializable objects like QAStatus enums
-                        def clean_for_json(obj: Any) -> Any:
-                            if hasattr(obj, 'value'):
-                                return obj.value
-                            elif isinstance(obj, dict):
-                                return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
-                            elif isinstance(obj, list):
-                                return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
-                            else:
-                                return obj
-
-                        cleaned_qa_result = clean_for_json(qa_result)
-                        qa_result_str = json.dumps(cleaned_qa_result)
-
-                    if existing:
-                        # Update existing record
-                        # Fix: Use explicit NULL checks instead of COALESCE for proper handling of 0 and False
-                        cursor.execute('''
-                            UPDATE stories
-                            SET status = ?,
-                                phase = ?,
-                                iteration = ?,
-                                qa_result = ?,
-                                error_message = ?,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE story_path = ?
-                        ''', (
-                            status,
-                            phase,
-                            iteration,
-                            qa_result_str,
-                            error,
-                            story_path
-                        ))
-                        logger.info(f"Updated status for {story_path}: {status}")
-                    else:
-                        # Insert new record
-                        cursor.execute('''
-                            INSERT INTO stories
-                            (epic_path, story_path, status, phase, iteration, qa_result, error_message)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            epic_path or '',
-                            story_path,
-                            status,
-                            phase,
-                            iteration or 0,
-                            qa_result_str,
-                            error
-                        ))
-                        logger.info(f"Inserted new record for {story_path}: {status}")
-
-                    conn.commit()
-                    conn.close()
-                    return True
-
-                return await asyncio.to_thread(_update)
-
-            except asyncio.CancelledError as e:
-                cause = getattr(e, '__cause__', None)
-                cause_type = cause.__class__.__name__ if cause else 'timeout_or_cancellation'
-                cause_str = str(cause) if cause else 'No cause'
-
-                logger.warning(
-                    f"State update cancelled for {story_path}: {cause_type}, "
-                    f"cause={cause_str[:100]}, "
-                    f"operation={status}, phase={phase}"
-                )
-
-                # Distinguish between timeout cancellation and user cancellation
-                if "timeout" in cause_str.lower():
-                    logger.warning(
-                        f"Operation timed out for {story_path}. "
-                        f"Consider increasing timeout or optimizing the operation."
-                    )
-                else:
-                    logger.info(
-                        f"Operation was cancelled by user/system for {story_path}. "
-                        f"This is expected during cleanup."
-                    )
-
-                # Don't propagate cancellation error, just mark as failed
-                return False
-            except Exception as e:
-                logger.error(f"Failed to update story status: {e}")
-                return False
+        success, _ = await self.update_story_status(
+            story_path=story_path,
+            status=status,
+            phase=phase,
+            iteration=iteration,
+            qa_result=qa_result,
+            error=error,
+            epic_path=epic_path,
+            lock_timeout=lock_timeout,
+            expected_version=None  # Skip version check for legacy compatibility
+        )
+        return success
 
     async def get_story_status(self, story_path: str) -> Union["dict[str, Any]", None]:
         """
@@ -362,9 +411,9 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    stories: "list[dict[str, Any]]" = []
+                    stories: list[dict[str, Any]] = []
                     for row in rows:
-                        story: "dict[str, Any]" = {
+                        story: dict[str, Any] = {
                             'epic_path': row[0],
                             'story_path': row[1],
                             'status': row[2],
@@ -420,9 +469,9 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    stories: "list[dict[str, Any]]" = []
+                    stories: list[dict[str, Any]] = []
                     for row in rows:
-                        story: "dict[str, Any]" = {
+                        story: dict[str, Any] = {
                             'epic_path': row[0],
                             'story_path': row[1],
                             'status': row[2],
@@ -506,7 +555,7 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    stats: "dict[str, int]" = {}
+                    stats: dict[str, int] = {}
                     for status, count in rows:
                         stats[status] = count
 
@@ -677,7 +726,7 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    records: "list[dict[str, Any]]" = []
+                    records: list[dict[str, Any]] = []
                     for row in rows:
                         records.append({
                             'record_id': row[0],
@@ -725,7 +774,7 @@ class StateManager:
                     rows = cursor.fetchall()
                     conn.close()
 
-                    records: "list[dict[str, Any]]" = []
+                    records: list[dict[str, Any]] = []
                     for row in rows:
                         records.append({
                             'record_id': row[0],
@@ -1021,7 +1070,7 @@ class StateManager:
         lock_timeout: float = 30.0
     ) -> bool:
         """
-        Batch update multiple story statuses with transactional support.
+        Batch update multiple story statuses with enhanced cancellation handling.
 
         Args:
             stories: List of story update dicts with keys:
@@ -1037,103 +1086,109 @@ class StateManager:
         Returns:
             True if all updates succeeded, False otherwise
         """
+        conn = None
         try:
-            # Use wait_for to timeout on lock acquisition
+            # Use unified lock management with async wait_for
             await asyncio.wait_for(self._lock.acquire(), timeout=lock_timeout)
-        except asyncio.TimeoutError:
-            logger.error(f"Failed to acquire database lock within {lock_timeout}s")
-            return False
+            async with self._lock:
+                    conn = sqlite3.connect(self.db_path)
+                    cursor = conn.cursor()
 
-        try:
-            def _batch_update():
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
+                    try:
+                        conn.execute("BEGIN")
 
-                try:
-                    for story_data in stories:
-                        story_path = story_data.get('story_path')
-                        if not story_path:
-                            logger.warning(f"Skipping story without path: {story_data}")
-                            continue
+                        for story_data in stories:
+                            # Check cancellation
+                            await asyncio.sleep(0)  # Yield control
 
-                        # Check if story exists
-                        cursor.execute(
-                            'SELECT id FROM stories WHERE story_path = ?',
-                            (story_path,)
-                        )
-                        existing = cursor.fetchone()
+                            story_path = story_data.get('story_path')
+                            if not story_path:
+                                logger.warning(f"Skipping story without path: {story_data}")
+                                continue
 
-                        # Clean qa_result if present
-                        qa_result_str = None
-                        if story_data.get('qa_result'):
-                            # Clean qa_result to make it JSON serializable
-                            def clean_for_json(obj: Any) -> Any:
-                                if hasattr(obj, 'value'):
-                                    return obj.value
-                                elif isinstance(obj, dict):
-                                    return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
-                                elif isinstance(obj, list):
-                                    return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
-                                else:
-                                    return obj
+                            # Check if story exists
+                            cursor.execute(
+                                'SELECT id FROM stories WHERE story_path = ?',
+                                (story_path,)
+                            )
+                            existing = cursor.fetchone()
 
-                            cleaned_qa_result = clean_for_json(story_data['qa_result'])
-                            qa_result_str = json.dumps(cleaned_qa_result)
+                            # Clean qa_result if present
+                            qa_result_str = None
+                            if story_data.get('qa_result'):
+                                # Clean qa_result to make it JSON serializable
+                                def clean_for_json(obj: Any) -> Any:
+                                    if hasattr(obj, 'value'):
+                                        return obj.value
+                                    elif isinstance(obj, dict):
+                                        return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
+                                    elif isinstance(obj, list):
+                                        return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
+                                    else:
+                                        return obj
 
-                        if existing:
-                            # Update existing record
-                            # Fix: Use explicit NULL checks instead of COALESCE for proper handling of 0 and False
-                            cursor.execute('''
-                                UPDATE stories
-                                SET status = ?,
-                                    phase = ?,
-                                    iteration = ?,
-                                    qa_result = ?,
-                                    error_message = ?,
-                                    updated_at = CURRENT_TIMESTAMP
-                                WHERE story_path = ?
-                            ''', (
-                                story_data['status'],
-                                story_data.get('phase'),
-                                story_data.get('iteration', 0),
-                                qa_result_str,
-                                story_data.get('error'),
-                                story_path
-                            ))
-                        else:
-                            # Insert new record
-                            cursor.execute('''
-                                INSERT INTO stories
-                                (epic_path, story_path, status, phase, iteration, qa_result, error_message)
-                                VALUES (?, ?, ?, ?, ?, ?, ?)
-                            ''', (
-                                story_data.get('epic_path', ''),
-                                story_path,
-                                story_data['status'],
-                                story_data.get('phase'),
-                                story_data.get('iteration', 0),
-                                qa_result_str,
-                                story_data.get('error')
-                            ))
+                                cleaned_qa_result = clean_for_json(story_data['qa_result'])
+                                qa_result_str = json.dumps(cleaned_qa_result)
 
-                    # Commit all changes in a single transaction
-                    conn.commit()
-                    logger.info(f"Successfully batch updated {len(stories)} stories")
-                    return True
+                            if existing:
+                                # Update existing record
+                                cursor.execute('''
+                                    UPDATE stories
+                                    SET status = ?,
+                                        phase = ?,
+                                        iteration = ?,
+                                        qa_result = ?,
+                                        error_message = ?,
+                                        epic_path = ?,
+                                        updated_at = CURRENT_TIMESTAMP
+                                    WHERE story_path = ?
+                                ''', (
+                                    story_data['status'],
+                                    story_data.get('phase'),
+                                    story_data.get('iteration', 0),
+                                    qa_result_str,
+                                    story_data.get('error'),
+                                    story_data.get('epic_path', ''),
+                                    story_path
+                                ))
+                            else:
+                                # Insert new record
+                                cursor.execute('''
+                                    INSERT INTO stories
+                                    (epic_path, story_path, status, phase, iteration, qa_result, error_message)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                ''', (
+                                    story_data.get('epic_path', ''),
+                                    story_path,
+                                    story_data['status'],
+                                    story_data.get('phase'),
+                                    story_data.get('iteration', 0),
+                                    qa_result_str,
+                                    story_data.get('error')
+                                ))
 
-                except Exception as e:
-                    # Rollback on any error
-                    conn.rollback()
-                    logger.error(f"Batch update failed, rolled back: {e}")
-                    return False
-                finally:
-                    conn.close()
+                        conn.commit()
+                        logger.info(f"Successfully batch updated {len(stories)} stories")
+                        return True
 
-            result = await asyncio.to_thread(_batch_update)
-            return result
+                    except Exception as e:
+                        # Rollback on any error
+                        if conn:
+                            conn.rollback()
+                        logger.error(f"Batch update failed, rolled back: {e}")
+                        return False
+                    finally:
+                        if conn:
+                            conn.close()
 
+        except asyncio.CancelledError:
+            if conn:
+                conn.rollback()
+            logger.warning("Batch update cancelled, rolled back")
+            raise  # Re-raise cancellation
         except Exception as e:
+            if conn:
+                conn.rollback()
             logger.error(f"Batch update failed: {e}")
             return False
-        finally:
-            self._lock.release()
+

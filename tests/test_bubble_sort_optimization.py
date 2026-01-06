@@ -19,7 +19,10 @@ class TestBubbleSortOptimization:
         result = bubble_sort(sorted_list)
 
         assert result == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        assert result is sorted_list  # Should still be in-place
+        # Input should not be modified
+        assert sorted_list == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        # Should create a new list
+        assert id(result) != id(sorted_list)
 
     def test_early_termination_single_swap(self):
         """Test that lists requiring only one swap terminate early."""

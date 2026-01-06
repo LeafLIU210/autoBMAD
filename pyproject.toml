@@ -10,7 +10,7 @@ name = "pytQt-template"
 version = "2.0.0"
 description = "PyQt Windows应用程序开发模板"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "PyQt Template Team"},

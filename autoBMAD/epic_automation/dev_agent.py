@@ -29,7 +29,7 @@ except ImportError:
     _ResultMessage = None
 
 # Import SDK session manager for isolated execution
-from .sdk_session_manager import get_session_manager, SDKErrorType
+from .sdk_session_manager import SDKSessionManager, SDKErrorType
 
 # Export for use in code
 query = _query
@@ -66,6 +66,8 @@ class DevAgent:
         self.use_claude = use_claude
         self._current_story_path = None
         self._claude_available = self._check_claude_available() if use_claude else False
+        # 每个DevAgent实例创建独立的会话管理器，消除跨Agent cancel scope污染
+        self._session_manager = SDKSessionManager()
         logger.info(f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})")
 
     def _validate_prompt_format(self, prompt: str) -> bool:
@@ -103,7 +105,7 @@ class DevAgent:
             except UnicodeEncodeError:
                 logger.warning("[Prompt Validation] Prompt contains non-ASCII characters")
             
-            logger.info(f"[Prompt Validation] Prompt format validation passed")
+            logger.info("[Prompt Validation] Prompt format validation passed")
             return True
             
         except Exception as e:
@@ -430,7 +432,7 @@ class DevAgent:
 
             # Normal development mode - execute single SDK call
             logger.info(f"{self.name} Executing normal development with single SDK call")
-            base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create and improve test suites @tests/, perform test-driven development until all tests pass completely. Change story document Status to "Ready for Review".'
+            base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create or improve comprehensive test suites @tests/, perform test-driven development until all tests pass completely. Change story document Status to "Ready for Review".'
 
             # Execute single SDK call
             result = await self._execute_single_claude_sdk(base_prompt, story_path, log_manager)
@@ -510,9 +512,6 @@ class DevAgent:
             logger.error(f"[Dev Agent] Invalid prompt format for {story_path}")
             return False
 
-        # Get session manager for isolated execution
-        session_manager = get_session_manager()
-
         async def sdk_call() -> bool:
             """Inner SDK call wrapped for isolation"""
             if SafeClaudeSDK is None:
@@ -536,8 +535,8 @@ class DevAgent:
                 logger.info(f"[Dev Agent] SDK call attempt {attempt + 1}/{max_retries} for {story_path}")
                 logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
 
-                # Execute with session isolation
-                result = await session_manager.execute_isolated(
+                # Execute with session isolation using dedicated session manager
+                result = await self._session_manager.execute_isolated(
                     agent_name="DevAgent",
                     sdk_func=sdk_call,
                     timeout=1200.0
@@ -614,10 +613,10 @@ class DevAgent:
 
             # Check if QA found issues
             if qa_result.get('needs_fix'):
-                logger.info(f"[Dev Agent] QA found issues, will trigger Dev-QA loop")
+                logger.info("[Dev Agent] QA found issues, will trigger Dev-QA loop")
                 return qa_result
             else:
-                logger.info(f"[Dev Agent] QA passed, story completed")
+                logger.info("[Dev Agent] QA passed, story completed")
                 return qa_result
 
         except Exception as e:

@@ -1,0 +1,228 @@
+{
+  "version": "1.37.0",
+  "time": "1767742029999",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"cast\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 11,
+          "character": 34
+        },
+        "end": {
+          "line": 11,
+          "character": 38
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"Awaitable\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 11,
+          "character": 40
+        },
+        "end": {
+          "line": 11,
+          "character": 49
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"close_task\" 的类型部分未知\n  \"close_task\" 为 \"Task[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 464,
+          "character": 24
+        },
+        "end": {
+          "line": 464,
+          "character": 34
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"object\" 类型的实参无法赋值给函数 \"create_task\" 中 \"_CoroutineLike[_T@create_task]\" 类型的形参 \"coro\"\n  \"object\" 类型与 \"_CoroutineLike[_T@create_task]\" 类型不兼容\n    \"object\" 与 \"Coroutine[Any, Any, _T@create_task]\" 不兼容\n    \"object\" 与 Protocol 类 \"Generator[Any, None, _T@create_task]\" 不兼容\n      \"__next__\" 不存在\n      \"send\" 不存在\n      \"throw\" 不存在\n      \"close\" 不存在\n      \"__iter__\" 不存在",
+      "range": {
+        "start": {
+          "line": 464,
+          "character": 57
+        },
+        "end": {
+          "line": 464,
+          "character": 65
+        }
+      },
+      "rule": "reportArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"wait_for\" 函数中的 \"fut\" 形参\n  参数类型为 \"Task[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 466,
+          "character": 51
+        },
+        "end": {
+          "line": 466,
+          "character": 61
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"_stop_event\" 类型未知",
+      "range": {
+        "start": {
+          "line": 483,
+          "character": 12
+        },
+        "end": {
+          "line": 483,
+          "character": 28
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"set\" 类型未知",
+      "range": {
+        "start": {
+          "line": 483,
+          "character": 12
+        },
+        "end": {
+          "line": 483,
+          "character": 32
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "无法访问 \"SafeClaudeSDK*\" 类的 \"_stop_event\" 属性\n  属性 \"_stop_event\" 未知",
+      "range": {
+        "start": {
+          "line": 483,
+          "character": 17
+        },
+        "end": {
+          "line": 483,
+          "character": 28
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"timeout\" 类型未知",
+      "range": {
+        "start": {
+          "line": 205,
+          "character": 23
+        },
+        "end": {
+          "line": 205,
+          "character": 38
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"timeout\" 不是 \"asyncio\" 模块的已知属性",
+      "range": {
+        "start": {
+          "line": 205,
+          "character": 31
+        },
+        "end": {
+          "line": 205,
+          "character": 38
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"timeout\" 类型未知",
+      "range": {
+        "start": {
+          "line": 1091,
+          "character": 23
+        },
+        "end": {
+          "line": 1091,
+          "character": 38
+        }
+      },
+      "rule": "reportUnknownMemberType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"timeout\" 不是 \"asyncio\" 模块的已知属性",
+      "range": {
+        "start": {
+          "line": 1091,
+          "character": 31
+        },
+        "end": {
+          "line": 1091,
+          "character": 38
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 12,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.041
+  },
+  "metadata": {
+    "check_time": "2026-01-07T07:27:10.058226",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "..\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

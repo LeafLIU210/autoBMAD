@@ -20,7 +20,7 @@ import time
 from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
 # Import SDK session manager for isolated execution
-from .sdk_session_manager import get_session_manager, SDKErrorType
+from .sdk_session_manager import SDKSessionManager, SDKErrorType
 
 # Import Claude SDK types
 try:
@@ -79,6 +79,8 @@ class QAAgent:
 
     def __init__(self) -> None:
         """Initialize QA agent."""
+        # 每个QAAgent实例创建独立的会话管理器，消除跨Agent cancel scope污染
+        self._session_manager = SDKSessionManager()
         logger.info(f"{self.name} initialized")
 
     async def execute(
@@ -247,18 +249,15 @@ class QAAgent:
             # Build the prompt for Claude SDK
             prompt = (
                 f'@.bmad-core\\agents\\qa.md *review {story_path} '
-                'Review story document and update story document status.'
-                f'*gate {story_path} Create or update QA gate file at @docs\\gates\\'
-                'If the story document review passes with no CONCERNS, update status to "Ready for Done"'
+                'Review story document and update story document Status.'
+                f'*gate {story_path} Create or update QA gate file @docs\\qa\\gates\\'
+                'If the story document review passes with no CONCERNS, update Status to "Done"'
             )
 
             # Create ClaudeAgentOptions for SDK
             if ClaudeAgentOptions is None:
                 logger.warning("Claude Agent SDK not available - QA review skipped")
                 return True
-
-            # Get session manager for isolated execution
-            session_manager = get_session_manager()
 
             async def sdk_call() -> bool:
                 """Inner SDK call wrapped for isolation"""
@@ -272,8 +271,8 @@ class QAAgent:
                 sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
                 return await sdk.execute()
 
-            # Execute with session isolation to prevent cancel scope propagation
-            result = await session_manager.execute_isolated(
+            # Execute with session isolation using dedicated session manager
+            result = await self._session_manager.execute_isolated(
                 agent_name="QAAgent",
                 sdk_func=sdk_call,
                 timeout=1200.0

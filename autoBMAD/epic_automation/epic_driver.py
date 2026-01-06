@@ -583,7 +583,7 @@ class EpicDriver:
             story: Story dictionary with path and metadata (created by SM agent)
 
         Returns:
-            True if story completed successfully (Ready for Done), False otherwise
+            True if story completed successfully (Done or Ready for Done), False otherwise
         """
         story_path = story['path']
         story_id = story['id']
@@ -608,7 +608,7 @@ class EpicDriver:
 
             # Additional check: if story document status is "Ready for Done", skip processing
             if await self._is_story_ready_for_done(story_path):
-                logger.info(f"Story document status is Ready for Done: {story_path}")
+                logger.info(f"Story document status is Done or Ready for Done: {story_path}")
                 # Update state to completed if not already
                 if not existing_status or existing_status.get('status') != 'completed':
                     await self.state_manager.update_story_status(

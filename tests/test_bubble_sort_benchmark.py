@@ -172,19 +172,24 @@ class TestBubbleSortBenchmark:
 
         random.seed(42)
         test_data = [random.randint(1, 1000) for _ in range(1000)]
+        test_data_copy = test_data.copy()
 
         # Get initial memory (approximate)
         initial_size = sys.getsizeof(test_data)
 
         result = bubble_sort(test_data)
 
-        # Should be the same object (in-place)
-        assert result is test_data
+        # Should create a new list (pure function)
+        assert id(result) != id(test_data)
 
-        # Memory usage should not increase significantly
-        # (We're modifying the existing list, not creating new one)
+        # Memory usage should be proportional to input size
+        # (We're creating a new list)
         final_size = sys.getsizeof(result)
-        assert final_size == initial_size
+        # Allow some variation due to list growth
+        assert final_size >= initial_size * 0.8
+
+        # Input should not be modified
+        assert test_data == test_data_copy
 
     def test_benchmark_multiple_runs_consistency(self):
         """Test that multiple runs produce consistent results."""
@@ -203,24 +208,26 @@ class TestBubbleSortBenchmark:
         for result in results:
             assert result == expected
 
-    def test_benchmark_in_place_modification_timing(self):
-        """Benchmark in-place modification vs creating new list."""
+    def test_benchmark_pure_function_timing(self):
+        """Benchmark pure function vs creating new list."""
         from src.bubble_sort import bubble_sort
 
         test_data = [random.randint(1, 1000) for _ in range(500)]
+        test_data_copy = test_data.copy()
 
-        # Time the in-place modification
+        # Time the pure function
         start = time.perf_counter()
         result = bubble_sort(test_data)
         end = time.perf_counter()
 
-        in_place_time = end - start
+        pure_time = end - start
 
-        # Should be very fast
+        # Should be fast (creating a copy and sorting)
         assert (
-            in_place_time < 0.1
-        ), f"In-place modification took {in_place_time:.6f} seconds"
-        assert result is test_data  # Should be same object
+            pure_time < 0.1
+        ), f"Pure function took {pure_time:.6f} seconds"
+        assert id(result) != id(test_data)  # Should be different object
+        assert test_data == test_data_copy  # Input should not be modified
 
     def test_benchmark_comparison_with_sorted(self):
         """Compare bubble sort timing with Python's built-in sorted()."""

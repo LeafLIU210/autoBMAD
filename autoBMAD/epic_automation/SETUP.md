@@ -43,7 +43,7 @@ your-project/
 
 Ensure you have:
 
-1. **Python 3.8 or higher**
+1. **Python 3.12 or higher**
    ```bash
    python --version
    ```
@@ -233,7 +233,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-first-epic.md --ver
 
 #### Required Software
 
-1. **Python 3.8+**
+1. **Python 3.12+**
    - Download from [python.org](https://www.python.org/downloads/)
    - Ensure Python is in your PATH
 

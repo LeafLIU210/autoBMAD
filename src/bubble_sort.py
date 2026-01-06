@@ -9,18 +9,19 @@ def bubble_sort(arr: List[Any]) -> List[Any]:
 
     Bubble sort works by repeatedly stepping through the list,
     comparing adjacent elements and swapping them if in the wrong order.
+    This implementation is pure and does not modify the input list.
 
     Args:
         arr: A list of comparable elements to sort
 
     Returns:
-        The sorted list (same object, modified in place)
+        A new sorted list (does not modify the input)
 
     Raises:
         TypeError: If arr is None or not iterable
 
     Time Complexity: O(n^2) in worst and average case
-    Space Complexity: O(1) - sorts in place
+    Space Complexity: O(n) - creates a new list
 
     Examples:
         >>> bubble_sort([3, 1, 2])
@@ -53,10 +54,13 @@ def bubble_sort(arr: List[Any]) -> List[Any]:
     except TypeError:
         raise TypeError("Input must be iterable")
 
-    if len(arr) <= 1:
-        return arr
+    # Create a copy to maintain purity
+    result = list(arr)
 
-    n = len(arr)
+    if len(result) <= 1:
+        return result
+
+    n = len(result)
     # Perform n-1 passes through the array
     for i in range(n):
         # Flag to optimize: if no swapping occurs, array is sorted
@@ -64,13 +68,13 @@ def bubble_sort(arr: List[Any]) -> List[Any]:
         # Last i elements are already in place
         for j in range(0, n - i - 1):
             # Compare adjacent elements
-            if arr[j] > arr[j + 1]:
+            if result[j] > result[j + 1]:
                 # Swap if they are in wrong order
-                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+                result[j], result[j + 1] = result[j + 1], result[j]
                 swapped = True
 
         # If no two elements were swapped, array is sorted
         if not swapped:
             break
 
-    return arr
+    return result

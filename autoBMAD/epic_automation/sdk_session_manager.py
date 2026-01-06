@@ -153,7 +153,7 @@ class SDKSessionManager:
         """
         在隔离上下文中执行 SDK 调用。
 
-        使用 asyncio.shield 保护执行，防止外部取消信号传播到 SDK 调用。
+        简化取消信号处理，使用上下文边界控制而非 asyncio.shield。
 
         Args:
             agent_name: Agent 名称
@@ -168,10 +168,9 @@ class SDKSessionManager:
 
         async with self.create_session(agent_name) as _context:
             try:
-                # 使用 asyncio.shield 保护执行，防止外部取消传播
-                # 这是解决 cancel scope 传播问题的关键
+                # 简化取消信号处理：直接使用 wait_for，通过上下文边界控制
                 result = await asyncio.wait_for(
-                    asyncio.shield(sdk_func()),
+                    sdk_func(),
                     timeout=timeout
                 )
                 duration = time.time() - start_time
@@ -220,6 +219,35 @@ class SDKSessionManager:
                     session_id=session_id
                 )
 
+            except RuntimeError as e:
+                duration = time.time() - start_time
+                error_msg = str(e)
+
+                # 检查是否是 cancel scope 错误
+                if "cancel scope" in error_msg:
+                    logger.error(f"[{agent_name}] Cancel scope error detected: {error_msg}")
+                    async with self._lock:
+                        self._failed_sessions += 1
+                    return SDKExecutionResult(
+                        success=False,
+                        error_type=SDKErrorType.SDK_ERROR,
+                        error_message=f"Cancel scope error: {error_msg}",
+                        duration_seconds=duration,
+                        session_id=session_id
+                    )
+
+                # 其他 RuntimeError
+                logger.error(f"[{agent_name}] Runtime error: {error_msg}")
+                async with self._lock:
+                    self._failed_sessions += 1
+                return SDKExecutionResult(
+                    success=False,
+                    error_type=SDKErrorType.UNKNOWN,
+                    error_message=error_msg,
+                    duration_seconds=duration,
+                    session_id=session_id
+                )
+
             except Exception as e:
                 duration = time.time() - start_time
                 error_msg = str(e)
@@ -233,10 +261,6 @@ class SDKSessionManager:
                     duration_seconds=duration,
                     session_id=session_id
                 )
-            finally:
-                # 确保 cancel scope 完整生命周期在同一任务中
-                # 在所有异常处理后添加延迟，确保 anyio cancel scope 完全清理
-                await asyncio.sleep(1.0)
 
     def get_active_sessions(self) -> List[str]:
         """获取当前活动的会话 ID 列表"""
