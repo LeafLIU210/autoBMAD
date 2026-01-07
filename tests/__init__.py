@@ -1,6 +1,6 @@
 """
-Test suite for bubble sort implementation.
-Comprehensive testing covering unit, integration, and performance tests.
-"""
+Test suite for the PyQt Template project.
 
-__version__ = "1.0.0"
+This package contains all test modules for validating the PyQt Template
+application structure and functionality.
+"""

@@ -173,31 +173,6 @@ class StateManager:
             ON stories(status)
         ''')
 
-        # 创建其他表...
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS code_quality_phase (
-                record_id TEXT PRIMARY KEY,
-                epic_id TEXT NOT NULL,
-                file_path TEXT NOT NULL,
-                error_count INTEGER DEFAULT 0,
-                fix_status TEXT DEFAULT 'pending',
-                basedpyright_errors TEXT,
-                ruff_errors TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS test_automation_phase (
-                record_id TEXT PRIMARY KEY,
-                epic_id TEXT NOT NULL,
-                test_file_path TEXT NOT NULL,
-                failure_count INTEGER DEFAULT 0,
-                fix_status TEXT DEFAULT 'pending',
-                debug_info TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
 
         conn.commit()
         conn.close()
@@ -590,21 +565,6 @@ class StateManager:
 
                     deleted_count = cursor.rowcount
 
-                    # 清理其他表的旧记录
-                    cursor.execute('''
-                        DELETE FROM code_quality_phase
-                        WHERE timestamp < datetime('now', '-{} days')
-                    '''.format(days))
-
-                    deleted_count += cursor.rowcount
-
-                    cursor.execute('''
-                        DELETE FROM test_automation_phase
-                        WHERE timestamp < datetime('now', '-{} days')
-                    '''.format(days))
-
-                    deleted_count += cursor.rowcount
-
                     conn.commit()
 
                     logger.info(f"Cleaned up {deleted_count} old records")
@@ -615,59 +575,6 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return 0
 
-    async def add_quality_phase_record(
-        self,
-        epic_id: str,
-        file_path: str,
-        error_count: int,
-        basedpyright_errors: str = "",
-        ruff_errors: str = "",
-        fix_status: str = "pending"
-    ) -> bool:
-        """
-        Add or update a code quality phase record.
-
-        Args:
-            epic_id: Epic identifier
-            file_path: Path to the file being checked
-            error_count: Number of errors found
-            basedpyright_errors: JSON string of basedpyright errors
-            ruff_errors: JSON string of ruff errors
-            fix_status: Current fix status
-
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            async with self._lock:
-                async with self._get_db_connection() as conn:
-                    cursor = conn.cursor()
-
-                    record_id = str(uuid.uuid4())
-
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO code_quality_phase
-                        (record_id, epic_id, file_path, error_count, fix_status,
-                         basedpyright_errors, ruff_errors, timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    ''', (
-                        record_id,
-                        epic_id,
-                        file_path,
-                        error_count,
-                        fix_status,
-                        basedpyright_errors,
-                        ruff_errors
-                    ))
-
-                    conn.commit()
-                    logger.info(f"Added quality phase record for {file_path}")
-                    return True
-
-        except Exception as e:
-            logger.error(f"Failed to add quality phase record: {e}")
-            logger.debug(f"Error details: {e}", exc_info=True)
-            return False
 
     def get_health_status(self) -> "dict[str, Any]":
         """

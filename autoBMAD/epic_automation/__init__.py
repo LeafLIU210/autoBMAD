@@ -6,7 +6,6 @@ from .epic_driver import EpicDriver
 from .dev_agent import DevAgent
 from .qa_agent import QAAgent
 from .qa_tools_integration import QAStatus, QAError, BasedPyrightWorkflowRunner, FixtestWorkflowRunner, QAAutomationWorkflow
-from .test_automation_agent import TestAutomationAgent
 from .agents import BaseAgent, AgentConfig
 from .sdk_session_manager import (
     SDKSessionManager,
@@ -28,7 +27,6 @@ __all__ = [
     'BasedPyrightWorkflowRunner',
     'FixtestWorkflowRunner',
     'QAAutomationWorkflow',
-    'TestAutomationAgent',
     'BaseAgent',
     'AgentConfig',
     # SDK Session Manager

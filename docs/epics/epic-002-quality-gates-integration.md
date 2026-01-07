@@ -5,7 +5,6 @@
 **Date**: 2026-01-05
 **Priority**: High
 **Epic Owner**: Product Owner
-**Status**: Ready for Planning
 
 ---
 

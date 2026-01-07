@@ -28,6 +28,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# 超时配置常量
+STORY_TIMEOUT = 14400  # 4小时 = 240分钟（整个故事的所有循环）
+CYCLE_TIMEOUT = 5400   # 90分钟（单次Dev+QA循环）
+DEV_TIMEOUT = 2700     # 45分钟（开发阶段）
+QA_TIMEOUT = 1800      # 30分钟（QA审查阶段）
+SM_TIMEOUT = 1800      # 30分钟（SM阶段）
+
 
 class EpicDriver:
     """Main orchestrator for complete BMAD workflow."""
@@ -45,10 +52,6 @@ class EpicDriver:
     use_claude: bool
     source_dir: str
     test_dir: str
-    skip_quality: bool
-    skip_tests: bool
-    max_quality_iterations: int
-    max_test_iterations: int
     sm_agent: Any
     dev_agent: Any
     qa_agent: Any
@@ -60,10 +63,9 @@ class EpicDriver:
                  max_iterations: int = 3, retry_failed: bool = False,
                  verbose: bool = False, concurrent: bool = False,
                  use_claude: bool = True, source_dir: str = "src",
-                 test_dir: str = "tests", skip_quality: bool = False,
-                 skip_tests: bool = False):
+                 test_dir: str = "tests"):
         """
-        Initialize epic driver with quality gate options.
+        Initialize epic driver.
 
         Args:
             epic_path: Path to the epic markdown file
@@ -75,8 +77,6 @@ class EpicDriver:
             use_claude: Use Claude Code CLI for real implementation (default True)
             source_dir: Source code directory for QA checks (default: "src")
             test_dir: Test directory for QA checks (default: "tests")
-            skip_quality: Skip code quality gates (default: False)
-            skip_tests: Skip test automation (default: False)
         """
         self.epic_path = Path(epic_path).resolve()
         self.epic_id = str(epic_path)  # Use epic path as epic_id
@@ -94,13 +94,6 @@ class EpicDriver:
         test_path = Path(test_dir)
         self.source_dir = str(source_path.resolve() if source_path.exists() else Path.cwd() / source_dir)
         self.test_dir = str(test_path.resolve() if test_path.exists() else Path.cwd() / test_dir)
-
-        self.skip_quality = skip_quality
-        self.skip_tests = skip_tests
-
-        # Quality gate and test automation iteration limits
-        self.max_quality_iterations = 3
-        self.max_test_iterations = 5
 
         # Initialize log manager
         self.log_manager = LogManager()
@@ -484,17 +477,6 @@ class EpicDriver:
         """
         logger.info(f"Executing QA phase for {story_path}")
 
-        # Check if quality gates are skipped
-        if self.skip_quality:
-            logger.info("QA phase skipped via CLI flag")
-            # Update state to completed when skipping QA
-            await self.state_manager.update_story_status(
-                story_path=story_path,
-                status="completed",
-                phase="qa"
-            )
-            return True
-
         try:
             # Read story content
             with open(story_path, encoding='utf-8') as f:
@@ -570,10 +552,10 @@ class EpicDriver:
             # Shield inside _process_story_impl will handle cancellation protection
             return await asyncio.wait_for(
                 self._process_story_impl(story),
-                timeout=600.0  # 10 minute timeout for entire process
+                timeout=STORY_TIMEOUT  # 4小时超时（整个故事的所有循环）
             )
         except asyncio.TimeoutError:
-            logger.warning(f"Story processing timed out after 600s: {story_path}")
+            logger.warning(f"Story processing timed out after {STORY_TIMEOUT}s: {story_path}")
             return False
         except asyncio.CancelledError:
             logger.info(f"Story processing cancelled for {story_path}")
@@ -696,11 +678,6 @@ class EpicDriver:
                     # Check for completion status
                     if 'ready for done' in status or status == 'done':
                         logger.info(f"Story status is '{status}' - considered ready for done")
-                        return True
-                    elif 'ready for review' in status:
-                        logger.info(f"Story status is '{status}' - considered ready for review")
-                        # For "Ready for Review" status, we consider it ready for done
-                        # since it means development is complete and waiting for QA
                         return True
 
             logger.warning(f"Could not find status or unknown status in story: {story_path}")
@@ -974,55 +951,6 @@ class EpicDriver:
         self.logger.info(f"Dev-QA cycle complete: {success_count}/{len(stories)} stories succeeded")
         return success_count == len(stories)
 
-    async def execute_test_automation(self) -> "dict[str, Any]":
-        """
-        Execute test automation after quality gates.
-
-        Returns:
-            Dict with test automation results and status
-        """
-        self.logger.info("Starting test automation")
-
-        # Check if test automation is skipped
-        if self.skip_tests:
-            self.logger.info("Test automation skipped via CLI flag")
-            await self._update_progress('test_automation', 'skipped', {})
-            return {'status': 'skipped'}
-
-        try:
-            from autoBMAD.epic_automation.test_automation_agent import (
-                TestAutomationAgent,  # type: ignore
-            )
-
-            test_agent: Any = cast(Any, TestAutomationAgent(
-                state_manager=self.state_manager,
-                epic_id=self.epic_id,
-                skip_tests=self.skip_tests
-            ))
-
-            raw_results: Any = await test_agent.run_test_automation(
-                test_dir=self.test_dir,
-                skip_tests=self.skip_tests
-            )
-            test_results: dict[str, Any] = cast("dict[str, Any]", raw_results)
-
-            # Update progress
-            status: str = str(test_results.get('status', 'failed'))
-            await self._update_progress('test_automation', status, test_results)
-
-            if status == 'completed':
-                self.logger.info("Test automation completed successfully")
-            elif status == 'skipped':
-                self.logger.info("Test automation skipped via CLI flag")
-            else:
-                self.logger.warning(f"Test automation completed with status: {status}")
-
-            return test_results
-
-        except Exception as e:
-            self.logger.error(f"Test automation execution failed: {e}", exc_info=True)
-            await self._update_progress('test_automation', 'failed', {'error': str(e)})
-            return {'status': 'failed', 'error': str(e)}
 
     def _validate_phase_gates(self) -> bool:
         """
@@ -1031,18 +959,6 @@ class EpicDriver:
         Returns:
             True if all validations pass, False otherwise
         """
-        # Validate source directory exists
-        if not self.skip_quality:
-            if not Path(self.source_dir).exists():
-                self.logger.error(f"Source directory not found: {self.source_dir}")
-                return False
-
-        # Validate test directory exists
-        if not self.skip_tests:
-            if not Path(self.test_dir).exists():
-                self.logger.error(f"Test directory not found: {self.test_dir}")
-                return False
-
         return True
 
     async def _update_progress(self, phase: str, status: str, details: "dict[str, Any]") -> None:
@@ -1050,7 +966,7 @@ class EpicDriver:
         Update progress tracking in state manager.
 
         Args:
-            phase: Phase name (dev_qa, quality_gates, test_automation)
+            phase: Phase name (dev_qa)
             status: Phase status (pending, in_progress, completed, failed, skipped)
             details: Additional phase details
         """
@@ -1084,8 +1000,7 @@ class EpicDriver:
             'epic_id': self.epic_id,
             'status': 'completed',
             'phases': {
-                'dev_qa': 'completed',
-                'test_automation': 'skipped' if self.skip_tests else 'completed'
+                'dev_qa': 'completed'
             },
             'total_stories': len(self.stories),
             'timestamp': asyncio.get_event_loop().time()
@@ -1098,15 +1013,14 @@ class EpicDriver:
         Returns:
             True if epic completed successfully, False otherwise
         """
-        self.logger.info("Starting Epic Driver - Complete 5-Phase Workflow")
+        self.logger.info("Starting Epic Driver - Dev-QA Workflow")
 
         # Log configuration
         if self.verbose:
             config_str = (
                 f"Configuration: max_iterations={self.max_iterations}, "
                 f"retry_failed={self.retry_failed}, verbose={self.verbose}, "
-                f"concurrent={self.concurrent}, skip_quality={self.skip_quality}, "
-                f"skip_tests={self.skip_tests}"
+                f"concurrent={self.concurrent}"
             )
             self.logger.debug(config_str)
 
@@ -1135,26 +1049,6 @@ class EpicDriver:
                 await self._update_progress('dev_qa', 'failed', {})
                 return False
 
-            # Phase 2: Quality Gates (SKIPPED - 奥卡姆剃刀原则)
-            # 移除code_quality_agent依赖，避免SDK API错误
-            # 根据奥卡姆剃刀原则：最简单的解决方案是直接跳过有问题的阶段
-            self.logger.info("=== Phase 2: Quality Gates (SKIPPED - code_quality_agent removed) ===")
-            await self._update_progress('quality_gates', 'skipped', {
-                'status': 'skipped',
-                'message': 'Skipped due to code_quality_agent removal (Ockham\'s Razor - simplest solution)'
-            })
-
-            # Phase 3: Test Automation (conditional)
-            if not self.skip_tests:
-                self.logger.info("=== Phase 3: Test Automation ===")
-                await self._update_progress('test_automation', 'in_progress', {})
-                test_results = await self.execute_test_automation()
-
-                if test_results.get('status') not in ['completed', 'skipped']:
-                    self.logger.warning("Test automation completed with issues but continuing")
-            else:
-                self.logger.info("=== Phase 3: Test Automation (SKIPPED) ===")
-                await self._update_progress('test_automation', 'skipped', {})
 
             self.logger.info("=== Epic Processing Complete ===")
             return True
@@ -1187,7 +1081,7 @@ class EpicDriver:
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='BMAD Epic Automation - Process epic markdown files through complete Dev-QA workflow',
+        description='BMAD Epic Automation - Process epic markdown files through Dev-QA workflow',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1195,15 +1089,6 @@ Examples:
   python epic_driver.py docs/epics/my-epic.md --max-iterations 5
   python epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
   python epic_driver.py docs/epics/my-epic.md --source-dir src --test-dir tests
-  python epic_driver.py docs/epics/my-epic.md --skip-tests
-  python epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
-
-Quality Gates:
-  Quality gates have been removed from the workflow (--skip-quality flag is deprecated).
-
-Test Automation:
-  Test automation (pytest and debugpy) runs after Dev-QA cycle completes.
-  Use --skip-tests to bypass test automation.
         """
     )
 
@@ -1263,18 +1148,6 @@ Test Automation:
         help='Test directory for QA checks (default: "tests")'
     )
 
-    _ = parser.add_argument(
-        '--skip-quality',
-        action='store_true',
-        help='Skip code quality gates (basedpyright and ruff checks)'
-    )
-
-    _ = parser.add_argument(
-        '--skip-tests',
-        action='store_true',
-        help='Skip test automation (pytest and debugpy checks)'
-    )
-
     args = parser.parse_args()
 
     # Validate max_iterations
@@ -1307,9 +1180,7 @@ async def main():
         concurrent=args.concurrent,  # type: ignore[arg-type]
         use_claude=not args.no_claude,  # type: ignore[arg-type]
         source_dir=args.source_dir,  # type: ignore[arg-type]
-        test_dir=args.test_dir,  # type: ignore[arg-type]
-        skip_quality=args.skip_quality,  # type: ignore[arg-type]
-        skip_tests=args.skip_tests  # type: ignore[arg-type]
+        test_dir=args.test_dir  # type: ignore[arg-type]
     )
 
     success = await driver.run()

@@ -479,7 +479,7 @@ class SMAgent:
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd())
             )
-            sdk = SafeClaudeSDK(prompt, options, timeout=1200.0)
+            sdk = SafeClaudeSDK(prompt, options, timeout=1800.0)  # 30分钟超时（SM_TIMEOUT）
             # Execute SDK call and ensure it returns a bool
             result = await sdk.execute()
             return bool(result)
@@ -491,12 +491,12 @@ class SMAgent:
                 asyncio.shield(session_manager.execute_isolated(
                     agent_name="SMAgent",
                     sdk_func=sdk_call,
-                    timeout=1200.0
+                    timeout=1800.0  # 30分钟超时（SM_TIMEOUT）
                 )),
-                timeout=1300.0  # Slightly longer than SDK timeout
+                timeout=1900.0  # 31.7分钟（SM_TIMEOUT + 额外缓冲）
             )
         except asyncio.TimeoutError:
-            logger.warning("[SM Agent] SDK call timed out after 1300s")
+            logger.warning("[SM Agent] SDK call timed out after 1900s")
             return False
         except asyncio.CancelledError:
             logger.info("[SM Agent] SDK call was cancelled")

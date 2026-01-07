@@ -1,274 +1,397 @@
-# Python Bubble Sort Algorithm Product Requirements Document (PRD)
+# autoBMAD/epic_automation Brownfield Enhancement PRD
 
-## Goals and Background Context
+**Version**: 1.0
+**Date**: 2026-01-05
+**Project**: Integration of Code Quality and Test Automation into autoBMAD
 
-### Goals
-- Create a complete, well-documented Python implementation of the bubble sort algorithm
-- Provide educational value with clear explanations of how bubble sort works
-- Include performance testing and comparison with other sorting algorithms
-- Ensure the code is reusable and follows Python best practices
-- Create visualization tools to demonstrate the sorting process step-by-step
+---
 
-### Background Context
-The bubble sort algorithm is one of the fundamental sorting algorithms in computer science education. Despite its inefficiency (O(n²) time complexity), it's often taught as an introduction to sorting concepts due to its simplicity and visual nature. This project aims to create a comprehensive Python implementation that serves both as a functional sorting tool and an educational resource for learning about sorting algorithms and algorithmic analysis. The implementation will be particularly valuable for students, educators, and anyone wanting to understand sorting fundamentals through practical, visual examples.
+## 1. Intro Project Analysis and Context
 
-### Change Log
-| Date | Version | Description | Author |
-|------|---------|-------------|---------|
-| 2025-11-14 | v1.0 | Initial PRD creation | John (PM) |
+### 1.1 Existing Project Overview
 
-## Requirements
+**Analysis Source**: IDE-based fresh analysis (direct code examination)
 
-### Functional Requirements
-**FR1:** The system shall implement a standard bubble sort algorithm that can sort lists of comparable elements in ascending order.
-**FR2:** The system shall support custom comparison functions to allow for descending order or custom sorting criteria.
-**FR3:** The system shall include an optimized version with early termination when the list is already sorted.
-**FR4:** The system shall provide step-by-step visualization of the sorting process, showing array state after each pass.
-**FR5:** The system shall include performance benchmarking comparing bubble sort against Python's built-in sort() and other sorting algorithms.
-**FR6:** The system shall generate detailed execution reports including number of comparisons, swaps, and passes.
-**FR7:** The system shall support input validation and error handling for edge cases (empty lists, non-comparable elements).
-**FR8:** The system shall provide a command-line interface for testing and demonstration.
-**FR9:** The system shall include comprehensive unit tests covering various scenarios and edge cases.
+**Current Project State**:
+autoBMAD/epic_automation is a self-contained Python automation system for the BMAD (Breakthrough Method of Agile AI-driven Development) workflow. It processes epic markdown files through an automated SM-Dev-QA cycle. The system consists of:
 
-### Non-Functional Requirements
-**NFR1:** The code shall follow PEP 8 Python style guidelines and include comprehensive docstrings.
-**NFR2:** The implementation shall be compatible with Python 3.8+ without external dependencies for core functionality.
-**NFR3:** Performance benchmarking shall accurately measure time complexity and include statistical analysis.
-**NFR4:** The visualization components shall be clear and suitable for educational presentations.
-**NFR5:** The system shall handle large inputs gracefully (with appropriate warnings about performance limitations).
-**NFR6:** All functions shall have type hints for better code maintainability and IDE support.
-**NFR7:** The documentation shall be sufficient for someone with basic Python knowledge to understand and modify the code.
+- **Core Driver** (`epic_driver.py`): Main orchestrator with CLI interface, handles epic parsing and story processing
+- **Three Agent Types**: SM Agent (story creation/refinement), Dev Agent (implementation), QA Agent (validation)
+- **State Management** (`state_manager.py`): SQLite-based progress tracking in `progress.db`
+- **Task Guidance**: Reads from `.bmad-core/tasks/*.md` files for agent prompts
+- **CLI Options**: Supports retry logic, verbose logging, concurrent processing (experimental), and custom source/test directories
 
-## User Interface Design Goals
+### 1.2 Available Documentation
 
-### Overall UX Vision
-Create an educational tool that makes bubble sort algorithms intuitive and engaging through clear visualizations and interactive demonstrations. The interface should balance simplicity for beginners with depth for advanced learners.
+- ✅ Tech Stack Documentation (README.md comprehensive)
+- ✅ Source Tree/Architecture (README.md architecture section)
+- ✅ Coding Standards (informal, following Python best practices)
+- ✅ API Documentation (CLI interface documented)
+- ✅ Setup Guide (SETUP.md with installation instructions)
 
-### Key Interaction Paradigms
-- Command-line interface for programmatic access and automation
-- Optional web-based visualization for interactive learning
-- Step-by-step execution with pause/resume capabilities
-- Comparative analysis views showing multiple algorithms side-by-side
+### 1.3 Enhancement Scope Definition
 
-### Core Screens and Views
-- **Main Execution Terminal**: Command-line interface for running sort operations
-- **Algorithm Visualization Console**: Text-based or optional graphical display of sorting process
-- **Performance Report View**: Detailed benchmark results and comparison charts
-- **Help/Documentation System**: Comprehensive usage examples and algorithm explanations
+**Enhancement Type**: Integration with New Systems + Major Feature Modification
 
-### Accessibility
-WCAG AA compliance for any web-based components, ensuring the educational content is accessible to users with disabilities through screen reader compatibility and keyboard navigation.
+**Enhancement Description**:
+Integrate basedpyright-workflow (code quality) and fixtest-workflow (test automation) into the autoBMAD epic automation system to create a unified workflow that processes multi-story epics through complete SM-Dev-QA cycles, followed by automated code quality checks and test execution.
 
-### Branding
-Clean, academic styling with a focus on clarity over aesthetics. Use color coding to highlight comparisons, swaps, and sorted portions of the array.
+**Impact Assessment**: Major Impact - requires architectural changes to incorporate two additional workflow phases after the existing SM-Dev-QA cycle, with new agent integrations and state management for quality gates.
 
-### Target Device and Platforms
-Web Responsive for documentation, and cross-platform Python compatibility for the core algorithm implementation.
+### 1.4 Goals and Background Context
 
-## Technical Assumptions
+**Goals**:
+- Create a unified BMAD workflow that combines story development with automated quality assurance
+- Enable multi-story epic processing through complete automation: story creation → development → QA → code quality → test automation
+- Maintain backward compatibility with existing epic_automation functionality
+- Provide seamless integration of basedpyright-workflow and fixtest-workflow as post-QA quality gates
+- Establish clear retry mechanisms and error handling across all three workflow phases
 
-### Repository Structure
-Monorepo structure containing all algorithm implementations, tests, documentation, and visualization tools in a single cohesive project.
+**Background Context**:
+The current autoBMAD/epic_automation system handles the SM-Dev-QA cycle for individual stories within an epic. However, it lacks integration with the project's code quality and test automation workflows. By integrating basedpyright-workflow (which provides type checking, linting, and code quality reports) and fixtest-workflow (which provides automated test execution and fixing), we can create a comprehensive development pipeline that ensures code quality at the epic level rather than just the individual story level.
 
-### Service Architecture
-Monolith Python application with modular components for core algorithms, benchmarking, visualization, and testing. No external services required.
+### 1.5 Change Log
 
-### Testing Requirements
-Full Testing Pyramid including:
-- Unit tests for all core algorithm functions
-- Integration tests for end-to-end workflows
-- Performance regression tests for algorithm verification
-- Manual testing convenience methods for educational demonstrations
+| Change | Date | Version | Description | Author |
+|--------|------|---------|-------------|--------|
+| Initial PRD Creation | 2026-01-05 | 1.0 | Complete PRD for basedpyright and fixtest integration | Product Manager |
 
-### Additional Technical Assumptions and Requests
-- Use standard Python libraries only (no external dependencies for core functionality)
-- Optional matplotlib or similar for visualization components
-- Implement timing decorators for performance measurement
-- Include logging for debugging and educational purposes
-- Support both procedural and object-oriented programming paradigms
-- Provide example usage patterns and integration guides
+---
 
-## Epic List
+## 2. Requirements
 
-### Epic 1: Core Algorithm Foundation
-Establish the fundamental bubble sort implementation with basic functionality, testing infrastructure, and project setup.
+### 2.1 Functional Requirements
 
-### Epic 2: Algorithm Optimization and Analysis
-Implement optimized bubble sort variants, performance benchmarking, and comparative analysis tools.
+**FR1**: The system shall process multi-story epics through a sequential workflow: SM story creation → DEV development → QA validation → integrated code quality checks → integrated test automation
 
-### Epic 3: Visualization and Educational Tools
-Create step-by-step visualization, interactive demonstrations, and comprehensive educational documentation.
+**FR2**: The SM agent shall create individual story documents, verify successful creation before proceeding to DEV development phase
 
-## Epic 1: Core Algorithm Foundation
+**FR3**: The DEV agent shall implement story features, and upon completion trigger automatic QA validation through the QA agent
 
-This epic establishes the project foundation, implementing the basic bubble sort algorithm along with proper testing, documentation, and project structure. The goal is to create a solid, well-tested foundation that can be built upon for more advanced features.
+**FR4**: The QA agent shall review completed stories; if validation fails, the system shall repeat the DEV-QA cycle until the story passes QA acceptance criteria
 
-### Story 1.1: Project Setup and Infrastructure
-As a developer,
-I want to establish the project structure with proper Python package setup,
-so that the code is organized, installable, and follows Python best practices.
+**FR5**: After all stories in an epic complete the SM-Dev-QA cycle, the system shall execute integrated code quality checks on all .py files in the source directory
 
-**Acceptance Criteria:**
-1. Create proper Python package structure with __init__.py files
-2. Setup.py or pyproject.toml file with project metadata and dependencies
-3. README.md with installation instructions and basic usage
-4. Basic directory structure for source code, tests, and documentation
-5. Git repository initialization with appropriate .gitignore file
-6. Basic CI/CD configuration file (GitHub Actions or similar)
+**FR6**: The integrated code quality checks shall include both basedpyright type checking and ruff linting with automatic fix capabilities, generating JSON error reports for each .py file containing errors
 
-### Story 1.2: Basic Bubble Sort Implementation
-As a user,
-I want a working bubble sort algorithm that can sort lists of numbers,
-so that I can understand and use the fundamental sorting algorithm.
+**FR7**: The system shall automatically invoke Claude agents to fix identified basedpyright and ruff issues, then re-execute checks until zero .py files contain errors
 
-**Acceptance Criteria:**
-1. Implement bubble_sort() function that accepts a list and returns a sorted copy
-2. Function handles empty lists and single-element lists correctly
-3. Raises appropriate exceptions for invalid inputs (None, non-iterable)
-4. Includes comprehensive docstring with algorithm explanation and complexity analysis
-5. Implementation follows the standard bubble sort algorithm with nested loops
-6. Type hints for all function parameters and return values
+**FR8**: Following successful code quality validation, the system shall execute integrated test automation to run all tests in the @tests directory
 
-### Story 1.3: Comprehensive Testing Suite
-As a developer,
-I want thorough unit tests for the bubble sort implementation,
-so that I can be confident the algorithm works correctly for all edge cases.
+**FR9**: The integrated test automation shall collect failed/errored test file paths and failure information, generating a summary JSON report
 
-**Acceptance Criteria:**
-1. Test empty list, single element, and multiple element scenarios
-2. Test already sorted, reverse sorted, and random order inputs
-3. Test with negative numbers, floats, and mixed numeric types
-4. Test error handling for None, non-iterable, and non-comparable inputs
-5. Test that original input list is not modified (pure function behavior)
-6. Achieve >95% code coverage for the bubble sort implementation
-7. Include parameterized tests for multiple input scenarios
+**FR10**: For each test file with errors, the system shall invoke Claude agents to fix the identified issues
 
-### Story 1.4: Command-Line Interface
-As a user,
-I want a command-line interface to test the bubble sort algorithm,
-so that I can easily demonstrate and experiment with the implementation.
+**FR11**: The system shall re-execute tests after each fix attempt; if tests still fail, it shall invoke debugpy with test file path, error details, and debug information provided to Claude agents for resolution
 
-**Acceptance Criteria:**
-1. Create CLI entry point that accepts arrays as command-line arguments
-2. Support reading arrays from files or standard input
-3. Provide options for different output formats (sorted array, detailed process)
-4. Include help documentation and usage examples
-5. Handle command-line errors gracefully with helpful error messages
-6. Support both interactive and batch modes of operation
+**FR12**: The state manager shall track progress across all workflow phases (SM-Dev-QA → code quality → test automation) in the progress.db database
 
-## Epic 2: Algorithm Optimization and Analysis
+**FR13**: All code quality and test automation functionality shall be natively integrated into autoBMAD without requiring external workflow installations
 
-This epic focuses on implementing optimized versions of bubble sort, comprehensive performance analysis, and comparative tools to understand the algorithm's behavior and limitations compared to other sorting methods.
+**FR14**: The system shall only depend on .bmad-core directory and pip-installed libraries required by autoBMAD code
 
-### Story 2.1: Optimized Bubble Sort Variants
-As a performance-conscious developer,
-I want optimized bubble sort implementations including early termination,
-so that the algorithm performs better on partially sorted datasets.
+### 2.2 Non-Functional Requirements
 
-**Acceptance Criteria:**
-1. Implement bubble_sort_optimized() with early termination when no swaps occur
-2. Implement bubble_sort_cocktail() (bidirectional bubble sort) variant
-3. Add option to specify sorting direction (ascending/descending)
-4. Include custom comparison function support for complex data types
-5. All variants maintain the same interface for easy comparison
-6. Document the performance characteristics and best-use scenarios for each variant
+**NFR1**: The integration shall maintain backward compatibility with existing epic_automation CLI interface and functionality
 
-### Story 2.2: Performance Benchmarking Framework
-As a data analyst,
-I want comprehensive performance testing tools,
-so that I can measure and analyze the algorithm's behavior across different scenarios.
+**NFR2**: All workflow phases shall support retry mechanisms and error handling without corrupting the progress database
 
-**Acceptance Criteria:**
-1. Create benchmarking framework that measures execution time, comparisons, and swaps
-2. Test with various input sizes (10, 100, 1000, 10000 elements)
-3. Test with different input distributions (sorted, reverse, random, partially sorted)
-4. Generate performance reports with graphs and statistical analysis
-5. Compare bubble sort against Python's built-in sort() function
-6. Export results in multiple formats (CSV, JSON, plain text)
+**NFR3**: The system shall support concurrent processing of multiple stories within an epic when experimental concurrent mode is enabled
 
-### Story 2.3: Algorithm Comparison Tools
-As an educator,
-I want tools to compare bubble sort with other fundamental sorting algorithms,
-so that students can understand the trade-offs between different approaches.
+**NFR4**: Code quality and test automation phases shall complete within reasonable time bounds (target: under 10 minutes for typical epics)
 
-**Acceptance Criteria:**
-1. Implement insertion sort and selection sort for comparison
-2. Create side-by-side comparison of time complexity and space complexity
-3. Visual comparison showing algorithm steps for each sorting method
-4. Generate summary tables of algorithm characteristics and best-use scenarios
-5. Include theoretical vs. actual performance comparisons
-6. Provide recommendations for when to use each algorithm
+**NFR5**: Error messages and progress reporting shall be clear and actionable throughout all workflow phases
 
-## Epic 3: Visualization and Educational Tools
+**NFR6**: The system shall preserve existing logging and verbose output capabilities across all integrated workflows
 
-This epic creates comprehensive visualization and educational tools to help users understand how bubble sort works through interactive demonstrations, detailed explanations, and step-by-step visualizations.
+**NFR7**: The system supports two integration modes for quality gates:
+- **Option A**: Copy basedpyright-workflow and fixtest-workflow directories to project
+- **Option B**: Install via pip (basedpyright>=1.1.0, ruff>=0.1.0, pytest>=7.0.0, debugpy>=1.6.0)
+- **Graceful Fallback**: System continues with WAIVED status if tools unavailable
 
-### Story 3.1: Step-by-Step Visualization Engine
-As a student,
-I want to see the bubble sort process visualized step-by-step,
-so that I can understand exactly how the algorithm works at each iteration.
+**NFR8**: Test automation uses pytest natively with debugpy integration; gracefully handles missing tools
 
-**Acceptance Criteria:**
-1. Create visualization engine that shows array state after each pass and swap
-2. Support both console-based and optional graphical visualization
-3. Highlight elements being compared and swapped in each step
-4. Include counters for passes, comparisons, and swaps
-5. Allow users to pause, resume, or step through the algorithm manually
-6. Export visualization steps as text or images for documentation
+### 2.3 Compatibility Requirements
 
-### Story 3.2: Interactive Learning Mode
-As an educator,
-I want an interactive mode where students can experiment with bubble sort,
-so that they can learn by doing and see immediate results.
+**CR1**: The integration shall maintain existing API compatibility - all current CLI options and arguments shall continue to function as documented
 
-**Acceptance Criteria:**
-1. Create interactive console mode for hands-on learning
-2. Allow users to input custom arrays and see real-time sorting
-3. Provide hints and explanations for each step of the algorithm
-4. Include quiz questions to test understanding of the algorithm
-5. Support "what-if" scenarios to explore different input patterns
-6. Track progress and provide feedback on user understanding
+**CR2**: The database schema shall extend existing progress.db structure without breaking backward compatibility with existing epic records
 
-### Story 3.3: Comprehensive Documentation System
-As a self-learner,
-I want detailed documentation with examples and explanations,
-so that I can learn bubble sort thoroughly at my own pace.
+**CR3**: UI/UX consistency shall be maintained - existing command-line interface behavior and output formatting shall remain unchanged
 
-**Acceptance Criteria:**
-1. Write comprehensive algorithm explanation with pseudocode
-2. Create multiple worked examples with different input patterns
-3. Include time and space complexity analysis with mathematical justification
-4. Provide historical context and real-world applications (if any)
-5. Create FAQ section addressing common misconceptions
-6. Include links to further reading and advanced topics
-7. Generate PDF documentation suitable for classroom use
+**CR4**: Integration compatibility shall ensure basedpyright and ruff checks can be disabled or bypassed if needed without affecting core epic automation functionality
 
-### Story 3.4: Educational Assessment Tools
-As a teacher,
-I want assessment tools to evaluate student understanding of bubble sort,
-so that I can measure learning outcomes and identify areas needing improvement.
+**CR5**: Test automation maintains compatibility with existing test structure and pytest conventions; supports both workflow directory integration and standalone pip installation modes
 
-**Acceptance Criteria:**
-1. Create multiple-choice quiz questions about algorithm concepts
-2. Develop coding exercises for implementing bubble sort variations
-3. Include performance analysis problems for critical thinking
-4. Provide automated grading rubrics for assessment
-5. Generate student progress reports and learning analytics
-6. Export assessment results in various formats for record-keeping
+---
 
-## Checklist Results Report
+## 3. Technical Constraints and Integration Requirements
 
-*PM Checklist results will be populated here after document approval*
+### 3.1 Existing Technology Stack
 
-## Next Steps
+**Languages**: Python 3.x
+**Frameworks**: Standard library + BMAD methodology framework
+**Database**: SQLite (progress.db for state management)
+**Infrastructure**: CLI-based tool, cross-platform compatible
+**External Dependencies**:
+- BMAD core templates (.bmad-core/tasks/)
+- **Quality Gate Tools** (choose one):
+  - Copy basedpyright-workflow and fixtest-workflow directories
+  - Or pip packages: basedpyright>=1.1.0, ruff>=0.1.0, pytest>=7.0.0, debugpy>=1.6.0
+- Virtual environment (venv) for dependency isolation
+- **bmad-workflow**: NOT required (autoBMAD is standalone)
 
-### UX Expert Prompt
-Please review this PRD from a user experience perspective, focusing on the educational value and clarity of the bubble sort implementation. Pay special attention to the visualization components and interactive learning features to ensure they effectively support student understanding of sorting algorithms.
+### 3.2 Integration Approach
 
-### Architect Prompt
-Please create a technical architecture for this Python bubble sort implementation, focusing on:
-- Modular design for algorithm variants and testing
-- Performance optimization strategies within bubble sort constraints
-- Visualization architecture that supports both console and optional graphical outputs
-- Scalable testing framework for educational assessment tools
-- Documentation generation and maintenance strategy
+**Database Integration Strategy**: Extend existing SQLite schema in progress.db to include new workflow phases:
+- Add code_quality_phase table with fields: epic_id, file_path, error_count, fix_status, timestamp
+- Add test_automation_phase table with fields: epic_id, test_file_path, failure_count, fix_status, debug_info, timestamp
+- Maintain backward compatibility with existing epic_processing table
+
+**API Integration Strategy**:
+- Extend epic_driver.py CLI to add new workflow phases after QA completion
+- Create CodeQualityAgent class that wraps basedpyright and ruff execution
+- Create TestAutomationAgent class that wraps pytest execution and debugpy integration
+- Maintain existing CLI interface with optional flags to skip quality gates
+
+**Frontend Integration Strategy**:
+- N/A - CLI tool only
+- Preserve existing command-line interface patterns
+- Add progress indicators for new workflow phases
+
+**Testing Integration Strategy**:
+- Integrate pytest execution directly into autoBMAD core
+- Collect test results in JSON format for analysis
+- Implement debugpy integration for failing test diagnosis
+- Generate test execution reports in existing logging format
+
+### 3.3 Code Organization and Standards
+
+**File Structure Approach**:
+```
+autoBMAD/
+├── epic_driver.py (extended with quality gates)
+├── agents/
+│   ├── sm_agent.py (existing)
+│   ├── dev_agent.py (existing)
+│   ├── qa_agent.py (existing)
+│   ├── code_quality_agent.py (NEW)
+│   └── test_automation_agent.py (NEW)
+├── workflows/
+│   ├── basedpyright_workflow.py (NEW - integrated from basedpyright-workflow)
+│   ├── ruff_workflow.py (NEW - integrated ruff checks)
+│   └── test_automation_workflow.py (NEW - integrated from fixtest-workflow)
+└── state_manager.py (extended schema)
+```
+
+**Naming Conventions**: Follow existing autoBMAD patterns (snake_case for modules, PascalCase for classes)
+
+**Coding Standards**:
+- Basedpyright for type checking (strict mode)
+- Ruff for linting (using existing project's ruff configuration if available)
+- Black for code formatting (maintain consistency)
+
+**Documentation Standards**:
+- Update README.md to document new workflow phases
+- Add inline comments for complex quality gate logic
+- Maintain existing docstring format
+
+### 3.4 Deployment and Operations
+
+**Build Process Integration**:
+- Add basedpyright, ruff, pytest, debugpy to requirements.txt
+- Update SETUP.md with new dependencies
+- Ensure virtual environment activation includes all quality tools
+
+**Deployment Strategy**:
+- Self-contained package - no external workflow installations required
+- Single pip install command installs all dependencies
+- .bmad-core directory contains all methodology templates
+
+**Monitoring and Logging**:
+- Extend existing logging to include quality gate phases
+- Add structured logging for basedpyright/ruff results
+- Track test execution metrics and debugpy usage
+
+**Configuration Management**:
+- Add configuration section in epic_driver.py for quality gate settings
+- Allow bypassing quality gates via CLI flags (--skip-quality, --skip-tests)
+- Maintain existing configuration patterns
+
+### 3.5 Risk Assessment and Mitigation
+
+**Technical Risks**:
+- **Risk**: Basedpyright and ruff may conflict with existing code style
+- **Mitigation**: Start with lenient rules and gradually tighten, allow per-file rule overrides
+
+- **Risk**: Debugpy integration may cause performance issues
+- **Mitigation**: Only invoke debugpy for persistent test failures, add timeout controls
+
+**Integration Risks**:
+- **Risk**: New workflow phases may extend execution time beyond acceptable limits
+- **Mitigation**: Implement parallel execution where possible, add progress indicators
+
+- **Risk**: State management database schema changes may corrupt existing progress
+- **Mitigation**: Always create database backups before schema modifications, implement rollback mechanisms
+
+**Deployment Risks**:
+- **Risk**: New dependencies may conflict with user's existing Python environment
+- **Mitigation**: Recommend using isolated venv, provide clear dependency documentation
+
+- **Risk**: Quality gate failures may block epic completion unnecessarily
+- **Mitigation**: Implement waivable quality gates, allow epic completion with known issues
+
+**Mitigation Strategies**:
+- Implement --skip-quality and --skip-tests flags for emergency bypasses
+- Add detailed logging for all quality gate operations
+- Create comprehensive error recovery mechanisms
+- Maintain backward compatibility with existing epic processing
+
+---
+
+## 4. Epic and Story Structure
+
+### 4.1 Epic Approach
+
+**Epic Structure Decision**: Single epic with multiple coordinated stories, each delivering a distinct workflow phase while maintaining system integrity throughout the integration process.
+
+**Rationale**: The basedpyright-workflow and fixtest-workflow integration represents a unified quality assurance system that builds upon the existing SM-Dev-QA cycle. The workflow phases are sequential and interdependent, making them most effective as a cohesive epic rather than separate features.
+
+---
+
+## 5. Epic 1: Integration of Code Quality and Test Automation into autoBMAD
+
+**Epic Goal**: Integrate basedpyright and ruff code quality checks, along with pytest test automation with debugpy, into the autoBMAD epic automation system to create a unified workflow that processes multi-story epics through complete SM-Dev-QA cycles followed by automated quality assurance gates.
+
+**Integration Requirements**:
+- Maintain 100% backward compatibility with existing epic_automation functionality
+- Ensure all new workflow phases can be bypassed via CLI flags
+- Preserve existing state management and progress tracking
+- Integrate basedpyright and ruff as native dependencies, not external tools
+- Implement pytest and debugpy integration without external workflow dependencies
+
+### Story 1.1: Extend State Management for Quality Gates
+
+As a **BMAD automation system**,
+I want to **extend the SQLite database schema to track code quality and test automation phases**,
+so that **progress can be tracked across all workflow phases without losing existing epic data**.
+
+**Acceptance Criteria**:
+1. The progress.db schema is extended with code_quality_phase table (epic_id, file_path, error_count, fix_status, timestamp, basedpyright_errors, ruff_errors)
+2. The progress.db schema is extended with test_automation_phase table (epic_id, test_file_path, failure_count, fix_status, debug_info, timestamp)
+3. State manager can read existing epic records without errors
+4. New schema additions are backward compatible with existing data
+5. Database backup mechanism is implemented before schema changes
+
+**Integration Verification**:
+- IV1: Existing epic processing continues to work without database modifications
+- IV2: New schema additions don't interfere with existing SM-Dev-QA workflow
+- IV3: Database integrity is maintained across all read/write operations
+
+---
+
+### Story 1.2: Integrate Basedpyright and Ruff Code Quality Checks
+
+As a **BMAD automation system**,
+I want to **natively integrate basedpyright type checking and ruff linting with auto-fix capabilities**,
+so that **code quality can be validated automatically after QA completion without external tool dependencies**.
+
+**Acceptance Criteria**:
+1. Basedpyright is added as a direct dependency in requirements.txt
+2. Ruff is added as a direct dependency in requirements.txt
+3. CodeQualityAgent class is created to wrap basedpyright and ruff execution
+4. Basedpyright_workflow.py module is integrated to execute type checking on all .py files
+5. Ruff_workflow.py module is integrated to execute linting with --fix auto-correction
+6. JSON error reports are generated for each .py file with identified issues
+7. Claude agents are automatically invoked to fix identified basedpyright and ruff issues
+8. System repeats quality checks until zero errors remain or max iterations reached
+9. Quality gate can be bypassed via --skip-quality CLI flag
+
+**Integration Verification**:
+- IV1: Existing SM-Dev-QA workflow continues to function without quality gates
+- IV2: Code quality checks only execute after all stories pass QA
+- IV3: Basedpyright and ruff execution doesn't interfere with existing CLI interface
+
+---
+
+### Story 1.3: Integrate Test Automation with Debugpy
+
+As a **BMAD automation system**,
+I want to **natively integrate pytest test execution with debugpy for persistent failure diagnosis**,
+so that **test automation can be performed automatically after code quality validation without external workflow dependencies**.
+
+**Acceptance Criteria**:
+1. Pytest is added as a direct dependency in requirements.txt
+2. Debugpy is added as a direct dependency in requirements.txt
+3. TestAutomationAgent class is created to manage test execution workflow
+4. Test_automation_workflow.py module is integrated to execute all tests in @tests directory
+5. Failed/errored test file paths and failure information are collected in JSON format
+6. Summary JSON report is generated for all test execution results
+7. Claude agents are automatically invoked to fix identified test issues
+8. System re-executes tests after each fix attempt
+9. Debugpy is invoked for tests that fail repeatedly, providing test path, error details, and debug information to Claude agents
+10. Test automation gate can be bypassed via --skip-tests CLI flag
+
+**Integration Verification**:
+- IV1: Existing epic processing continues without test automation when skipped
+- IV2: Test execution only occurs after successful code quality validation
+- IV3: Debugpy integration doesn't interfere with normal test execution flow
+
+---
+
+### Story 1.4: Extend Epic Driver with Quality Gate Orchestration
+
+As a **BMAD automation system**,
+I want to **extend epic_driver.py to orchestrate the complete workflow from story creation through quality gates**,
+so that **the entire multi-phase workflow executes seamlessly with proper error handling and progress tracking**.
+
+**Acceptance Criteria**:
+1. Epic driver processes epics through complete workflow: SM → Dev → QA → Code Quality → Test Automation
+2. State manager tracks progress across all workflow phases
+3. Quality gates execute only after all epic stories complete SM-Dev-QA cycle
+4. Retry mechanisms work across all workflow phases without corrupting progress database
+5. Error handling provides clear, actionable feedback for failures in any phase
+6. CLI interface is extended with --skip-quality and --skip-tests flags
+7. Verbose logging includes all quality gate operations
+8. Concurrent processing mode (experimental) is compatible with quality gates
+
+**Integration Verification**:
+- IV1: Existing CLI options continue to function as documented
+- IV2: New quality gates integrate seamlessly with existing workflow
+- IV3: Progress tracking is accurate across all workflow phases
+- IV4: Error recovery mechanisms work without manual intervention
+
+---
+
+### Story 1.5: Documentation and Testing Integration
+
+As a **BMAD automation system**,
+I want to **update all documentation and create integration tests for the complete workflow**,
+so that **users understand the new workflow phases and the system can be validated end-to-end**.
+
+**Acceptance Criteria**:
+1. README.md is updated to document new quality gate workflow phases
+2. SETUP.md is updated with basedpyright, ruff, pytest, and debugpy dependencies
+3. Integration tests verify complete workflow: story creation → development → QA → code quality → test automation
+4. Example epic is created demonstrating multi-story processing with quality gates
+5. Troubleshooting guide is added for common quality gate issues
+6. Performance benchmarks are established for typical epic processing times
+
+**Integration Verification**:
+- IV1: Documentation accurately reflects actual system behavior
+- IV2: New users can successfully set up and run the complete workflow
+- IV3: Integration tests validate all workflow phases work together correctly
+
+---
+
+## Summary
+
+This PRD outlines the complete integration of basedpyright-workflow and fixtest-workflow functionality into autoBMAD/epic_automation. The enhancement follows a structured approach:
+
+1. **Database Schema Extension** - Track quality gates without breaking existing functionality
+2. **Code Quality Integration** - Native basedpyright and ruff with automatic fixing
+3. **Test Automation Integration** - Pytest and debugpy for comprehensive testing
+4. **Orchestration Enhancement** - Seamless workflow across all phases
+5. **Documentation and Testing** - Complete validation and user guidance
+
+The integration maintains 100% backward compatibility while adding powerful quality assurance capabilities to the BMAD workflow.

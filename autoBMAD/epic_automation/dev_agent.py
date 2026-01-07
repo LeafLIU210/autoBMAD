@@ -502,7 +502,7 @@ class DevAgent:
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd())
             )
-            sdk = SafeClaudeSDK(prompt, options, timeout=1200.0, log_manager=log_manager)
+            sdk = SafeClaudeSDK(prompt, options, timeout=2700.0, log_manager=log_manager)  # 45分钟超时（DEV_TIMEOUT）
             return await sdk.execute()
 
         max_retries = 1
@@ -520,12 +520,12 @@ class DevAgent:
                         asyncio.shield(self._session_manager.execute_isolated(
                             agent_name="DevAgent",
                             sdk_func=sdk_call,
-                            timeout=1200.0
+                            timeout=2700.0  # 45分钟超时（DEV_TIMEOUT）
                         )),
-                        timeout=1300.0  # Slightly longer than SDK timeout
+                        timeout=2800.0  # 46.7分钟（DEV_TIMEOUT + 额外缓冲）
                     )
                 except asyncio.TimeoutError:
-                    logger.warning(f"[Dev Agent] SDK call timed out after 1300s for {story_path}")
+                    logger.warning(f"[Dev Agent] SDK call timed out after 2800s for {story_path}")
                     if attempt < max_retries - 1:
                         logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
                         await asyncio.sleep(1.0)

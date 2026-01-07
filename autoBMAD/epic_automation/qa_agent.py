@@ -296,7 +296,7 @@ class QAAgent:
             result = await self._session_manager.execute_isolated(
                 agent_name=self.name,
                 sdk_func=sdk_func,
-                timeout=1200.0  # 20分钟超时
+                timeout=1800.0  # 30分钟超时（QA_TIMEOUT）
             )
 
             logger.info(f"{self.name} QA review result: {result.success} "
@@ -330,12 +330,12 @@ class QAAgent:
                         cwd=str(Path.cwd())
                     )
                     # 限制最大回合数，防止无限等待
-                    options.max_turns = 10
+                    options.max_turns = 1000
 
                 sdk = SafeClaudeSDK(
                     prompt=prompt,
                     options=options,
-                    timeout=1200.0
+                    timeout=1800.0  # 30分钟超时（QA_TIMEOUT）
                 )
 
                 # 执行SDK
