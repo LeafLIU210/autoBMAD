@@ -28,12 +28,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 超时配置常量
-STORY_TIMEOUT = 14400  # 4小时 = 240分钟（整个故事的所有循环）
-CYCLE_TIMEOUT = 5400   # 90分钟（单次Dev+QA循环）
-DEV_TIMEOUT = 2700     # 45分钟（开发阶段）
-QA_TIMEOUT = 1800      # 30分钟（QA审查阶段）
-SM_TIMEOUT = 1800      # 30分钟（SM阶段）
+# 超时配置常量 - DEPRECATED: External timeouts removed - using max_turns instead
+STORY_TIMEOUT = None  # 4小时 = 240分钟（整个故事的所有循环）
+CYCLE_TIMEOUT = None   # 90分钟（单次Dev+QA循环）
+DEV_TIMEOUT = None     # 45分钟（开发阶段）
+QA_TIMEOUT = None      # 30分钟（QA审查阶段）
+SM_TIMEOUT = None      # 30分钟（SM阶段）
 
 
 class EpicDriver:
@@ -548,15 +548,8 @@ class EpicDriver:
         logger.info(f"Processing story {story_id}: {story_path}")
 
         try:
-            # Use timeout directly without shield to avoid cancel scope errors
-            # Shield inside _process_story_impl will handle cancellation protection
-            return await asyncio.wait_for(
-                self._process_story_impl(story),
-                timeout=STORY_TIMEOUT  # 4小时超时（整个故事的所有循环）
-            )
-        except asyncio.TimeoutError:
-            logger.warning(f"Story processing timed out after {STORY_TIMEOUT}s: {story_path}")
-            return False
+            # No external timeout - rely on SDK max_turns configuration
+            return await self._process_story_impl(story)
         except asyncio.CancelledError:
             logger.info(f"Story processing cancelled for {story_path}")
             return False
@@ -574,8 +567,8 @@ class EpicDriver:
         story_path = story['path']
 
         try:
-            # Use shield to protect from external cancellation without conflicting with wait_for
-            return await asyncio.shield(self._execute_story_processing(story))
+            # No shield - external timeouts removed
+            return await self._execute_story_processing(story)
         except asyncio.CancelledError:
             logger.info(f"Story processing cancelled for {story_path}")
             return False

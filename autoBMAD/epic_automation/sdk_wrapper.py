@@ -118,17 +118,15 @@ class SafeAsyncGenerator:
         try:
             aclose = getattr(self.generator, 'aclose', None)
             if aclose and callable(aclose):
-                # 使用超时保护生成器关闭
+                # 直接关闭生成器，不使用超时保护
                 try:
                     result = aclose()
                     if result is not None:
-                        # 尝试等待结果，如果失败则忽略
+                        # 等待结果但不设置超时
                         if asyncio.iscoroutine(result):
-                            await asyncio.wait_for(result, timeout=self.cleanup_timeout)
+                            await result
                 except (TypeError, AttributeError) as e:
                     logger.debug(f"Generator cleanup (non-critical): {e}")
-                except asyncio.TimeoutError:
-                    logger.warning(f"Generator cleanup timeout after {self.cleanup_timeout}s")
                 except asyncio.CancelledError:
                     logger.debug("Generator cleanup cancelled (ignored)")
                 except RuntimeError as e:
@@ -251,7 +249,7 @@ class SafeClaudeSDK:
     4. Cross-task cancel scope protection
     """
 
-    def __init__(self, prompt: str, options: Any, timeout: Optional[float] = 1800.0, log_manager: Optional[Any] = None):
+    def __init__(self, prompt: str, options: Any, timeout: Optional[float] = None, log_manager: Optional[Any] = None):
         self.prompt: str = prompt
         self.options: Any = options
         self.timeout: Optional[float] = timeout
@@ -418,12 +416,9 @@ class SafeClaudeSDK:
             logger.warning("Claude Agent SDK not available - returning False for cancelled execution")
             return False
 
-        # Use asyncio.wait_for for timeout control
+        # Execute without external timeout - use max_turns in SDK options instead
         try:
-            return await asyncio.wait_for(self._execute_safely(), timeout=self.timeout)
-        except asyncio.TimeoutError:
-            logger.warning(f"SDK execution timed out after {self.timeout}s")
-            return False
+            return await self._execute_safely()
         except asyncio.CancelledError:
             # Cancellation handled by upper layer
             logger.warning("SDK execution was cancelled")
@@ -468,8 +463,8 @@ class SafeClaudeSDK:
             logger.warning("Claude SDK not properly initialized")
             return False
 
-        # Log SDK execution start with timeout info
-        logger.info(f"[SDK Start] Starting Claude SDK execution (timeout={self.timeout}s)")
+        # Log SDK execution start
+        logger.info(f"[SDK Start] Starting Claude SDK execution")
         logger.info(f"[SDK Config] Options: {self.options}")
         logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
 
@@ -566,7 +561,6 @@ class SafeClaudeSDK:
                 logger.error(f"[SDK Failed] Claude SDK returned no messages after {total_elapsed:.1f}s")
                 logger.error(f"[Diagnostic] Prompt preview: {prompt_preview}")
                 logger.error(f"[Diagnostic] Options: {self.options}")
-                logger.error(f"[Diagnostic] Timeout: {self.timeout}s")
                 logger.error(f"[Diagnostic] Message count: {message_count}")
                 return False
 

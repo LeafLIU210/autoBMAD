@@ -405,49 +405,25 @@ class SMAgent:
         Returns:
             True if successful, False otherwise
         """
-        max_retries = 1
-        retry_delay = 1.0
-        timeout_seconds = 1200
+        try:
+            logger.info(f"[SM Agent] Claude SDK call")
+            start_time = time.time()
 
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"[SM Agent] Claude SDK call attempt {attempt + 1}/{max_retries}")
-                start_time = time.time()
+            # Check if SDK is available
+            if query is None or ClaudeAgentOptions is None:
+                logger.warning("[SM Agent] Claude Agent SDK not available, returning False")
+                return False
 
-                # Check if SDK is available
-                if query is None or ClaudeAgentOptions is None:
-                    logger.warning("[SM Agent] Claude Agent SDK not available, returning False")
-                    return False
+            # Execute SDK call without external timeout
+            result = await self._execute_sdk_with_logging(prompt)
 
-                # Use asyncio.wait_for to implement timeout
-                result = await asyncio.wait_for(
-                    self._execute_sdk_with_logging(prompt),
-                    timeout=timeout_seconds
-                )
+            elapsed = time.time() - start_time
+            logger.info(f"[SM Agent] Call successful, took {elapsed:.2f} seconds")
+            return result
 
-                elapsed = time.time() - start_time
-                logger.info(f"[SM Agent] Call successful, took {elapsed:.2f} seconds")
-                return result
-
-            except asyncio.TimeoutError:
-                logger.warning(f"[SM Agent] Call timeout (>{timeout_seconds} seconds), attempt {attempt + 1}/{max_retries}")
-                if attempt < max_retries - 1:
-                    logger.info(f"[SM Agent] Waiting {retry_delay} seconds before retry...")
-                    await asyncio.sleep(1.0)
-                else:
-                    logger.error(f"[SM Agent] Call failed, reached max retries ({max_retries})")
-                    return False
-
-            except Exception as e:
-                logger.error(f"[SM Agent] Call exception: {type(e).__name__}: {e}")
-                if attempt < max_retries - 1:
-                    logger.info(f"[SM Agent] Waiting {retry_delay} seconds before retry...")
-                    await asyncio.sleep(1.0)
-                else:
-                    logger.error("[SM Agent] Call failed, reached max retries")
-                    return False
-
-        return False
+        except Exception as e:
+            logger.error(f"[SM Agent] Call exception: {type(e).__name__}: {e}")
+            return False
 
     async def _execute_sdk_with_logging(self, prompt: str) -> bool:
         """
@@ -479,25 +455,19 @@ class SMAgent:
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd())
             )
-            sdk = SafeClaudeSDK(prompt, options, timeout=1800.0)  # 30分钟超时（SM_TIMEOUT）
+            sdk = SafeClaudeSDK(prompt, options, timeout=None)
             # Execute SDK call and ensure it returns a bool
             result = await sdk.execute()
             return bool(result)
 
         # Execute with session isolation
-        # Shield the SDK call to prevent external cancellation from affecting cancel scope
+        # No external timeout - rely on SDK max_turns configuration
         try:
-            result = await asyncio.wait_for(
-                asyncio.shield(session_manager.execute_isolated(
-                    agent_name="SMAgent",
-                    sdk_func=sdk_call,
-                    timeout=1800.0  # 30分钟超时（SM_TIMEOUT）
-                )),
-                timeout=1900.0  # 31.7分钟（SM_TIMEOUT + 额外缓冲）
+            result = await session_manager.execute_isolated(
+                agent_name="SMAgent",
+                sdk_func=sdk_call,
+                timeout=None  # No external timeout
             )
-        except asyncio.TimeoutError:
-            logger.warning("[SM Agent] SDK call timed out after 1900s")
-            return False
         except asyncio.CancelledError:
             logger.info("[SM Agent] SDK call was cancelled")
             return False

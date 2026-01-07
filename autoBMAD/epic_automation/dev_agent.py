@@ -502,60 +502,32 @@ class DevAgent:
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd())
             )
-            sdk = SafeClaudeSDK(prompt, options, timeout=2700.0, log_manager=log_manager)  # 45分钟超时（DEV_TIMEOUT）
+            sdk = SafeClaudeSDK(prompt, options, timeout=None, log_manager=log_manager)
             return await sdk.execute()
 
-        max_retries = 1
-        retry_delay = 1.0  # 1.0 second between retries
+        # Simplified execution - single SDK call without retry loop
+        try:
+            logger.info(f"[Dev Agent] SDK call for {story_path}")
+            logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
 
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"[Dev Agent] SDK call attempt {attempt + 1}/{max_retries} for {story_path}")
-                logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
+            # Execute with session isolation using dedicated session manager
+            # No external timeout - rely on SDK max_turns configuration
+            result = await self._session_manager.execute_isolated(
+                agent_name="DevAgent",
+                sdk_func=sdk_call,
+                timeout=None  # No external timeout
+            )
 
-                # Execute with session isolation using dedicated session manager
-                # Shield the SDK call to prevent external cancellation from affecting cancel scope
-                try:
-                    result = await asyncio.wait_for(
-                        asyncio.shield(self._session_manager.execute_isolated(
-                            agent_name="DevAgent",
-                            sdk_func=sdk_call,
-                            timeout=2700.0  # 45分钟超时（DEV_TIMEOUT）
-                        )),
-                        timeout=2800.0  # 46.7分钟（DEV_TIMEOUT + 额外缓冲）
-                    )
-                except asyncio.TimeoutError:
-                    logger.warning(f"[Dev Agent] SDK call timed out after 2800s for {story_path}")
-                    if attempt < max_retries - 1:
-                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                        await asyncio.sleep(1.0)
-                    continue
-                except asyncio.CancelledError:
-                    logger.info(f"[Dev Agent] SDK call was cancelled for {story_path}")
-                    return False  # Don't retry on cancellation
+            if result.success:
+                logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {result.duration_seconds:.1f}s")
+                return True
+            else:
+                logger.warning(f"[Dev Agent] SDK call failed: {result.error_message}")
+                return False
 
-                if result.success:
-                    logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {result.duration_seconds:.1f}s")
-                    return True
-                elif result.error_type == SDKErrorType.TIMEOUT:
-                    logger.warning(f"[Dev Agent] SDK call timed out for {story_path}")
-                    if attempt < max_retries - 1:
-                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                        await asyncio.sleep(1.0)
-                else:
-                    logger.warning(f"[Dev Agent] SDK call failed (attempt {attempt + 1}): {result.error_message}")
-                    if attempt < max_retries - 1:
-                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                        await asyncio.sleep(1.0)
-
-            except Exception as e:
-                logger.error(f"[Dev Agent] SDK call exception (attempt {attempt + 1}): {type(e).__name__}: {str(e)}")
-                if attempt < max_retries - 1:
-                    logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
-                    await asyncio.sleep(1.0)
-
-        logger.error(f"[Dev Agent] All {max_retries} attempts failed for {story_path}")
-        return False
+        except Exception as e:
+            logger.error(f"[Dev Agent] SDK call exception: {type(e).__name__}: {str(e)}")
+            return False
 
     async def _notify_qa_agent(self, story_path: str) -> Optional[Dict[str, Any]]:
         """

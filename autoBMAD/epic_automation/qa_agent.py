@@ -156,69 +156,48 @@ class QAAgent:
         Returns:
             包含QA结果的字典
         """
-        logger.info(f"{self.name} executing QA phase with {max_retries} retries")
+        logger.info(f"{self.name} executing QA phase")
 
-        retry_count = 0
-        last_error = None
+        try:
+            # 执行AI驱动的QA审查 - 单次执行，无重试
+            logger.info(f"{self.name} Starting QA review for: {story_path}")
+            qa_result = await self._execute_qa_review(
+                story_path, source_dir, test_dir
+            )
 
-        while retry_count <= max_retries:
-            try:
-                # 执行AI驱动的QA审查
-                logger.info(f"{self.name} Starting QA review for: {story_path}")
-                qa_result = await self._execute_qa_review(
-                    story_path, source_dir, test_dir
-                )
+            # 返回结果
+            return qa_result.to_dict()
 
-                # 如果审查成功，返回结果
-                if qa_result.passed:
-                    logger.info(f"{self.name} QA review passed")
-                    return qa_result.to_dict()
+        except asyncio.CancelledError as e:
+            logger.warning(f"{self.name} QA execution cancelled")
+            return {
+                'passed': False,
+                'completed': False,
+                'needs_fix': True,
+                'gate_paths': [],
+                'dev_prompt': f"*review-qa Fix: QA execution was cancelled",
+                'fallback_review': True,
+                'checks_passed': 0,
+                'total_checks': 0,
+                'reason': f"QA execution cancelled: {str(e)}"
+            }
 
-                # 如果失败且还有重试次数，等待后重试
-                if retry_count < max_retries and not qa_result.fallback_review:
-                    delay = 2 ** retry_count  # 指数退避
-                    logger.warning(
-                        f"{self.name} QA review failed (attempt {retry_count + 1}/{max_retries + 1}), "
-                        f"retrying in {delay}s..."
-                    )
-                    await asyncio.sleep(delay)
-                    retry_count += 1
-                    continue
+        except Exception as e:
+            logger.error(f"{self.name} QA execution error: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
 
-                # 返回失败结果
-                return qa_result.to_dict()
-
-            except asyncio.CancelledError as e:
-                last_error = e
-                logger.warning(f"{self.name} QA execution cancelled")
-                break
-
-            except Exception as e:
-                last_error = e
-                logger.error(f"{self.name} QA execution error (attempt {retry_count + 1}): {e}")
-                logger.debug(f"Error details: {e}", exc_info=True)
-
-                if retry_count < max_retries:
-                    delay = 2 ** retry_count
-                    logger.info(f"Retrying in {delay}s...")
-                    await asyncio.sleep(delay)
-                    retry_count += 1
-                else:
-                    logger.error(f"{self.name} Max retries exceeded")
-                    break
-
-        # 所有重试都失败
-        return {
-            'passed': False,
-            'completed': False,
-            'needs_fix': True,
-            'gate_paths': [],
-            'dev_prompt': f"*review-qa Fix: QA execution failed after {max_retries + 1} attempts",
-            'fallback_review': True,
-            'checks_passed': 0,
-            'total_checks': 0,
-            'reason': f"QA execution failed: {str(last_error)}" if last_error else "Unknown error"
-        }
+            # 返回失败结果
+            return {
+                'passed': False,
+                'completed': False,
+                'needs_fix': True,
+                'gate_paths': [],
+                'dev_prompt': f"*review-qa Fix: QA execution failed",
+                'fallback_review': True,
+                'checks_passed': 0,
+                'total_checks': 0,
+                'reason': f"QA execution failed: {str(e)}"
+            }
 
     async def _execute_qa_review(
         self,
@@ -296,7 +275,7 @@ class QAAgent:
             result = await self._session_manager.execute_isolated(
                 agent_name=self.name,
                 sdk_func=sdk_func,
-                timeout=1800.0  # 30分钟超时（QA_TIMEOUT）
+                timeout=None  # No external timeout
             )
 
             logger.info(f"{self.name} QA review result: {result.success} "
@@ -335,7 +314,7 @@ class QAAgent:
                 sdk = SafeClaudeSDK(
                     prompt=prompt,
                     options=options,
-                    timeout=1800.0  # 30分钟超时（QA_TIMEOUT）
+                    timeout=None  # No external timeout
                 )
 
                 # 执行SDK
