@@ -249,38 +249,27 @@ class StateManager:
         Returns:
             (success, current_version): (是否成功, 当前版本号)
         """
-        # 使用死锁检测器获取锁
-        lock_acquired = await self._deadlock_detector.wait_for_lock(
-            f"story_{story_path}", self._lock
-        )
-
-        if not lock_acquired:
-            logger.error(f"Failed to acquire lock for {story_path} (deadlock detected)")
-            return False, None
-
         try:
-            # 验证死锁检测
-            if self._deadlock_detector.deadlock_detected:
-                logger.error(f"Deadlock detected for {story_path}")
-                return False, None
-
-            async with self._lock:
-                return await self._update_story_internal(
+            # Use a simple approach with timeout
+            # _update_story_internal already has lock protection
+            return await asyncio.wait_for(
+                self._update_story_internal(
                     story_path, status, phase, iteration, qa_result, error,
                     epic_path, expected_version
-                )
+                ),
+                timeout=lock_timeout
+            )
 
+        except asyncio.TimeoutError:
+            logger.warning(f"Update operation timeout for {story_path} (>{lock_timeout}s)")
+            return False, None
         except asyncio.CancelledError:
-            logger.warning(f"Lock acquisition cancelled for {story_path}")
+            logger.warning(f"Update operation cancelled for {story_path}")
             return False, None
         except Exception as e:
             logger.error(f"Failed to update story status for {story_path}: {e}")
             logger.debug(f"Error details: {e}", exc_info=True)
             return False, None
-        finally:
-            # 确保锁被释放
-            if self._lock.locked():
-                self._lock.release()
 
     async def _update_story_internal(
         self,
@@ -293,74 +282,76 @@ class StateManager:
         epic_path: Union[str, None],
         expected_version: Union[int, None]
     ) -> "tuple[bool, Union[int, None]]":
-        """内部更新逻辑"""
-        async with self._get_db_connection() as conn:
-            cursor = conn.cursor()
+        """内部更新逻辑 - 使用锁保护"""
+        # Use lock to protect database operations
+        async with self._lock:
+            async with self._get_db_connection() as conn:
+                cursor = conn.cursor()
 
-            # 检查故事是否存在
-            cursor.execute(
-                'SELECT id, version FROM stories WHERE story_path = ?',
-                (story_path,)
-            )
-            existing = cursor.fetchone()
+                # 检查故事是否存在
+                cursor.execute(
+                    'SELECT id, version FROM stories WHERE story_path = ?',
+                    (story_path,)
+                )
+                existing = cursor.fetchone()
 
-            # 清理qa_result
-            qa_result_str = None
-            if qa_result:
-                qa_result_str = self._clean_qa_result_for_json(qa_result)
+                # 清理qa_result
+                qa_result_str = None
+                if qa_result:
+                    qa_result_str = self._clean_qa_result_for_json(qa_result)
 
-            if existing:
-                _, current_version = existing
+                if existing:
+                    _, current_version = existing
 
-                # 乐观锁检查
-                if expected_version is not None and current_version != expected_version:
-                    logger.warning(
-                        f"Version conflict for {story_path}: "
-                        f"expected {expected_version}, got {current_version}"
-                    )
-                    return False, current_version
+                    # 乐观锁检查
+                    if expected_version is not None and current_version != expected_version:
+                        logger.warning(
+                            f"Version conflict for {story_path}: "
+                            f"expected {expected_version}, got {current_version}"
+                        )
+                        return False, current_version
 
-                # 更新现有记录
-                cursor.execute('''
-                    UPDATE stories
-                    SET status = ?,
-                        phase = ?,
-                        iteration = ?,
-                        qa_result = ?,
-                        error_message = ?,
-                        updated_at = CURRENT_TIMESTAMP,
-                        version = version + 1
-                    WHERE story_path = ?
-                ''', (
-                    status,
-                    phase,
-                    iteration,
-                    qa_result_str,
-                    error,
-                    story_path
-                ))
-                logger.info(f"Updated status for {story_path}: {status} (version {current_version + 1})")
-                current_version = current_version + 1
-            else:
-                # 插入新记录
-                cursor.execute('''
-                    INSERT INTO stories
-                    (epic_path, story_path, status, phase, iteration, qa_result, error_message, version)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-                ''', (
-                    epic_path or '',
-                    story_path,
-                    status,
-                    phase,
-                    iteration or 0,
-                    qa_result_str,
-                    error
-                ))
-                logger.info(f"Inserted new record for {story_path}: {status} (version 1)")
-                current_version = 1
+                    # 更新现有记录
+                    cursor.execute('''
+                        UPDATE stories
+                        SET status = ?,
+                            phase = ?,
+                            iteration = ?,
+                            qa_result = ?,
+                            error_message = ?,
+                            updated_at = CURRENT_TIMESTAMP,
+                            version = version + 1
+                        WHERE story_path = ?
+                    ''', (
+                        status,
+                        phase,
+                        iteration,
+                        qa_result_str,
+                        error,
+                        story_path
+                    ))
+                    logger.info(f"Updated status for {story_path}: {status} (version {current_version + 1})")
+                    current_version = current_version + 1
+                else:
+                    # 插入新记录
+                    cursor.execute('''
+                        INSERT INTO stories
+                        (epic_path, story_path, status, phase, iteration, qa_result, error_message, version)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                    ''', (
+                        epic_path or '',
+                        story_path,
+                        status,
+                        phase,
+                        iteration or 0,
+                        qa_result_str,
+                        error
+                    ))
+                    logger.info(f"Inserted new record for {story_path}: {status} (version 1)")
+                    current_version = 1
 
-            conn.commit()
-            return True, current_version
+                conn.commit()
+                return True, current_version
 
     def _clean_qa_result_for_json(self, qa_result: Any) -> Optional[str]:
         """清理QA结果以便JSON序列化"""

@@ -1,0 +1,91 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-07 14:05:26
+检查目录: D:\GITHUB\pytQt_template\src
+Python文件数量: 4
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. D:\GITHUB\pytQt_template\src\__init__.py
+  2. D:\GITHUB\pytQt_template\src\__main__.py
+  3. D:\GITHUB\pytQt_template\src\bubble_sort.py
+  4. D:\GITHUB\pytQt_template\src\cli.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\src\bubble_sort.py
+  d:\GITHUB\pytQt_template\src\bubble_sort.py:49:8 - error: 条件的计算结果始终为 `False`，因为类型 "List[Any]" 和 "None" 之间不存在交集 (reportUnnecessaryComparison)
+d:\GITHUB\pytQt_template\src\cli.py
+  d:\GITHUB\pytQt_template\src\cli.py:6:43 - error: "TextIO" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\src\cli.py:11:5 - error: 返回类型 "Tuple[List[Unknown], int, int]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:11:26 - error: "arr" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:11:31 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:11:46 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:21:8 - error: 条件的计算结果始终为 `False`，因为类型 "List[Unknown]" 和 "None" 之间不存在交集 (reportUnnecessaryComparison)
+  d:\GITHUB\pytQt_template\src\cli.py:24:19 - error: 部分参数的类型未知
+    实参对应于 "__init__" 函数中的 "iterable" 形参
+    参数类型为 "List[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:28:12 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:31:13 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:46:5 - error: 返回类型 "Tuple[List[Unknown], List[Tuple[int, List[Unknown]]]]" 部分未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:46:23 - error: "arr" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:46:28 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:46:43 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:46:65 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:56:8 - error: 条件的计算结果始终为 `False`，因为类型 "List[Unknown]" 和 "None" 之间不存在交集 (reportUnnecessaryComparison)
+  d:\GITHUB\pytQt_template\src\cli.py:59:19 - error: 部分参数的类型未知
+    实参对应于 "__init__" 函数中的 "iterable" 形参
+    参数类型为 "List[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:62:12 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:65:13 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:72:35 - error: 部分参数的类型未知
+    实参对应于 "__init__" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:134:38 - error: 部分参数的类型未知
+    实参对应于 "__new__" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:213:26 - error: "result" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:213:34 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:215:16 - error: 部分参数的类型未知
+    实参对应于 "__new__" 函数中的 "object" 形参
+    参数类型为 "List[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:218:28 - error: "original" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:218:38 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:218:44 - error: "result" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:218:52 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:229:25 - error: "original" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:229:35 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:229:41 - error: "result" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:229:49 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:229:55 - error: "steps" 参数的类型部分未知
+    参数为 "List[Tuple[int, List[Unknown]]]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:229:78 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:276:24 - error: "arr" 参数的类型部分未知
+    参数为 "List[Unknown]" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\src\cli.py:276:29 - error: "List" 泛型类应有类型参数 (reportMissingTypeArgument)
+  d:\GITHUB\pytQt_template\src\cli.py:287:21 - error: 部分参数的类型未知
+    实参对应于 "__init__" 函数中的 "iterable" 形参
+    参数类型为 "List[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\src\cli.py:296:30 - error: 部分参数的类型未知
+    实参对应于 "bubble_sort" 函数中的 "arr" 形参
+    参数类型为 "List[Unknown]" (reportUnknownArgumentType)
+38 errors, 0 warnings, 0 notes
+

@@ -42,9 +42,10 @@ dev = [
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --json-report --json-report-file=test_results.json"
+addopts = "-ra -q --strict-markers --cov=src --cov-report=term-missing --json-report --json-report-file=test_results.json"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+pythonpath = ["src"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
@@ -54,6 +55,7 @@ markers = [
     "documentation: marks tests as documentation tests",
     "epic: marks tests as epic-related tests",
     "gui: marks tests as GUI tests",
+    "acceptance: marks tests as acceptance criteria tests",
 ]
 
 [tool.black]

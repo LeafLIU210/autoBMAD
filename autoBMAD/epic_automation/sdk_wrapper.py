@@ -120,18 +120,28 @@ class SafeAsyncGenerator:
             if aclose and callable(aclose):
                 # 使用超时保护生成器关闭
                 try:
-                    close_coro = aclose()
-                    if close_coro is not None:
-                        await asyncio.wait_for(close_coro, timeout=self.cleanup_timeout)  # type: ignore[arg-type]
+                    result = aclose()
+                    if result is not None:
+                        # 尝试等待结果，如果失败则忽略
+                        if asyncio.iscoroutine(result):
+                            await asyncio.wait_for(result, timeout=self.cleanup_timeout)
+                except (TypeError, AttributeError) as e:
+                    logger.debug(f"Generator cleanup (non-critical): {e}")
                 except asyncio.TimeoutError:
                     logger.warning(f"Generator cleanup timeout after {self.cleanup_timeout}s")
                 except asyncio.CancelledError:
                     logger.debug("Generator cleanup cancelled (ignored)")
                 except RuntimeError as e:
-                    if "cancel scope" in str(e) or "Event loop is closed" in str(e):
-                        logger.debug(f"Expected cleanup error (ignored): {e}")
+                    error_msg = str(e)
+                    if "cancel scope" in error_msg or "Event loop is closed" in error_msg:
+                        # Suppress cancel scope errors - these are expected during SDK shutdown
+                        logger.debug(f"Expected SDK shutdown error (suppressed): {error_msg}")
                     else:
+                        logger.debug(f"Generator cleanup RuntimeError: {e}")
                         raise
+                except Exception as e:
+                    # Catch any other exceptions during cleanup
+                    logger.debug(f"Generator cleanup exception: {e}")
         except Exception as e:
             logger.debug(f"Generator cleanup error: {e}")
 
@@ -418,6 +428,21 @@ class SafeClaudeSDK:
             # Cancellation handled by upper layer
             logger.warning("SDK execution was cancelled")
             raise
+        except RuntimeError as e:
+            error_msg = str(e)
+            # Enhanced cancel scope error handling
+            if "cancel scope" in error_msg:
+                logger.error(f"Cancel scope error detected: {error_msg}")
+                logger.debug(f"Cancel scope error details: {e}", exc_info=True)
+                # Suppress cancel scope errors - they are expected during task cleanup
+                return False
+            elif "Event loop is closed" in error_msg:
+                logger.warning(f"Event loop closed: {e}")
+                return False
+            else:
+                logger.error(f"Runtime error in SDK execution: {e}")
+                logger.debug(f"Runtime error details: {e}", exc_info=True)
+                return False
         except Exception as e:
             error_msg = str(e)
             if "cancel scope" in error_msg:

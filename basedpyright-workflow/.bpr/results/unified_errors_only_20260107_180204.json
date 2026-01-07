@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260107_180159.txt",
+    "extraction_time": "2026-01-07T18:02:04.327315",
+    "total_files_with_errors": 1,
+    "total_errors": 1,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedVariable": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 593,
+          "column": 9,
+          "message": "变量 \"story_id\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    }
+  ]
+}

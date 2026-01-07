@@ -1,80 +1,102 @@
-"""Bubble sort algorithm implementation."""
+"""Bubble Sort Algorithm Implementation.
 
-from typing import List, Iterable, Any
+This module provides a clean implementation of the bubble sort algorithm
+for educational and practical sorting of small lists.
+"""
+
+from typing import List, Iterable, Union
 
 
-def bubble_sort(arr: List[Any]) -> List[Any]:
-    """
-    Sort a list using the bubble sort algorithm.
+def bubble_sort(data: Iterable[Union[int, float]]) -> List[Union[int, float]]:
+    """Sort a list of numbers using the bubble sort algorithm.
 
-    Bubble sort works by repeatedly stepping through the list,
-    comparing adjacent elements and swapping them if in the wrong order.
-    This implementation is pure and does not modify the input list.
+    This function implements the bubble sort algorithm, which repeatedly
+    steps through the list, compares adjacent elements and swaps them
+    if they are in the wrong order. The pass through the list is
+    repeated until the list is sorted.
+
+    Algorithm Steps:
+    1. Start with the first element and compare it with the next element
+    2. If the current element is greater than the next element, swap them
+    3. Move to the next element and repeat steps 1-2
+    4. After each full pass, the largest unsorted element "bubbles up"
+       to its correct position at the end of the list
+    5. Repeat until no swaps are needed (list is sorted)
+
+    Time Complexity: O(n²) in the average and worst case
+                     O(n) in the best case (already sorted)
+    Space Complexity: O(1) - sorts in place
 
     Args:
-        arr: A list of comparable elements to sort
+        data: An iterable of numbers (int or float) to be sorted.
+              The input list is not modified.
 
     Returns:
-        A new sorted list (does not modify the input)
+        A new sorted list containing all elements from the input.
 
     Raises:
-        TypeError: If arr is None or not iterable
-
-    Time Complexity: O(n^2) in worst and average case
-    Space Complexity: O(n) - creates a new list
+        TypeError: If input is None or not iterable.
+        ValueError: If input contains non-numeric elements.
 
     Examples:
-        >>> bubble_sort([3, 1, 2])
-        [1, 2, 3]
+        >>> bubble_sort([5, 1, 4, 2, 8])
+        [1, 2, 4, 5, 8]
 
-        >>> bubble_sort([5, 4, 3, 2, 1])
-        [1, 2, 3, 4, 5]
-
-        >>> bubble_sort([1, 2, 3, 4, 5])
-        [1, 2, 3, 4, 5]
+        >>> bubble_sort([3.14, 2.71, 1.41])
+        [1.41, 2.71, 3.14]
 
         >>> bubble_sort([])
         []
 
-        >>> bubble_sort([1])
-        [1]
+        >>> bubble_sort([42])
+        [42]
 
-        >>> bubble_sort([2, 2, 2, 2])
-        [2, 2, 2, 2]
-
-        >>> bubble_sort([-1, -3, -2, 0, 2])
-        [-3, -2, -1, 0, 2]
+        >>> bubble_sort([8, 5, 3, 1])
+        [1, 3, 5, 8]
     """
-    # Input validation
-    if arr is None:
+    # Validate input is not None
+    if data is None:
         raise TypeError("Input cannot be None")
+
+    # Convert to list and validate it's iterable
     try:
-        # Check if iterable by attempting to iterate
-        iter(arr)
+        input_list = list(data)
     except TypeError:
-        raise TypeError("Input must be iterable")
+        raise TypeError("Input must be an iterable of numbers")
 
-    # Create a copy to maintain purity
-    result = list(arr)
+    # Validate all elements are numeric
+    for i, item in enumerate(input_list):
+        if not isinstance(item, (int, float)):
+            raise ValueError(
+                f"All elements must be numeric (int or float), "
+                f"but element at index {i} is {type(item).__name__}"
+            )
 
-    if len(result) <= 1:
-        return result
+    # Handle edge cases: empty list or single element
+    n = len(input_list)
+    if n <= 1:
+        return input_list
 
-    n = len(result)
-    # Perform n-1 passes through the array
+    # Create a copy to avoid modifying the original list
+    sorted_list = input_list[:]
+
+    # Bubble sort implementation with early termination
+    # Outer loop: controls how many passes through the list
     for i in range(n):
-        # Flag to optimize: if no swapping occurs, array is sorted
+        # Flag to optimize: if no swaps occur, list is sorted
         swapped = False
-        # Last i elements are already in place
+
+        # Inner loop: compare adjacent elements
+        # After i passes, the last i elements are already in place
         for j in range(0, n - i - 1):
-            # Compare adjacent elements
-            if result[j] > result[j + 1]:
-                # Swap if they are in wrong order
-                result[j], result[j + 1] = result[j + 1], result[j]
+            # Compare adjacent elements and swap if out of order
+            if sorted_list[j] > sorted_list[j + 1]:
+                # Swap elements
+                sorted_list[j], sorted_list[j + 1] = sorted_list[j + 1], sorted_list[j]
                 swapped = True
 
-        # If no two elements were swapped, array is sorted
+        # Early termination: if no swaps occurred, list is sorted
         if not swapped:
             break
 
-    return result
+    return sorted_list

@@ -137,7 +137,6 @@ class QAAgent:
         self,
         story_content: str,
         story_path: str = "",
-        task_guidance: str | None = None,
         use_qa_tools: bool = True,
         source_dir: str = "src",
         test_dir: str = "tests",
@@ -149,7 +148,6 @@ class QAAgent:
         Args:
             story_content: 故事的原始markdown内容
             story_path: 故事文件路径
-            task_guidance: 任务指导
             use_qa_tools: 是否使用QA工具
             source_dir: 源代码目录
             test_dir: 测试目录
@@ -168,7 +166,7 @@ class QAAgent:
                 # 执行AI驱动的QA审查
                 logger.info(f"{self.name} Starting QA review for: {story_path}")
                 qa_result = await self._execute_qa_review(
-                    story_path, task_guidance, source_dir, test_dir
+                    story_path, source_dir, test_dir
                 )
 
                 # 如果审查成功，返回结果
@@ -225,14 +223,13 @@ class QAAgent:
     async def _execute_qa_review(
         self,
         story_path: str,
-        task_guidance: str | None,
         source_dir: str,
         test_dir: str
     ) -> QAResult:
         """执行QA审查"""
         try:
             # 执行AI驱动的QA审查
-            review_success = await self._execute_ai_qa_review(story_path, task_guidance)
+            review_success = await self._execute_ai_qa_review(story_path)
 
             if not review_success:
                 logger.warning(f"{self.name} AI-driven QA review failed, using fallback review")
@@ -286,19 +283,11 @@ class QAAgent:
                 reason=f"QA review error: {str(e)}"
             )
 
-    async def _execute_ai_qa_review(self, story_path: str, task_guidance: str | None) -> bool:
+    async def _execute_ai_qa_review(self, story_path: str) -> bool:
         """执行AI驱动的QA审查"""
         try:
-            # 读取故事内容
-            story_file = Path(story_path)
-            if not story_file.exists():
-                logger.error(f"Story file not found: {story_path}")
-                return False
-
-            story_content = story_file.read_text(encoding='utf-8')
-
             # 构建QA提示
-            qa_prompt = self._build_qa_prompt(story_content, task_guidance)
+            qa_prompt = self._build_qa_prompt(story_path)
 
             # 执行SDK调用
             sdk_func = self._create_sdk_execution_function(qa_prompt)
@@ -320,32 +309,9 @@ class QAAgent:
             logger.debug(f"Error details: {e}", exc_info=True)
             return False
 
-    def _build_qa_prompt(self, story_content: str, task_guidance: str | None) -> str:
+    def _build_qa_prompt(self, story_path: str) -> str:
         """构建QA提示"""
-        prompt_parts = [
-            "You are a QA agent reviewing a software development story.",
-            "Please analyze the story and perform the following:",
-            "",
-            "1. Review the story implementation",
-            "2. Check for any issues or concerns",
-            "3. Create or update a QA gate file if needed",
-            "",
-            "Story content:",
-            "---",
-            story_content,
-            "---",
-            "",
-            "Please provide a detailed review and create a QA gate file if issues are found."
-        ]
-
-        if task_guidance:
-            prompt_parts.extend([
-                "",
-                "Additional task guidance:",
-                task_guidance
-            ])
-
-        return "\n".join(prompt_parts)
+        return f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\qa.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\review-story.md Review the current story document @{story_path} . If the review passes, update the story document status to "Done".'
 
     def _create_sdk_execution_function(self, prompt: str):
         """创建SDK执行函数"""
@@ -359,7 +325,12 @@ class QAAgent:
                 # 创建SDK实例
                 options = None
                 if ClaudeAgentOptions:
-                    options = ClaudeAgentOptions()
+                    options = ClaudeAgentOptions(
+                        permission_mode="bypassPermissions",
+                        cwd=str(Path.cwd())
+                    )
+                    # 限制最大回合数，防止无限等待
+                    options.max_turns = 10
 
                 sdk = SafeClaudeSDK(
                     prompt=prompt,
@@ -388,14 +359,28 @@ class QAAgent:
 
             content = story_file.read_text(encoding='utf-8')
 
-            # 查找状态行
-            status_pattern = r'Status:\s*(\w+(?:\s+\w+)*)'
-            match = re.search(status_pattern, content, re.IGNORECASE)
+            # 查找状态行 - 支持多种状态模式
+            status_patterns = [
+                r'Status:\s*\*\*([^*]+)\*\*',  # **Bold** format
+                r'Status:\s*(\w+(?:\s+\w+)*)'  # Regular format
+            ]
 
-            if match:
-                status = match.group(1).strip().lower()
-                # 检查是否包含"ready for done"或"done"
-                return "ready for done" in status or status == "done"
+            for pattern in status_patterns:
+                match = re.search(pattern, content, re.IGNORECASE)
+                if match:
+                    status = match.group(1).strip().lower()
+                    # 检查状态是否为完成状态
+                    if "ready for done" in status or status == "done":
+                        logger.info(f"Story status is '{status}' - considered complete")
+                        return True
+                    elif "ready for review" in status:
+                        logger.info(f"Story status is '{status}' - considering as ready for QA review")
+                        # Ready for Review should trigger QA review, not skip it
+                        # Return False to proceed with QA review
+                        return False
+                    else:
+                        logger.debug(f"Story status is '{status}' - not a completion status")
+                        return False
             else:
                 logger.warning(f"Could not find status in story file: {story_path}")
                 return False

@@ -47,7 +47,6 @@ class EpicDriver:
     test_dir: str
     skip_quality: bool
     skip_tests: bool
-    task_guidance: "dict[str, str]"
     max_quality_iterations: int
     max_test_iterations: int
     sm_agent: Any
@@ -98,7 +97,6 @@ class EpicDriver:
 
         self.skip_quality = skip_quality
         self.skip_tests = skip_tests
-        self.task_guidance = {}
 
         # Quality gate and test automation iteration limits
         self.max_quality_iterations = 3
@@ -148,18 +146,6 @@ class EpicDriver:
             logger.info(f"Logging configured. Log file: {self.log_manager.get_current_log_path()}")
 
         return logger
-
-    async def load_task_guidance(self) -> None:
-        """
-        Load task guidance files from tasks directory.
-
-        This method can be extended to load additional task guidance
-        if needed in the future. Currently, it's a placeholder to
-        maintain compatibility with the workflow orchestration.
-        """
-        # Placeholder for future task guidance loading
-        # Currently, task guidance is loaded implicitly through agent initialization
-        self.logger.debug("Task guidance loading completed")
 
     async def parse_epic(self) -> "list[dict[str, Any]]":
         """
@@ -240,7 +226,7 @@ class EpicDriver:
                         logger.info(f"[Match Success] {story_id} -> {story_file.name}")
                         stories.append({
                             'id': story_id,
-                            'path': str(story_file.resolve()),
+                            'path': str(story_file.resolve()).replace('\\', '\\\\'),
                             'name': story_file.name
                         })
                         found_stories.append(story_id)
@@ -258,7 +244,7 @@ class EpicDriver:
                                 if created_story_file:
                                     stories.append({
                                         'id': story_id,
-                                        'path': str(created_story_file.resolve()),
+                                        'path': str(created_story_file.resolve()).replace('\\', '\\\\'),
                                         'name': created_story_file.name
                                     })
                                     found_stories.append(story_id)
@@ -394,15 +380,12 @@ class EpicDriver:
         logger.info(f"Executing SM phase for {story_path}")
 
         try:
-            # Get task guidance for SM agent
-            guidance = self.task_guidance.get("sm_agent", "")
-
             # Read story content
             with open(story_path, encoding='utf-8') as f:
                 story_content = f.read()
 
             # Execute SM phase with story_path parameter
-            result: bool = await self.sm_agent.execute(story_content, guidance, story_path)
+            result: bool = await self.sm_agent.execute(story_content, story_path)
 
             # Update state
             state_update_success = await self.state_manager.update_story_status(
@@ -453,9 +436,6 @@ class EpicDriver:
             return False
 
         try:
-            # Get task guidance for Dev agent
-            guidance = self.task_guidance.get("dev_agent", "")
-
             # Read story content
             with open(story_path, encoding='utf-8') as f:
                 story_content = f.read()
@@ -464,7 +444,7 @@ class EpicDriver:
             self.dev_agent._log_manager = self.log_manager
 
             # Execute Dev phase with story_path parameter
-            result: bool = await self.dev_agent.execute(story_content, guidance, story_path)
+            result: bool = await self.dev_agent.execute(story_content, story_path)
 
             # Update state
             state_update_success = await self.state_manager.update_story_status(
@@ -515,9 +495,6 @@ class EpicDriver:
             )
             return True
 
-        # Get task guidance for QA agent
-        guidance = self.task_guidance.get("qa_agent", "")
-
         try:
             # Read story content
             with open(story_path, encoding='utf-8') as f:
@@ -527,7 +504,6 @@ class EpicDriver:
             qa_result: dict[str, Any] = await self.qa_agent.execute(
                 story_content,
                 story_path=story_path,
-                task_guidance=guidance,
                 use_qa_tools=True,
                 source_dir=self.source_dir,
                 test_dir=self.test_dir
@@ -590,9 +566,10 @@ class EpicDriver:
         logger.info(f"Processing story {story_id}: {story_path}")
 
         try:
-            # Protect entire method from external cancellation to prevent cancel scope errors
+            # Use timeout directly without shield to avoid cancel scope errors
+            # Shield inside _process_story_impl will handle cancellation protection
             return await asyncio.wait_for(
-                asyncio.shield(self._process_story_impl(story)),
+                self._process_story_impl(story),
                 timeout=600.0  # 10 minute timeout for entire process
             )
         except asyncio.TimeoutError:
@@ -613,6 +590,19 @@ class EpicDriver:
             True if story completed successfully, False otherwise
         """
         story_path = story['path']
+
+        try:
+            # Use shield to protect from external cancellation without conflicting with wait_for
+            return await asyncio.shield(self._execute_story_processing(story))
+        except asyncio.CancelledError:
+            logger.info(f"Story processing cancelled for {story_path}")
+            return False
+
+    async def _execute_story_processing(self, story: "dict[str, Any]") -> bool:
+        """
+        Core story processing logic without shield to avoid cancel scope conflicts.
+        """
+        story_path = story['path']
         story_id = story['id']
 
         try:
@@ -623,7 +613,7 @@ class EpicDriver:
                 # Continue processing despite inconsistencies - be more resilient
             else:
                 logger.debug(f"State consistency check passed for {story_path}")
-            
+
             # Continue with normal processing regardless of consistency check result
 
             # Check if story already completed
@@ -692,12 +682,28 @@ class EpicDriver:
             with open(story_path, encoding='utf-8') as f:
                 content = f.read()
 
-            # Check for Ready for Done status
-            status_match = re.search(r'## Status\s*\n\*\*([^*]+)\*\*', content)
-            if status_match:
-                status = status_match.group(1).strip().lower()
-                return 'ready for done' in status or 'done' in status
+            # Check for Ready for Done status - support multiple status patterns
+            status_patterns = [
+                r'## Status\s*\n\*\*([^*]+)\*\*',  # Bold format
+                r'Status:\s*\*\*([^*]+)\*\*',       # Inline bold
+                r'Status:\s*(\w+(?:\s+\w+)*)'       # Regular format
+            ]
 
+            for pattern in status_patterns:
+                status_match = re.search(pattern, content, re.IGNORECASE)
+                if status_match:
+                    status = status_match.group(1).strip().lower()
+                    # Check for completion status
+                    if 'ready for done' in status or status == 'done':
+                        logger.info(f"Story status is '{status}' - considered ready for done")
+                        return True
+                    elif 'ready for review' in status:
+                        logger.info(f"Story status is '{status}' - considered ready for review")
+                        # For "Ready for Review" status, we consider it ready for done
+                        # since it means development is complete and waiting for QA
+                        return True
+
+            logger.warning(f"Could not find status or unknown status in story: {story_path}")
             return False
         except Exception as e:
             logger.error(f"Failed to check story status: {e}")
@@ -1108,9 +1114,6 @@ class EpicDriver:
             self.logger.warning("Concurrent processing is experimental and not fully tested with quality gates")
 
         try:
-            # Load task guidance
-            await self.load_task_guidance()
-
             # Parse epic
             stories = await self.parse_epic()
             if not stories:

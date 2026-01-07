@@ -181,7 +181,6 @@ class DevAgent:
     async def execute(
         self,
         story_content: str,
-        task_guidance: str = "",
         story_path: str = "",
         qa_feedback: Optional[Dict[str, Any]] = None
     ) -> bool:
@@ -190,7 +189,6 @@ class DevAgent:
 
         Args:
             story_content: Raw markdown content of the story
-            task_guidance: Task guidance from .bmad-core/tasks/develop-story.md
             story_path: Path to the story file
             qa_feedback: Optional QA feedback from previous QA review
 
@@ -223,12 +221,6 @@ class DevAgent:
             validation = await self._validate_requirements(requirements)
             if not validation['valid']:
                 logger.warning(f"Requirement validation issues: {validation['issues']}")
-
-            # Process according to task guidance
-            if task_guidance:
-                processed = await self._apply_dev_guidance(requirements, task_guidance)
-                if not processed:
-                    logger.warning("Failed to apply development guidance")
 
             # Execute development tasks
             tasks_completed = await self._execute_development_tasks(requirements)
@@ -371,20 +363,6 @@ class DevAgent:
             'warnings': warnings
         }
 
-    async def _apply_dev_guidance(self, requirements: Dict[str, Any], guidance: str) -> bool:
-        """Apply development guidance to requirements."""
-        logger.info("Applying implementation guidance")
-
-        try:
-            # In a real implementation, this would parse guidance and apply it
-            # For now, we just acknowledge it
-            _ = requirements  # Mark as intentionally unused for now
-            _ = guidance  # Mark as intentionally unused for now
-            return True
-        except Exception as e:
-            logger.error(f"Failed to apply dev guidance: {e}")
-            return False
-
     async def _execute_development_tasks(self, requirements: Dict[str, Any]) -> bool:
         """Execute development tasks using Claude Agent SDK with single call."""
         logger.info("Executing development tasks")
@@ -432,7 +410,7 @@ class DevAgent:
 
             # Normal development mode - execute single SDK call
             logger.info(f"{self.name} Executing normal development with single SDK call")
-            base_prompt = f'@.bmad-core/agents/dev.md *develop-story "{story_path}" Create or improve comprehensive test suites @tests/, perform test-driven development until all tests pass completely. Change story document Status to "Ready for Review".'
+            base_prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @tests/, perform test-driven development until all tests pass completely. Change story document Status to "Ready for Review".'
 
             # Execute single SDK call
             result = await self._execute_single_claude_sdk(base_prompt, story_path, log_manager)

@@ -62,7 +62,6 @@ class BaseAgent:
         self.config = config
         self.session_id = str(uuid.uuid4())
         self.client = None
-        self.task_guidance = None
 
         # Initialize Anthropic client
         api_key = config.api_key or os.environ.get('ANTHROPIC_API_KEY')
@@ -74,25 +73,7 @@ class BaseAgent:
         else:
             self.client = Anthropic(api_key=api_key)
 
-        # Load task guidance
-        self._load_task_guidance()
-
-    def _load_task_guidance(self):
-        """Load task guidance from file."""
-        guidance_file = Path(__file__).parent / "agentdocs" / f"{self.config.task_name}.md"
-
-        if not guidance_file.exists():
-            logger.warning(f"Task guidance file not found: {guidance_file}")
-            self.task_guidance = ""
-            return
-
-        try:
-            self.task_guidance = guidance_file.read_text(encoding='utf-8')
-        except Exception as e:
-            logger.error(f"Failed to load task guidance: {e}")
-            self.task_guidance = ""
-
-    async def process_request(self, input_text: str) -> Dict[str, Any]:
+    async def process_request(self, input_text: str) -> Dict[str, Any]:  # type: ignore[misc]
         """
         Process a request using the agent.
 
@@ -120,7 +101,14 @@ class BaseAgent:
         )
 
         # Extract text content from response
-        response_text = response.content[0].text if response.content else ""  # type: ignore[union-attr]
+        response_text = ""  # type: ignore[assignment]
+        if response.content:
+            first_content = response.content[0]  # type: ignore
+            # Handle different content types
+            if hasattr(first_content, 'text'):
+                response_text = first_content.text  # type: ignore
+            elif hasattr(first_content, 'thinking'):
+                response_text = first_content.thinking  # type: ignore
 
         return {
             "response": response_text,
@@ -139,7 +127,6 @@ class BaseAgent:
             "task_name": self.config.task_name,
             "session_id": self.session_id,
             "model": self.config.model,
-            "guidance_loaded": self.task_guidance is not None and len(self.task_guidance) > 0,
             "client_initialized": self.client is not None,
         }
 
@@ -348,9 +335,6 @@ class DevAgent(BaseAgent):
 
         Acceptance Criteria:
         {', '.join(acceptance_criteria)}
-
-        Task Guidance:
-        {self.task_guidance or 'No guidance available'}
         """
 
         # Call Claude API
@@ -362,7 +346,14 @@ class DevAgent(BaseAgent):
         )
 
         # Extract implementation text from response
-        implementation = response.content[0].text if response.content else ""  # type: ignore[union-attr]
+        implementation = ""  # type: ignore[assignment]
+        if response.content:
+            first_content = response.content[0]  # type: ignore
+            # Handle different content types
+            if hasattr(first_content, 'text'):
+                implementation = first_content.text  # type: ignore
+            elif hasattr(first_content, 'thinking'):
+                implementation = first_content.thinking  # type: ignore
 
         return {
             "status": "success",
@@ -372,7 +363,7 @@ class DevAgent(BaseAgent):
             "implementation": implementation,
         }
 
-    def write_tests(
+    def write_tests(  # type: ignore[misc]
         self,
         test_specs: List[Dict[str, Any]],
         test_type: str = "unit",
@@ -395,9 +386,6 @@ class DevAgent(BaseAgent):
         Write {test_type} tests for the following specifications:
 
         {test_specs}
-
-        Task Guidance:
-        {self.task_guidance or 'No guidance available'}
         """
 
         # Call Claude API
@@ -409,7 +397,14 @@ class DevAgent(BaseAgent):
         )
 
         # Extract tests text from response
-        tests = response.content[0].text if response.content else ""  # type: ignore[union-attr]
+        tests = ""  # type: ignore[assignment]
+        if response.content:
+            first_content = response.content[0]  # type: ignore
+            # Handle different content types
+            if hasattr(first_content, 'text'):
+                tests = first_content.text  # type: ignore
+            elif hasattr(first_content, 'thinking'):
+                tests = first_content.thinking  # type: ignore
 
         return {
             "status": "success",
@@ -418,7 +413,7 @@ class DevAgent(BaseAgent):
             "tests": tests,
         }
 
-    def execute_validations(
+    def execute_validations(  # type: ignore[misc]
         self,
         source_files: List[str],
         test_files: Optional[List[str]] = None,
@@ -567,7 +562,6 @@ class DevAgent(BaseAgent):
             "test_directory": self.config.test_dir,
             "test_framework": self.config.test_framework,
             "task_name": self.config.task_name,
-            "guidance_loaded": self.task_guidance is not None and len(self.task_guidance) > 0,
         }
 
 
@@ -631,7 +625,6 @@ class QAAgent(BaseAgent):
         return {
             "agent_type": "QA",
             "task_name": self.config.task_name,
-            "guidance_loaded": self.task_guidance is not None and len(self.task_guidance) > 0,
         }
 
 
@@ -659,5 +652,4 @@ class SMAgent(BaseAgent):
             "task_name": self.config.task_name,
             "project_root": self.project_root,
             "tasks_path": self.tasks_path,
-            "guidance_loaded": self.task_guidance is not None and len(self.task_guidance) > 0,
         }

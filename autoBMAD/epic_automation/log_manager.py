@@ -319,13 +319,25 @@ class DualWriteStream:
 
     def write(self, text: str) -> None:
         """Write to both original stream and log file."""
-        # Write to original stream
-        self.original_stream.write(text)
-        self.original_stream.flush()
+        # Write to original stream with Unicode handling
+        try:
+            self.original_stream.write(text)
+            self.original_stream.flush()
+        except UnicodeEncodeError:
+            # Handle Unicode characters that can't be encoded in the console's encoding
+            # Replace problematic characters with ASCII equivalents
+            safe_text = text.encode('ascii', errors='replace').decode('ascii')
+            self.original_stream.write(safe_text)
+            self.original_stream.flush()
 
         # Write to log file if available
         if text.strip():  # Only log non-empty text
-            self.log_manager.write_log(f"[{self.stream_name}] {text.strip()}")
+            try:
+                self.log_manager.write_log(f"[{self.stream_name}] {text.strip()}")
+            except UnicodeEncodeError:
+                # If log file has encoding issues, sanitize the message
+                safe_message = text.strip().encode('utf-8', errors='replace').decode('utf-8')
+                self.log_manager.write_log(f"[{self.stream_name}] {safe_message}")
 
     def flush(self) -> None:
         """Flush both streams."""

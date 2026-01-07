@@ -94,7 +94,6 @@ class SMAgent:
     async def execute(
         self,
         story_content: str,
-        task_guidance: str = "",
         story_path: str = ""
     ) -> bool:
         """
@@ -102,7 +101,6 @@ class SMAgent:
 
         Args:
             story_content: Raw markdown content of the story
-            task_guidance: Task guidance from .bmad-core/tasks/create-next-story.md
             story_path: Path to the story file (for status update)
 
         Returns:
@@ -123,12 +121,6 @@ class SMAgent:
             if not validation_result['valid']:
                 logger.warning(f"Story validation issues: {validation_result['issues']}")
                 # Continue anyway, as validation issues don't block SM phase
-
-            # Process story according to task guidance
-            if task_guidance:
-                processed = await self._apply_task_guidance(story_data, task_guidance)
-                if not processed:
-                    logger.warning("Failed to apply task guidance")
 
             logger.info(f"{self.name} SM phase completed successfully")
             return True
@@ -227,42 +219,6 @@ class SMAgent:
             logger.info(f"Story validation warnings: {warnings}")
 
         return result
-
-    async def _apply_task_guidance(
-        self,
-        story_data: Dict[str, Any],
-        task_guidance: str
-    ) -> bool:
-        """
-        Apply task guidance to story processing.
-
-        Args:
-            story_data: Parsed story metadata
-            task_guidance: Task guidance content
-
-        Returns:
-            True if guidance applied successfully, False otherwise
-        """
-        try:
-            # Check for specific guidance patterns
-            if "acceptance criteria" in task_guidance.lower():
-                logger.info("Applying acceptance criteria guidance")
-
-            if "task" in task_guidance.lower():
-                logger.info("Applying task guidance")
-
-            if "status" in task_guidance.lower():
-                logger.info("Applying status guidance")
-
-            # In a real implementation, this would use the guidance to
-            # modify story processing logic
-            # For now, we just log that we applied it
-
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to apply task guidance: {e}")
-            return False
 
     async def create_story(
         self,
@@ -434,7 +390,7 @@ class SMAgent:
         # Get relative path from current directory
         epic_rel_path = str(Path(epic_path))
 
-        prompt = f"@.bmad-core/agents/sm.md *draft {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from 'Draft' to 'Approved'."
+        prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from "Draft" to "Approved".'
 
         logger.debug(f"Built prompt: {prompt}")
         return prompt

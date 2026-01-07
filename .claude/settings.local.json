@@ -50,7 +50,9 @@
       "Bash(netstat:*)",
       "Bash(tasklist:*)",
       "Bash(powershell:*)",
-      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template timeout 30 python:*)"
+      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template timeout 30 python:*)",
+      "Bash(rm:*)",
+      "Bash(lsof:*)"
     ]
   }
 }

@@ -1,7 +1,7 @@
 {
-  "test_automation_id": "test-auto-20260106-105947",
-  "epic_id": "test-epic-001",
-  "timestamp": "2026-01-06T10:59:47.302089",
+  "test_automation_id": "test-auto-20260107-182527",
+  "epic_id": "docs\\epics\\epic-1-core-algorithm-foundation.md",
+  "timestamp": "2026-01-07T18:25:19.707761",
   "summary": {
     "total_tests": 0,
     "passed": 0,
@@ -12,8 +12,17 @@
   },
   "failed_tests": [
     {
-      "test_file": "test_example.py",
-      "test_name": "test_fail",
+      "test_file": "tests/test_acceptance_criteria.py",
+      "test_name": "TestCodeQualityStandards",
+      "failure_type": "failed",
+      "error_message": "",
+      "traceback": [],
+      "fix_attempts": 0,
+      "debugpy_invoked": false
+    },
+    {
+      "test_file": "tests/test_acceptance_criteria.py",
+      "test_name": "TestStoryImplementationCompleteness",
       "failure_type": "failed",
       "error_message": "",
       "traceback": [],
