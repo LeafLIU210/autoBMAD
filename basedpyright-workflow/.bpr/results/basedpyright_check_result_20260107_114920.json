@@ -1,0 +1,52 @@
+{
+  "version": "1.37.0",
+  "time": "1767757763731",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"Awaitable\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 17,
+          "character": 49
+        },
+        "end": {
+          "line": 17,
+          "character": 58
+        }
+      },
+      "rule": "reportUnusedImport"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 1,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.179
+  },
+  "metadata": {
+    "check_time": "2026-01-07T11:49:23.794771",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "..\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

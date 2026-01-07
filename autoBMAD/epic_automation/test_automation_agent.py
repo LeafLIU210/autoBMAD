@@ -79,7 +79,7 @@ class TestAutomationAgent:
 
     async def run_pytest_execution(self, test_dir: str, json_report_path: str = "test_results.json") -> Dict[str, Any]:
         try:
-            cmd = [sys.executable, "-m", "pytest", test_dir, f"--json-report", f"--json-report-file={json_report_path}", "-v"]
+            cmd = [sys.executable, "-m", "pytest", test_dir, "--json-report", f"--json-report-file={json_report_path}", "-v"]
             process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             _stdout, _stderr = await process.communicate()
 

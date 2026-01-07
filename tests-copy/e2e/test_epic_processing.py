@@ -130,7 +130,6 @@ def test_subtract():
             with patch('autoBMAD.epic_automation.sm_agent.SMAgent') as sm_agent_class, \
                  patch('autoBMAD.epic_automation.dev_agent.DevAgent') as dev_agent_class, \
                  patch('autoBMAD.epic_automation.qa_agent.QAAgent') as qa_agent_class, \
-                 patch('autoBMAD.epic_automation.code_quality_agent.CodeQualityAgent') as quality_agent_class, \
                  patch('autoBMAD.epic_automation.test_automation_agent.TestAutomationAgent') as test_agent_class, \
                  patch('autoBMAD.epic_automation.state_manager.StateManager') as state_manager_class:
 
@@ -145,15 +144,6 @@ def test_subtract():
                 qa_agent = AsyncMock()
                 qa_agent.execute = AsyncMock(return_value={"passed": True})
                 qa_agent_class.return_value = qa_agent
-
-                quality_agent = AsyncMock()
-                quality_agent.run_quality_gates = AsyncMock(return_value={
-                    'status': 'completed',
-                    'errors': 0,
-                    'basedpyright': {'success': True, 'error_count': 0},
-                    'ruff': {'success': True, 'error_count': 0}
-                })
-                quality_agent_class.return_value = quality_agent
 
                 test_agent = AsyncMock()
                 test_agent.run_test_automation = AsyncMock(return_value={
@@ -174,12 +164,11 @@ def test_subtract():
                 state_manager.get_story_status = AsyncMock(return_value=None)
                 state_manager_class.return_value = state_manager
 
-                # Create driver with all features enabled
+                # Create driver with test automation enabled
                 driver = EpicDriver(
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=False,
                     skip_tests=False,
                     verbose=True
                 )
@@ -199,7 +188,6 @@ def test_subtract():
                 assert sm_agent.execute.called
                 assert dev_agent.execute.called
                 assert qa_agent.execute.called
-                assert quality_agent.run_quality_gates.called
                 assert test_agent.run_test_automation.called
 
                 # Verify progress tracking
@@ -269,7 +257,6 @@ def test_subtract():
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
                     skip_tests=True,
                     verbose=True
                 )
@@ -280,8 +267,7 @@ def test_subtract():
                 # Verify all 5 stories were processed
                 assert sm_agent.execute.call_count == 5
                 assert dev_agent.execute.call_count == 5
-                # QA agent execute is not called when skip_quality=True
-                assert qa_agent.execute.call_count == 0
+                assert qa_agent.execute.call_count == 5
 
     @pytest.mark.asyncio
     async def test_error_recovery_scenario(self):
@@ -337,7 +323,6 @@ def test_subtract():
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
                     skip_tests=True,
                     verbose=True,
                     retry_failed=True,
@@ -402,7 +387,6 @@ def test_subtract():
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
                     skip_tests=True,
                     verbose=False  # Reduce logging overhead
                 )
@@ -481,7 +465,6 @@ def test_subtract():
                     concurrent=False,
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
                     skip_tests=True
                 )
 

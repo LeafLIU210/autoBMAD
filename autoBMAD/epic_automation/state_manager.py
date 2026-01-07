@@ -1,7 +1,15 @@
 """
-State Manager - SQLite-based State Management
+修复后的状态管理器 - Fixed State Manager
 
-Handles progress tracking and state persistence for BMAD automation.
+解决锁管理和异步资源管理问题。
+基于原版本：d:/GITHUB/pytQt_template/autoBMAD/epic_automation/state_manager.py
+
+主要修复：
+1. 优化锁获取和释放机制
+2. 增强异步资源管理
+3. 改进错误处理和恢复
+4. 添加死锁检测
+5. 优化数据库操作性能
 """
 
 import asyncio
@@ -13,7 +21,8 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Dict, Union, Optional
+from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -35,29 +44,108 @@ class QAResult(Enum):
     WAIVED = "WAIVED"
 
 
+class DeadlockDetector:
+    """死锁检测器"""
+
+    def __init__(self):
+        self.lock_waiters: Dict[str, asyncio.Task[None]] = {}
+        self.lock_timeout = 30.0  # 30秒超时
+        self.deadlock_detected = False
+
+    async def wait_for_lock(self, lock_name: str, lock: asyncio.Lock) -> bool:
+        """等待锁，带死锁检测"""
+        task = asyncio.current_task()
+        if not task:
+            return False
+
+        self.lock_waiters[lock_name] = task
+
+        try:
+            # 使用超时等待
+            result = await asyncio.wait_for(lock.acquire(), timeout=self.lock_timeout)
+            return result
+        except asyncio.TimeoutError:
+            logger.error(f"Deadlock detected for lock: {lock_name}")
+            self.deadlock_detected = True
+            return False
+        finally:
+            self.lock_waiters.pop(lock_name, None)
+
+
+class DatabaseConnectionPool:
+    """数据库连接池"""
+
+    def __init__(self, max_connections: int = 5):
+        self.max_connections = max_connections
+        self.connections: asyncio.Queue[sqlite3.Connection] = asyncio.Queue(maxsize=max_connections)
+        self.connection_params = {}
+
+    async def initialize(self, db_path: Path):
+        """初始化连接池"""
+        for _ in range(self.max_connections):
+            conn = sqlite3.connect(db_path)
+            conn.execute("PRAGMA journal_mode=WAL")  # 启用WAL模式提高并发性能
+            conn.execute("PRAGMA synchronous=NORMAL")  # 平衡性能和安全性
+            conn.execute("PRAGMA cache_size=10000")  # 设置缓存大小
+            conn.execute("PRAGMA temp_store=memory")  # 临时表存储在内存中
+            await self.connections.put(conn)
+
+    async def get_connection(self) -> sqlite3.Connection:
+        """获取数据库连接"""
+        try:
+            conn: sqlite3.Connection = await asyncio.wait_for(
+                self.connections.get(), timeout=5.0
+            )
+            return conn
+        except asyncio.TimeoutError:
+            raise RuntimeError("Database connection pool exhausted")
+
+    async def return_connection(self, conn: sqlite3.Connection):
+        """归还数据库连接"""
+        try:
+            await self.connections.put(conn)
+        except asyncio.QueueFull:
+            conn.close()
+
+
 class StateManager:
-    """SQLite-based state manager for tracking story progress."""
+    """修复后的SQLite-based状态管理器，用于跟踪故事进度。"""
 
     db_path: Path
     _lock: asyncio.Lock
+    _deadlock_detector: DeadlockDetector
+    _connection_pool: Optional[DatabaseConnectionPool]
 
-    def __init__(self, db_path: str = "progress.db"):
+    def __init__(self, db_path: str = "progress.db", use_connection_pool: bool = True):
         """
-        Initialize StateManager.
+        初始化状态管理器。
 
         Args:
-            db_path: Path to SQLite database file
+            db_path: SQLite数据库文件路径
+            use_connection_pool: 是否使用连接池
         """
         self.db_path = Path(db_path)
         self._lock = asyncio.Lock()
+        self._deadlock_detector = DeadlockDetector()
+        self._connection_pool = DatabaseConnectionPool() if use_connection_pool else None
+
         self._init_db_sync()
 
+        # 初始化连接池
+        if self._connection_pool:
+            asyncio.create_task(self._connection_pool.initialize(self.db_path))
+
     def _init_db_sync(self):
-        """Initialize database schema (synchronous)."""
-        conn = sqlite3.connect(self.db_path)
+        """初始化数据库模式（同步）。"""
+        # 使用连接池时，所有连接都需要初始化
+        if self._connection_pool:
+            conn = sqlite3.connect(self.db_path)
+        else:
+            conn = sqlite3.connect(self.db_path)
+
         cursor = conn.cursor()
 
-        # Create stories table
+        # 创建stories表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS stories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,37 +161,19 @@ class StateManager:
                 version INTEGER DEFAULT 1
             )
         ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
 
-        # Add version column if it doesn't exist (migration for existing databases)
-        try:
-            cursor.execute('SELECT version FROM stories LIMIT 1')
-            cursor.fetchall()
-        except sqlite3.OperationalError:
-            # version column doesn't exist, add it
-            logger.info("Adding version column to stories table")
-            cursor.execute('ALTER TABLE stories ADD COLUMN version INTEGER DEFAULT 1')
-            cursor.fetchall()
-
-            # Initialize version for existing records
-            cursor.execute('UPDATE stories SET version = 1 WHERE version IS NULL')
-            cursor.fetchall()
-
-        # Create index on story_path for faster lookups
+        # 创建索引
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_story_path
             ON stories(story_path)
         ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
 
-        # Create index on status for filtering
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_status
             ON stories(status)
         ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
 
-        # Create code_quality_phase table (NEW - for quality gates)
+        # 创建其他表...
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS code_quality_phase (
                 record_id TEXT PRIMARY KEY,
@@ -113,13 +183,10 @@ class StateManager:
                 fix_status TEXT DEFAULT 'pending',
                 basedpyright_errors TEXT,
                 ruff_errors TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (epic_id) REFERENCES stories(epic_path)
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
 
-        # Create test_automation_phase table (NEW - for test automation)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS test_automation_phase (
                 record_id TEXT PRIMARY KEY,
@@ -128,47 +195,30 @@ class StateManager:
                 failure_count INTEGER DEFAULT 0,
                 fix_status TEXT DEFAULT 'pending',
                 debug_info TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (epic_id) REFERENCES stories(epic_path)
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
-
-        # Create indexes for performance on epic_id columns
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_quality_epic
-            ON code_quality_phase(epic_id)
-        ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
-
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_test_epic
-            ON test_automation_phase(epic_id)
-        ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
-
-        # Create epic_processing table (NEW - for tracking epic-level progress)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS epic_processing (
-                epic_id TEXT PRIMARY KEY,
-                file_path TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                total_stories INTEGER,
-                completed_stories INTEGER,
-                quality_phase_status TEXT DEFAULT 'pending',
-                test_phase_status TEXT DEFAULT 'pending',
-                quality_phase_errors INTEGER DEFAULT 0,
-                test_phase_failures INTEGER DEFAULT 0
-            )
-        ''')
-        cursor.fetchall()  # Acknowledge result for strict type checking
 
         conn.commit()
         conn.close()
 
         logger.info(f"Database initialized: {self.db_path}")
+
+    @asynccontextmanager
+    async def _get_db_connection(self):
+        """获取数据库连接的上下文管理器"""
+        if self._connection_pool:
+            conn = await self._connection_pool.get_connection()
+            try:
+                yield conn
+            finally:
+                await self._connection_pool.return_connection(conn)
+        else:
+            conn = sqlite3.connect(self.db_path)
+            try:
+                yield conn
+            finally:
+                conn.close()
 
     async def update_story_status(
         self,
@@ -183,180 +233,213 @@ class StateManager:
         expected_version: Union[int, None] = None
     ) -> "tuple[bool, Union[int, None]]":
         """
-        Update or insert story status with optimistic locking using unified lock management.
+        更新或插入故事状态，优化锁管理和错误处理。
 
         Args:
-            story_path: Path to the story file
-            status: Current status (pending, in_progress, sm_completed, dev_completed, qa_completed, completed, failed, error)
-            phase: Current phase (sm, dev, qa)
-            iteration: Current iteration count
-            qa_result: QA result dictionary
-            error: Error message if any
-            epic_path: Path to epic file
-            lock_timeout: Timeout for lock acquisition in seconds (default: 30.0)
-            expected_version: Expected version for optimistic locking (None to skip version check)
+            story_path: 故事文件路径
+            status: 当前状态
+            phase: 当前阶段
+            iteration: 当前迭代次数
+            qa_result: QA结果字典
+            error: 错误消息
+            epic_path: Epic文件路径
+            lock_timeout: 锁获取超时时间（秒）
+            expected_version: 期望的版本号（用于乐观锁）
 
         Returns:
-            Tuple of (success, current_version):
-            - success: True if update succeeded, False otherwise
-            - current_version: Current version number (for detecting conflicts)
+            (success, current_version): (是否成功, 当前版本号)
         """
+        # 使用死锁检测器获取锁
+        lock_acquired = await self._deadlock_detector.wait_for_lock(
+            f"story_{story_path}", self._lock
+        )
+
+        if not lock_acquired:
+            logger.error(f"Failed to acquire lock for {story_path} (deadlock detected)")
+            return False, None
+
         try:
-            # Use async wait_for with timeout
-            await asyncio.wait_for(self._lock.acquire(), timeout=lock_timeout)
+            # 验证死锁检测
+            if self._deadlock_detector.deadlock_detected:
+                logger.error(f"Deadlock detected for {story_path}")
+                return False, None
+
             async with self._lock:
-                    def _update():
-                        conn = sqlite3.connect(self.db_path)
-                        cursor = conn.cursor()
+                return await self._update_story_internal(
+                    story_path, status, phase, iteration, qa_result, error,
+                    epic_path, expected_version
+                )
 
-                        # Check if story exists
-                        cursor.execute(
-                            'SELECT id, version FROM stories WHERE story_path = ?',
-                            (story_path,)
-                        )
-                        existing = cursor.fetchone()
-
-                        qa_result_str = None
-                        if qa_result:
-                            # Clean qa_result to make it JSON serializable
-                            # Remove non-serializable objects like QAStatus enums
-                            def clean_for_json(obj: Any) -> Any:
-                                if hasattr(obj, 'value'):
-                                    return obj.value
-                                elif isinstance(obj, dict):
-                                    return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
-                                elif isinstance(obj, list):
-                                    return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
-                                else:
-                                    return obj
-
-                            cleaned_qa_result = clean_for_json(qa_result)
-                            qa_result_str = json.dumps(cleaned_qa_result)
-
-                        if existing:
-                            _story_id, current_version = existing
-
-                            # Optimistic locking: check version if expected_version is provided
-                            if expected_version is not None and current_version != expected_version:
-                                logger.warning(
-                                    f"Version conflict for {story_path}: "
-                                    f"expected {expected_version}, got {current_version}"
-                                )
-                                conn.close()
-                                return False, current_version
-
-                            # Update existing record
-                            # Fix: Use explicit NULL checks instead of COALESCE for proper handling of 0 and False
-                            cursor.execute('''
-                                UPDATE stories
-                                SET status = ?,
-                                    phase = ?,
-                                    iteration = ?,
-                                    qa_result = ?,
-                                    error_message = ?,
-                                    updated_at = CURRENT_TIMESTAMP,
-                                    version = version + 1
-                                WHERE story_path = ?
-                            ''', (
-                                status,
-                                phase,
-                                iteration,
-                                qa_result_str,
-                                error,
-                                story_path
-                            ))
-                            logger.info(f"Updated status for {story_path}: {status} (version {current_version + 1})")
-                        else:
-                            # Insert new record
-                            cursor.execute('''
-                                INSERT INTO stories
-                                (epic_path, story_path, status, phase, iteration, qa_result, error_message, version)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-                            ''', (
-                                epic_path or '',
-                                story_path,
-                                status,
-                                phase,
-                                iteration or 0,
-                                qa_result_str,
-                                error
-                            ))
-                            logger.info(f"Inserted new record for {story_path}: {status} (version 1)")
-                            current_version = 1
-
-                        conn.commit()
-                        conn.close()
-                        return True, current_version
-
-                    return await asyncio.to_thread(_update)
-
-        except asyncio.TimeoutError:
-            logger.error(f"Lock timeout for {story_path} after {lock_timeout}s")
+        except asyncio.CancelledError:
+            logger.warning(f"Lock acquisition cancelled for {story_path}")
             return False, None
         except Exception as e:
             logger.error(f"Failed to update story status for {story_path}: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
             return False, None
+        finally:
+            # 确保锁被释放
+            if self._lock.locked():
+                self._lock.release()
 
-    async def update_story_status_legacy(
+    async def _update_story_internal(
         self,
         story_path: str,
         status: str,
-        phase: Union[str, None] = None,
-        iteration: Union[int, None] = None,
-        qa_result: Union["dict[str, Any]", None] = None,
-        error: Union[str, None] = None,
-        epic_path: Union[str, None] = None,
-        lock_timeout: float = 30.0
-    ) -> bool:
+        phase: Union[str, None],
+        iteration: Union[int, None],
+        qa_result: Union["dict[str, Any]", None],
+        error: Union[str, None],
+        epic_path: Union[str, None],
+        expected_version: Union[int, None]
+    ) -> "tuple[bool, Union[int, None]]":
+        """内部更新逻辑"""
+        async with self._get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # 检查故事是否存在
+            cursor.execute(
+                'SELECT id, version FROM stories WHERE story_path = ?',
+                (story_path,)
+            )
+            existing = cursor.fetchone()
+
+            # 清理qa_result
+            qa_result_str = None
+            if qa_result:
+                qa_result_str = self._clean_qa_result_for_json(qa_result)
+
+            if existing:
+                _, current_version = existing
+
+                # 乐观锁检查
+                if expected_version is not None and current_version != expected_version:
+                    logger.warning(
+                        f"Version conflict for {story_path}: "
+                        f"expected {expected_version}, got {current_version}"
+                    )
+                    return False, current_version
+
+                # 更新现有记录
+                cursor.execute('''
+                    UPDATE stories
+                    SET status = ?,
+                        phase = ?,
+                        iteration = ?,
+                        qa_result = ?,
+                        error_message = ?,
+                        updated_at = CURRENT_TIMESTAMP,
+                        version = version + 1
+                    WHERE story_path = ?
+                ''', (
+                    status,
+                    phase,
+                    iteration,
+                    qa_result_str,
+                    error,
+                    story_path
+                ))
+                logger.info(f"Updated status for {story_path}: {status} (version {current_version + 1})")
+                current_version = current_version + 1
+            else:
+                # 插入新记录
+                cursor.execute('''
+                    INSERT INTO stories
+                    (epic_path, story_path, status, phase, iteration, qa_result, error_message, version)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                ''', (
+                    epic_path or '',
+                    story_path,
+                    status,
+                    phase,
+                    iteration or 0,
+                    qa_result_str,
+                    error
+                ))
+                logger.info(f"Inserted new record for {story_path}: {status} (version 1)")
+                current_version = 1
+
+            conn.commit()
+            return True, current_version
+
+    def _clean_qa_result_for_json(self, qa_result: Any) -> Optional[str]:
+        """清理QA结果以便JSON序列化"""
+        try:
+            # 移除不可序列化的对象
+            def clean_for_json(obj: Any) -> Any:
+                if hasattr(obj, 'value'):
+                    return obj.value
+                elif isinstance(obj, dict):
+                    return {k: clean_for_json(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [clean_for_json(v) for v in obj]
+                else:
+                    return obj
+
+            cleaned_qa_result = clean_for_json(qa_result)
+            return json.dumps(cleaned_qa_result)
+        except Exception as e:
+            logger.warning(f"Failed to clean QA result for JSON: {e}")
+            return None
+
+    @asynccontextmanager
+    async def managed_operation(self):
         """
-        Legacy update_story_status method for backward compatibility.
+        异步上下文管理器，用于安全锁管理。
 
-        This method maintains the old boolean return type for existing code.
-
-        Args:
-            (same as update_story_status)
-
-        Returns:
-            True if successful, False otherwise
+        确保即使发生取消也能正确释放锁。
         """
-        success, _ = await self.update_story_status(
-            story_path=story_path,
-            status=status,
-            phase=phase,
-            iteration=iteration,
-            qa_result=qa_result,
-            error=error,
-            epic_path=epic_path,
-            lock_timeout=lock_timeout,
-            expected_version=None  # Skip version check for legacy compatibility
-        )
-        return success
+        lock_acquired = False
+        try:
+            # 使用死锁检测
+            lock_acquired = await self._deadlock_detector.wait_for_lock(
+                "managed_operation", self._lock
+            )
+
+            if lock_acquired:
+                yield self
+            else:
+                logger.error("Failed to acquire lock for managed operation")
+                raise RuntimeError("Failed to acquire lock")
+        except asyncio.CancelledError:
+            logger.warning("Managed operation cancelled, releasing lock")
+            if lock_acquired and self._lock.locked():
+                self._lock.release()
+            # 不重新抛出以避免cancel scope错误
+            return
+        except Exception as e:
+            logger.error(f"Managed operation failed: {e}")
+            if lock_acquired and self._lock.locked():
+                self._lock.release()
+            raise
+        finally:
+            # 确保锁被释放
+            if lock_acquired and self._lock.locked():
+                self._lock.release()
 
     async def get_story_status(self, story_path: str) -> Union["dict[str, Any]", None]:
         """
-        Get current status for a story.
+        获取故事状态。
 
         Args:
-            story_path: Path to the story file
+            story_path: 故事文件路径
 
         Returns:
-            Dictionary with story status and metadata, or None if not found
+            包含故事状态和元数据的字典，如果未找到则返回None
         """
-        async with self._lock:
-            try:
-                def _get():
-                    conn = sqlite3.connect(self.db_path)
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
                     cursor.execute('''
                         SELECT epic_path, story_path, status, iteration, qa_result,
-                               error_message, created_at, updated_at, phase
+                               error_message, created_at, updated_at, phase, version
                         FROM stories
                         WHERE story_path = ?
                     ''', (story_path,))
 
                     row = cursor.fetchone()
-                    conn.close()
 
                     if row:
                         result = {
@@ -366,7 +449,8 @@ class StateManager:
                             'iteration': row[3],
                             'created_at': row[6],
                             'updated_at': row[7],
-                            'phase': row[8]
+                            'phase': row[8],
+                            'version': row[9]
                         }
 
                         if row[4]:  # qa_result
@@ -382,45 +466,43 @@ class StateManager:
 
                     return None
 
-                return await asyncio.to_thread(_get)
-
-            except Exception as e:
-                logger.error(f"Failed to get story status: {e}")
-                return None
+        except Exception as e:
+            logger.error(f"Failed to get story status: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return None
 
     async def get_all_stories(self) -> "list[dict[str, Any]]":
         """
-        Get all stories from database.
+        获取所有故事。
 
         Returns:
-            List of story dictionaries
+            故事字典列表
         """
-        async with self._lock:
-            try:
-                def _get_all() -> "list[dict[str, Any]]":
-                    conn = sqlite3.connect(self.db_path)
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
                     cursor.execute('''
                         SELECT epic_path, story_path, status, iteration, qa_result,
-                               error_message, created_at, updated_at, phase
+                               error_message, created_at, updated_at, phase, version
                         FROM stories
                         ORDER BY created_at
                     ''')
 
                     rows = cursor.fetchall()
-                    conn.close()
+                    stories = []
 
-                    stories: list[dict[str, Any]] = []
                     for row in rows:
-                        story: dict[str, Any] = {
+                        story = {
                             'epic_path': row[0],
                             'story_path': row[1],
                             'status': row[2],
                             'iteration': row[3],
                             'created_at': row[6],
                             'updated_at': row[7],
-                            'phase': row[8]
+                            'phase': row[8],
+                            'version': row[9]
                         }
 
                         if row[4]:  # qa_result
@@ -436,114 +518,21 @@ class StateManager:
 
                     return stories
 
-                return await asyncio.to_thread(_get_all)
-
-            except Exception as e:
-                logger.error(f"Failed to get all stories: {e}")
-                return []
-
-    async def get_stories_by_status(self, status: str) -> "list[dict[str, Any]]":
-        """
-        Get all stories with a specific status.
-
-        Args:
-            status: Status to filter by
-
-        Returns:
-            List of story dictionaries
-        """
-        async with self._lock:
-            try:
-                def _get_by_status() -> "list[dict[str, Any]]":
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute('''
-                        SELECT epic_path, story_path, status, iteration, qa_result,
-                               error_message, created_at, updated_at, phase
-                        FROM stories
-                        WHERE status = ?
-                        ORDER BY created_at
-                    ''', (status,))
-
-                    rows = cursor.fetchall()
-                    conn.close()
-
-                    stories: list[dict[str, Any]] = []
-                    for row in rows:
-                        story: dict[str, Any] = {
-                            'epic_path': row[0],
-                            'story_path': row[1],
-                            'status': row[2],
-                            'iteration': row[3],
-                            'created_at': row[6],
-                            'updated_at': row[7],
-                            'phase': row[8]
-                        }
-
-                        if row[4]:  # qa_result
-                            try:
-                                story['qa_result'] = json.loads(row[4])
-                            except json.JSONDecodeError:
-                                story['qa_result'] = row[4]
-
-                        if row[5]:  # error_message
-                            story['error'] = row[5]
-
-                        stories.append(story)
-
-                    return stories
-
-                return await asyncio.to_thread(_get_by_status)
-
-            except Exception as e:
-                logger.error(f"Failed to get stories by status: {e}")
-                return []
-
-    async def delete_story(self, story_path: str) -> bool:
-        """
-        Delete a story from the database.
-
-        Args:
-            story_path: Path to the story file
-
-        Returns:
-            True if successful, False otherwise
-        """
-        async with self._lock:
-            try:
-                def _delete():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        'DELETE FROM stories WHERE story_path = ?',
-                        (story_path,)
-                    )
-
-                    conn.commit()
-                    conn.close()
-
-                    logger.info(f"Deleted story: {story_path}")
-                    return True
-
-                return await asyncio.to_thread(_delete)
-
-            except Exception as e:
-                logger.error(f"Failed to delete story: {e}")
-                return False
+        except Exception as e:
+            logger.error(f"Failed to get all stories: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return []
 
     async def get_stats(self) -> "dict[str, int]":
         """
-        Get statistics about story statuses.
+        获取故事状态统计。
 
         Returns:
-            Dictionary with status counts
+            包含状态计数的字典
         """
-        async with self._lock:
-            try:
-                def _get_stats() -> "dict[str, int]":
-                    conn = sqlite3.connect(self.db_path)
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
                     cursor.execute('''
@@ -553,77 +542,123 @@ class StateManager:
                     ''')
 
                     rows = cursor.fetchall()
-                    conn.close()
-
-                    stats: dict[str, int] = {}
+                    stats = {}
                     for status, count in rows:
                         stats[status] = count
 
                     return stats
 
-                return await asyncio.to_thread(_get_stats)
-
-            except Exception as e:
-                logger.error(f"Failed to get stats: {e}")
-                return {}
+        except Exception as e:
+            logger.error(f"Failed to get stats: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return {}
 
     async def create_backup(self) -> Union[str, None]:
         """
-        Create a backup of the database before schema changes.
+        创建数据库备份。
 
         Returns:
-            Path to the backup file, or None if backup failed
+            备份文件路径，如果失败则返回None
         """
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_path = self.db_path.parent / f"{self.db_path.stem}_backup_{timestamp}{self.db_path.suffix}"
 
-            def _create_backup():
-                shutil.copy2(self.db_path, backup_path)
-                return str(backup_path)
+            # 使用文件复制而不是数据库备份，因为SQLite支持热备份
+            shutil.copy2(self.db_path, backup_path)
 
-            backup_file = await asyncio.to_thread(_create_backup)
-            logger.info(f"Database backup created: {backup_file}")
-            return backup_file
+            logger.info(f"Database backup created: {backup_path}")
+            return str(backup_path)
 
         except Exception as e:
             logger.error(f"Failed to create backup: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
             return None
+
+    async def cleanup_old_records(self, days: int = 30) -> int:
+        """
+        清理旧记录。
+
+        Args:
+            days: 保留天数
+
+        Returns:
+            清理的记录数
+        """
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # 清理旧的stories记录
+                    cursor.execute('''
+                        DELETE FROM stories
+                        WHERE updated_at < datetime('now', '-{} days')
+                        AND status IN ('completed', 'failed')
+                    '''.format(days))
+
+                    deleted_count = cursor.rowcount
+
+                    # 清理其他表的旧记录
+                    cursor.execute('''
+                        DELETE FROM code_quality_phase
+                        WHERE timestamp < datetime('now', '-{} days')
+                    '''.format(days))
+
+                    deleted_count += cursor.rowcount
+
+                    cursor.execute('''
+                        DELETE FROM test_automation_phase
+                        WHERE timestamp < datetime('now', '-{} days')
+                    '''.format(days))
+
+                    deleted_count += cursor.rowcount
+
+                    conn.commit()
+
+                    logger.info(f"Cleaned up {deleted_count} old records")
+                    return deleted_count
+
+        except Exception as e:
+            logger.error(f"Failed to cleanup old records: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return 0
 
     async def add_quality_phase_record(
         self,
         epic_id: str,
         file_path: str,
         error_count: int,
-        basedpyright_errors: str,
-        ruff_errors: str,
+        basedpyright_errors: str = "",
+        ruff_errors: str = "",
         fix_status: str = "pending"
-    ) -> Union[str, None]:
+    ) -> bool:
         """
-        Add a new code quality phase record.
+        Add or update a code quality phase record.
 
         Args:
             epic_id: Epic identifier
-            file_path: Path to the file being tracked
+            file_path: Path to the file being checked
             error_count: Number of errors found
-            basedpyright_errors: BasedPyright error details
-            ruff_errors: Ruff error details
-            fix_status: Fix status (pending, in_progress, completed, failed)
+            basedpyright_errors: JSON string of basedpyright errors
+            ruff_errors: JSON string of ruff errors
+            fix_status: Current fix status
 
         Returns:
-            record_id for the created record, or None if failed
+            True if successful, False otherwise
         """
-        async with self._lock:
-            try:
-                def _add_record():
-                    conn = sqlite3.connect(self.db_path)
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
                     record_id = str(uuid.uuid4())
+
                     cursor.execute('''
-                        INSERT INTO code_quality_phase
-                        (record_id, epic_id, file_path, error_count, fix_status, basedpyright_errors, ruff_errors)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT OR REPLACE INTO code_quality_phase
+                        (record_id, epic_id, file_path, error_count, fix_status,
+                         basedpyright_errors, ruff_errors, timestamp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ''', (
                         record_id,
                         epic_id,
@@ -635,560 +670,30 @@ class StateManager:
                     ))
 
                     conn.commit()
-                    conn.close()
-
-                    logger.info(f"Added quality phase record: {record_id}")
-                    return record_id
-
-                return await asyncio.to_thread(_add_record)
-
-            except Exception as e:
-                logger.error(f"Failed to add quality phase record: {e}")
-                return None
-
-    async def add_test_phase_record(
-        self,
-        epic_id: str,
-        test_file_path: str,
-        failure_count: int,
-        debug_info: str,
-        fix_status: str = "pending"
-    ) -> Union[str, None]:
-        """
-        Add a new test automation phase record.
-
-        Args:
-            epic_id: Epic identifier
-            test_file_path: Path to the test file
-            failure_count: Number of test failures
-            debug_info: Debug information
-            fix_status: Fix status (pending, in_progress, completed, failed)
-
-        Returns:
-            record_id for the created record, or None if failed
-        """
-        async with self._lock:
-            try:
-                def _add_record():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    record_id = str(uuid.uuid4())
-                    cursor.execute('''
-                        INSERT INTO test_automation_phase
-                        (record_id, epic_id, test_file_path, failure_count, fix_status, debug_info)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (
-                        record_id,
-                        epic_id,
-                        test_file_path,
-                        failure_count,
-                        fix_status,
-                        debug_info
-                    ))
-
-                    conn.commit()
-                    conn.close()
-
-                    logger.info(f"Added test phase record: {record_id}")
-                    return record_id
-
-                return await asyncio.to_thread(_add_record)
-
-            except Exception as e:
-                logger.error(f"Failed to add test phase record: {e}")
-                return None
-
-    async def get_quality_phase_records(self, epic_id: str) -> "list[dict[str, Any]]":
-        """
-        Get all quality phase records for an epic.
-
-        Args:
-            epic_id: Epic identifier
-
-        Returns:
-            List of quality phase record dictionaries
-        """
-        async with self._lock:
-            try:
-                def _get_records() -> "list[dict[str, Any]]":
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute('''
-                        SELECT record_id, epic_id, file_path, error_count, fix_status,
-                               basedpyright_errors, ruff_errors, timestamp
-                        FROM code_quality_phase
-                        WHERE epic_id = ?
-                        ORDER BY timestamp DESC
-                    ''', (epic_id,))
-
-                    rows = cursor.fetchall()
-                    conn.close()
-
-                    records: list[dict[str, Any]] = []
-                    for row in rows:
-                        records.append({
-                            'record_id': row[0],
-                            'epic_id': row[1],
-                            'file_path': row[2],
-                            'error_count': row[3],
-                            'fix_status': row[4],
-                            'basedpyright_errors': row[5],
-                            'ruff_errors': row[6],
-                            'timestamp': row[7]
-                        })
-
-                    return records
-
-                return await asyncio.to_thread(_get_records)
-
-            except Exception as e:
-                logger.error(f"Failed to get quality phase records: {e}")
-                return []
-
-    async def get_test_phase_records(self, epic_id: str) -> "list[dict[str, Any]]":
-        """
-        Get all test automation phase records for an epic.
-
-        Args:
-            epic_id: Epic identifier
-
-        Returns:
-            List of test phase record dictionaries
-        """
-        async with self._lock:
-            try:
-                def _get_records() -> "list[dict[str, Any]]":
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute('''
-                        SELECT record_id, epic_id, test_file_path, failure_count, fix_status,
-                               debug_info, timestamp
-                        FROM test_automation_phase
-                        WHERE epic_id = ?
-                        ORDER BY timestamp DESC
-                    ''', (epic_id,))
-
-                    rows = cursor.fetchall()
-                    conn.close()
-
-                    records: list[dict[str, Any]] = []
-                    for row in rows:
-                        records.append({
-                            'record_id': row[0],
-                            'epic_id': row[1],
-                            'test_file_path': row[2],
-                            'failure_count': row[3],
-                            'fix_status': row[4],
-                            'debug_info': row[5],
-                            'timestamp': row[6]
-                        })
-
-                    return records
-
-                return await asyncio.to_thread(_get_records)
-
-            except Exception as e:
-                logger.error(f"Failed to get test phase records: {e}")
-                return []
-
-    async def update_quality_phase_status(
-        self,
-        record_id: str,
-        fix_status: str,
-        error_count: Union[int, None] = None
-    ) -> bool:
-        """
-        Update the fix status of a quality phase record.
-
-        Args:
-            record_id: Record identifier
-            fix_status: New fix status
-            error_count: Updated error count (optional)
-
-        Returns:
-            True if successful, False otherwise
-        """
-        async with self._lock:
-            try:
-                def _update_status():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    if error_count is not None:
-                        cursor.execute('''
-                            UPDATE code_quality_phase
-                            SET fix_status = ?, error_count = ?
-                            WHERE record_id = ?
-                        ''', (fix_status, error_count, record_id))
-                    else:
-                        cursor.execute('''
-                            UPDATE code_quality_phase
-                            SET fix_status = ?
-                            WHERE record_id = ?
-                        ''', (fix_status, record_id))
-
-                    conn.commit()
-
-                    # Check if any rows were updated
-                    rows_updated = cursor.rowcount > 0
-                    conn.close()
-
-                    if rows_updated:
-                        logger.info(f"Updated quality phase status: {record_id} -> {fix_status}")
-                    else:
-                        logger.warning(f"No quality phase record found to update: {record_id}")
-
-                    return rows_updated
-
-                return await asyncio.to_thread(_update_status)
-
-            except Exception as e:
-                logger.error(f"Failed to update quality phase status: {e}")
-                return False
-
-    async def update_test_phase_status(
-        self,
-        record_id: str,
-        fix_status: str,
-        failure_count: Union[int, None] = None,
-        debug_info: Union[str, None] = None
-    ) -> bool:
-        """
-        Update the fix status of a test phase record.
-
-        Args:
-            record_id: Record identifier
-            fix_status: New fix status
-            failure_count: Updated failure count (optional)
-            debug_info: Updated debug info (optional)
-
-        Returns:
-            True if successful, False otherwise
-        """
-        async with self._lock:
-            try:
-                def _update_status():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    if failure_count is not None and debug_info is not None:
-                        cursor.execute('''
-                            UPDATE test_automation_phase
-                            SET fix_status = ?, failure_count = ?, debug_info = ?
-                            WHERE record_id = ?
-                        ''', (fix_status, failure_count, debug_info, record_id))
-                    elif failure_count is not None:
-                        cursor.execute('''
-                            UPDATE test_automation_phase
-                            SET fix_status = ?, failure_count = ?
-                            WHERE record_id = ?
-                        ''', (fix_status, failure_count, record_id))
-                    elif debug_info is not None:
-                        cursor.execute('''
-                            UPDATE test_automation_phase
-                            SET fix_status = ?, debug_info = ?
-                            WHERE record_id = ?
-                        ''', (fix_status, debug_info, record_id))
-                    else:
-                        cursor.execute('''
-                            UPDATE test_automation_phase
-                            SET fix_status = ?
-                            WHERE record_id = ?
-                        ''', (fix_status, record_id))
-
-                    conn.commit()
-
-                    # Check if any rows were updated
-                    rows_updated = cursor.rowcount > 0
-                    conn.close()
-
-                    if rows_updated:
-                        logger.info(f"Updated test phase status: {record_id} -> {fix_status}")
-                    else:
-                        logger.warning(f"No test phase record found to update: {record_id}")
-
-                    return rows_updated
-
-                return await asyncio.to_thread(_update_status)
-
-            except Exception as e:
-                logger.error(f"Failed to update test phase status: {e}")
-                return False
-
-    async def update_epic_status(
-        self,
-        epic_id: str,
-        file_path: str,
-        status: str,
-        total_stories: Union[int, None] = None,
-        completed_stories: Union[int, None] = None,
-        quality_phase_status: Union[str, None] = None,
-        test_phase_status: Union[str, None] = None,
-        quality_phase_errors: Union[int, None] = None,
-        test_phase_failures: Union[int, None] = None
-    ) -> bool:
-        """
-        Update or insert epic processing status.
-
-        Args:
-            epic_id: Epic identifier
-            file_path: Path to epic file
-            status: Overall epic status
-            total_stories: Total number of stories
-            completed_stories: Number of completed stories
-            quality_phase_status: Quality gate phase status
-            test_phase_status: Test automation phase status
-            quality_phase_errors: Number of quality phase errors
-            test_phase_failures: Number of test phase failures
-
-        Returns:
-            True if successful, False otherwise
-        """
-        async with self._lock:
-            try:
-                def _update():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    # Check if epic exists
-                    cursor.execute(
-                        'SELECT epic_id FROM epic_processing WHERE epic_id = ?',
-                        (epic_id,)
-                    )
-                    existing = cursor.fetchone()
-
-                    if existing:
-                        # Update existing record
-                        cursor.execute('''
-                            UPDATE epic_processing
-                            SET status = ?,
-                                total_stories = COALESCE(?, total_stories),
-                                completed_stories = COALESCE(?, completed_stories),
-                                quality_phase_status = COALESCE(?, quality_phase_status),
-                                test_phase_status = COALESCE(?, test_phase_status),
-                                quality_phase_errors = COALESCE(?, quality_phase_errors),
-                                test_phase_failures = COALESCE(?, test_phase_failures),
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE epic_id = ?
-                        ''', (
-                            status,
-                            total_stories,
-                            completed_stories,
-                            quality_phase_status,
-                            test_phase_status,
-                            quality_phase_errors,
-                            test_phase_failures,
-                            epic_id
-                        ))
-                        logger.info(f"Updated epic status: {epic_id} -> {status}")
-                    else:
-                        # Insert new record
-                        cursor.execute('''
-                            INSERT INTO epic_processing
-                            (epic_id, file_path, status, total_stories, completed_stories,
-                             quality_phase_status, test_phase_status, quality_phase_errors, test_phase_failures)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            epic_id,
-                            file_path,
-                            status,
-                            total_stories or 0,
-                            completed_stories or 0,
-                            quality_phase_status or 'pending',
-                            test_phase_status or 'pending',
-                            quality_phase_errors or 0,
-                            test_phase_failures or 0
-                        ))
-                        logger.info(f"Inserted new epic record: {epic_id} -> {status}")
-
-                    conn.commit()
-                    conn.close()
+                    logger.info(f"Added quality phase record for {file_path}")
                     return True
 
-                return await asyncio.to_thread(_update)
-
-            except Exception as e:
-                logger.error(f"Failed to update epic status: {e}")
-                return False
-
-    async def get_epic_status(self, epic_id: str) -> Union["dict[str, Any]", None]:
-        """
-        Get current status for an epic.
-
-        Args:
-            epic_id: Epic identifier
-
-        Returns:
-            Dictionary with epic status and metadata, or None if not found
-        """
-        async with self._lock:
-            try:
-                def _get():
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute('''
-                        SELECT epic_id, file_path, status, created_at, updated_at,
-                               total_stories, completed_stories, quality_phase_status,
-                               test_phase_status, quality_phase_errors, test_phase_failures
-                        FROM epic_processing
-                        WHERE epic_id = ?
-                    ''', (epic_id,))
-
-                    row = cursor.fetchone()
-                    conn.close()
-
-                    if row:
-                        return {
-                            'epic_id': row[0],
-                            'file_path': row[1],
-                            'status': row[2],
-                            'created_at': row[3],
-                            'updated_at': row[4],
-                            'total_stories': row[5],
-                            'completed_stories': row[6],
-                            'quality_phase_status': row[7],
-                            'test_phase_status': row[8],
-                            'quality_phase_errors': row[9],
-                            'test_phase_failures': row[10]
-                        }
-
-                    return None
-
-                return await asyncio.to_thread(_get)
-
-            except Exception as e:
-                logger.error(f"Failed to get epic status: {e}")
-                return None
-
-    async def update_stories_status_batch(
-        self,
-        stories: "list[dict[str, Any]]",
-        lock_timeout: float = 30.0
-    ) -> bool:
-        """
-        Batch update multiple story statuses with enhanced cancellation handling.
-
-        Args:
-            stories: List of story update dicts with keys:
-                - story_path: str (required)
-                - status: str (required)
-                - phase: Optional[str]
-                - iteration: Optional[int]
-                - qa_result: Optional[Dict]
-                - error: Optional[str]
-                - epic_path: Optional[str]
-            lock_timeout: Maximum time to wait for lock (seconds)
-
-        Returns:
-            True if all updates succeeded, False otherwise
-        """
-        conn = None
-        try:
-            # Use unified lock management with async wait_for
-            await asyncio.wait_for(self._lock.acquire(), timeout=lock_timeout)
-            async with self._lock:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-
-                    try:
-                        conn.execute("BEGIN")
-
-                        for story_data in stories:
-                            # Check cancellation
-                            await asyncio.sleep(0)  # Yield control
-
-                            story_path = story_data.get('story_path')
-                            if not story_path:
-                                logger.warning(f"Skipping story without path: {story_data}")
-                                continue
-
-                            # Check if story exists
-                            cursor.execute(
-                                'SELECT id FROM stories WHERE story_path = ?',
-                                (story_path,)
-                            )
-                            existing = cursor.fetchone()
-
-                            # Clean qa_result if present
-                            qa_result_str = None
-                            if story_data.get('qa_result'):
-                                # Clean qa_result to make it JSON serializable
-                                def clean_for_json(obj: Any) -> Any:
-                                    if hasattr(obj, 'value'):
-                                        return obj.value
-                                    elif isinstance(obj, dict):
-                                        return {k: clean_for_json(v) for k, v in obj.items()}  # type: ignore[union-attr]
-                                    elif isinstance(obj, list):
-                                        return [clean_for_json(v) for v in obj]  # type: ignore[union-attr]
-                                    else:
-                                        return obj
-
-                                cleaned_qa_result = clean_for_json(story_data['qa_result'])
-                                qa_result_str = json.dumps(cleaned_qa_result)
-
-                            if existing:
-                                # Update existing record
-                                cursor.execute('''
-                                    UPDATE stories
-                                    SET status = ?,
-                                        phase = ?,
-                                        iteration = ?,
-                                        qa_result = ?,
-                                        error_message = ?,
-                                        epic_path = ?,
-                                        updated_at = CURRENT_TIMESTAMP
-                                    WHERE story_path = ?
-                                ''', (
-                                    story_data['status'],
-                                    story_data.get('phase'),
-                                    story_data.get('iteration', 0),
-                                    qa_result_str,
-                                    story_data.get('error'),
-                                    story_data.get('epic_path', ''),
-                                    story_path
-                                ))
-                            else:
-                                # Insert new record
-                                cursor.execute('''
-                                    INSERT INTO stories
-                                    (epic_path, story_path, status, phase, iteration, qa_result, error_message)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                                ''', (
-                                    story_data.get('epic_path', ''),
-                                    story_path,
-                                    story_data['status'],
-                                    story_data.get('phase'),
-                                    story_data.get('iteration', 0),
-                                    qa_result_str,
-                                    story_data.get('error')
-                                ))
-
-                        conn.commit()
-                        logger.info(f"Successfully batch updated {len(stories)} stories")
-                        return True
-
-                    except Exception as e:
-                        # Rollback on any error
-                        if conn:
-                            conn.rollback()
-                        logger.error(f"Batch update failed, rolled back: {e}")
-                        return False
-                    finally:
-                        if conn:
-                            conn.close()
-
-        except asyncio.CancelledError:
-            if conn:
-                conn.rollback()
-            logger.warning("Batch update cancelled, rolled back")
-            raise  # Re-raise cancellation
         except Exception as e:
-            if conn:
-                conn.rollback()
-            logger.error(f"Batch update failed: {e}")
+            logger.error(f"Failed to add quality phase record: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
             return False
 
+    def get_health_status(self) -> "dict[str, Any]":
+        """
+        获取数据库健康状态。
+
+        Returns:
+            健康状态字典
+        """
+        try:
+            return {
+                "db_path": str(self.db_path),
+                "db_exists": self.db_path.exists(),
+                "lock_locked": self._lock.locked(),
+                "deadlock_detected": self._deadlock_detector.deadlock_detected,
+                "connection_pool_enabled": self._connection_pool is not None,
+                "connection_pool_size": self._connection_pool.max_connections if self._connection_pool else 0
+            }
+        except Exception as e:
+            logger.error(f"Failed to get health status: {e}")
+            return {"error": str(e)}

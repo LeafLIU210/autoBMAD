@@ -1,8 +1,15 @@
 """
-SDK 会话管理器 - 提供 Agent 间的 SDK 调用隔离。
+修复后的SDK会话管理器 - Fixed SDK Session Manager
 
-本模块解决 anyio cancel scope 在多个 Agent SDK 调用间传播的问题，
-通过 asyncio.shield 和独立上下文确保每个 Agent 的 SDK 调用互不干扰。
+解决SDK会话生命周期管理和cancel scope传播问题。
+基于原版本：d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_session_manager.py
+
+主要修复：
+1. 增强会话隔离机制
+2. 改进取消处理逻辑
+3. 添加智能重试机制
+4. 优化错误恢复策略
+5. 增强会话健康检查
 """
 
 import asyncio
@@ -23,6 +30,9 @@ class SDKErrorType(Enum):
     TIMEOUT = "timeout"
     CANCELLED = "cancelled"
     SDK_ERROR = "sdk_error"
+    SESSION_ERROR = "session_error"
+    NETWORK_ERROR = "network_error"
+    AUTHENTICATION_ERROR = "authentication_error"
     UNKNOWN = "unknown"
 
 
@@ -34,6 +44,8 @@ class SDKExecutionResult:
     error_message: Optional[str] = None
     duration_seconds: float = 0.0
     session_id: str = ""
+    retry_count: int = 0
+    last_error: Optional[BaseException] = None
 
     def is_cancelled(self) -> bool:
         """检查是否被取消"""
@@ -42,6 +54,61 @@ class SDKExecutionResult:
     def is_timeout(self) -> bool:
         """检查是否超时"""
         return self.error_type == SDKErrorType.TIMEOUT
+
+    def is_retryable_error(self) -> bool:
+        """检查是否是可重试的错误"""
+        return self.error_type in [
+            SDKErrorType.TIMEOUT,
+            SDKErrorType.NETWORK_ERROR,
+            SDKErrorType.SESSION_ERROR
+        ]
+
+
+class SessionHealthChecker:
+    """会话健康检查器"""
+
+    def __init__(self):
+        self.health_history: Dict[str, List[Dict[str, Any]]] = {}
+        self.failure_threshold = 3  # 连续失败阈值
+        self.recovery_threshold = 2  # 恢复所需成功数
+
+    async def check_session_health(self, session_id: str) -> bool:
+        """检查会话健康状态"""
+        if session_id not in self.health_history:
+            self.health_history[session_id] = []
+
+        # 获取最近的健康记录
+        recent_checks = self.health_history[session_id][-5:]  # 最近5次检查
+        recent_failures = sum(1 for check in recent_checks if not check.get("healthy", False))
+
+        return recent_failures < self.failure_threshold
+
+    def record_health_check(self, session_id: str, healthy: bool, details: Optional[Dict[str, Any]] = None):
+        """记录健康检查结果"""
+        if session_id not in self.health_history:
+            self.health_history[session_id] = []
+
+        check_result = {
+            "timestamp": time.time(),
+            "healthy": healthy,
+            "details": details or {}
+        }
+
+        self.health_history[session_id].append(check_result)
+
+        # 保留最近20次记录
+        if len(self.health_history[session_id]) > 20:
+            self.health_history[session_id] = self.health_history[session_id][-20:]
+
+    def is_session_recovering(self, session_id: str) -> bool:
+        """检查会话是否在恢复中"""
+        if session_id not in self.health_history:
+            return False
+
+        recent_checks = self.health_history[session_id][-5:]  # 最近5次检查
+        recent_successes = sum(1 for check in recent_checks if check.get("healthy", False))
+
+        return 0 < recent_successes < self.recovery_threshold
 
 
 class IsolatedSDKContext:
@@ -57,6 +124,7 @@ class IsolatedSDKContext:
         self._cancel_event = asyncio.Event()
         self._is_active = False
         self._start_time: Optional[float] = None
+        self._health_checker = SessionHealthChecker()
 
     async def __aenter__(self) -> "IsolatedSDKContext":
         self._is_active = True
@@ -78,6 +146,15 @@ class IsolatedSDKContext:
             f"[{self.agent_name}] Session {self.session_id[:8]} ended "
             f"(duration: {duration:.1f}s)"
         )
+
+        # 记录健康检查结果
+        is_healthy = exc_type is None
+        self._health_checker.record_health_check(
+            self.session_id,
+            is_healthy,
+            {"duration": duration, "exception": str(exc_val) if exc_val else None}
+        )
+
         return False  # 不吞没异常
 
     def request_cancel(self) -> None:
@@ -100,6 +177,10 @@ class IsolatedSDKContext:
             return 0.0
         return time.time() - self._start_time
 
+    async def check_health(self) -> bool:
+        """检查会话健康状态"""
+        return await self._health_checker.check_session_health(self.session_id)
+
 
 class SDKSessionManager:
     """
@@ -110,6 +191,8 @@ class SDKSessionManager:
     2. 使用 asyncio.shield 防止外部取消信号传播
     3. 统一的错误处理和超时管理
     4. 会话生命周期追踪
+    5. 智能重试机制
+    6. 会话健康检查
     """
 
     def __init__(self) -> None:
@@ -118,6 +201,12 @@ class SDKSessionManager:
         self._total_sessions = 0
         self._successful_sessions = 0
         self._failed_sessions = 0
+        self._retry_config = {
+            "max_retries": 3,
+            "base_delay": 1.0,
+            "max_delay": 10.0,
+            "backoff_factor": 2.0
+        }
 
     @asynccontextmanager
     async def create_session(self, agent_name: str):
@@ -148,119 +237,214 @@ class SDKSessionManager:
         self,
         agent_name: str,
         sdk_func: Callable[[], Any],
-        timeout: float = 1200.0
+        timeout: float = 1200.0,
+        max_retries: Optional[int] = None
     ) -> SDKExecutionResult:
         """
         在隔离上下文中执行 SDK 调用。
-
-        简化取消信号处理，使用上下文边界控制而非 asyncio.shield。
 
         Args:
             agent_name: Agent 名称
             sdk_func: 要执行的 SDK 函数（无参数，返回 bool）
             timeout: 超时时间（秒）
+            max_retries: 最大重试次数（None表示使用默认值）
 
         Returns:
             SDKExecutionResult: 执行结果，包含成功状态、错误类型等
         """
-        start_time = time.time()
-        session_id = str(uuid.uuid4())
+        max_retries = int(max_retries or self._retry_config["max_retries"])
+        assert max_retries is not None, "max_retries should never be None after this point"
+        retry_count = 0
+        last_error = None
+        start_time = time.time()  # Initialize to avoid unbound variable error
+        session_id = str(uuid.uuid4())  # Initialize to avoid unbound variable error
 
-        async with self.create_session(agent_name) as _context:
+        while retry_count <= max_retries:
+            start_time = time.time()
+            session_id = str(uuid.uuid4())
+
             try:
-                # 简化取消信号处理：直接使用 wait_for，通过上下文边界控制
-                result = await asyncio.wait_for(
-                    sdk_func(),
-                    timeout=timeout
-                )
+                # 检查会话健康状态
+                async with self.create_session(agent_name) as context:
+                    # 检查是否被取消
+                    if context.is_cancelled():
+                        raise asyncio.CancelledError("Session was cancelled before execution")
+
+                    # 执行SDK调用
+                    result = await asyncio.wait_for(
+                        sdk_func(),
+                        timeout=timeout
+                    )
+
+                    duration = time.time() - start_time
+
+                    # 更新统计
+                    async with self._lock:
+                        if result:
+                            self._successful_sessions += 1
+                        else:
+                            self._failed_sessions += 1
+
+                    return SDKExecutionResult(
+                        success=bool(result),
+                        error_type=SDKErrorType.SUCCESS if result else SDKErrorType.SDK_ERROR,
+                        duration_seconds=duration,
+                        session_id=session_id,
+                        retry_count=retry_count
+                    )
+
+            except asyncio.TimeoutError as e:
                 duration = time.time() - start_time
-
-                async with self._lock:
-                    if result:
-                        self._successful_sessions += 1
-                    else:
-                        self._failed_sessions += 1
-
-                return SDKExecutionResult(
-                    success=bool(result),
-                    error_type=SDKErrorType.SUCCESS if result else SDKErrorType.SDK_ERROR,
-                    duration_seconds=duration,
-                    session_id=session_id
-                )
-
-            except asyncio.TimeoutError:
-                duration = time.time() - start_time
+                last_error = e
                 logger.warning(
                     f"[{agent_name}] SDK timeout after {duration:.1f}s "
-                    f"(limit: {timeout}s)"
+                    f"(limit: {timeout}s), retry {retry_count}/{max_retries}"
                 )
-                async with self._lock:
-                    self._failed_sessions += 1
-                return SDKExecutionResult(
+
+                result = SDKExecutionResult(
                     success=False,
                     error_type=SDKErrorType.TIMEOUT,
                     error_message=f"Timeout after {timeout}s",
                     duration_seconds=duration,
-                    session_id=session_id
+                    session_id=session_id,
+                    retry_count=retry_count,
+                    last_error=e
                 )
 
-            except asyncio.CancelledError:
+                # 如果是可重试的错误且还有重试次数，则等待后重试
+                if result.is_retryable_error() and retry_count < max_retries:
+                    delay = self._calculate_retry_delay(retry_count)
+                    logger.info(f"[{agent_name}] Retrying in {delay:.1f}s...")
+                    await asyncio.sleep(delay)
+                    retry_count += 1
+                    continue
+                else:
+                    async with self._lock:
+                        self._failed_sessions += 1
+                    return result
+
+            except asyncio.CancelledError as e:
                 duration = time.time() - start_time
+                last_error = e
                 logger.info(
                     f"[{agent_name}] SDK cancelled after {duration:.1f}s"
                 )
+
                 async with self._lock:
                     self._failed_sessions += 1
+
                 return SDKExecutionResult(
                     success=False,
                     error_type=SDKErrorType.CANCELLED,
                     error_message="Execution cancelled",
                     duration_seconds=duration,
-                    session_id=session_id
+                    session_id=session_id,
+                    retry_count=retry_count,
+                    last_error=e
                 )
 
             except RuntimeError as e:
                 duration = time.time() - start_time
+                last_error = e
                 error_msg = str(e)
 
                 # 检查是否是 cancel scope 错误
                 if "cancel scope" in error_msg:
                     logger.error(f"[{agent_name}] Cancel scope error detected: {error_msg}")
-                    async with self._lock:
-                        self._failed_sessions += 1
-                    return SDKExecutionResult(
+                    logger.debug(f"Cancel scope error details: {e}", exc_info=True)
+
+                    result = SDKExecutionResult(
                         success=False,
-                        error_type=SDKErrorType.SDK_ERROR,
+                        error_type=SDKErrorType.SESSION_ERROR,
                         error_message=f"Cancel scope error: {error_msg}",
                         duration_seconds=duration,
-                        session_id=session_id
+                        session_id=session_id,
+                        retry_count=retry_count,
+                        last_error=e
                     )
+
+                    # Cancel scope错误通常不可重试
+                    async with self._lock:
+                        self._failed_sessions += 1
+                    return result
 
                 # 其他 RuntimeError
                 logger.error(f"[{agent_name}] Runtime error: {error_msg}")
-                async with self._lock:
-                    self._failed_sessions += 1
-                return SDKExecutionResult(
+                logger.debug(f"Runtime error details: {e}", exc_info=True)
+
+                result = SDKExecutionResult(
                     success=False,
                     error_type=SDKErrorType.UNKNOWN,
                     error_message=error_msg,
                     duration_seconds=duration,
-                    session_id=session_id
+                    session_id=session_id,
+                    retry_count=retry_count,
+                    last_error=e
                 )
+
+                # 检查是否可重试
+                if result.is_retryable_error() and retry_count < max_retries:
+                    delay = self._calculate_retry_delay(retry_count)
+                    logger.info(f"[{agent_name}] Retrying in {delay:.1f}s...")
+                    await asyncio.sleep(delay)
+                    retry_count += 1
+                    continue
+                else:
+                    async with self._lock:
+                        self._failed_sessions += 1
+                    return result
 
             except Exception as e:
                 duration = time.time() - start_time
+                last_error = e
                 error_msg = str(e)
                 logger.error(f"[{agent_name}] SDK error: {error_msg}")
-                async with self._lock:
-                    self._failed_sessions += 1
-                return SDKExecutionResult(
+                logger.debug(f"SDK error details: {e}", exc_info=True)
+
+                result = SDKExecutionResult(
                     success=False,
-                    error_type=SDKErrorType.UNKNOWN,
+                    error_type=SDKErrorType.SDK_ERROR,
                     error_message=error_msg,
                     duration_seconds=duration,
-                    session_id=session_id
+                    session_id=session_id,
+                    retry_count=retry_count,
+                    last_error=e
                 )
+
+                # 检查是否可重试
+                if result.is_retryable_error() and retry_count < max_retries:
+                    delay = self._calculate_retry_delay(retry_count)
+                    logger.info(f"[{agent_name}] Retrying in {delay:.1f}s...")
+                    await asyncio.sleep(delay)
+                    retry_count += 1
+                    continue
+                else:
+                    async with self._lock:
+                        self._failed_sessions += 1
+                    return result
+
+        # 达到最大重试次数
+        async with self._lock:
+            self._failed_sessions += 1
+
+        return SDKExecutionResult(
+            success=False,
+            error_type=SDKErrorType.SDK_ERROR,
+            error_message=f"Max retries ({max_retries}) exceeded",
+            duration_seconds=time.time() - start_time,
+            session_id=session_id,
+            retry_count=retry_count,
+            last_error=last_error
+        )
+
+    def _calculate_retry_delay(self, retry_count: int) -> float:
+        """计算重试延迟（指数退避）"""
+        base_delay = self._retry_config["base_delay"]
+        backoff_factor = self._retry_config["backoff_factor"]
+        max_delay = self._retry_config["max_delay"]
+
+        delay = base_delay * (backoff_factor ** retry_count)
+        return min(delay, max_delay)
 
     def get_active_sessions(self) -> List[str]:
         """获取当前活动的会话 ID 列表"""
@@ -270,13 +454,18 @@ class SDKSessionManager:
         """获取当前活动会话数"""
         return len(self._active_sessions)
 
-    def get_statistics(self) -> Dict[str, int]:
+    def get_statistics(self) -> Dict[str, Any]:
         """获取会话统计信息"""
+        total = self._total_sessions
+        success_rate = (self._successful_sessions / total * 100) if total > 0 else 0
+
         return {
             "total_sessions": self._total_sessions,
             "successful_sessions": self._successful_sessions,
             "failed_sessions": self._failed_sessions,
-            "active_sessions": len(self._active_sessions)
+            "active_sessions": len(self._active_sessions),
+            "success_rate": success_rate,
+            "failure_rate": 100 - success_rate
         }
 
     async def cancel_all_sessions(self) -> int:
@@ -294,6 +483,30 @@ class SDKSessionManager:
                     cancelled_count += 1
                     logger.info(f"Cancelled session {session_id[:8]}")
         return cancelled_count
+
+    async def get_session_health_summary(self) -> Dict[str, Any]:
+        """获取会话健康摘要"""
+        total_sessions = self._total_sessions
+        active_sessions = len(self._active_sessions)
+
+        # 统计健康状态
+        healthy_sessions = 0
+        unhealthy_sessions = 0
+
+        for context in self._active_sessions.values():
+            is_healthy = await context.check_health()
+            if is_healthy:
+                healthy_sessions += 1
+            else:
+                unhealthy_sessions += 1
+
+        return {
+            "total_sessions": total_sessions,
+            "active_sessions": active_sessions,
+            "healthy_sessions": healthy_sessions,
+            "unhealthy_sessions": unhealthy_sessions,
+            "health_rate": (healthy_sessions / active_sessions * 100) if active_sessions > 0 else 0
+        }
 
 
 # 全局单例

@@ -1,0 +1,100 @@
+{
+  "version": "1.37.0",
+  "time": "1767755127276",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "参数类型未知\n  实参对应于 \"__new__\" 函数中的 \"object\" 形参",
+      "range": {
+        "start": {
+          "line": 370,
+          "character": 32
+        },
+        "end": {
+          "line": 370,
+          "character": 33
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"k\" 类型未知",
+      "range": {
+        "start": {
+          "line": 370,
+          "character": 58
+        },
+        "end": {
+          "line": 370,
+          "character": 59
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"v\" 类型未知",
+      "range": {
+        "start": {
+          "line": 370,
+          "character": 61
+        },
+        "end": {
+          "line": 370,
+          "character": 62
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"item\" 类型未知",
+      "range": {
+        "start": {
+          "line": 372,
+          "character": 53
+        },
+        "end": {
+          "line": 372,
+          "character": 57
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 4,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.034
+  },
+  "metadata": {
+    "check_time": "2026-01-07T11:05:27.334391",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "..\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

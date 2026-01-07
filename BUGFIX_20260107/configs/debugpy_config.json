@@ -1,0 +1,95 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Debugpy configuration for BUGFIX_20260107 framework",
+    "created": "2026-01-07",
+    "last_modified": "2026-01-07"
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "port": 5678,
+    "wait_for_client": true,
+    "log_to_file": true,
+    "address_family": "ipv4"
+  },
+  "client": {
+    "connection_timeout": 30,
+    "reconnect_attempts": 3,
+    "reconnect_delay": 1.0,
+    "keep_alive": true
+  },
+  "features": {
+    "async_debugging": true,
+    "multiprocess": true,
+    "breakpoints": true,
+    "conditional_breakpoints": true,
+    "hit_count_breakpoints": true,
+    "log_points": true,
+    "exception_breakpoints": true,
+    "property_evalupd": true,
+    "suppress_optimizations": true
+  },
+  "security": {
+    "allowed_hosts": [
+      "127.0.0.1",
+      "localhost",
+      "::1"
+    ],
+    "require_authentication": false,
+    "max_connections": 5
+  },
+  "logging": {
+    "level": "DEBUG",
+    "file": "logs/debugpy.log",
+    "max_size_mb": 100,
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "enable_console": true
+  },
+  "performance": {
+    "max_memory_mb": 512,
+    "gc_threshold": 100,
+    "event_loop_monitoring": true,
+    "task_tracking": true
+  },
+  "breakpoints": {
+    "default_enabled": true,
+    "auto_disable_after_trigger": false,
+    "max_per_session": 100,
+    "persistent": true
+  },
+  "exceptions": {
+    "break_on_unhandled": true,
+    "break_on_user_unhandled": true,
+    "break_on_throw": [
+      "ZeroDivisionError",
+      "AttributeError",
+      "TypeError",
+      "ValueError",
+      "RuntimeError"
+    ]
+  },
+  "async_tracking": {
+    "track_coroutines": true,
+    "track_tasks": true,
+    "track_event_loops": true,
+    "stack_trace_depth": 50
+  },
+  "remote": {
+    "port_range": [5678, 5687],
+    "bind_all_interfaces": false,
+    "require_tls": false,
+    "certificate_file": null,
+    "private_key_file": null
+  },
+  "compatibility": {
+    "python_version_min": "3.8",
+    "python_version_max": "3.13",
+    "debugpy_version_min": "1.6.0"
+  },
+  "experimental": {
+    "ai_assisted_debugging": false,
+    "predictive_breakpoints": false,
+    "smart_variable_inspection": false
+  }
+}

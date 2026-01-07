@@ -536,18 +536,29 @@ class DevAgent:
                 logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
 
                 # Execute with session isolation using dedicated session manager
-                result = await self._session_manager.execute_isolated(
-                    agent_name="DevAgent",
-                    sdk_func=sdk_call,
-                    timeout=1200.0
-                )
+                # Shield the SDK call to prevent external cancellation from affecting cancel scope
+                try:
+                    result = await asyncio.wait_for(
+                        asyncio.shield(self._session_manager.execute_isolated(
+                            agent_name="DevAgent",
+                            sdk_func=sdk_call,
+                            timeout=1200.0
+                        )),
+                        timeout=1300.0  # Slightly longer than SDK timeout
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"[Dev Agent] SDK call timed out after 1300s for {story_path}")
+                    if attempt < max_retries - 1:
+                        logger.info(f"[Dev Agent] Retrying in {retry_delay}s...")
+                        await asyncio.sleep(1.0)
+                    continue
+                except asyncio.CancelledError:
+                    logger.info(f"[Dev Agent] SDK call was cancelled for {story_path}")
+                    return False  # Don't retry on cancellation
 
                 if result.success:
                     logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {result.duration_seconds:.1f}s")
                     return True
-                elif result.error_type == SDKErrorType.CANCELLED:
-                    logger.info(f"[Dev Agent] SDK call cancelled for {story_path}")
-                    return False  # Don't retry on cancellation
                 elif result.error_type == SDKErrorType.TIMEOUT:
                     logger.warning(f"[Dev Agent] SDK call timed out for {story_path}")
                     if attempt < max_retries - 1:

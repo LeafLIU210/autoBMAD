@@ -1,0 +1,13 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (2):  Line 1235, Col 21: [reportUnknownMemberType] "flush" 类型未知 (reportUnknownMemberType)
+  Line 1235, Col 38: [unknown] 无法访问 "LogManager" 类的 "flush" 属性
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

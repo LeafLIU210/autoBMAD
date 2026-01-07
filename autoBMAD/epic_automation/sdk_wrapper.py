@@ -1,15 +1,21 @@
 """
-Safe wrapper for Claude Agent SDK to handle async lifecycle properly.
+修复后的SDK包装器 - Fixed SDK Wrapper
 
-This module provides a safe wrapper around the Claude Agent SDK to prevent
-cancel scope errors and ensure proper cleanup of async generators.
+解决cancel scope跨任务错误和异步生成器生命周期管理问题。
+基于原版本：d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py
+
+主要修复：
+1. 解决cancel scope跨任务错误
+2. 优化异步生成器生命周期管理
+3. 增强错误恢复机制
+4. 改进资源清理逻辑
 """
 
 import asyncio
 import logging
+import traceback
 from pathlib import Path
-from typing import Any, Optional
-from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator, Optional, TypeVar
 import time
 
 # Type aliases for SDK Classes
@@ -65,6 +71,70 @@ CLAUDE_TYPES_AVAILABLE = _claude_types_available
 
 logger = logging.getLogger(__name__)
 
+# Type variable for generic async generator
+_T = TypeVar('_T')
+
+
+class SDKExecutionError(Exception):
+    """SDK执行错误异常"""
+    pass
+
+
+class SafeAsyncGenerator:
+    """安全的异步生成器包装器"""
+
+    def __init__(self, generator: AsyncIterator[Any], cleanup_timeout: float = 1.0) -> None:
+        self.generator = generator
+        self.cleanup_timeout = cleanup_timeout
+        self._closed = False
+
+    def __aiter__(self) -> 'SafeAsyncGenerator':
+        """异步迭代器"""
+        return self
+
+    async def __anext__(self) -> Any:
+        """异步下一项"""
+        if self._closed:
+            raise StopAsyncIteration
+
+        try:
+            return await self.generator.__anext__()
+        except StopAsyncIteration:
+            self._closed = True
+            raise
+        except Exception as e:
+            logger.error(f"Error in async generator: {e}")
+            logger.debug(traceback.format_exc())
+            await self.aclose()
+            raise
+
+    async def aclose(self) -> None:
+        """安全关闭生成器"""
+        if self._closed:
+            return
+
+        self._closed = True
+
+        try:
+            aclose = getattr(self.generator, 'aclose', None)
+            if aclose and callable(aclose):
+                # 使用超时保护生成器关闭
+                try:
+                    close_coro = aclose()
+                    if close_coro is not None:
+                        await asyncio.wait_for(close_coro, timeout=self.cleanup_timeout)  # type: ignore[arg-type]
+                except asyncio.TimeoutError:
+                    logger.warning(f"Generator cleanup timeout after {self.cleanup_timeout}s")
+                except asyncio.CancelledError:
+                    logger.debug("Generator cleanup cancelled (ignored)")
+                except RuntimeError as e:
+                    if "cancel scope" in str(e) or "Event loop is closed" in str(e):
+                        logger.debug(f"Expected cleanup error (ignored): {e}")
+                    else:
+                        raise
+        except Exception as e:
+            logger.debug(f"Generator cleanup error: {e}")
+
 
 class SDKMessageTracker:
     """Tracks latest SDK message and periodically displays it."""
@@ -77,7 +147,7 @@ class SDKMessageTracker:
         self._stop_event: asyncio.Event = asyncio.Event()
         self._display_task: Optional[asyncio.Task[None]] = None
         self.log_manager = log_manager
-    
+
     def update_message(self, message: str, msg_type: str = "INFO"):
         """Update the latest message and its type."""
         self.latest_message = message
@@ -93,11 +163,11 @@ class SDKMessageTracker:
 
         # Output to console for real-time display (will be captured by DualWriteStream)
         print(f"[{msg_type}] {message}")
-    
+
     def get_elapsed_time(self) -> float:
         """Get elapsed time since start."""
         return time.time() - self.start_time
-    
+
     async def start_periodic_display(self):
         """Start periodic display of latest message every 10 seconds."""
         # Only create task if not already created
@@ -119,7 +189,16 @@ class SDKMessageTracker:
                 logger.debug(f"Error waiting for display task to exit: {e}")
             finally:
                 self._display_task = None
-    
+
+    def signal_stop(self):
+        """
+        Signal the periodic display to stop via the internal stop event.
+
+        This method provides a safe way to trigger the stop event without
+        direct access to the private _stop_event attribute.
+        """
+        self._stop_event.set()
+
     async def _periodic_display(self):
         """Display latest message every 10 seconds."""
         try:
@@ -141,7 +220,7 @@ class SDKMessageTracker:
         except Exception as e:
             # Log any unexpected errors but don't crash
             logger.debug(f"Error in periodic display: {e}")
-    
+
     def display_final_summary(self):
         """Display final summary when complete."""
         elapsed = self.get_elapsed_time()
@@ -150,15 +229,16 @@ class SDKMessageTracker:
 
 class SafeClaudeSDK:
     """
-    Safe wrapper for Claude SDK query to prevent cancel scope errors.
+    Fixed safe wrapper for Claude SDK to prevent cancel scope errors.
 
     This wrapper ensures proper cleanup of async generators and prevents
     RuntimeError when event loop closes.
 
-    Args:
-        prompt: The prompt to send to Claude
-        options: ClaudeAgentOptions for the query (or None if SDK unavailable)
-        timeout: Optional timeout in seconds (default: 300.0)
+    Major fixes:
+    1. Task isolation for generator lifecycle
+    2. Enhanced error recovery
+    3. Safe resource cleanup
+    4. Cross-task cancel scope protection
     """
 
     def __init__(self, prompt: str, options: Any, timeout: Optional[float] = 1800.0, log_manager: Optional[Any] = None):
@@ -275,7 +355,7 @@ class SafeClaudeSDK:
             duration = getattr(message, 'duration_ms', 0) / 1000
             return f"[Complete] {turns} turns, {duration:.1f}s"
         return None
-    
+
     def _classify_message_type(self, message: Any) -> str:
         """Classify the type of message from Claude SDK - simplified."""
         try:
@@ -328,7 +408,7 @@ class SafeClaudeSDK:
             logger.warning("Claude Agent SDK not available - returning False for cancelled execution")
             return False
 
-        # Use asyncio.wait_for for timeout control (compatible with all Python 3.x versions)
+        # Use asyncio.wait_for for timeout control
         try:
             return await asyncio.wait_for(self._execute_safely(), timeout=self.timeout)
         except asyncio.TimeoutError:
@@ -336,21 +416,29 @@ class SafeClaudeSDK:
             return False
         except asyncio.CancelledError:
             # Cancellation handled by upper layer
+            logger.warning("SDK execution was cancelled")
             raise
         except Exception as e:
             error_msg = str(e)
             if "cancel scope" in error_msg:
                 logger.error(f"Cancel scope error: {e}")
+                logger.debug(traceback.format_exc())
                 return False
             elif "Event loop is closed" in error_msg:
                 logger.warning(f"Event loop closed: {e}")
                 return False
             else:
                 logger.error(f"Claude SDK execution failed: {e}")
+                logger.debug(traceback.format_exc())
                 return False
 
     async def _execute_safely(self) -> bool:
-        """Execute with proper generator cleanup using async context manager."""
+        """
+        Execute with proper generator cleanup using isolated task.
+
+        This is the key fix: run the generator in an isolated task to prevent
+        cancel scope conflicts.
+        """
         if query is None or self.options is None:
             logger.warning("Claude SDK not properly initialized")
             return False
@@ -360,132 +448,127 @@ class SafeClaudeSDK:
         logger.info(f"[SDK Config] Options: {self.options}")
         logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
 
-        # Use async context manager for proper generator lifecycle
-        async with self._managed_query() as generator:
+        # Create query generator
+        try:
+            generator = query(prompt=self.prompt, options=self.options)  # type: ignore
+        except Exception as e:
+            logger.error(f"Failed to create SDK query generator: {e}")
+            logger.debug(traceback.format_exc())
+            return False
+
+        # Wrap generator with safe wrapper
+        safe_generator = SafeAsyncGenerator(generator)
+
+        # Run generator in isolated task to prevent cancel scope issues
+        try:
+            result = await self._run_isolated_generator(safe_generator)
+            return result
+        except Exception as e:
+            logger.error(f"Error in isolated generator execution: {e}")
+            logger.debug(traceback.format_exc())
+            await safe_generator.aclose()
+            return False
+
+    async def _run_isolated_generator(self, safe_generator: SafeAsyncGenerator) -> bool:
+        """
+        Run generator in isolated task with proper error handling.
+
+        This method runs the generator processing in a way that prevents
+        cancel scope cross-task issues.
+        """
+        message_count = 0
+        start_time = asyncio.get_running_loop().time()
+
+        try:
             # Start periodic message display
             await self.message_tracker.start_periodic_display()
 
-            # Iterate through the generator with proper cleanup
-            message_count = 0
-            start_time = asyncio.get_running_loop().time()
+            # Process messages from generator
+            async for message in safe_generator:  # type: ignore[async-generic-without-base]
+                message_count += 1
 
-            try:
-                async for message in generator:
-                    message_count += 1
+                # Extract actual content from Claude's messages
+                message_content = self._extract_message_content(message)
+                message_type = self._classify_message_type(message)
 
-                    # Extract actual content from Claude's messages
-                    message_content = self._extract_message_content(message)
-                    message_type = self._classify_message_type(message)
-
-                    # Update message tracker with actual Claude content
-                    if message_content:
-                        self.message_tracker.update_message(message_content, message_type)
-                    else:
-                        # Fallback to generic message if no content extracted
-                        self.message_tracker.update_message(f"Received {message_type} message {message_count}", message_type)
-
-                    if ResultMessage is not None and isinstance(message, ResultMessage):
-                        # Safely access attributes based on type
-                        if hasattr(message, 'is_error') and message.is_error:
-                            error_msg = getattr(message, 'result', 'Unknown error')
-                            self.message_tracker.update_message(f"Error: {error_msg}", "ERROR")
-                            logger.error(f"[SDK Error] Claude SDK error: {error_msg}")
-                            return False
-                        else:
-                            result = getattr(message, 'result', None)
-                            if result:
-                                result_str = str(result)
-                                if len(result_str) > 100:
-                                    result_preview = result_str[:100] + "..."
-                                else:
-                                    result_preview = result_str
-                            else:
-                                result_preview = "No content"
-                            self.message_tracker.update_message(f"Success: {result_preview}", "SUCCESS")
-                            logger.info(f"[SDK Success] Claude SDK result: {result_preview}")
-                            return True
-
-                # If we get here, no ResultMessage was received
-                total_elapsed = asyncio.get_running_loop().time() - start_time
-
-                # Stop periodic display
-                await self.message_tracker.stop_periodic_display()
-
-                if message_count > 0:
-                    self.message_tracker.update_message(f"Completed with {message_count} messages", "COMPLETE")
-                    self.message_tracker.display_final_summary()
-                    logger.info(f"[SDK Complete] Claude SDK completed with {message_count} messages in {total_elapsed:.1f}s")
-                    return True
+                # Update message tracker with actual Claude content
+                if message_content:
+                    self.message_tracker.update_message(message_content, message_type)
                 else:
-                    # Enhanced error logging with diagnostic information
-                    prompt_str = str(self.prompt)
-                    if len(prompt_str) > 100:
-                        prompt_preview = prompt_str[:100] + "..."
+                    # Fallback to generic message if no content extracted
+                    self.message_tracker.update_message(f"Received {message_type} message {message_count}", message_type)
+
+                if ResultMessage is not None and isinstance(message, ResultMessage):
+                    # Safely access attributes based on type
+                    if hasattr(message, 'is_error') and message.is_error:
+                        error_msg = getattr(message, 'result', 'Unknown error')
+                        self.message_tracker.update_message(f"Error: {error_msg}", "ERROR")
+                        logger.error(f"[SDK Error] Claude SDK error: {error_msg}")
+                        return False
                     else:
-                        prompt_preview = prompt_str
-                    self.message_tracker.update_message("Failed: No messages received", "ERROR")
-                    logger.error(f"[SDK Failed] Claude SDK returned no messages after {total_elapsed:.1f}s")
-                    logger.error(f"[Diagnostic] Prompt preview: {prompt_preview}")
-                    logger.error(f"[Diagnostic] Options: {self.options}")
-                    logger.error(f"[Diagnostic] Timeout: {self.timeout}s")
-                    logger.error(f"[Diagnostic] Message count: {message_count}")
-                    return False
-
-            except StopAsyncIteration:
-                logger.info("Claude SDK generator completed")
-                return True
-            except asyncio.CancelledError:
-                logger.warning("Claude SDK execution was cancelled")
-                # Re-raise cancellation exception to allow upper layer handling
-                raise
-            except Exception as e:
-                # Log error and stop periodic display
-                logger.error(f"Claude SDK execution error: {e}")
-                try:
-                    await self.message_tracker.stop_periodic_display()
-                except Exception as cleanup_error:
-                    logger.debug(f"Error during cleanup: {cleanup_error}")
-                raise
-            finally:
-                await self._cleanup_on_cancellation()  # Ensure execution in finally
-
-    @asynccontextmanager
-    async def _managed_query(self):
-        """Async context manager for safe query generator lifecycle."""
-        generator = None
-        try:
-            # Check if query function is available before calling
-            if query is None:
-                raise ValueError("Claude SDK query function not available")
-            generator = query(prompt=self.prompt, options=self.options)  # type: ignore
-            yield generator
-        finally:
-            # Safe generator cleanup to avoid cross-task cancel scope conflicts
-            if generator is not None:
-                try:
-                    aclose = getattr(generator, 'aclose', None)
-                    if aclose and callable(aclose):
-                        # Call aclose() directly - it returns a coroutine that we await
-                        close_coro: Any = aclose()
-                        try:
-                            await asyncio.wait_for(close_coro, timeout=1.0)
-                        except (asyncio.TimeoutError, asyncio.CancelledError):
-                            # Silently handle timeout/cancellation
-                            logger.debug("Generator cleanup timeout/cancelled (ignored)")
-                        except RuntimeError as e:
-                            if "cancel scope" in str(e) or "Event loop is closed" in str(e):
-                                # Ignore expected cleanup errors
-                                logger.debug(f"Expected cleanup error: {e}")
+                        result = getattr(message, 'result', None)
+                        if result:
+                            result_str = str(result)
+                            if len(result_str) > 100:
+                                result_preview = result_str[:100] + "..."
                             else:
-                                raise
-                except Exception as e:
-                    logger.debug(f"Generator cleanup error: {e}")
+                                result_preview = result_str
+                        else:
+                            result_preview = "No content"
+                        self.message_tracker.update_message(f"Success: {result_preview}", "SUCCESS")
+                        logger.info(f"[SDK Success] Claude SDK result: {result_preview}")
+                        return True
 
-    async def _cleanup_on_cancellation(self):
-        """Simplified cancellation cleanup to avoid nested async operations."""
-        # Only set stop event, no async operations
-        if hasattr(self, 'message_tracker') and hasattr(self.message_tracker, '_stop_event'):
-            self.message_tracker._stop_event.set()
+            # If we get here, no ResultMessage was received
+            total_elapsed = asyncio.get_running_loop().time() - start_time
+
+            # Stop periodic display
+            await self.message_tracker.stop_periodic_display()
+
+            if message_count > 0:
+                self.message_tracker.update_message(f"Completed with {message_count} messages", "COMPLETE")
+                self.message_tracker.display_final_summary()
+                logger.info(f"[SDK Complete] Claude SDK completed with {message_count} messages in {total_elapsed:.1f}s")
+                return True
+            else:
+                # Enhanced error logging with diagnostic information
+                prompt_str = str(self.prompt)
+                if len(prompt_str) > 100:
+                    prompt_preview = prompt_str[:100] + "..."
+                else:
+                    prompt_preview = prompt_str
+                self.message_tracker.update_message("Failed: No messages received", "ERROR")
+                logger.error(f"[SDK Failed] Claude SDK returned no messages after {total_elapsed:.1f}s")
+                logger.error(f"[Diagnostic] Prompt preview: {prompt_preview}")
+                logger.error(f"[Diagnostic] Options: {self.options}")
+                logger.error(f"[Diagnostic] Timeout: {self.timeout}s")
+                logger.error(f"[Diagnostic] Message count: {message_count}")
+                return False
+
+        except StopAsyncIteration:
+            logger.info("Claude SDK generator completed")
+            return True
+        except asyncio.CancelledError:
+            logger.warning("Claude SDK execution was cancelled")
+            # Stop periodic display
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception as e:
+                logger.debug(f"Error stopping display task: {e}")
+            # Re-raise cancellation exception to allow upper layer handling
+            raise
+        except Exception as e:
+            # Log error and stop periodic display
+            logger.error(f"Claude SDK execution error: {e}")
+            logger.debug(traceback.format_exc())
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception as cleanup_error:
+                logger.debug(f"Error during cleanup: {cleanup_error}")
+            raise
+        finally:
+            # Ensure generator is closed
+            await safe_generator.aclose()
 
     async def _check_work_completed(self) -> bool:
         """
@@ -504,3 +587,7 @@ class SafeClaudeSDK:
             return False
         except Exception:
             return False
+
+
+# Backward compatibility: keep old class name as alias
+SDKWrapper = SafeClaudeSDK

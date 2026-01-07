@@ -231,7 +231,7 @@ class BasedPyrightWorkflowRunner:
                             if part.isdigit():
                                 errors += int(part)
                                 break
-                    except:
+                    except Exception:
                         errors += 1
 
             if "warning" in line.lower() and ":" in line:
@@ -242,7 +242,7 @@ class BasedPyrightWorkflowRunner:
                             if part.isdigit():
                                 warnings += int(part)
                                 break
-                    except:
+                    except Exception:
                         warnings += 1
 
         # Simple heuristic: assume simple errors are auto-fixable

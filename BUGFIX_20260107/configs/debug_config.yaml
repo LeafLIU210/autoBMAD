@@ -1,0 +1,333 @@
+# Debug Configuration for BUGFIX_20260107 Framework
+# Version: 1.0.0
+# Created: 2026-01-07
+
+# ============================================================================
+# GLOBAL DEBUG SETTINGS
+# ============================================================================
+
+debug:
+  # Enable/disable debug mode globally
+  enabled: true
+
+  # Remote debugging configuration
+  remote_debugging:
+    enabled: true
+    host: "127.0.0.1"
+    port: 5678
+    wait_for_client: true
+    auto_start: true
+
+  # Debug dashboard configuration
+  dashboard:
+    enabled: true
+    port: 8080
+    refresh_interval: 5  # seconds
+    auto_open: false
+
+  # Debug level (TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: "DEBUG"
+
+# ============================================================================
+# ASYNC DEBUGGING SETTINGS
+# ============================================================================
+
+async_debugging:
+  # Enable async debugging features
+  enabled: true
+
+  # Task tracking
+  track_tasks: true
+  track_coroutines: true
+  track_event_loops: true
+
+  # Cancel scope monitoring
+  cancel_scope_tracking:
+    enabled: true
+    detect_cross_task_violations: true
+    log_all_operations: true
+    violation_threshold: 0
+
+  # Async operation timeout
+  default_timeout: 300  # seconds
+  max_timeout: 3600  # seconds
+
+# ============================================================================
+# MONITORING AND OBSERVABILITY
+# ============================================================================
+
+monitoring:
+  # Resource monitoring
+  resource_monitoring:
+    enabled: true
+    interval: 5  # seconds
+    metrics:
+      cpu: true
+      memory: true
+      threads: true
+      tasks: true
+      event_loops: true
+
+  # Performance tracking
+  performance_tracking:
+    enabled: true
+    track_operations: true
+    track_sessions: true
+    track_breakpoints: true
+    metrics_retention: 100  # number of metrics to retain
+
+  # Log aggregation
+  log_aggregation:
+    enabled: true
+    max_log_size: 100  # MB
+    max_log_files: 10
+    structured_logging: true
+
+# ============================================================================
+# ERROR RECOVERY SETTINGS
+# ============================================================================
+
+recovery:
+  # Automatic error recovery
+  auto_retry:
+    enabled: true
+    max_retries: 5
+    initial_delay: 1.0  # seconds
+    max_delay: 60.0  # seconds
+    backoff_factor: 2.0
+
+  # Circuit breaker pattern
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    reset_timeout: 60  # seconds
+
+  # Fallback strategies
+  fallback_strategies:
+    enabled: true
+    strategies:
+      - "retry"
+      - "degrade"
+      - "skip"
+      - "fallback"
+
+# ============================================================================
+# SESSION MANAGEMENT
+# ============================================================================
+
+session_management:
+  # Session configuration
+  default_session_timeout: 3600  # seconds (1 hour)
+  max_concurrent_sessions: 10
+  session_isolation: true
+
+  # Session persistence
+  persistence:
+    enabled: false
+    storage_path: "sessions/"
+    save_on_completion: true
+
+# ============================================================================
+# BREAKPOINT MANAGEMENT
+# ============================================================================
+
+breakpoints:
+  # Default breakpoint settings
+  default_enabled: true
+  auto_disable_after_trigger: false
+  max_per_session: 100
+
+  # Breakpoint types
+  types:
+    line:
+      enabled: true
+    conditional:
+      enabled: true
+    hit_count:
+      enabled: true
+    exception:
+      enabled: true
+    log_point:
+      enabled: true
+
+  # Automatic breakpoints
+  auto_breakpoints:
+    enabled: true
+    locations:
+      - "exception_handlers"
+      - "async_operations"
+      - "cancel_scope_operations"
+
+# ============================================================================
+# NOTIFICATION AND ALERTING
+# ============================================================================
+
+notifications:
+  # Console notifications
+  console:
+    enabled: true
+    show_info: true
+    show_warnings: true
+    show_errors: true
+
+  # File notifications
+  file:
+    enabled: true
+    path: "logs/debug_notifications.log"
+    rotate: true
+
+  # Alert thresholds
+  alerts:
+    cancel_scope_errors: 0
+    session_failures: 1
+    recovery_attempts: 3
+    timeout_threshold: 0.1  # percentage
+
+# ============================================================================
+# INTEGRATION SETTINGS
+# ============================================================================
+
+integration:
+  # BUGFIX_20260107 framework integration
+  framework:
+    enabled: true
+    components:
+      - "sdk_wrapper"
+      - "sdk_session_manager"
+      - "state_manager"
+      - "qa_agent"
+      - "async_debugger"
+      - "cancel_scope_tracker"
+      - "resource_monitor"
+
+  # External tool integration
+  external_tools:
+    enabled: false
+    tools:
+      - "vscode"
+      - "pycharm"
+      - "vimspector"
+
+# ============================================================================
+# DEVELOPMENT SETTINGS
+# ============================================================================
+
+development:
+  # Debugging aids
+  debugging_aids:
+    enabled: true
+    show_source_code: true
+    show_variables: true
+    show_stack_trace: true
+    show_memory_usage: true
+
+  # Hot reloading
+  hot_reload:
+    enabled: false
+    watch_paths: ["src/", "tests/"]
+
+  # Test integration
+  test_integration:
+    enabled: true
+    auto_debug_failed_tests: false
+    debug_test_sessions: false
+
+# ============================================================================
+# ADVANCED SETTINGS
+# ============================================================================
+
+advanced:
+  # Memory management
+  memory:
+    limit_mb: 1024
+    gc_threshold: 1000
+    track_allocations: false
+
+  # Threading
+  threading:
+    max_worker_threads: 10
+    thread_pool_size: 5
+    monitor_thread_creation: true
+
+  # Event loop management
+  event_loop:
+    monitor_loop_creation: true
+    detect_blocking_operations: true
+    loop_monitoring_interval: 1  # seconds
+
+# ============================================================================
+# SECURITY SETTINGS
+# ============================================================================
+
+security:
+  # Access control
+  access_control:
+    allowed_hosts: ["127.0.0.1", "localhost"]
+    require_authentication: false
+    max_connections: 5
+
+  # Data protection
+  data_protection:
+    sanitize_logs: true
+    encrypt_sensitive_data: false
+    redact_credentials: true
+
+# ============================================================================
+# EXPERIMENTAL FEATURES
+# ============================================================================
+
+experimental:
+  # AI-assisted debugging
+  ai_assisted_debugging:
+    enabled: false
+    features:
+      - "error_prediction"
+      - "suggested_breakpoints"
+      - "variable_insights"
+
+  # Predictive analytics
+  predictive_analytics:
+    enabled: false
+    features:
+      - "error_prediction"
+      - "performance_forecasting"
+      - "resource_usage_prediction"
+
+# ============================================================================
+# PLATFORM-SPECIFIC SETTINGS
+# ============================================================================
+
+platform:
+  # Windows-specific settings
+  windows:
+    com_integration: false
+    wmi_monitoring: false
+    process_tracking: true
+
+  # Linux-specific settings
+  linux:
+    perf_monitoring: false
+    system_calls_tracing: false
+    process_tracking: true
+
+  # macOS-specific settings
+  macos:
+    dtrace_integration: false
+    process_tracking: true
+
+# ============================================================================
+# BACKWARD COMPATIBILITY
+# ============================================================================
+
+compatibility:
+  # Legacy support
+  legacy_support:
+    enabled: true
+    deprecated_features:
+      - "old_debug_api"
+      - "legacy_session_format"
+
+  # Migration settings
+  migration:
+    auto_migrate: false
+    backup_old_config: true

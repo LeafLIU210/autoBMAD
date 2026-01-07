@@ -1,0 +1,52 @@
+{
+  "version": "1.37.0",
+  "time": "1767744408789",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "severity": "error",
+      "message": "\"_stop_event\" 在声明它受到保护的类之外被使用",
+      "range": {
+        "start": {
+          "line": 487,
+          "character": 33
+        },
+        "end": {
+          "line": 487,
+          "character": 44
+        }
+      },
+      "rule": "reportPrivateUsage"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 1,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.069
+  },
+  "metadata": {
+    "check_time": "2026-01-07T08:06:48.852057",
+    "check_directory": "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\__init__.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\init_db.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\log_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

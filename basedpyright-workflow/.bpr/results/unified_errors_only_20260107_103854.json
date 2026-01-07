@@ -1,0 +1,530 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260107_103844.txt",
+    "extraction_time": "2026-01-07T10:38:54.540755",
+    "total_files_with_errors": 5,
+    "total_errors": 73,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportUnknownMemberType": 2,
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 185,
+          "column": 27,
+          "message": "\"add_quality_phase_record\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 185,
+          "column": 46,
+          "message": "无法访问 \"StateManager\" 类的 \"add_quality_phase_record\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 228,
+          "column": 27,
+          "message": "\"add_quality_phase_record\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 228,
+          "column": 46,
+          "message": "无法访问 \"StateManager\" 类的 \"add_quality_phase_record\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "reportInvalidStringEscapeSequence": 4,
+        "reportUnusedImport": 3,
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 8
+      },
+      "errors": [
+        {
+          "line": 5,
+          "column": 9,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 16,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 40,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 56,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 23,
+          "column": 8,
+          "message": "\"time\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 24,
+          "column": 22,
+          "message": "\"datetime\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 30,
+          "column": 53,
+          "message": "\"SDKErrorType\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 215,
+          "column": 16,
+          "message": "\"dict[str, bool | list[str] | str | int]\" 类型不匹配返回类型 \"dict[str, str | bool | list[str]]\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "error_count": 13,
+      "errors_by_rule": {
+        "reportInvalidStringEscapeSequence": 4,
+        "unknown": 7,
+        "reportPossiblyUnboundVariable": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 13
+      },
+      "errors": [
+        {
+          "line": 5,
+          "column": 9,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 16,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 40,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 56,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 230,
+          "column": 24,
+          "message": "\"IsolatedSDKContext\" 类型的对象不能用于 `with` 语句，因为它未实现 \"__aexit__\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 255,
+          "column": 23,
+          "message": "\"int | float\" 类型不匹配声明的 \"int | None\" 类型",
+          "rule": "unknown"
+        },
+        {
+          "line": 259,
+          "column": 15,
+          "message": "\"int\" 与 \"int | None\" 类型不支持 \"<=\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 312,
+          "column": 52,
+          "message": "\"int\" 与 \"int | None\" 类型不支持 \"<\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 340,
+          "column": 32,
+          "message": "\"CancelledError\" 类型的实参无法赋值给函数 \"__init__\" 中 \"Exception | None\" 类型的形参 \"last_error\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 383,
+          "column": 52,
+          "message": "\"int\" 与 \"int | None\" 类型不支持 \"<\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 412,
+          "column": 52,
+          "message": "\"int\" 与 \"int | None\" 类型不支持 \"<\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 431,
+          "column": 44,
+          "message": "\"start_time\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 432,
+          "column": 24,
+          "message": "\"session_id\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "error_count": 18,
+      "errors_by_rule": {
+        "reportInvalidStringEscapeSequence": 4,
+        "reportUnusedImport": 2,
+        "reportUnknownParameterType": 2,
+        "reportMissingParameterType": 1,
+        "reportUnknownMemberType": 4,
+        "reportUnknownVariableType": 2,
+        "unknown": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 18
+      },
+      "errors": [
+        {
+          "line": 5,
+          "column": 9,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 16,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 40,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 56,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 16,
+          "column": 8,
+          "message": "\"sys\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 20,
+          "column": 24,
+          "message": "\"asynccontextmanager\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 85,
+          "column": 24,
+          "message": "\"generator\" 参数的类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 85,
+          "column": 24,
+          "message": "\"generator\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 86,
+          "column": 9,
+          "message": "\"generator\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 94,
+          "column": 15,
+          "message": "返回类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 100,
+          "column": 20,
+          "message": "返回类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 100,
+          "column": 26,
+          "message": "\"generator\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 100,
+          "column": 26,
+          "message": "\"__anext__\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 118,
+          "column": 30,
+          "message": "\"generator\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 118,
+          "column": 30,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 123,
+          "column": 44,
+          "message": "\"object\" 类型的实参无法赋值给函数 \"wait_for\" 中 \"_FutureLike[_T@wait_for]\" 类型的形参 \"fut\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 485,
+          "column": 23,
+          "message": "\"message\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 485,
+          "column": 34,
+          "message": "\"SafeAsyncGenerator\" 不支持迭代",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "error_count": 30,
+      "errors_by_rule": {
+        "reportInvalidStringEscapeSequence": 4,
+        "reportUnusedImport": 2,
+        "reportUndefinedVariable": 1,
+        "reportMissingTypeArgument": 2,
+        "reportUnusedVariable": 2,
+        "reportUnknownMemberType": 3,
+        "unknown": 7,
+        "reportUnknownVariableType": 8,
+        "reportIndexIssue": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 30
+      },
+      "errors": [
+        {
+          "line": 5,
+          "column": 9,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 16,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 40,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 5,
+          "column": 56,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 20,
+          "column": 8,
+          "message": "\"uuid\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 21,
+          "column": 8,
+          "message": "\"weakref\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 52,
+          "column": 28,
+          "message": "\"Dict\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 52,
+          "column": 38,
+          "message": "\"Task\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 62,
+          "column": 9,
+          "message": "变量 \"task_id\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 63,
+          "column": 9,
+          "message": "\"lock_waiters\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 74,
+          "column": 13,
+          "message": "\"lock_waiters\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 74,
+          "column": 13,
+          "message": "\"pop\" 类型未知 (reportUnknownMemberType)",
+          "rule": "reportUnknownMemberType"
+        },
+        {
+          "line": 82,
+          "column": 27,
+          "message": "\"Queue\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "line": 93,
+          "column": 19,
+          "message": "\"connections\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 93,
+          "column": 19,
+          "message": "\"put\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 98,
+          "column": 13,
+          "message": "\"conn\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 98,
+          "column": 43,
+          "message": "\"connections\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 98,
+          "column": 43,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 99,
+          "column": 20,
+          "message": "返回类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 106,
+          "column": 19,
+          "message": "\"connections\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 106,
+          "column": 19,
+          "message": "\"put\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 313,
+          "column": 17,
+          "message": "变量 \"story_id\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 373,
+          "column": 28,
+          "message": "返回类型 \"dict[Unknown, Any]\" 部分未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 373,
+          "column": 54,
+          "message": "\"k\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 373,
+          "column": 57,
+          "message": "\"v\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 375,
+          "column": 51,
+          "message": "\"v\" 类型未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 517,
+          "column": 25,
+          "message": "\"append\" 的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 519,
+          "column": 28,
+          "message": "返回类型 \"list[Unknown]\" 部分未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 549,
+          "column": 28,
+          "message": "返回类型 \"dict[Unknown, Unknown]\" 部分未知 (reportUnknownVariableType)",
+          "rule": "reportUnknownVariableType"
+        },
+        {
+          "line": 627,
+          "column": 36,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        }
+      ]
+    }
+  ]
+}

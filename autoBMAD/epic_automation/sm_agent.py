@@ -531,11 +531,22 @@ class SMAgent:
             return bool(result)
 
         # Execute with session isolation
-        result = await session_manager.execute_isolated(
-            agent_name="SMAgent",
-            sdk_func=sdk_call,
-            timeout=1200.0
-        )
+        # Shield the SDK call to prevent external cancellation from affecting cancel scope
+        try:
+            result = await asyncio.wait_for(
+                asyncio.shield(session_manager.execute_isolated(
+                    agent_name="SMAgent",
+                    sdk_func=sdk_call,
+                    timeout=1200.0
+                )),
+                timeout=1300.0  # Slightly longer than SDK timeout
+            )
+        except asyncio.TimeoutError:
+            logger.warning("[SM Agent] SDK call timed out after 1300s")
+            return False
+        except asyncio.CancelledError:
+            logger.info("[SM Agent] SDK call was cancelled")
+            return False
 
         if result.success:
             logger.info(f"[SM Agent] SDK call succeeded in {result.duration_seconds:.1f}s")
@@ -639,7 +650,7 @@ class SMAgent:
             story_ids: List of story IDs to update
             stories_dir: Directory containing story files
         """
-        logger.info(f"[SM Agent] Updating story statuses to 'Ready for Development'")
+        logger.info("[SM Agent] Updating story statuses to 'Ready for Development'")
 
         for story_id in story_ids:
             try:

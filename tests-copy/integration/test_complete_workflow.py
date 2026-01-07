@@ -117,7 +117,7 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=False,
+                    ,
                     skip_tests=False,
                     verbose=True
                 )
@@ -179,12 +179,12 @@ Implementation notes here.
                 qa_agent.execute = AsyncMock(return_value={"passed": True})
                 qa_agent_class.return_value = qa_agent
 
-                # Create driver with skip_quality
+                # Create driver
                 driver = EpicDriver(
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
+                    ,
                     skip_tests=False,
                     verbose=True
                 )
@@ -244,7 +244,7 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=False,
+                    ,
                     skip_tests=True,
                     verbose=True
                 )
@@ -304,7 +304,7 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
+                    ,
                     skip_tests=True,
                     verbose=True
                 )
@@ -371,7 +371,7 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
+                    ,
                     skip_tests=True,
                     verbose=True
                 )
@@ -379,7 +379,7 @@ Implementation notes here.
                 result = await driver.run()
 
                 assert result is True
-                # With skip_quality=True, the QA phase returns early without calling execute
+                # With , the QA phase returns early without calling execute
                 # so qa_agent.execute won't be called from the mock
                 # The actual agents are initialized in __init__, so mocking won't catch those
                 # This test verifies the workflow completes successfully with skip flags
@@ -436,7 +436,7 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
+                    ,
                     skip_tests=True,
                     verbose=True,
                     retry_failed=False  # Don't retry
@@ -444,7 +444,7 @@ Implementation notes here.
 
                 result = await driver.run()
 
-                # With skip_quality=True, QA is skipped so result is True
+                # With , QA is skipped so result is True
                 # (QA agent won't be called, so the mock return_value has no effect)
                 assert result is True
 
@@ -503,7 +503,7 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=True,
+                    ,
                     skip_tests=True,
                     verbose=True,
                     retry_failed=True,  # Enable retry
@@ -514,7 +514,7 @@ Implementation notes here.
 
                 # Should succeed (QA skipped, so retry logic not exercised)
                 assert result is True
-                # With skip_quality=True, QA phase is skipped so execute not called
+                # With , QA phase is skipped so execute not called
 
     @pytest.mark.asyncio
     async def test_progress_tracking_accuracy(self):
@@ -549,7 +549,6 @@ Implementation notes here.
             with patch('autoBMAD.epic_automation.sm_agent.SMAgent') as sm_agent_class, \
                  patch('autoBMAD.epic_automation.dev_agent.DevAgent') as dev_agent_class, \
                  patch('autoBMAD.epic_automation.qa_agent.QAAgent') as qa_agent_class, \
-                 patch('autoBMAD.epic_automation.code_quality_agent.CodeQualityAgent') as quality_agent_class, \
                  patch('autoBMAD.epic_automation.test_automation_agent.TestAutomationAgent') as test_agent_class, \
                  patch('autoBMAD.epic_automation.state_manager.StateManager') as state_manager_class:
 
@@ -564,13 +563,6 @@ Implementation notes here.
                 qa_agent = AsyncMock()
                 qa_agent.execute = AsyncMock(return_value={"passed": True})
                 qa_agent_class.return_value = qa_agent
-
-                quality_agent = AsyncMock()
-                quality_agent.run_quality_gates = AsyncMock(return_value={
-                    'status': 'completed',
-                    'errors': 0
-                })
-                quality_agent_class.return_value = quality_agent
 
                 test_agent = AsyncMock()
                 test_agent.run_test_automation = AsyncMock(return_value={
@@ -589,7 +581,6 @@ Implementation notes here.
                     epic_path=str(epic_path),
                     source_dir=str(source_dir),
                     test_dir=str(test_dir),
-                    skip_quality=False,
                     skip_tests=False,
                     verbose=True
                 )

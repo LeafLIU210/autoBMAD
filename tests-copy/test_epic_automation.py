@@ -521,7 +521,7 @@ Description for story 2.
             epic_path.write_text("# Epic")
 
             # Use skip_quality and skip_tests to avoid tool dependency
-            driver = EpicDriver(str(epic_path), skip_quality=True, skip_tests=True)
+            driver = EpicDriver(str(epic_path), skip_tests=True)
 
             result = await driver.execute_qa_phase(str(story_path))
             # With tools skipped, QA should pass based on document completeness
@@ -553,7 +553,7 @@ Description for story 2.
             epic_path.write_text("# Epic")
 
             # Use skip_quality and skip_tests to avoid tool dependency
-            driver = EpicDriver(str(epic_path), skip_quality=True, skip_tests=True)
+            driver = EpicDriver(str(epic_path), skip_tests=True)
 
             story = {
                 'id': '1.1',
@@ -689,7 +689,7 @@ class TestIntegrationSmDevQaCycle:
             epic_path.write_text("# Epic")
 
             # Skip quality and tests to avoid tool dependency
-            driver = EpicDriver(str(epic_path), skip_quality=True, skip_tests=True)
+            driver = EpicDriver(str(epic_path), skip_tests=True)
 
             # Execute full cycle
             result = await driver.process_story({
@@ -704,7 +704,7 @@ class TestIntegrationSmDevQaCycle:
             # Verify state manager tracked the cycle
             final_status = await driver.state_manager.get_story_status(str(story_path))
             assert final_status is not None
-            # With skip_quality=True, the flow may end at 'dev_completed' or reach 'completed'
+            # With skip_tests=True, the flow may end at 'dev_completed' or reach 'completed'
             assert final_status['status'] in ['completed', 'qa_completed', 'dev_completed']
 
     @pytest.mark.asyncio
@@ -733,7 +733,7 @@ class TestIntegrationSmDevQaCycle:
             epic_path.write_text("# Epic")
 
             # First driver instance - start processing (skip tools)
-            driver1 = EpicDriver(str(epic_path), str(db_path), skip_quality=True, skip_tests=True)
+            driver1 = EpicDriver(str(epic_path), str(db_path), skip_tests=True)
 
             # Simulate partial execution (SM phase only)
             await driver1.execute_sm_phase(str(story_path))
@@ -742,7 +742,7 @@ class TestIntegrationSmDevQaCycle:
             del driver1
 
             # Second driver instance - should recover state (skip tools)
-            driver2 = EpicDriver(str(epic_path), str(db_path), skip_quality=True, skip_tests=True)
+            driver2 = EpicDriver(str(epic_path), str(db_path), skip_tests=True)
 
             # Verify state was recovered
             recovered_status = await driver2.state_manager.get_story_status(str(story_path))

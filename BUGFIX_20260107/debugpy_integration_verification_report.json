@@ -1,0 +1,133 @@
+{
+  "timestamp": 1767764704.8338602,
+  "tests": [
+    {
+      "name": "python_version",
+      "status": "PASS",
+      "message": "Python 3.12.10 is compatible",
+      "details": {
+        "version": "3.12.10"
+      }
+    },
+    {
+      "name": "debugpy_installation",
+      "status": "PASS",
+      "message": "debugpy version 1.8.19 is installed",
+      "details": {
+        "version": "1.8.19"
+      }
+    },
+    {
+      "name": "package_yaml",
+      "status": "PASS",
+      "message": "Package yaml is available",
+      "details": {}
+    },
+    {
+      "name": "package_rich",
+      "status": "PASS",
+      "message": "Package rich is available",
+      "details": {}
+    },
+    {
+      "name": "package_psutil",
+      "status": "PASS",
+      "message": "Package psutil is available",
+      "details": {}
+    },
+    {
+      "name": "package_asyncio",
+      "status": "PASS",
+      "message": "Package asyncio is available",
+      "details": {}
+    },
+    {
+      "name": "module_debugpy_integration_debugpy_server",
+      "status": "PASS",
+      "message": "Module debugpy_integration.debugpy_server and class DebugpyServer are importable",
+      "details": {}
+    },
+    {
+      "name": "module_debugpy_integration_debug_client",
+      "status": "PASS",
+      "message": "Module debugpy_integration.debug_client and class DebugClient are importable",
+      "details": {}
+    },
+    {
+      "name": "module_debugpy_integration_remote_debugger",
+      "status": "PASS",
+      "message": "Module debugpy_integration.remote_debugger and class RemoteDebugger are importable",
+      "details": {}
+    },
+    {
+      "name": "module_enhanced_debug_suite_async_debugger",
+      "status": "PASS",
+      "message": "Enhanced debug suite module enhanced_debug_suite.async_debugger is importable",
+      "details": {}
+    },
+    {
+      "name": "module_enhanced_debug_suite_debug_dashboard",
+      "status": "PASS",
+      "message": "Enhanced debug suite module enhanced_debug_suite.debug_dashboard is importable",
+      "details": {}
+    },
+    {
+      "name": "module_enhanced_debug_suite_cancel_scope_tracker",
+      "status": "PASS",
+      "message": "Enhanced debug suite module enhanced_debug_suite.cancel_scope_tracker is importable",
+      "details": {}
+    },
+    {
+      "name": "module_enhanced_debug_suite_resource_monitor",
+      "status": "PASS",
+      "message": "Enhanced debug suite module enhanced_debug_suite.resource_monitor is importable",
+      "details": {}
+    },
+    {
+      "name": "debugpy_server_methods",
+      "status": "PASS",
+      "message": "DebugpyServer has required methods (start, stop)",
+      "details": {}
+    },
+    {
+      "name": "async_debugger_creation",
+      "status": "PASS",
+      "message": "AsyncDebugger created successfully with all required attributes",
+      "details": {}
+    },
+    {
+      "name": "async_debugger_remote_debug",
+      "status": "WARNING",
+      "message": "Remote debugging is disabled (may be due to missing debugpy)",
+      "details": {}
+    },
+    {
+      "name": "debug_dashboard_creation",
+      "status": "PASS",
+      "message": "DebugDashboard created successfully with all required attributes",
+      "details": {}
+    },
+    {
+      "name": "debug_dashboard_metrics",
+      "status": "PASS",
+      "message": "DebugDashboard metrics collection working",
+      "details": {}
+    },
+    {
+      "name": "config_debugpy_config_json",
+      "status": "PASS",
+      "message": "Configuration file debugpy_config.json is valid",
+      "details": {}
+    },
+    {
+      "name": "config_debug_config_yaml",
+      "status": "PASS",
+      "message": "Configuration file debug_config.yaml is valid",
+      "details": {}
+    }
+  ],
+  "passed": 19,
+  "failed": 0,
+  "warnings": 1,
+  "overall_status": "WARNING"
+}

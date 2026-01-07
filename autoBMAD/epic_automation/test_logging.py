@@ -16,9 +16,9 @@ from typing import List
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root))  # noqa: E402
 
-from autoBMAD.epic_automation.log_manager import LogManager
+from autoBMAD.epic_automation.log_manager import LogManager  # noqa: E402
 
 
 async def test_basic_logging():

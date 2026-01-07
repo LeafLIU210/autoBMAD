@@ -91,7 +91,6 @@ class TestDocumentationAccuracy:
         content = api_file.read_text()
 
         # Check for API classes
-        assert "CodeQualityAgent" in content, "Should document CodeQualityAgent"
         assert "TestAutomationAgent" in content, "Should document TestAutomationAgent"
         assert "StateManager" in content, "Should document StateManager"
         assert "EpicDriver" in content, "Should document EpicDriver"

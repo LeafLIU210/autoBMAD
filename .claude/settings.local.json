@@ -44,7 +44,13 @@
       "Bash(pytest:*)",
       "Bash(pwsh:*)",
       "Bash($ PYTHONPATH=/d/GITHUB/pytQt_template python /d/GITHUB/pytQt_template/autoBMAD/epic_automation/epic_driver.py docs/epics/epic-1-core-algorithm-foundation.md --verbose --max-iterations 2 --source-dir src --test-dir tests)",
-      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template python:*)"
+      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template python:*)",
+      "Bash(mkdir:*)",
+      "Bash(chcp:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(powershell:*)",
+      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template timeout 30 python:*)"
     ]
   }
 }

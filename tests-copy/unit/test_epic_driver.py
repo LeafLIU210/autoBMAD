@@ -58,7 +58,6 @@ class TestEpicDriver:
         assert driver.use_claude is True
         assert driver.source_dir == "src"
         assert driver.test_dir == "tests"
-        assert driver.skip_quality is False
         assert driver.skip_tests is False
         assert driver.task_guidance == {}
         assert driver.max_quality_iterations == 3
@@ -275,12 +274,6 @@ class TestEpicDriver:
         assert epic_driver.concurrent is False
         epic_driver.set_concurrent(True)
         assert epic_driver.concurrent is True
-
-    def test_set_skip_quality(self, epic_driver):
-        """Test setting skip quality flag."""
-        assert epic_driver.skip_quality is False
-        epic_driver.set_skip_quality(True)
-        assert epic_driver.skip_quality is True
 
     def test_set_skip_tests(self, epic_driver):
         """Test setting skip tests flag."""

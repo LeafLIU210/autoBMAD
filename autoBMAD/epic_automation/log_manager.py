@@ -282,6 +282,20 @@ Traceback:
             _original_stdout.write(f"Warning: Failed to list log files: {e}\n")
             return []
 
+    def flush(self):
+        """
+        Flush any buffered log data to disk.
+
+        This method ensures that all buffered log messages are immediately
+        written to the log file. Useful for cleanup operations and ensuring
+        log data persistence before program exit.
+        """
+        if self.log_file_handle:
+            try:
+                self.log_file_handle.flush()
+            except Exception as e:
+                _original_stdout.write(f"Warning: Failed to flush log file: {e}\n")
+
 
 class DualWriteStream:
     """

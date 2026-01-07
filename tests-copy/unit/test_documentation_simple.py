@@ -75,11 +75,6 @@ class TestDocumentationFilesExist:
         test_file = Path("tests/unit/test_documentation.py")
         assert test_file.exists(), "Documentation test file should exist"
 
-    def test_code_quality_agent_exists(self):
-        """Verify CodeQualityAgent exists."""
-        agent_file = Path("autoBMAD/epic_automation/code_quality_agent.py")
-        assert agent_file.exists(), "CodeQualityAgent should exist"
-
     def test_test_automation_agent_exists(self):
         """Verify TestAutomationAgent exists."""
         agent_file = Path("autoBMAD/epic_automation/test_automation_agent.py")

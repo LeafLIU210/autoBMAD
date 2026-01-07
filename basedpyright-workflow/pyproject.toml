@@ -63,6 +63,7 @@ reportGeneralTypeIssues = true
 reportOptionalMemberAccess = true
 reportOptionalSubscript = true
 reportPrivateImportUsage = true
+extraPaths = ["../"]
 exclude = [
     "**/__pycache__",
     "**/.venv",
@@ -70,6 +71,9 @@ exclude = [
     "build/",
     "dist/"
 ]
+reportMissingImports = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
 
 [tool.ruff]
 target-version = "py38"

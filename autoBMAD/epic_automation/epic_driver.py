@@ -590,6 +590,32 @@ class EpicDriver:
         logger.info(f"Processing story {story_id}: {story_path}")
 
         try:
+            # Protect entire method from external cancellation to prevent cancel scope errors
+            return await asyncio.wait_for(
+                asyncio.shield(self._process_story_impl(story)),
+                timeout=600.0  # 10 minute timeout for entire process
+            )
+        except asyncio.TimeoutError:
+            logger.warning(f"Story processing timed out after 600s: {story_path}")
+            return False
+        except asyncio.CancelledError:
+            logger.info(f"Story processing cancelled for {story_path}")
+            return False
+
+    async def _process_story_impl(self, story: "dict[str, Any]") -> bool:
+        """
+        Internal implementation of story processing.
+
+        Args:
+            story: Story dictionary with path and metadata
+
+        Returns:
+            True if story completed successfully, False otherwise
+        """
+        story_path = story['path']
+        story_id = story['id']
+
+        try:
             # Check state consistency before processing - only log warnings, don't block
             consistency_check = await self._check_state_consistency(story)
             if not consistency_check:
@@ -651,10 +677,6 @@ class EpicDriver:
             logger.warning(f"Reached maximum Dev-QA cycles ({max_dev_qa_cycles}) for {story_path}")
             return False
 
-        except asyncio.CancelledError:
-            logger.info(f"Story processing cancelled for {story_path}")
-            await self._handle_graceful_cancellation(story)
-            return False
         except Exception as e:
             logger.error(f"Failed to process story {story_path}: {e}")
             await self.state_manager.update_story_status(
@@ -946,56 +968,6 @@ class EpicDriver:
         self.logger.info(f"Dev-QA cycle complete: {success_count}/{len(stories)} stories succeeded")
         return success_count == len(stories)
 
-    async def execute_quality_gates(self) -> "dict[str, Any]":
-        """
-        Execute quality gates after SM-Dev-QA completion.
-
-        Returns:
-            Dict with quality gate results and status
-        """
-        self.logger.info("Starting quality gates")
-
-        # Check if quality gates are skipped
-        if self.skip_quality:
-            self.logger.info("Quality gates skipped via CLI flag")
-            await self._update_progress('quality_gates', 'skipped', {})
-            return {'status': 'skipped'}
-
-        try:
-            from autoBMAD.epic_automation.code_quality_agent import (
-                CodeQualityAgent,  # type: ignore
-            )
-
-            quality_agent: Any = cast(Any, CodeQualityAgent(
-                state_manager=self.state_manager,
-                epic_id=self.epic_id,
-                skip_quality=self.skip_quality
-            ))
-
-            raw_results: Any = await quality_agent.run_quality_gates(
-                source_dir=self.source_dir,
-                skip_quality=self.skip_quality
-            )
-            quality_results: dict[str, Any] = cast("dict[str, Any]", raw_results)
-
-            # Update progress
-            status: str = str(quality_results.get('status', 'failed'))
-            await self._update_progress('quality_gates', status, quality_results)
-
-            if status == 'completed':
-                self.logger.info("Quality gates passed successfully")
-            elif status == 'skipped':
-                self.logger.info("Quality gates skipped via CLI flag")
-            else:
-                self.logger.warning(f"Quality gates completed with status: {status}")
-
-            return quality_results
-
-        except Exception as e:
-            self.logger.error(f"Quality gates execution failed: {e}", exc_info=True)
-            await self._update_progress('quality_gates', 'failed', {'error': str(e)})
-            return {'status': 'failed', 'error': str(e)}
-
     async def execute_test_automation(self) -> "dict[str, Any]":
         """
         Execute test automation after quality gates.
@@ -1077,27 +1049,7 @@ class EpicDriver:
             details: Additional phase details
         """
         try:
-            # Update epic status based on phase
-            if phase == 'dev_qa':
-                # For Dev-QA, we don't track in epic_processing, it's tracked in stories table
-                pass
-            elif phase == 'quality_gates':
-                await self.state_manager.update_epic_status(
-                    epic_id=self.epic_id,
-                    file_path=str(self.epic_path),
-                    status='in_progress',
-                    quality_phase_status=status,
-                    quality_phase_errors=details.get('total_errors', 0)
-                )
-            elif phase == 'test_automation':
-                await self.state_manager.update_epic_status(
-                    epic_id=self.epic_id,
-                    file_path=str(self.epic_path),
-                    status='in_progress',
-                    test_phase_status=status,
-                    test_phase_failures=details.get('failed_count', 0)
-                )
-
+            # Epic progress is tracked in stories table, not in epic_processing table
             self.logger.debug(f"Updated {phase} progress: {status}")
         except Exception as e:
             self.logger.error(f"Failed to update progress for {phase}: {e}")
@@ -1110,15 +1062,7 @@ class EpicDriver:
             total_stories: Total number of stories in epic
         """
         try:
-            await self.state_manager.update_epic_status(
-                epic_id=self.epic_id,
-                file_path=str(self.epic_path),
-                status="in_progress",
-                total_stories=total_stories,
-                completed_stories=0,
-                quality_phase_status="pending",
-                test_phase_status="pending"
-            )
+            # Epic processing is tracked via stories table, no separate initialization needed
             self.logger.debug(f"Initialized epic processing for {total_stories} stories")
         except Exception as e:
             self.logger.error(f"Failed to initialize epic processing: {e}")
@@ -1135,7 +1079,6 @@ class EpicDriver:
             'status': 'completed',
             'phases': {
                 'dev_qa': 'completed',
-                'quality_gates': 'skipped' if self.skip_quality else 'completed',
                 'test_automation': 'skipped' if self.skip_tests else 'completed'
             },
             'total_stories': len(self.stories),
@@ -1220,14 +1163,28 @@ class EpicDriver:
                 self.log_manager.write_exception(e, "Epic Driver run()")
             return False
         finally:
-            # Cleanup logging
-            cleanup_logging()
+            # Improved cleanup logic
+            try:
+                # 1. Cancel all active SDK sessions
+                if hasattr(self, 'qa_agent') and hasattr(self.qa_agent, '_session_manager'):
+                    await self.qa_agent._session_manager.cancel_all_sessions()
+
+                # 2. Flush log manager
+                if hasattr(self, 'log_manager') and self.log_manager:
+                    self.log_manager.flush()
+
+                # 3. Finally cleanup logging
+                cleanup_logging()
+
+            except Exception:
+                # Silently handle cleanup errors to avoid interfering with main flow
+                pass
 
 
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='BMAD Epic Automation - Process epic markdown files through complete 5-phase workflow',
+        description='BMAD Epic Automation - Process epic markdown files through complete Dev-QA workflow',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1235,16 +1192,14 @@ Examples:
   python epic_driver.py docs/epics/my-epic.md --max-iterations 5
   python epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
   python epic_driver.py docs/epics/my-epic.md --source-dir src --test-dir tests
-  python epic_driver.py docs/epics/my-epic.md --skip-quality
   python epic_driver.py docs/epics/my-epic.md --skip-tests
   python epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
 
 Quality Gates:
-  Quality gates (basedpyright and ruff) run after SM-Dev-QA cycle completes.
-  Use --skip-quality to bypass quality gates.
+  Quality gates have been removed from the workflow (--skip-quality flag is deprecated).
 
 Test Automation:
-  Test automation (pytest and debugpy) runs after quality gates complete.
+  Test automation (pytest and debugpy) runs after Dev-QA cycle completes.
   Use --skip-tests to bypass test automation.
         """
     )

@@ -64,6 +64,9 @@ target-version = ['py38']
 profile = "black"
 multi_line_output = 3
 
+[project.scripts]
+bubble-sort = "src.cli:main"
+
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true
