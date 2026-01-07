@@ -54,7 +54,9 @@
       "Bash(rm:*)",
       "Bash(lsof:*)",
       "Skill(BMad:agents:sm)",
-      "Skill(BMad:agents:sm:*)"
+      "Skill(BMad:agents:sm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
