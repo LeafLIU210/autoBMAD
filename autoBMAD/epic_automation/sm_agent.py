@@ -416,10 +416,8 @@ class SMAgent:
 
                 # Check if SDK is available
                 if query is None or ClaudeAgentOptions is None:
-                    raise RuntimeError(
-                        "Claude Agent SDK is required but not available. "
-                        "Please install claude-agent-sdk."
-                    )
+                    logger.warning("[SM Agent] Claude Agent SDK not available, returning False")
+                    return False
 
                 # Use asyncio.wait_for to implement timeout
                 result = await asyncio.wait_for(

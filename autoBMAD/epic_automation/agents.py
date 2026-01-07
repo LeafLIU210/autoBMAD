@@ -105,10 +105,9 @@ class BaseAgent:
         if response.content:
             first_content = response.content[0]  # type: ignore
             # Handle different content types
-            if hasattr(first_content, 'text'):
-                response_text = first_content.text  # type: ignore
-            elif hasattr(first_content, 'thinking'):
-                response_text = first_content.thinking  # type: ignore
+            response_text = getattr(first_content, 'text', None)
+            if response_text is None:
+                response_text = getattr(first_content, 'thinking', '')
 
         return {
             "response": response_text,
