@@ -8,7 +8,6 @@ Uses Claude Code CLI for actual implementation.
 
 import logging
 import subprocess
-import asyncio
 from typing import Any, cast, TYPE_CHECKING
 from typing import Dict, List, Optional  # For compatibility with older Python versions
 import re
@@ -29,7 +28,7 @@ except ImportError:
     _ResultMessage = None
 
 # Import SDK session manager for isolated execution
-from .sdk_session_manager import SDKSessionManager, SDKErrorType
+from .sdk_session_manager import SDKSessionManager
 
 # Export for use in code
 query = _query

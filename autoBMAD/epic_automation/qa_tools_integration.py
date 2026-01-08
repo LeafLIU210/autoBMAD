@@ -148,18 +148,32 @@ class BasedPyrightWorkflowRunner:
 
         logger.debug(f"Executing: {' '.join(cmd)} in {self.workflow_dir}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=self.workflow_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        # Use asyncio.shield to protect subprocess operations from cancellation
+        async def run_command():
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=self.workflow_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=self.timeout
+                )
+                return stdout, stderr, process
+            except asyncio.CancelledError:
+                logger.warning("BasedPyright check cancelled, cleaning up process")
+                try:
+                    process.terminate()
+                    await process.wait()
+                except Exception:
+                    pass
+                raise
 
         try:
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(),
-                timeout=self.timeout
-            )
+            stdout, stderr, process = await asyncio.shield(run_command())
             # Handle encoding errors gracefully
             def safe_decode(data: bytes) -> str:
                 try:
@@ -187,18 +201,32 @@ class BasedPyrightWorkflowRunner:
 
         logger.debug(f"Executing: {' '.join(cmd)}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=self.workflow_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        # Use asyncio.shield to protect subprocess operations from cancellation
+        async def run_auto_fix():
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=self.workflow_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            try:
+                _stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=self.timeout
+                )
+                return _stdout, stderr, process
+            except asyncio.CancelledError:
+                logger.warning("Auto-fix cancelled, cleaning up process")
+                try:
+                    process.terminate()
+                    await process.wait()
+                except Exception:
+                    pass
+                raise
 
         try:
-            _stdout, stderr = await asyncio.wait_for(
-                process.communicate(),
-                timeout=self.timeout
-            )
+            _stdout, stderr, process = await asyncio.shield(run_auto_fix())
 
             if process.returncode != 0:
                 logger.warning(f"Auto-fix completed with warnings: {stderr.decode('utf-8')}")
@@ -379,18 +407,32 @@ class FixtestWorkflowRunner:
 
         logger.debug(f"Executing: {' '.join(cmd)} in {self.workflow_dir}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=self.workflow_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        # Use asyncio.shield to protect subprocess operations from cancellation
+        async def run_scan():
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=self.workflow_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=120  # 2 minute timeout for scanning
+                )
+                return stdout, stderr, process
+            except asyncio.CancelledError:
+                logger.warning("Test scan cancelled, cleaning up process")
+                try:
+                    process.terminate()
+                    await process.wait()
+                except Exception:
+                    pass
+                raise
 
         try:
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(),
-                timeout=120  # 2 minute timeout for scanning
-            )
+            stdout, stderr, process = await asyncio.shield(run_scan())
 
             if process.returncode != 0:
                 logger.warning(f"Test scan completed with warnings: {stderr.decode('utf-8')}")
@@ -417,18 +459,32 @@ class FixtestWorkflowRunner:
 
         logger.debug(f"Executing: {' '.join(cmd)} in {self.workflow_dir}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=self.workflow_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        # Use asyncio.shield to protect subprocess operations from cancellation
+        async def run_command():
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=self.workflow_dir,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=self.timeout
+                )
+                return stdout, stderr, process
+            except asyncio.CancelledError:
+                logger.warning("Test execution cancelled, cleaning up process")
+                try:
+                    process.terminate()
+                    await process.wait()
+                except Exception:
+                    pass
+                raise
 
         try:
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(),
-                timeout=self.timeout
-            )
+            stdout, stderr, process = await asyncio.shield(run_command())
             # Handle encoding errors gracefully
             def safe_decode(data: bytes) -> str:
                 try:

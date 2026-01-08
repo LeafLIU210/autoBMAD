@@ -1,5 +1,5 @@
 # PyQt Windows应用程序生产依赖
-# 生成时间: 2026-01-04
+# 生成时间: 2026-01-08
 # 项目: PyQt Windows 应用程序开发模板 v2.0
 
 # Qt框架 - 现代Qt框架，用于跨平台GUI开发
@@ -10,6 +10,7 @@ loguru>=0.7.0
 
 # BMAD Epic自动化 - 基于奥卡姆剃刀原则的最小化实现
 claude_agent_sdk>=0.1.0
+anthropic>=0.40.0
 
 # 代码质量工具 - 类型检查和代码风格检查
 basedpyright>=1.1.0

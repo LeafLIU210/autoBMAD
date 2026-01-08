@@ -464,7 +464,7 @@ class SafeClaudeSDK:
             return False
 
         # Log SDK execution start
-        logger.info(f"[SDK Start] Starting Claude SDK execution")
+        logger.info("[SDK Start] Starting Claude SDK execution")
         logger.info(f"[SDK Config] Options: {self.options}")
         logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
 

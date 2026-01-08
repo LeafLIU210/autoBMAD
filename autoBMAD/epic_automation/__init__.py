@@ -15,6 +15,7 @@ from .sdk_session_manager import (
     get_session_manager,
     reset_session_manager,
 )
+from .test_automation_agent import TestAutomationAgent
 
 __all__ = [
     'SMAgent',
@@ -36,4 +37,6 @@ __all__ = [
     'IsolatedSDKContext',
     'get_session_manager',
     'reset_session_manager',
+    # Test Automation Agent
+    'TestAutomationAgent',
 ]

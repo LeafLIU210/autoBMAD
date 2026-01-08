@@ -406,7 +406,7 @@ class SMAgent:
             True if successful, False otherwise
         """
         try:
-            logger.info(f"[SM Agent] Claude SDK call")
+            logger.info("[SM Agent] Claude SDK call")
             start_time = time.time()
 
             # Check if SDK is available

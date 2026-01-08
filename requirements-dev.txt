@@ -1,5 +1,5 @@
 # PyQt Windows应用程序开发依赖
-# 生成时间: 2026-01-04
+# 生成时间: 2026-01-08
 # 项目: PyQt Windows 应用程序开发模板 v2.0
 
 # ========== 生产依赖 ==========
@@ -9,33 +9,38 @@ PySide6>=6.5.0
 # 日志处理 - 零配置日志记录，彩色输出，自动日志轮转
 loguru>=0.7.0
 
+# BMAD Epic自动化 - 基于奥卡姆剃刀原则的最小化实现
+claude_agent_sdk>=0.1.0
+anthropic>=0.40.0
+
 # ========== 测试依赖 ==========
 # 测试框架
 pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-json-report>=1.5.0
 
 # 代码覆盖率
 pytest-cov>=4.0.0
 
 # Qt应用测试插件 - Qt事件循环集成，信号和槽测试，GUI测试支持
-pytest-qt>=4.0.0
+pytest-qt>=4.2.0
 
 # 超时控制
 pytest-timeout>=2.1.0
 
 # 模拟对象
-pytest-mock>=3.10.0
+pytest-mock>=3.11.0
+
+# 调试工具
+debugpy>=1.6.0
 
 # ========== 构建依赖 ==========
 # Python打包工具 - 高性能编译，小体积分发，跨平台支持
 nuitka>=1.8.0
 
 # ========== 代码质量依赖 ==========
-
 # 代码检查和格式化工具 - 快速Python代码检查
 ruff>=0.1.0
 
 # 类型检查工具 - 增强的Pyright类型检查
-basedpyright>=1.0.0
-
-# ========== 开发工具 ==========
-
+basedpyright>=1.1.0

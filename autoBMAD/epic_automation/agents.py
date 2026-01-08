@@ -101,13 +101,17 @@ class BaseAgent:
         )
 
         # Extract text content from response
-        response_text = ""  # type: ignore[assignment]
+        response_text: str = ""
         if response.content:
-            first_content = response.content[0]  # type: ignore
+            first_content: Any = response.content[0]  # type: ignore[assignment]
             # Handle different content types
-            response_text = getattr(first_content, 'text', None)
-            if response_text is None:
-                response_text = getattr(first_content, 'thinking', '')
+            if first_content is not None:
+                text_attr: Optional[str] = getattr(first_content, 'text', None)  # type: ignore[arg-type]
+                if text_attr is not None:
+                    response_text = str(text_attr)
+                else:
+                    thinking_attr: str = getattr(first_content, 'thinking', '')  # type: ignore[arg-type]
+                    response_text = str(thinking_attr) if thinking_attr else ""
 
         return {
             "response": response_text,
@@ -345,14 +349,16 @@ class DevAgent(BaseAgent):
         )
 
         # Extract implementation text from response
-        implementation = ""  # type: ignore[assignment]
+        implementation: str = ""
         if response.content:
-            first_content = response.content[0]  # type: ignore
+            first_content: Any = response.content[0]  # type: ignore[assignment]
             # Handle different content types
-            if hasattr(first_content, 'text'):
-                implementation = first_content.text  # type: ignore
-            elif hasattr(first_content, 'thinking'):
-                implementation = first_content.thinking  # type: ignore
+            if hasattr(first_content, 'text'):  # type: ignore[arg-type]
+                text_content: str = first_content.text  # type: ignore
+                implementation = text_content
+            elif hasattr(first_content, 'thinking'):  # type: ignore[arg-type]
+                thinking_content: str = first_content.thinking  # type: ignore
+                implementation = thinking_content
 
         return {
             "status": "success",
@@ -396,14 +402,16 @@ class DevAgent(BaseAgent):
         )
 
         # Extract tests text from response
-        tests = ""  # type: ignore[assignment]
+        tests: str = ""
         if response.content:
-            first_content = response.content[0]  # type: ignore
+            first_content: Any = response.content[0]  # type: ignore[assignment]
             # Handle different content types
-            if hasattr(first_content, 'text'):
-                tests = first_content.text  # type: ignore
-            elif hasattr(first_content, 'thinking'):
-                tests = first_content.thinking  # type: ignore
+            if hasattr(first_content, 'text'):  # type: ignore[arg-type]
+                text_content: str = first_content.text  # type: ignore
+                tests = text_content
+            elif hasattr(first_content, 'thinking'):  # type: ignore[arg-type]
+                thinking_content: str = first_content.thinking  # type: ignore
+                tests = thinking_content
 
         return {
             "status": "success",

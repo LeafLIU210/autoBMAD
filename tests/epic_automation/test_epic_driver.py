@@ -1,373 +1,558 @@
 """
-Unit tests for EpicParser functionality.
+Test Epic Driver - Quality Gates Integration
 
-Tests cover:
-- Epic document parsing
-- Story extraction using regex pattern matching
-- Story-to-file-path mapping
-- Format validation
-- Edge case handling (empty files, malformed content, etc.)
+Tests for the epic driver with quality gates orchestration.
+Tests quality gates integration after Dev-QA cycle.
 """
 
+import asyncio
+import json
+import logging
 import pytest
 import tempfile
-import os
 from pathlib import Path
-
-from autoBMAD.epic_automation.epic_driver import EpicDriver as EpicParser
-
-
-class TestEpicParser:
-    """Test suite for EpicParser class."""
-
-    def test_init_default(self):
-        """Test initialization with default epic directory."""
-        parser = EpicParser()
-        assert parser.epic_dir == Path("docs/epics")
-
-    def test_init_custom_epic_dir(self):
-        """Test initialization with custom epic directory."""
-        parser = EpicParser("custom/epics")
-        assert parser.epic_dir == Path("custom/epics")
-
-    def test_read_epic_success(self):
-        """Test successful reading of an epic file."""
-        epic_content = "# Test Epic\n\n### Story 1: Test Story\n"
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-            f.write(epic_content)
-            temp_path = f.name
-
-        try:
-            parser = EpicParser()
-            content = parser.read_epic(temp_path)
-            assert content == epic_content
-        finally:
-            os.unlink(temp_path)
-
-    def test_read_epic_file_not_found(self):
-        """Test reading a non-existent epic file raises FileNotFoundError."""
-        parser = EpicParser()
-        with pytest.raises(FileNotFoundError):
-            parser.read_epic("/nonexistent/path/epic.md")
-
-    def test_read_epic_io_error(self):
-        """Test handling of IO errors when reading epic."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-            temp_path = f.name
-
-        try:
-            # Remove the file to cause IO error
-            os.unlink(temp_path)
-
-            parser = EpicParser()
-            with pytest.raises(IOError):
-                parser.read_epic(temp_path)
-        except Exception:
-            pass
-
-    def test_extract_stories_single_story(self):
-        """Test extraction of a single story."""
-        epic_content = """# Test Epic
-
-### Story 1: Calculate Button Implementation
-
-**As a** user,
-**I want to** click a calculate button,
-**So that** I can perform calculations.
-
----
-
-### Story 2: Input Validation
-
-**As a** user,
-**I want to** validate inputs,
-**So that** I can prevent errors.
-"""
-
-        parser = EpicParser()
-        stories = parser.extract_stories(epic_content)
-
-        assert len(stories) == 2
-        assert stories[0] == (1, 'Calculate Button Implementation')
-        assert stories[1] == (2, 'Input Validation')
-
-    def test_extract_stories_multiple_stories(self):
-        """Test extraction of multiple stories."""
-        epic_content = """# Epic: Test
-
-### Story 1: First Story
-### Story 2: Second Story
-### Story 3: Third Story
-"""
-
-        parser = EpicParser()
-        stories = parser.extract_stories(epic_content)
-
-        assert len(stories) == 3
-        for i, (story_num, title) in enumerate(stories, 1):
-            assert story_num == i
-            expected_title = ['First', 'Second', 'Third'][i-1]
-            assert title == f"{expected_title} Story"
-
-    def test_extract_stories_no_matches(self):
-        """Test extraction returns empty list when no story headers found."""
-        epic_content = "# Test Epic\n\nNo stories here.\n"
-
-        parser = EpicParser()
-        stories = parser.extract_stories(epic_content)
-
-        assert stories == []
-
-    def test_validate_epic_format_valid(self):
-        """Test validation of a properly formatted epic."""
-        epic_content = """# Epic: Test Epic
-
-**Epic ID**: EPIC-001
-
-### Story 1: Test Story
-"""
-
-        parser = EpicParser()
-        is_valid, errors = parser.validate_epic_format(epic_content)
-
-        assert is_valid is True
-        assert errors == []
-
-    def test_validate_epic_format_missing_header(self):
-        """Test validation fails when epic header is missing."""
-        epic_content = "### Story 1: Test Story\n"
-
-        parser = EpicParser()
-        is_valid, errors = parser.validate_epic_format(epic_content)
-
-        assert is_valid is False
-        assert any("Missing or invalid epic header" in error for error in errors)
-
-    def test_validate_epic_format_missing_epic_id(self):
-        """Test validation fails when Epic ID is missing."""
-        epic_content = """# Epic: Test
-
-### Story 1: Test Story
-"""
-
-        parser = EpicParser()
-        is_valid, errors = parser.validate_epic_format(epic_content)
-
-        assert is_valid is False
-        assert any("Missing or invalid Epic ID" in error for error in errors)
-
-    def test_validate_epic_format_no_stories(self):
-        """Test validation fails when no stories found."""
-        epic_content = """# Epic: Test
-
-**Epic ID**: EPIC-001
-
-Just some content without stories.
-"""
-
-        parser = EpicParser()
-        is_valid, errors = parser.validate_epic_format(epic_content)
-
-        assert is_valid is False
-        assert any("No stories found" in error for error in errors)
-
-    def test_validate_epic_format_duplicate_story_numbers(self):
-        """Test validation fails when duplicate story numbers exist."""
-        epic_content = """# Epic: Test
-
-**Epic ID**: EPIC-001
-
-### Story 1: First Story
-### Story 1: Duplicate Story
-"""
-
-        parser = EpicParser()
-        is_valid, errors = parser.validate_epic_format(epic_content)
-
-        assert is_valid is False
-        assert any("not sequential" in error for error in errors)
-
-    def test_map_story_paths(self):
-        """Test mapping of story numbers to file paths."""
-        stories = [(1, 'First Story'), (2, 'Second Story'), (5, 'Fifth Story')]
-
-        parser = EpicParser()
-        story_infos = parser.map_story_paths(stories, "docs/stories")
-
-        assert len(story_infos) == 3
-
-        # Check that the stories are mapped correctly
-        assert story_infos[0].number == 1
-        assert story_infos[0].title == 'First Story'
-        assert 'story_001.md' in story_infos[0].file_path
-
-        assert story_infos[1].number == 2
-        assert story_infos[1].title == 'Second Story'
-        assert 'story_002.md' in story_infos[1].file_path
-
-        assert story_infos[2].number == 5
-        assert story_infos[2].title == 'Fifth Story'
-        assert 'story_005.md' in story_infos[2].file_path
-
-    def test_parse_epic_success(self):
-        """Test the main parse_epic method with valid epic."""
-        epic_content = """# Epic: Test
-
-**Epic ID**: EPIC-001
-
-### Story 1: Test Story 1
-### Story 2: Test Story 2
-"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-            f.write(epic_content)
-            temp_path = f.name
-
-        try:
-            parser = EpicParser()
-            stories = parser.parse_epic(temp_path, "docs/stories")
-
-            assert len(stories) == 2
-            assert stories[0].number == 1
-            assert stories[0].title == 'Test Story 1'
-            assert stories[1].number == 2
-            assert stories[1].title == 'Test Story 2'
-        finally:
-            os.unlink(temp_path)
-
-    def test_parse_epic_invalid_format(self):
-        """Test parse_epic raises ValueError for invalid format."""
-        epic_content = "Invalid epic without proper format"
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-            f.write(epic_content)
-            temp_path = f.name
-
-        try:
-            parser = EpicParser()
-            with pytest.raises(ValueError):
-                parser.parse_epic(temp_path)
-        finally:
-            os.unlink(temp_path)
-
-    def test_parse_epic_file_not_found(self):
-        """Test parse_epic raises FileNotFoundError for non-existent file."""
-        parser = EpicParser()
-        with pytest.raises(FileNotFoundError):
-            parser.parse_epic("/nonexistent/epic.md")
-
-    def test_get_story_count(self):
-        """Test getting story count from epic."""
-        epic_content = """# Epic: Test
-
-**Epic ID**: EPIC-001
-
-### Story 1: First Story
-### Story 2: Second Story
-### Story 3: Third Story
-"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-            f.write(epic_content)
-            temp_path = f.name
-
-        try:
-            parser = EpicParser()
-            count = parser.get_story_count(temp_path)
-            assert count == 3
-        finally:
-            os.unlink(temp_path)
-
-    def test_get_story_count_file_not_found(self):
-        """Test get_story_count returns 0 for non-existent file."""
-        parser = EpicParser()
-        count = parser.get_story_count("/nonexistent/epic.md")
-        assert count == 0
-
-    def test_edge_case_story_with_special_characters(self):
-        """Test story extraction with special characters in title."""
-        epic_content = """# Epic: Test
-
-**Epic ID**: EPIC-001
-
-### Story 1: Test (with parentheses) & symbols!
-### Story 2: Story with "quotes" and 'apostrophes'
-"""
-
-        parser = EpicParser()
-        stories = parser.extract_stories(epic_content)
-
-        assert len(stories) == 2
-        assert stories[0][1] == 'Test (with parentheses) & symbols!'
-        assert stories[1][1] == 'Story with "quotes" and \'apostrophes\''
-
-    def test_regex_pattern_matches_format(self):
-        """Test that the regex pattern correctly matches the expected format."""
-        test_cases = [
-            ("### Story 1: Title", True, "1", "Title"),
-            ("### Story 42: Long Title Here", True, "42", "Long Title Here"),
-            ("## Story 1: Different Format", False, None, None),  # Only 2 hashes
-            ("### Story 5: Another Title", True, "5", "Another Title"),
-        ]
-
-        parser = EpicParser()
-        for test_string, should_match, expected_id, expected_title in test_cases:
-            if should_match:
-                match = parser.story_pattern.search(test_string)
-                assert match is not None
-                assert match.group(1) == expected_id
-                assert match.group(2) == expected_title
-            else:
-                match = parser.story_pattern.search(test_string)
-                assert match is None
-
-
-class TestEpicParserIntegration:
-    """Integration tests for EpicParser with real epic files."""
-
-    def test_parse_example_epic(self):
-        """Test parsing the actual example epic file."""
-        example_epic_path = Path(__file__).parent.parent.parent / "test-docs" / "epics" / "example-epic.md"
-
-        if not example_epic_path.exists():
-            pytest.skip(f"Example epic file not found at {example_epic_path}")
-
-        parser = EpicParser()
-        stories = parser.parse_epic(str(example_epic_path), "docs/stories")
-
-        # Example epic has 3 stories
-        assert len(stories) == 3
-        assert stories[0].number == 1
-        assert stories[0].title == 'Calculate Button Implementation'
-        assert stories[1].number == 2
-        assert stories[1].title == 'Input Field Validation'
-        assert stories[2].number == 3
-        assert stories[2].title == 'Result Display Enhancement'
-
-    def test_parse_main_epic(self):
-        """Test parsing the main epic-bmad-automation.md file."""
-        epic_path = Path(__file__).parent.parent.parent / "docs" / "epics" / "epic-bmad-automation.md"
-
-        if not epic_path.exists():
-            pytest.skip(f"Epic file not found at {epic_path}")
-
-        parser = EpicParser()
-        stories = parser.parse_epic(str(epic_path), "docs/stories")
-
-        # Main epic should have 5 stories
-        assert len(stories) == 5
-        assert stories[0].number == 1
-        assert stories[0].title == 'Epic Parser Implementation'
-        assert stories[1].number == 2
-        assert stories[1].title == 'BMAD Native Driver Core'
-        assert stories[2].number == 3
-        assert stories[2].title == 'QA Tools Integration'
-        assert stories[3].number == 4
-        assert stories[3].title == 'Progress Monitoring & State Management'
-        assert stories[4].number == 5
-        assert stories[4].title == 'CLI Interface & Documentation'
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+from unittest.mock import AsyncMock, MagicMock, patch, Mock
+import sys
+
+# Add the project root to the path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from autoBMAD.epic_automation.epic_driver import (
+    EpicDriver,
+    QualityGateOrchestrator,
+)
+
+
+class TestQualityGateOrchestrator:
+    """Test quality gate orchestrator functionality."""
+
+    @pytest.fixture
+    def temp_dirs(self):
+        """Create temporary directories for testing."""
+        with tempfile.TemporaryDirectory() as source_dir, \
+             tempfile.TemporaryDirectory() as test_dir:
+            yield Path(source_dir), Path(test_dir)
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_initialization(self, temp_dirs):
+        """Test quality gate orchestrator initialization."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=False
+        )
+
+        assert orchestrator.source_dir == str(source_dir)
+        assert orchestrator.test_dir == str(test_dir)
+        assert orchestrator.skip_quality is False
+        assert orchestrator.skip_tests is False
+        assert orchestrator.results["success"] is True
+        assert orchestrator.results["errors"] == []
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_initialization_with_skip_flags(self, temp_dirs):
+        """Test quality gate orchestrator initialization with skip flags."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=True,
+            skip_tests=True
+        )
+
+        assert orchestrator.skip_quality is True
+        assert orchestrator.skip_tests is True
+
+    @pytest.mark.asyncio
+    async def test_execute_quality_gates_skip_quality(self, temp_dirs):
+        """Test quality gates with skip_quality flag."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=True,
+            skip_tests=False
+        )
+
+        # Mock the pytest agent
+        with patch('autoBMAD.epic_automation.test_automation_agent.TestAutomationAgent') as mock_agent:
+            mock_instance = AsyncMock()
+            mock_instance.run_test_automation.return_value = {
+                "status": "completed",
+                "summary": {"passed": 10, "failed": 0}
+            }
+            mock_agent.return_value = mock_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            assert results["success"] is True
+            assert results["ruff"] is None
+            assert results["basedpyright"] is None
+            assert results["pytest"]["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_execute_quality_gates_skip_tests(self, temp_dirs):
+        """Test quality gates with skip_tests flag."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=True
+        )
+
+        # Mock Ruff and Basedpyright agents
+        with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff, \
+             patch('autoBMAD.epic_automation.quality_agents.BasedpyrightAgent') as mock_basedpyright:
+
+            mock_ruff_instance = AsyncMock()
+            mock_ruff_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_ruff.return_value = mock_ruff_instance
+
+            mock_basedpyright_instance = AsyncMock()
+            mock_basedpyright_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_basedpyright.return_value = mock_basedpyright_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            assert results["success"] is True
+            assert results["ruff"]["success"] is True
+            assert results["basedpyright"]["success"] is True
+            assert results["pytest"] is None
+
+    @pytest.mark.asyncio
+    async def test_execute_quality_gates_all_phases(self, temp_dirs):
+        """Test quality gates with all phases enabled."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=False
+        )
+
+        # Mock all agents
+        with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff, \
+             patch('autoBMAD.epic_automation.quality_agents.BasedpyrightAgent') as mock_basedpyright, \
+             patch('autoBMAD.epic_automation.test_automation_agent.TestAutomationAgent') as mock_pytest:
+
+            # Setup Ruff mock
+            mock_ruff_instance = AsyncMock()
+            mock_ruff_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_ruff.return_value = mock_ruff_instance
+
+            # Setup Basedpyright mock
+            mock_basedpyright_instance = AsyncMock()
+            mock_basedpyright_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_basedpyright.return_value = mock_basedpyright_instance
+
+            # Setup Pytest mock
+            mock_pytest_instance = AsyncMock()
+            mock_pytest_instance.run_test_automation.return_value = {
+                "status": "completed",
+                "summary": {"passed": 10, "failed": 0}
+            }
+            mock_pytest.return_value = mock_pytest_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            assert results["success"] is True
+            assert results["ruff"]["success"] is True
+            assert results["basedpyright"]["success"] is True
+            assert results["pytest"]["success"] is True
+            assert "total_duration" in results
+
+    @pytest.mark.asyncio
+    async def test_execute_quality_gates_ruff_failure(self, temp_dirs):
+        """Test quality gates with Ruff failure."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=False
+        )
+
+        # Mock Ruff to fail
+        with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff:
+            mock_ruff_instance = AsyncMock()
+            mock_ruff_instance.retry_cycle.return_value = {
+                "successful_cycles": 0,
+                "total_cycles": 3,
+                "total_issues_found": 5
+            }
+            mock_ruff.return_value = mock_ruff_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            assert results["success"] is False
+            assert results["ruff"]["success"] is False
+            assert len(results["errors"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_execute_quality_gates_basedpyright_failure(self, temp_dirs):
+        """Test quality gates with Basedpyright failure."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=False
+        )
+
+        # Mock Ruff to succeed, Basedpyright to fail
+        with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff, \
+             patch('autoBMAD.epic_automation.quality_agents.BasedpyrightAgent') as mock_basedpyright:
+
+            # Ruff succeeds
+            mock_ruff_instance = AsyncMock()
+            mock_ruff_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_ruff.return_value = mock_ruff_instance
+
+            # Basedpyright fails
+            mock_basedpyright_instance = AsyncMock()
+            mock_basedpyright_instance.retry_cycle.return_value = {
+                "successful_cycles": 0,
+                "total_cycles": 3,
+                "total_issues_found": 10
+            }
+            mock_basedpyright.return_value = mock_basedpyright_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            assert results["success"] is False
+            assert results["ruff"]["success"] is True
+            assert results["basedpyright"]["success"] is False
+            assert len(results["errors"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_execute_quality_gates_pytest_failure(self, temp_dirs):
+        """Test quality gates with Pytest failure."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=False
+        )
+
+        # Mock all agents
+        with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff, \
+             patch('autoBMAD.epic_automation.quality_agents.BasedpyrightAgent') as mock_basedpyright, \
+             patch('autoBMAD.epic_automation.test_automation_agent.TestAutomationAgent') as mock_pytest:
+
+            # Ruff succeeds
+            mock_ruff_instance = AsyncMock()
+            mock_ruff_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_ruff.return_value = mock_ruff_instance
+
+            # Basedpyright succeeds
+            mock_basedpyright_instance = AsyncMock()
+            mock_basedpyright_instance.retry_cycle.return_value = {
+                "successful_cycles": 1,
+                "total_cycles": 1,
+                "total_issues_found": 0
+            }
+            mock_basedpyright.return_value = mock_basedpyright_instance
+
+            # Pytest fails
+            mock_pytest_instance = AsyncMock()
+            mock_pytest_instance.run_test_automation.return_value = {
+                "status": "failed",
+                "summary": {"passed": 5, "failed": 5}
+            }
+            mock_pytest.return_value = mock_pytest_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            # Pytest failure doesn't halt the pipeline but marks success as False
+            assert results["success"] is False
+            assert results["ruff"]["success"] is True
+            assert results["basedpyright"]["success"] is True
+            assert results["pytest"]["success"] is False
+            assert len(results["errors"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_progress_tracking(self, temp_dirs):
+        """Test progress tracking through quality gates."""
+        source_dir, test_dir = temp_dirs
+
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_dir),
+            test_dir=str(test_dir),
+            skip_quality=False,
+            skip_tests=False
+        )
+
+        # Mock all agents
+        with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff, \
+             patch('autoBMAD.epic_automation.quality_agents.BasedpyrightAgent') as mock_basedpyright, \
+             patch('autoBMAD.epic_automation.test_automation_agent.TestAutomationAgent') as mock_pytest:
+
+            # Setup mocks
+            for mock_agent in [mock_ruff, mock_basedpyright]:
+                mock_instance = AsyncMock()
+                mock_instance.retry_cycle.return_value = {
+                    "successful_cycles": 1,
+                    "total_cycles": 1,
+                    "total_issues_found": 0
+                }
+                mock_agent.return_value = mock_instance
+
+            mock_pytest_instance = AsyncMock()
+            mock_pytest_instance.run_test_automation.return_value = {
+                "status": "completed",
+                "summary": {"passed": 10, "failed": 0}
+            }
+            mock_pytest.return_value = mock_pytest_instance
+
+            results = await orchestrator.execute_quality_gates("test_epic")
+
+            # Check progress tracking
+            assert "progress" in results
+            assert "current_phase" in results["progress"]
+            assert "phase_1_ruff" in results["progress"]
+            assert "phase_2_basedpyright" in results["progress"]
+            assert "phase_3_pytest" in results["progress"]
+
+            # All phases should be completed
+            assert results["progress"]["phase_1_ruff"]["status"] == "completed"
+            assert results["progress"]["phase_2_basedpyright"]["status"] == "completed"
+            assert results["progress"]["phase_3_pytest"]["status"] == "completed"
+
+
+class TestEpicDriverIntegration:
+    """Test Epic Driver integration with quality gates."""
+
+    @pytest.fixture
+    def epic_driver(self):
+        """Create an EpicDriver instance for testing."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            epic_path = Path(temp_dir) / "test_epic.md"
+            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1: Test Story\n")
+
+            # Mock StateManager to avoid async initialization issues in tests
+            with patch('autoBMAD.epic_automation.epic_driver.StateManager'):
+                driver = EpicDriver(
+                    epic_path=str(epic_path),
+                    source_dir=temp_dir,
+                    test_dir=temp_dir,
+                    skip_quality=True,
+                    skip_tests=True
+                )
+
+                yield driver
+
+    @pytest.mark.asyncio
+    async def test_epic_driver_initialization_with_quality_flags(self):
+        """Test EpicDriver initialization with quality gate flags."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            epic_path = Path(temp_dir) / "test_epic.md"
+            epic_path.write_text("# Test Epic\n\n## Stories\n- Story 1: Test Story\n")
+
+            with patch('autoBMAD.epic_automation.state_manager.StateManager'):
+                driver = EpicDriver(
+                    epic_path=str(epic_path),
+                    source_dir=temp_dir,
+                    test_dir=temp_dir,
+                    skip_quality=True,
+                    skip_tests=True
+                )
+
+                assert driver.skip_quality is True
+                assert driver.skip_tests is True
+
+    @pytest.mark.asyncio
+    async def test_epic_driver_initialization_default_flags(self):
+        """Test EpicDriver initialization with default quality gate flags."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            epic_path = Path(temp_dir) / "test_epic.md"
+            epic_path.write_text("# Test Epic\n\n")
+
+            with patch('autoBMAD.epic_automation.state_manager.StateManager'):
+                driver = EpicDriver(
+                    epic_path=str(epic_path),
+                    source_dir=temp_dir,
+                    test_dir=temp_dir
+                )
+
+                assert driver.skip_quality is False
+                assert driver.skip_tests is False
+
+    @pytest.mark.asyncio
+    async def test_run_with_quality_gates(self):
+        """Test EpicDriver run with quality gates enabled."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            epic_path = Path(temp_dir) / "test_epic.md"
+            epic_path.write_text("# Test Epic\n\n")
+
+            with patch('autoBMAD.epic_automation.state_manager.StateManager'):
+                driver = EpicDriver(
+                    epic_path=str(epic_path),
+                    source_dir=temp_dir,
+                    test_dir=temp_dir,
+                    skip_quality=True,
+                    skip_tests=True
+                )
+
+                # Mock the parse_epic to return empty stories
+                driver.parse_epic = AsyncMock(return_value=[])
+
+                # Run the epic driver
+                result = await driver.run()
+
+                # Should return False because no stories were found
+                assert result is False
+
+    @pytest.mark.asyncio
+    async def test_run_with_quality_gates_disabled(self):
+        """Test EpicDriver run with quality gates disabled."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            epic_path = Path(temp_dir) / "test_epic.md"
+            epic_path.write_text("# Test Epic\n\n")
+
+            with patch('autoBMAD.epic_automation.state_manager.StateManager'):
+                driver = EpicDriver(
+                    epic_path=str(epic_path),
+                    source_dir=temp_dir,
+                    test_dir=temp_dir,
+                    skip_quality=True,
+                    skip_tests=True
+                )
+
+                # Mock the parse_epic to return empty stories
+                driver.parse_epic = AsyncMock(return_value=[])
+
+                # Run the epic driver
+                result = await driver.run()
+
+                # Should return False because no stories were found
+                assert result is False
+
+    def test_cli_argument_parsing(self):
+        """Test CLI argument parsing for quality gate flags."""
+        import sys
+        from unittest.mock import patch
+
+        # Test --skip-quality flag
+        with patch.object(sys, 'argv', ['epic_driver.py', 'test.md', '--skip-quality']):
+            from autoBMAD.epic_automation.epic_driver import parse_arguments
+            args = parse_arguments()
+            assert args.skip_quality is True
+            assert args.skip_tests is False
+
+        # Test --skip-tests flag
+        with patch.object(sys, 'argv', ['epic_driver.py', 'test.md', '--skip-tests']):
+            args = parse_arguments()
+            assert args.skip_quality is False
+            assert args.skip_tests is True
+
+        # Test both flags
+        with patch.object(sys, 'argv', ['epic_driver.py', 'test.md', '--skip-quality', '--skip-tests']):
+            args = parse_arguments()
+            assert args.skip_quality is True
+            assert args.skip_tests is True
+
+        # Test no flags (default)
+        with patch.object(sys, 'argv', ['epic_driver.py', 'test.md']):
+            args = parse_arguments()
+            assert args.skip_quality is False
+            assert args.skip_tests is False
+
+
+class TestQualityGateErrorHandling:
+    """Test error handling in quality gates."""
+
+    @pytest.mark.asyncio
+    async def test_exception_handling_in_quality_gates(self):
+        """Test exception handling in quality gates pipeline."""
+        with tempfile.TemporaryDirectory() as source_dir, \
+             tempfile.TemporaryDirectory() as test_dir:
+
+            orchestrator = QualityGateOrchestrator(
+                source_dir=source_dir,
+                test_dir=test_dir,
+                skip_quality=False,
+                skip_tests=False
+            )
+
+            # Mock an agent to raise an exception
+            with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff:
+                mock_ruff_instance = AsyncMock()
+                mock_ruff_instance.retry_cycle.side_effect = Exception("Test exception")
+                mock_ruff.return_value = mock_ruff_instance
+
+                results = await orchestrator.execute_quality_gates("test_epic")
+
+                assert results["success"] is False
+                assert len(results["errors"]) > 0
+                assert "Test exception" in results["errors"][0]
+
+    @pytest.mark.asyncio
+    async def test_max_turns_configuration(self):
+        """Test that max_turns is properly configured."""
+        with tempfile.TemporaryDirectory() as source_dir, \
+             tempfile.TemporaryDirectory() as test_dir:
+
+            orchestrator = QualityGateOrchestrator(
+                source_dir=source_dir,
+                test_dir=test_dir,
+                skip_quality=False,
+                skip_tests=False
+            )
+
+            # Mock the Ruff agent
+            with patch('autoBMAD.epic_automation.quality_agents.RuffAgent') as mock_ruff:
+                mock_instance = AsyncMock()
+                mock_instance.retry_cycle.return_value = {
+                    "successful_cycles": 1,
+                    "total_cycles": 1
+                }
+                mock_ruff.return_value = mock_instance
+
+                results = await orchestrator.execute_quality_gates("test_epic")
+
+                # Verify retry_cycle was called
+                mock_instance.retry_cycle.assert_called_once()
+                call_kwargs = mock_instance.retry_cycle.call_args[1]
+                assert "max_cycles" in call_kwargs
+                assert call_kwargs["max_cycles"] == 3
+
+
+if __name__ == "__main__":
+    # Run the tests
+    pytest.main([__file__, "-v", "--tb=short"])

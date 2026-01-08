@@ -10,8 +10,9 @@ import asyncio
 import logging
 import re
 import sys
+import time
 from pathlib import Path
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 # Import log manager
 from autoBMAD.epic_automation.log_manager import (
@@ -34,6 +35,314 @@ CYCLE_TIMEOUT = None   # 90分钟（单次Dev+QA循环）
 DEV_TIMEOUT = None     # 45分钟（开发阶段）
 QA_TIMEOUT = None      # 30分钟（QA审查阶段）
 SM_TIMEOUT = None      # 30分钟（SM阶段）
+
+
+class QualityGateOrchestrator:
+    """Orchestrates quality gates pipeline after QA completion."""
+
+    def __init__(self, source_dir: str, test_dir: str, skip_quality: bool = False, skip_tests: bool = False):
+        """
+        Initialize quality gate orchestrator.
+
+        Args:
+            source_dir: Source code directory
+            test_dir: Test directory
+            skip_quality: Skip ruff and basedpyright quality checks
+            skip_tests: Skip pytest execution
+        """
+        self.source_dir = source_dir
+        self.test_dir = test_dir
+        self.skip_quality = skip_quality
+        self.skip_tests = skip_tests
+        self.logger = logging.getLogger(f"{__name__}.quality_gates")
+
+        # Initialize results with proper type structure
+        self.results: Dict[str, Any] = {
+            "success": True,
+            "ruff": None,
+            "basedpyright": None,
+            "pytest": None,
+            "errors": [],  # type: List[str]
+            "start_time": None,
+            "end_time": None,
+            "total_duration": 0.0,
+            "progress": {
+                "current_phase": "not_started",
+                "phase_1_ruff": {"status": "pending", "start_time": None, "end_time": None},
+                "phase_2_basedpyright": {"status": "pending", "start_time": None, "end_time": None},
+                "phase_3_pytest": {"status": "pending", "start_time": None, "end_time": None}
+            }
+        }
+
+    def _update_progress(self, phase: str, status: str, start: bool = False, end: bool = False):
+        """Update progress tracking for a phase."""
+        progress_dict = self.results["progress"]
+        if phase in progress_dict:
+            phase_dict = progress_dict[phase]
+            phase_dict["status"] = status
+            if start:
+                phase_dict["start_time"] = time.time()
+            if end:
+                phase_dict["end_time"] = time.time()
+
+    def _calculate_duration(self, start_time: float, end_time: float) -> float:
+        """Calculate duration in seconds."""
+        return round(end_time - start_time, 2)
+
+    async def execute_ruff_agent(self, source_dir: str) -> Dict[str, Any]:
+        """Execute Ruff quality agent."""
+        if self.skip_quality:
+            self.logger.info("Skipping Ruff quality check (--skip-quality flag)")
+            return {"success": True, "skipped": True, "message": "Skipped via CLI flag"}
+
+        self.logger.info("=== Quality Gate 1/3: Ruff Linting ===")
+        self._update_progress("phase_1_ruff", "in_progress", start=True)
+        progress_dict = cast(Dict[str, Any], self.results["progress"])
+        progress_dict["current_phase"] = "ruff"
+
+        try:
+            from autoBMAD.epic_automation.quality_agents import RuffAgent
+            ruff_agent = RuffAgent()
+
+            start_time = time.time()
+            ruff_result = await ruff_agent.retry_cycle(
+                source_dir=Path(source_dir),
+                max_cycles=3
+            )
+            end_time = time.time()
+
+            # Check if successful (has successful_cycles > 0)
+            success = ruff_result.get("successful_cycles", 0) > 0
+
+            if success:
+                self.logger.info(f"✓ Ruff quality gate PASSED in {self._calculate_duration(start_time, end_time)}s")
+                self._update_progress("phase_1_ruff", "completed", end=True)
+                return {
+                    "success": True,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": ruff_result
+                }
+            else:
+                error_msg = f"Ruff quality gate failed after {ruff_result.get('total_cycles', 0)} cycles"
+                self.logger.warning(f"✗ {error_msg}")
+                self._update_progress("phase_1_ruff", "failed", end=True)
+                errors_list = cast(List[str], self.results["errors"])
+                errors_list.append(error_msg)
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": ruff_result
+                }
+        except Exception as e:
+            error_msg = f"Ruff execution error: {str(e)}"
+            self.logger.error(error_msg)
+            self._update_progress("phase_1_ruff", "error", end=True)
+            errors_list = cast(List[str], self.results["errors"])
+            errors_list.append(error_msg)
+            return {
+                "success": False,
+                "error": error_msg,
+                "duration": 0.0
+            }
+
+    async def execute_basedpyright_agent(self, source_dir: str) -> Dict[str, Any]:
+        """Execute Basedpyright type checking agent."""
+        if self.skip_quality:
+            self.logger.info("Skipping Basedpyright quality check (--skip-quality flag)")
+            return {"success": True, "skipped": True, "message": "Skipped via CLI flag"}
+
+        self.logger.info("=== Quality Gate 2/3: BasedPyright Type Checking ===")
+        self._update_progress("phase_2_basedpyright", "in_progress", start=True)
+        progress_dict = cast(Dict[str, Any], self.results["progress"])
+        progress_dict["current_phase"] = "basedpyright"
+
+        try:
+            from autoBMAD.epic_automation.quality_agents import BasedpyrightAgent
+            basedpyright_agent = BasedpyrightAgent()
+
+            start_time = time.time()
+            basedpyright_result = await basedpyright_agent.retry_cycle(
+                source_dir=Path(source_dir),
+                max_cycles=3
+            )
+            end_time = time.time()
+
+            # Check if successful (has successful_cycles > 0)
+            success = basedpyright_result.get("successful_cycles", 0) > 0
+
+            if success:
+                self.logger.info(f"✓ BasedPyright quality gate PASSED in {self._calculate_duration(start_time, end_time)}s")
+                self._update_progress("phase_2_basedpyright", "completed", end=True)
+                return {
+                    "success": True,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": basedpyright_result
+                }
+            else:
+                error_msg = f"BasedPyright quality gate failed after {basedpyright_result.get('total_cycles', 0)} cycles"
+                self.logger.warning(f"✗ {error_msg}")
+                self._update_progress("phase_2_basedpyright", "failed", end=True)
+                errors_list = cast(List[str], self.results["errors"])
+                errors_list.append(error_msg)
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": basedpyright_result
+                }
+        except Exception as e:
+            error_msg = f"BasedPyright execution error: {str(e)}"
+            self.logger.error(error_msg)
+            self._update_progress("phase_2_basedpyright", "error", end=True)
+            errors_list = cast(List[str], self.results["errors"])
+            errors_list.append(error_msg)
+            return {
+                "success": False,
+                "error": error_msg,
+                "duration": 0.0
+            }
+
+    async def execute_pytest_agent(self, test_dir: str) -> Dict[str, Any]:
+        """Execute Pytest agent."""
+        if self.skip_tests:
+            self.logger.info("Skipping pytest execution (--skip-tests flag)")
+            return {"success": True, "skipped": True, "message": "Skipped via CLI flag"}
+
+        self.logger.info("=== Quality Gate 3/3: Pytest Execution ===")
+        self._update_progress("phase_3_pytest", "in_progress", start=True)
+        progress_dict = cast(Dict[str, Any], self.results["progress"])
+        progress_dict["current_phase"] = "pytest"
+
+        try:
+            from autoBMAD.epic_automation.state_manager import StateManager
+            from autoBMAD.epic_automation.test_automation_agent import (
+                TestAutomationAgent,
+            )
+
+            # Create a minimal state manager for pytest agent
+            state_manager = StateManager()
+            pytest_agent = TestAutomationAgent(
+                state_manager=state_manager,
+                epic_id="epic_driver_quality_gates",
+                skip_tests=False
+            )
+
+            start_time = time.time()
+            pytest_result = await pytest_agent.run_test_automation(
+                test_dir=test_dir,
+                skip_tests=False
+            )
+            end_time = time.time()
+
+            success = pytest_result.get("status") == "completed"
+
+            if success:
+                self.logger.info(f"✓ Pytest quality gate PASSED in {self._calculate_duration(start_time, end_time)}s")
+                self._update_progress("phase_3_pytest", "completed", end=True)
+                return {
+                    "success": True,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": pytest_result
+                }
+            else:
+                error_msg = f"Pytest quality gate failed with status: {pytest_result.get('status')}"
+                self.logger.warning(f"✗ {error_msg}")
+                self._update_progress("phase_3_pytest", "failed", end=True)
+                errors_list = cast(List[str], self.results["errors"])
+                errors_list.append(error_msg)
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": pytest_result
+                }
+        except Exception as e:
+            error_msg = f"Pytest execution error: {str(e)}"
+            self.logger.error(error_msg)
+            self._update_progress("phase_3_pytest", "error", end=True)
+            errors_list = cast(List[str], self.results["errors"])
+            errors_list.append(error_msg)
+            return {
+                "success": False,
+                "error": error_msg,
+                "duration": 0.0
+            }
+
+    async def execute_quality_gates(self, epic_id: str) -> Dict[str, Any]:
+        """
+        Execute complete quality gates pipeline.
+
+        Args:
+            epic_id: Epic identifier for tracking
+
+        Returns:
+            Dictionary with quality gate results
+        """
+        self.logger.info(f"Starting quality gates pipeline for epic: {epic_id}")
+        self.results["start_time"] = time.time()
+        progress_dict = cast(Dict[str, Any], self.results["progress"])
+        progress_dict["current_phase"] = "starting"
+
+        try:
+            # Phase 1: Ruff
+            if not self.skip_quality:
+                ruff_result = await self.execute_ruff_agent(self.source_dir)
+                self.results["ruff"] = ruff_result
+                if not ruff_result["success"]:
+                    self.logger.error("Quality gates pipeline halted due to Ruff failure")
+                    return self._finalize_results()
+
+            # Phase 2: Basedpyright
+            if not self.skip_quality:
+                basedpyright_result = await self.execute_basedpyright_agent(self.source_dir)
+                self.results["basedpyright"] = basedpyright_result
+                if not basedpyright_result["success"]:
+                    self.logger.error("Quality gates pipeline halted due to BasedPyright failure")
+                    return self._finalize_results()
+
+            # Phase 3: Pytest
+            if not self.skip_tests:
+                pytest_result = await self.execute_pytest_agent(self.test_dir)
+                self.results["pytest"] = pytest_result
+                if not pytest_result["success"]:
+                    self.results["success"] = False
+                    self.logger.warning("Quality gates completed with pytest failure")
+            else:
+                self.logger.info("Skipping pytest (--skip-tests flag set)")
+
+            return self._finalize_results()
+
+        except Exception as e:
+            error_msg = f"Quality gates pipeline error: {str(e)}"
+            self.logger.error(error_msg, exc_info=True)
+            self.results["success"] = False
+            errors_list = cast(List[str], self.results["errors"])
+            errors_list.append(error_msg)
+            return self._finalize_results()
+
+    def _finalize_results(self) -> Dict[str, Any]:
+        """Finalize and return results."""
+        self.results["end_time"] = time.time()
+        start_time = self.results["start_time"]
+        end_time = self.results["end_time"]
+        if start_time and end_time:
+            self.results["total_duration"] = self._calculate_duration(
+                start_time,
+                end_time
+            )
+
+        # Determine overall status
+        if self.results["errors"]:
+            self.results["success"] = False
+            self.logger.info(f"Quality gates pipeline FAILED with {len(self.results['errors'])} error(s)")
+        else:
+            self.results["success"] = True
+            self.logger.info(f"Quality gates pipeline COMPLETED SUCCESSFULLY in {self.results['total_duration']}s")
+
+        progress_dict = cast(Dict[str, Any], self.results["progress"])
+        progress_dict["current_phase"] = "completed"
+        return self.results
 
 
 class EpicDriver:
@@ -63,7 +372,8 @@ class EpicDriver:
                  max_iterations: int = 3, retry_failed: bool = False,
                  verbose: bool = False, concurrent: bool = False,
                  use_claude: bool = True, source_dir: str = "src",
-                 test_dir: str = "tests"):
+                 test_dir: str = "tests", skip_quality: bool = False,
+                 skip_tests: bool = False):
         """
         Initialize epic driver.
 
@@ -77,6 +387,8 @@ class EpicDriver:
             use_claude: Use Claude Code CLI for real implementation (default True)
             source_dir: Source code directory for QA checks (default: "src")
             test_dir: Test directory for QA checks (default: "tests")
+            skip_quality: Skip quality gates (ruff and basedpyright)
+            skip_tests: Skip pytest execution
         """
         self.epic_path = Path(epic_path).resolve()
         self.epic_id = str(epic_path)  # Use epic path as epic_id
@@ -88,6 +400,8 @@ class EpicDriver:
         self.verbose = verbose
         self.concurrent = concurrent
         self.use_claude = use_claude
+        self.skip_quality = skip_quality
+        self.skip_tests = skip_tests
 
         # Auto-resolve source_dir and test_dir to absolute paths
         source_path = Path(source_dir)
@@ -683,10 +997,10 @@ class EpicDriver:
         """
         Check if story state is consistent with filesystem and expected outcomes.
         Be more permissive - log issues but don't fail the entire process.
-        
+
         Args:
             story: Story dictionary with path and metadata
-            
+
         Returns:
             True if state is consistent, False if there are issues
         """
@@ -712,7 +1026,7 @@ class EpicDriver:
             try:
                 db_status = await self.state_manager.get_story_status(story_path)
                 current_status = story.get('status', 'unknown')
-                
+
                 if db_status and db_status.get('status') != current_status:
                     logger.info(f"Status mismatch noted for {story_path}: story={current_status}, db={db_status.get('status')}")
                     # Informational only - don't block processing
@@ -732,10 +1046,10 @@ class EpicDriver:
         """
         Check if expected files exist on filesystem.
         Be permissive - log missing files but don't fail the process.
-        
+
         Args:
             story: Story dictionary with expected files
-            
+
         Returns:
             True if filesystem looks reasonable, False if major issues found
         """
@@ -744,17 +1058,17 @@ class EpicDriver:
             if not expected_files:
                 # If no expected files specified, check for basic structure
                 expected_files = ['src', 'tests', 'docs']
-            
+
             missing_files: list[str] = []
             existing_files: list[str] = []
-            
+
             for file_path in expected_files:
                 path = Path(file_path)
                 if path.exists():
                     existing_files.append(file_path)
                 else:
                     missing_files.append(file_path)
-            
+
             # Log status but be permissive
             if missing_files:
                 logger.info(f"Expected files check: found {str(len(existing_files))}, missing {str(len(missing_files))} for {story.get('path', 'unknown')}")
@@ -774,10 +1088,10 @@ class EpicDriver:
         """
         Validate story file content integrity.
         Be smart about validation - check for essential elements, not strict formatting.
-        
+
         Args:
             story: Story dictionary with path and validation requirements
-            
+
         Returns:
             True if story has essential content, False if it's clearly invalid
         """
@@ -793,12 +1107,12 @@ class EpicDriver:
                 return False  # This is a real issue - file should exist
 
             content = story_file.read_text(encoding='utf-8')
-            
+
             # Essential checks - only fail on truly problematic content
             if len(content.strip()) < 50:  # Very short content
                 logger.warning(f"Story {story_path} appears too short ({len(content)} chars)")
                 return False
-            
+
             # Helper functions for checking essential story elements
             def has_markdown_headers(content: str) -> bool:
                 """Check if content has markdown headers."""
@@ -818,13 +1132,13 @@ class EpicDriver:
                 ('status', mentions_status),  # Mentions status
                 ('story content', has_substantial_content),  # Has substantial content
             ]
-            
+
             missing_essentials: list[str] = []
             for element_name, check_func in essential_elements:
-                check_func_cast = cast(Callable[[str], bool], check_func)
-                if not check_func_cast(content):
+                # check_func is already correctly typed as Callable[[str], bool]
+                if not check_func(content):
                     missing_essentials.append(element_name)
-            
+
             if missing_essentials:
                 logger.warning(f"Story {story_path} missing essential elements: {missing_essentials}")
                 # For missing essentials, be more permissive - log but don't fail
@@ -836,7 +1150,7 @@ class EpicDriver:
             has_story_pattern = any(pattern in content.lower() for pattern in [
                 '## story', '# story', 'as a', 'i want', 'so that'
             ])
-            
+
             has_acceptance_pattern = any(pattern in content.lower() for pattern in [
                 '## acceptance', '# acceptance', 'acceptance criteria'
             ])
@@ -856,19 +1170,19 @@ class EpicDriver:
     async def _resync_story_state(self, story: "dict[str, Any]") -> None:
         """
         Resynchronize story state with expected status.
-        
+
         Args:
             story: Story dictionary with path and expected status
         """
         try:
             story_path = story.get('path', '')
             expected_status = story.get('expected_status', 'ready')
-            
+
             if not story_path:
                 return
 
             logger.info(f"Resynchronizing story state for {story_path} to {expected_status}")
-            
+
             # Update database state
             await self.state_manager.update_story_status(
                 story_path=story_path,
@@ -885,7 +1199,7 @@ class EpicDriver:
     async def _handle_graceful_cancellation(self, story: "dict[str, Any]") -> None:
         """
         Handle graceful cancellation of story processing.
-        
+
         Args:
             story: Story dictionary being processed
         """
@@ -895,7 +1209,7 @@ class EpicDriver:
                 return
 
             logger.info(f"Handling graceful cancellation for {story_path}")
-            
+
             # Update story status to indicate cancellation
             await self.state_manager.update_story_status(
                 story_path=story_path,
@@ -942,6 +1256,8 @@ class EpicDriver:
         })
 
         self.logger.info(f"Dev-QA cycle complete: {success_count}/{len(stories)} stories succeeded")
+
+        # Return True if all stories succeeded, False otherwise
         return success_count == len(stories)
 
 
@@ -1013,7 +1329,8 @@ class EpicDriver:
             config_str = (
                 f"Configuration: max_iterations={self.max_iterations}, "
                 f"retry_failed={self.retry_failed}, verbose={self.verbose}, "
-                f"concurrent={self.concurrent}"
+                f"concurrent={self.concurrent}, skip_quality={self.skip_quality}, "
+                f"skip_tests={self.skip_tests}"
             )
             self.logger.debug(config_str)
 
@@ -1042,6 +1359,17 @@ class EpicDriver:
                 await self._update_progress('dev_qa', 'failed', {})
                 return False
 
+            # Phase 2: Quality Gates (Ruff, Basedpyright, Pytest)
+            # Quality gates are non-blocking - epic continues regardless of results
+            await self.execute_quality_gates()
+
+            # Sync story statuses from database to markdown files
+            self.logger.info("=== Syncing Story Statuses ===")
+            sync_results = await self.state_manager.sync_story_statuses_to_markdown()
+            if sync_results.get("error_count", 0) > 0:
+                self.logger.warning(f"同步过程中有 {sync_results['error_count']} 个错误")
+            else:
+                self.logger.info(f"成功同步 {sync_results.get('success_count', 0)} 个故事状态")
 
             self.logger.info("=== Epic Processing Complete ===")
             return True
@@ -1070,18 +1398,97 @@ class EpicDriver:
                 # Silently handle cleanup errors to avoid interfering with main flow
                 pass
 
+    async def execute_quality_gates(self) -> bool:
+        """
+        Execute quality gates pipeline after Dev-QA cycle completes.
+
+        Returns:
+            True if quality gates passed or were skipped, False otherwise
+        """
+        self.logger.info("=== Phase 2: Quality Gates ===")
+        await self._update_progress('quality_gates', 'in_progress', {})
+
+        try:
+            # Create quality gate orchestrator
+            quality_orchestrator = QualityGateOrchestrator(
+                source_dir=self.source_dir,
+                test_dir=self.test_dir,
+                skip_quality=self.skip_quality,
+                skip_tests=self.skip_tests
+            )
+
+            # Execute quality gates pipeline
+            quality_results = await quality_orchestrator.execute_quality_gates(self.epic_id)
+
+            # Update progress
+            await self._update_progress('quality_gates', 'completed', {
+                'quality_results': quality_results
+            })
+
+            # Check if quality gates succeeded
+            if quality_results.get("success", False):
+                self.logger.info("✓ Quality gates pipeline PASSED")
+                return True
+            else:
+                # Quality gates failed
+                errors = quality_results.get("errors", [])
+                if errors:
+                    self.logger.error(f"✗ Quality gates pipeline FAILED with {len(errors)} error(s):")
+                    for error in errors:
+                        self.logger.error(f"  - {error}")
+                else:
+                    self.logger.error("✗ Quality gates pipeline FAILED (no specific errors reported)")
+
+                # Quality gates failures are non-blocking by design
+                # We return True to allow epic completion even if quality gates fail
+                # This allows developers to review and fix issues post-epic
+                self.logger.warning("Quality gates failure is non-blocking - epic processing continues")
+                return True
+
+        except Exception as e:
+            error_msg = f"Quality gates execution error: {str(e)}"
+            self.logger.error(error_msg, exc_info=True)
+            await self._update_progress('quality_gates', 'error', {'error': str(e)})
+
+            # Quality gates errors are also non-blocking
+            self.logger.warning("Quality gates error is non-blocking - epic processing continues")
+            return True
+
 
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description='BMAD Epic Automation - Process epic markdown files through Dev-QA workflow',
+        description='BMAD Epic Automation - Process epic markdown files through Dev-QA workflow with quality gates',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python epic_driver.py docs/epics/my-epic.md
+Quality Gates Examples:
+  # Run with full quality gates (Ruff, BasedPyright, Pytest)
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
+
+  # Skip quality gates for faster development
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+
+  # Skip only pytest execution
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
+
+  # Skip both quality gates and tests
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality --skip-tests
+
+  # Custom source and test directories
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --source-dir src --test-dir tests
+
+  # Enable verbose logging for detailed quality gate output
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
+
+  # Increase retry attempts for quality gates
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --max-iterations 5
+
+Standard Examples:
   python epic_driver.py docs/epics/my-epic.md --max-iterations 5
   python epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
   python epic_driver.py docs/epics/my-epic.md --source-dir src --test-dir tests
+
+For more information on quality gates, see docs/troubleshooting/quality-gates.md
         """
     )
 
@@ -1141,6 +1548,18 @@ Examples:
         help='Test directory for QA checks (default: "tests")'
     )
 
+    _ = parser.add_argument(
+        '--skip-quality',
+        action='store_true',
+        help='Skip quality gates (ruff and basedpyright checks)'
+    )
+
+    _ = parser.add_argument(
+        '--skip-tests',
+        action='store_true',
+        help='Skip pytest execution'
+    )
+
     args = parser.parse_args()
 
     # Validate max_iterations
@@ -1173,7 +1592,9 @@ async def main():
         concurrent=args.concurrent,  # type: ignore[arg-type]
         use_claude=not args.no_claude,  # type: ignore[arg-type]
         source_dir=args.source_dir,  # type: ignore[arg-type]
-        test_dir=args.test_dir  # type: ignore[arg-type]
+        test_dir=args.test_dir,  # type: ignore[arg-type]
+        skip_quality=args.skip_quality,  # type: ignore[arg-type]
+        skip_tests=args.skip_tests  # type: ignore[arg-type]
     )
 
     success = await driver.run()

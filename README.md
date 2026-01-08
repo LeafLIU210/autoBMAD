@@ -134,31 +134,42 @@ The autoBMAD system processes epics through **5 integrated phases**:
 
 ## 🔧 Quality Gates
 
-Quality gates ensure code quality before proceeding to test automation.
+Quality gates add automated code quality validation to epic processing. After the Dev-QA cycle completes successfully, the system automatically runs three sequential quality agents:
 
-### BasedPyRight Type Checking
+1. **Ruff Agent** - Code linting and auto-fix
+2. **BasedPyright Agent** - Type checking and validation
+3. **Pytest Agent** - Test automation with debugging
 
-BasedPyRight provides static type checking for Python code:
+### Quality Gates Workflow
+
+Quality gates execute automatically after QA completion:
 
 ```bash
-# Run type checking manually
-basedpyright src/
+# Process epic with full quality gates
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
 
-# Configure in pyproject.toml
-[tool.basedpyright]
-pythonVersion = "3.8"
-typeCheckingMode = "basic"
+# Skip quality gates for faster iteration
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+
+# Skip only pytest execution
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
 ```
 
-**Common Issues & Solutions:**
+**Quality Gate Sequence:**
+```
+Phase 1: SM-Dev-QA Cycle
+         ↓
+Phase 2: Quality Gates (Ruff → BasedPyright → Pytest)
+         ↓
+Phase 3: Documentation & Integration
+```
 
-| Issue | Solution |
-|-------|----------|
-| `reportMissingImports` | Add `# type: ignore` or fix imports |
-| `reportOptionalMemberAccess` | Add None checks |
-| `reportGeneralTypeIssues` | Fix type annotations |
+**Important: Cancel Scope Safety**
+- Quality gates use SDK max_turns=150 (no external timeouts)
+- Cancel scope errors are prevented through simplified timeout handling
+- See `docs/evaluation/cancel-scope-error-analysis.md` for technical details
 
-### Ruff Linting
+### Ruff Agent
 
 Ruff provides fast linting with automatic fix capabilities:
 
@@ -181,17 +192,121 @@ ruff format src/
 | `E501` (line too long) | Break long lines or increase limit |
 | `B007` (loop control) | Use meaningful variable names |
 
-### CLI Quality Gate Options
+**Auto-fix Examples:**
+```bash
+# Fix all auto-fixable issues
+ruff check --fix src/
+
+# Format code to Ruff standards
+ruff format src/
+```
+
+### BasedPyright Agent
+
+BasedPyright provides static type checking for Python code:
+
+```bash
+# Run type checking manually
+basedpyright src/
+
+# Configure in pyproject.toml
+[tool.basedpyright]
+pythonVersion = "3.8"
+typeCheckingMode = "basic"
+```
+
+**Common Issues & Solutions:**
+
+| Issue | Solution |
+|-------|----------|
+| `reportMissingImports` | Add `# type: ignore` or fix imports |
+| `reportOptionalMemberAccess` | Add None checks |
+| `reportGeneralTypeIssues` | Fix type annotations |
+
+**Type Hinting Examples:**
+```python
+# Function parameters and return types
+def process_data(data: str) -> str:
+    return data.strip()
+
+# List type annotation
+def process_list(items: list[str]) -> list[str]:
+    return [item.strip() for item in items]
+
+# Optional type annotation
+def get_user(user_id: int) -> str | None:
+    return db.get_user(user_id)
+```
+
+### Pytest Agent
+
+Pytest executes comprehensive test suites with automatic debugging:
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src
+
+# Run GUI tests
+pytest tests/gui/ -v
+```
+
+**Debugpy Integration:**
+- Automatic activation after 3+ test failures
+- Provides persistent debugging session
+- See `docs/troubleshooting/quality-gates.md` for debugpy troubleshooting
+
+### Quality Agents Configuration
+
+Quality agents can be configured via CLI flags:
 
 ```bash
 # Skip all quality gates
-python epic_driver.py my-epic.md --skip-quality
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --skip-quality
 
-# Custom retry attempts
-python epic_driver.py my-epic.md --max-iterations 5
+# Skip only tests
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --skip-tests
+
+# Custom source and test directories
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --source-dir src --test-dir tests
 
 # Verbose quality gate output
-python epic_driver.py my-epic.md --verbose
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --verbose
+```
+
+**Flag Combinations:**
+```bash
+# Development mode - skip quality gates, run tests
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --skip-quality
+
+# Quick validation - skip tests, run quality gates
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --skip-tests
+
+# Full pipeline - all quality gates and tests
+python -m autoBMAD.epic_automation.epic_driver my-epic.md
+```
+
+### Troubleshooting Quality Gates
+
+For detailed troubleshooting, see:
+- [Quality Gates Troubleshooting](docs/troubleshooting/quality-gates.md)
+- [Cancel Scope Error Analysis](docs/evaluation/cancel-scope-error-analysis.md)
+
+**Quick Fix Commands:**
+```bash
+# Check quality gate status
+python -m autoBMAD.epic_automation.epic_driver my-epic.md --verbose
+
+# Fix ruff issues automatically
+ruff check --fix src/
+
+# Type check with detailed output
+basedpyright src/ --output-format=json
+
+# Run tests with verbose output
+pytest tests/ -v --tb=long
 ```
 
 ## 🧪 Test Automation
@@ -361,15 +476,88 @@ Positional Arguments:
   EPIC_PATH              Path to epic markdown file
 
 Options:
-  --source-dir DIR       Source code directory (default: src)
-  --test-dir DIR         Test directory (default: tests)
-  --skip-quality         Skip code quality gates
-  --skip-tests           Skip test automation
-  --max-iterations N     Max retry attempts (default: 3)
-  --verbose              Enable verbose logging
-  --concurrent           Enable concurrent processing
+  --source-dir DIR       Source code directory for quality gates (default: src)
+  --test-dir DIR         Test directory for pytest execution (default: tests)
+  --skip-quality         Skip quality gates (Ruff and BasedPyright)
+  --skip-tests           Skip pytest execution
+  --max-iterations N     Max retry attempts for Dev-QA cycle (default: 3)
+  --retry-failed         Enable automatic retry of failed stories
+  --verbose              Enable detailed logging output
+  --concurrent           Enable concurrent story processing (experimental)
+  --no-claude            Disable Claude Code CLI integration
   --help                 Show this message and exit
 ```
+
+**Quality Gate Flags:**
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--skip-quality` | Skip Ruff and BasedPyright checks | `python epic_driver.py my-epic.md --skip-quality` |
+| `--skip-tests` | Skip pytest execution | `python epic_driver.py my-epic.md --skip-tests` |
+| `--source-dir DIR` | Specify source directory for quality checks | `python epic_driver.py my-epic.md --source-dir src` |
+| `--test-dir DIR` | Specify test directory for pytest | `python epic_driver.py my-epic.md --test-dir tests` |
+
+**Common Usage Patterns:**
+
+```bash
+# Full pipeline with quality gates
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
+
+# Development mode - skip quality gates
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+
+# Quality check only - skip tests
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
+
+# Verbose mode for debugging
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
+
+# Custom directories
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --source-dir src --test-dir tests
+
+# With retry enabled
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --retry-failed
+```
+
+## ⚠️ Cancel Scope Error Prevention
+
+The autoBMAD system uses the **Claude Agent SDK** for AI-driven development. To prevent Cancel Scope errors (related to anyio's async context management), the system implements specific safety requirements:
+
+### Critical Safety Requirements
+
+**1. NO External Timeouts**
+- External `asyncio.wait_for()` timeouts have been removed
+- System relies solely on SDK's built-in `max_turns` limit (150 turns)
+- This prevents cancel scope conflicts during async operations
+
+**2. Sequential Execution**
+- Quality gates execute sequentially (Ruff → BasedPyright → Pytest)
+- No concurrent execution that could trigger scope conflicts
+- Each phase completes fully before the next begins
+
+**3. SDK Configuration**
+```python
+# All agents use this configuration
+options = ClaudeAgentOptions(
+    permission_mode="bypassPermissions",
+    max_turns=150,  # Maximum conversation turns (not time-based)
+    cwd=str(Path.cwd())
+)
+```
+
+**4. Error Handling**
+- Cancel Scope errors are suppressed and logged
+- System continues execution after scope-related errors
+- Errors don't propagate to crash the application
+
+### What This Means for Users
+
+- **No manual timeout configuration needed** - SDK handles all timing
+- **No external timeout flags** - removed from CLI
+- **Sequential processing** - quality gates run one after another
+- **Graceful degradation** - errors are caught and reported, not propagated
+
+For detailed analysis, see: `docs/evaluation/cancel-scope-error-analysis.md`
 
 ## 🔍 Troubleshooting
 
@@ -407,6 +595,19 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+**Cancel Scope Errors (Technical):**
+
+If you see Cancel Scope errors in logs:
+```
+RuntimeError: Attempted to exit cancel scope in a different task than it was entered in
+```
+
+**This is expected and handled automatically:**
+- Errors are suppressed by the system
+- Processing continues normally
+- No action required from users
+- See `docs/evaluation/cancel-scope-error-analysis.md` for technical details
 
 See `docs/troubleshooting/quality-gates.md` for detailed troubleshooting.
 

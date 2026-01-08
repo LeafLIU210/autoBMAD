@@ -15,9 +15,9 @@
 import asyncio
 import json
 import logging
+import re
 import shutil
 import sqlite3
-import uuid
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -595,3 +595,116 @@ class StateManager:
         except Exception as e:
             logger.error(f"Failed to get health status: {e}")
             return {"error": str(e)}
+
+    async def sync_story_statuses_to_markdown(self) -> "dict[str, Any]":
+        """
+        将数据库中的故事状态同步到markdown文件。
+
+        Returns:
+            同步结果字典，包含成功和失败的故事数量
+        """
+        logger.info("开始同步故事状态到markdown文件")
+        results: dict[str, Any] = {
+            "success_count": 0,
+            "error_count": 0,
+            "errors": []  # type: ignore[assignment]
+        }
+
+        try:
+            # 获取所有故事记录
+            stories = await self.get_all_stories()
+            logger.info(f"找到 {len(stories)} 个故事记录")
+
+            for story in stories:
+                story_path = story.get('story_path')
+                db_status = story.get('status')
+
+                if not story_path or not db_status:
+                    logger.warning(f"跳过无效的故事记录: {story}")
+                    continue
+
+                try:
+                    await self._update_markdown_status(story_path, db_status)
+                    results["success_count"] = int(results["success_count"]) + 1  # type: ignore[arg-type]
+                    logger.info(f"已更新 {story_path} 状态为 {db_status}")
+                except Exception as e:
+                    results["error_count"] = int(results["error_count"]) + 1  # type: ignore[arg-type]
+                    error_msg = f"更新 {story_path} 失败: {str(e)}"
+                    errors_list = results["errors"]  # type: ignore[assignment]
+                    errors_list.append(error_msg)
+                    logger.error(error_msg)
+
+            logger.info(f"同步完成: 成功 {results['success_count']}, 失败 {results['error_count']}")
+            return results
+
+        except Exception as e:
+            error_msg = f"同步故事状态失败: {str(e)}"
+            logger.error(error_msg)
+            errors_list = results["errors"]  # type: ignore[assignment]
+            errors_list.append(error_msg)
+            return results
+
+    async def _update_markdown_status(self, story_path: str, db_status: str) -> None:
+        """
+        更新markdown文件中的Status字段。
+        将数据库状态映射为适当的markdown状态。
+
+        Args:
+            story_path: 故事文件路径
+            db_status: 数据库状态
+        """
+        try:
+            # 映射数据库状态到markdown状态
+            status_mapping = {
+                "completed": "Done",
+                "done": "Done",
+                "ready_for_review": "Ready for Review",
+                "approved": "Approved",
+                "in_progress": "In Progress",
+                "failed": "Failed",
+            }
+
+            # 获取markdown状态，如果未映射则使用原状态
+            markdown_status = status_mapping.get(db_status.lower(), db_status)
+
+            story_file = Path(story_path)
+            if not story_file.exists():
+                raise FileNotFoundError(f"故事文件不存在: {story_path}")
+
+            # 读取文件内容
+            with open(story_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # 更新Status字段的正则表达式
+            status_pattern = r'(^### Status\s*\n)\*\*.*?\*\*'
+            new_status_line = f'\\g<1>**{markdown_status}**'
+
+            # 执行替换
+            updated_content = re.sub(status_pattern, new_status_line, content, flags=re.MULTILINE)
+
+            # 检查是否有更改
+            if updated_content == content:
+                # 如果没有找到Status字段，在文件开头添加
+                if "### Status" not in content:
+                    # 在第一个标题前插入Status
+                    first_header_match = re.search(r'^#', content, re.MULTILINE)
+                    if first_header_match:
+                        insertion_point = first_header_match.start()
+                        status_block = f"### Status\n**{markdown_status}**\n\n"
+                        updated_content = content[:insertion_point] + status_block + content[insertion_point:]
+                    else:
+                        # 如果没有标题，在文件开头添加
+                        status_block = f"### Status\n**{markdown_status}**\n\n"
+                        updated_content = status_block + content
+                else:
+                    logger.warning(f"Status字段未找到且无法添加: {story_path}")
+
+            # 写回文件
+            with open(story_file, 'w', encoding='utf-8') as f:
+                f.write(updated_content)
+
+            logger.debug(f"已更新 {story_path} 的Status字段为 {markdown_status} (从 {db_status} 映射)")
+
+        except Exception as e:
+            logger.error(f"更新markdown状态失败 {story_path}: {str(e)}")
+            raise
