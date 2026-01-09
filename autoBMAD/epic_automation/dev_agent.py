@@ -599,35 +599,30 @@ class DevAgent:
             return False
 
         async def sdk_call() -> bool:
-            """Inner SDK call wrapped for isolation"""
+            """内部 SDK 调用 - 无外部超时保护"""
             if SafeClaudeSDK is None:
                 logger.error("[Dev Agent] SafeClaudeSDK not available")
                 return False
-            # Safe to call ClaudeAgentOptions since we already checked it's not None
-            # Use assert to satisfy type checker
+
             assert ClaudeAgentOptions is not None, (
                 "ClaudeAgentOptions should not be None"
             )
             options = ClaudeAgentOptions(
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd()),
-                max_turns=100,  # 增加最大轮数，以支持复杂故事开发
+                max_turns=1000,  # 唯一防护：限制对话轮数
                 cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe",
             )
             sdk = SafeClaudeSDK(prompt, options, timeout=None, log_manager=log_manager)
             return await sdk.execute()
 
-        # Simplified execution - single SDK call without retry loop
         try:
-            logger.info(f"[Dev Agent] SDK call for {story_path}")
-            logger.debug(f"[Dev Agent] Prompt preview: {prompt[:100]}...")
-
-            # Execute with session isolation using dedicated session manager
-            # No external timeout - rely on SDK max_turns configuration
+            # 关键修复：移除 asyncio.wait_for 和 asyncio.shield 嵌套
+            # 直接执行，让 SDK 自然完成
             result = await self._session_manager.execute_isolated(
                 agent_name="DevAgent",
                 sdk_func=sdk_call,
-                timeout=None,  # No external timeout
+                timeout=None,  # 移除外部超时
             )
 
             if result.success:

@@ -70,7 +70,9 @@
       "Skill(review)",
       "Skill(review:*)",
       "Bash(venv/Scripts/python.exe:*)",
-      "Bash(copy:*)"
+      "Bash(copy:*)",
+      "Bash(.venvScriptsactivate:*)",
+      "Bash(venv/Scripts/python:*)"
     ],
     "deny": [
       "Bash(curl:*)",

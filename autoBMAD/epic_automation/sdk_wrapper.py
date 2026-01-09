@@ -127,42 +127,47 @@ class SafeAsyncGenerator:
             raise
 
     async def aclose(self) -> None:
-        """安全关闭生成器"""
+        """增强的异步生成器清理 - 防止 cancel scope 跨任务错误"""
         if self._closed:
             return
 
         self._closed = True
 
         try:
+            # 关键修复：检测事件循环状态
+            loop = asyncio.get_running_loop()
+            loop_running = not loop.is_closed()
+
+            if not loop_running:
+                logger.debug("Event loop is closed, skipping generator cleanup")
+                return
+
+            # 获取原始生成器的 aclose 方法
             aclose = getattr(self.generator, "aclose", None)
             if aclose and callable(aclose):
-                # 直接关闭生成器，不使用超时保护
+                # 关键修复：确保在正确的任务上下文中执行
                 try:
                     result = aclose()
                     if result is not None:
-                        # 等待结果但不设置超时
+                        # 不设置超时，让清理自然完成
                         if asyncio.iscoroutine(result):
                             await result
                 except (TypeError, AttributeError) as e:
                     logger.debug(f"Generator cleanup (non-critical): {e}")
                 except asyncio.CancelledError:
+                    # 记录但不重新抛出，避免 scope 冲突
                     logger.debug("Generator cleanup cancelled (ignored)")
                 except RuntimeError as e:
                     error_msg = str(e)
-                    if (
-                        "cancel scope" in error_msg
-                        or "Event loop is closed" in error_msg
-                    ):
-                        # Suppress cancel scope errors - these are expected during SDK shutdown
-                        logger.debug(
-                            f"Expected SDK shutdown error (suppressed): {error_msg}"
-                        )
-                        return  # Return instead of raising to prevent crash
+                    # 关键修复：识别并安全处理 cancel scope 错误
+                    if "cancel scope" in error_msg or "Event loop is closed" in error_msg:
+                        logger.debug(f"Expected SDK shutdown error (suppressed): {error_msg}")
+                        return  # 返回而不是抛出，防止崩溃
                     else:
                         logger.debug(f"Generator cleanup RuntimeError: {e}")
                         raise
                 except Exception as e:
-                    # Catch any other exceptions during cleanup
+                    # 捕获清理过程中的任何其他异常
                     logger.debug(f"Generator cleanup exception: {e}")
         except Exception as e:
             logger.debug(f"Generator cleanup error: {e}")
@@ -534,10 +539,9 @@ class SafeClaudeSDK:
         # Wrap generator with safe wrapper
         safe_generator = SafeAsyncGenerator(generator)
 
-        # Run generator in isolated task to prevent cancel scope issues
-        # Use asyncio.shield to protect from external cancellation
         try:
-            result = await asyncio.shield(self._run_isolated_generator(safe_generator))
+            # 关键修复：移除 asyncio.shield，直接执行
+            result = await self._run_isolated_generator(safe_generator)
             return result
         except Exception as e:
             logger.error(f"Error in isolated generator execution: {e}")

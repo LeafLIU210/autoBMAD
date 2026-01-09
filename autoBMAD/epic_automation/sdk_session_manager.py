@@ -249,7 +249,7 @@ class SDKSessionManager:
         max_retries: int | None = None,
     ) -> SDKExecutionResult:
         """
-        在隔离上下文中执行 SDK 调用。
+        简化的隔离执行 - 移除复杂的超时和重试逻辑。
 
         Args:
             agent_name: Agent 名称
@@ -260,40 +260,34 @@ class SDKSessionManager:
         Returns:
             SDKExecutionResult: 执行结果，包含成功状态、错误类型等
         """
-        # Simplified: single execution, no retries
         start_time = time.time()
         session_id = str(uuid.uuid4())
 
+        # 更新总会话数
+        async with self._lock:
+            self._total_sessions += 1
+
         try:
-            # 检查会话健康状态
-            async with self.create_session(agent_name) as context:
-                # 检查是否被取消
-                if context.is_cancelled():
-                    raise asyncio.CancelledError(
-                        "Session was cancelled before execution"
-                    )
+            # 关键修复：移除外部超时包装，让 SDK 自然完成
+            # 不使用 asyncio.wait_for 或 asyncio.shield
+            result = await sdk_func()
 
-                # 执行SDK调用 - 使用asyncio.shield保护免受外部取消影响
-                result = await asyncio.shield(sdk_func())
+            duration = time.time() - start_time
 
-                duration = time.time() - start_time
+            # 更新统计
+            async with self._lock:
+                if result:
+                    self._successful_sessions += 1
+                else:
+                    self._failed_sessions += 1
 
-                # 更新统计
-                async with self._lock:
-                    if result:
-                        self._successful_sessions += 1
-                    else:
-                        self._failed_sessions += 1
-
-                return SDKExecutionResult(
-                    success=bool(result),
-                    error_type=SDKErrorType.SUCCESS
-                    if result
-                    else SDKErrorType.SDK_ERROR,
-                    duration_seconds=duration,
-                    session_id=session_id,
-                    retry_count=0,
-                )
+            return SDKExecutionResult(
+                success=bool(result),
+                error_type=SDKErrorType.SUCCESS if result else SDKErrorType.SDK_ERROR,
+                duration_seconds=duration,
+                session_id=session_id,
+                retry_count=0,
+            )
 
         except asyncio.CancelledError as e:
             duration = time.time() - start_time
@@ -316,12 +310,11 @@ class SDKSessionManager:
             duration = time.time() - start_time
             error_msg = str(e)
 
-            # 检查是否是 cancel scope 错误
+            # 关键修复：增强 cancel scope 错误检测和处理
             if "cancel scope" in error_msg:
                 logger.error(f"[{agent_name}] Cancel scope error detected: {error_msg}")
-                logger.debug(f"Cancel scope error details: {e}", exc_info=True)
 
-                result = SDKExecutionResult(
+                return SDKExecutionResult(
                     success=False,
                     error_type=SDKErrorType.SESSION_ERROR,
                     error_message=f"Cancel scope error: {error_msg}",
@@ -331,48 +324,21 @@ class SDKSessionManager:
                     last_error=e,
                 )
 
-                # Cancel scope错误通常不可重试
-                async with self._lock:
-                    self._failed_sessions += 1
-                return result
-
-            # 其他 RuntimeError
-            logger.error(f"[{agent_name}] Runtime error: {error_msg}")
-            logger.debug(f"Runtime error details: {e}", exc_info=True)
-
-            result = SDKExecutionResult(
-                success=False,
-                error_type=SDKErrorType.UNKNOWN,
-                error_message=error_msg,
-                duration_seconds=duration,
-                session_id=session_id,
-                retry_count=0,
-                last_error=e,
-            )
-
-            async with self._lock:
-                self._failed_sessions += 1
-            return result
+            raise  # 其他 RuntimeError 重新抛出
 
         except Exception as e:
             duration = time.time() - start_time
-            error_msg = str(e)
-            logger.error(f"[{agent_name}] SDK error: {error_msg}")
-            logger.debug(f"SDK error details: {e}", exc_info=True)
+            logger.error(f"[{agent_name}] SDK error: {str(e)}")
 
-            result = SDKExecutionResult(
+            return SDKExecutionResult(
                 success=False,
                 error_type=SDKErrorType.SDK_ERROR,
-                error_message=error_msg,
+                error_message=str(e),
                 duration_seconds=duration,
                 session_id=session_id,
                 retry_count=0,
                 last_error=e,
             )
-
-            async with self._lock:
-                self._failed_sessions += 1
-            return result
 
     def _calculate_retry_delay(self, retry_count: int) -> float:
         """计算重试延迟（指数退避）"""
