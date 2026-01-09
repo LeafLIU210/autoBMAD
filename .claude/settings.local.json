@@ -62,7 +62,14 @@
       "Skill(BMad:tasks:create-doc:*)",
       "Bash(grep:*)",
       "Bash(PYTHONPATH=/d/GITHUB/pytQt_template python:*)",
-      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template timeout 30 python:*)"
+      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template timeout 30 python:*)",
+      "Bash(git mv:*)",
+      "Bash(.venvScriptspython.exe:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(chmod:*)",
+      "Skill(review)",
+      "Skill(review:*)",
+      "Bash(venv/Scripts/python.exe:*)"
     ],
     "deny": [
       "Bash(curl:*)",

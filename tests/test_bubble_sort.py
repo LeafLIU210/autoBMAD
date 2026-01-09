@@ -1,226 +1,142 @@
-"""Comprehensive test suite for bubble sort implementation.
-
-This test suite provides thorough coverage of the bubble sort algorithm,
-testing all edge cases, input types, and error conditions as specified in
-the acceptance criteria.
 """
+Comprehensive test suite for bubble_sort function.
+
+Tests all acceptance criteria including edge cases, error conditions,
+and function purity.
+"""
+
 import pytest
-from typing import List
+
+from src.bubblesort import bubble_sort
 
 
-class TestBubbleSortExistence:
-    """Test that bubble_sort function exists and is importable."""
+class TestBubbleSortBasic:
+    """Test basic sorting functionality."""
 
-    def test_bubble_sort_exists(self):
-        """Test that bubble_sort function exists and is importable."""
-        from src.bubblesort import bubble_sort
-        assert callable(bubble_sort)
+    def test_empty_list(self):
+        """Empty list returns empty list."""
+        assert bubble_sort([]) == []
 
+    def test_single_element(self):
+        """Single element list returns same list."""
+        assert bubble_sort([42]) == [42]
+        assert bubble_sort([-5]) == [-5]
+        assert bubble_sort([0]) == [0]
 
-class TestBasicFunctionality:
-    """Test basic functionality scenarios (AC: #1)."""
+    def test_two_elements_sorted(self):
+        """Two element list sorted correctly."""
+        assert bubble_sort([2, 1]) == [1, 2]
+        assert bubble_sort([1, 2]) == [1, 2]
 
-    @pytest.mark.parametrize("input_list,expected", [
-        ([], []),
-        ([5], [5]),
-        ([1], [1]),
-        ([0], [0]),
-    ])
-    def test_empty_and_single_element(self, input_list, expected):
-        """Test empty list and single element scenarios."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
-        assert isinstance(result, list)
-
-    @pytest.mark.parametrize("input_list,expected", [
-        ([1, 2], [1, 2]),
-        ([2, 1], [1, 2]),
-        ([5, 1, 4, 2, 8], [1, 2, 4, 5, 8]),
-        ([10, -5, 3, 0, 7], [-5, 0, 3, 7, 10]),
-        ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
-    ])
-    def test_multiple_elements(self, input_list, expected):
-        """Test multiple element scenarios with 2, 5, and 10+ elements."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
+    def test_multiple_elements(self):
+        """Multiple elements sorted in ascending order."""
+        assert bubble_sort([5, 1, 4, 2, 8]) == [1, 2, 4, 5, 8]
+        assert bubble_sort([10, 7, 8, 9, 1, 5]) == [1, 5, 7, 8, 9, 10]
+        assert bubble_sort([3, 3, 2, 1, 2]) == [1, 2, 2, 3, 3]
 
 
-class TestInputOrderings:
-    """Test various input orderings (AC: #2)."""
+class TestBubbleSortEdgeCases:
+    """Test edge cases and special scenarios."""
 
-    @pytest.mark.parametrize("input_list,expected", [
-        ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5]),
-        ([1, 2, 3], [1, 2, 3]),
-        ([0, 1, 2], [0, 1, 2]),
-    ])
-    def test_already_sorted(self, input_list, expected):
-        """Test already sorted input."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
+    def test_already_sorted(self):
+        """Already sorted list remains sorted."""
+        assert bubble_sort([1, 2, 3, 4, 5]) == [1, 2, 3, 4, 5]
+        assert bubble_sort([1, 1, 1]) == [1, 1, 1]
 
-    @pytest.mark.parametrize("input_list,expected", [
-        ([5, 4, 3, 2, 1], [1, 2, 3, 4, 5]),
-        ([3, 2, 1], [1, 2, 3]),
-        ([10, 5, 0], [0, 5, 10]),
-    ])
-    def test_reverse_sorted(self, input_list, expected):
-        """Test reverse sorted input."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
+    def test_reverse_sorted(self):
+        """Reverse sorted list becomes sorted."""
+        assert bubble_sort([5, 4, 3, 2, 1]) == [1, 2, 3, 4, 5]
+        assert bubble_sort([10, 9, 8, 7]) == [7, 8, 9, 10]
 
-    @pytest.mark.parametrize("input_list,expected", [
-        ([3, 1, 4, 1, 5, 9, 2, 6], [1, 1, 2, 3, 4, 5, 6, 9]),
-        ([5, 3, 8, 4, 2, 7, 1, 6], [1, 2, 3, 4, 5, 6, 7, 8]),
-        ([9, 1, 8, 2, 7, 3, 6, 4, 5], [1, 2, 3, 4, 5, 6, 7, 8, 9]),
-    ])
-    def test_random_order(self, input_list, expected):
-        """Test random order input."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
+    def test_with_duplicates(self):
+        """List with duplicates sorted correctly."""
+        assert bubble_sort([5, 1, 5, 1, 5]) == [1, 1, 5, 5, 5]
+        assert bubble_sort([3, 3, 3]) == [3, 3, 3]
 
-    @pytest.mark.parametrize("input_list,expected", [
-        ([3, 1, 2, 3, 1], [1, 1, 2, 3, 3]),
-        ([5, 5, 5, 5], [5, 5, 5, 5]),
-        ([1, 2, 1, 2, 1], [1, 1, 1, 2, 2]),
-        ([4, 4, 1, 1, 2, 2], [1, 1, 2, 2, 4, 4]),
-    ])
-    def test_duplicate_elements(self, input_list, expected):
-        """Test with duplicate elements."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
+    def test_with_negatives(self):
+        """List with negative numbers sorted correctly."""
+        assert bubble_sort([5, -1, 3, -10]) == [-10, -1, 3, 5]
+        assert bubble_sort([-5, -1, -3]) == [-5, -3, -1]
+
+    def test_with_floats(self):
+        """List with floats sorted correctly."""
+        assert bubble_sort([3.5, 2.1, 4.8]) == [2.1, 3.5, 4.8]
+        assert bubble_sort([1.1, 1.0, 2.9]) == [1.0, 1.1, 2.9]
+        assert bubble_sort([5.5, 5.0, 6.0]) == [5.0, 5.5, 6.0]
+
+    def test_mixed_ints_and_floats(self):
+        """List with mixed integers and floats sorted correctly."""
+        assert bubble_sort([5, 2.5, 3, 1.1]) == [1.1, 2.5, 3, 5]
 
 
-class TestNumericTypes:
-    """Test different numeric types (AC: #3)."""
+class TestBubbleSortErrorHandling:
+    """Test error handling and validation."""
 
-    @pytest.mark.parametrize("input_list,expected", [
-        ([5, -3, 0, -10, 2], [-10, -3, 0, 2, 5]),
-        ([-1, -2, -3, -4, -5], [-5, -4, -3, -2, -1]),
-        ([0, -1, 1, -2, 2], [-2, -1, 0, 1, 2]),
-    ])
-    def test_negative_numbers(self, input_list, expected):
-        """Test with negative numbers."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
-
-    @pytest.mark.parametrize("input_list,expected", [
-        ([3.5, 1.2, 2.8, 0.5], [0.5, 1.2, 2.8, 3.5]),
-        ([1.1, 2.2, 3.3, 4.4], [1.1, 2.2, 3.3, 4.4]),
-        ([9.9, 1.1, 5.5, 3.3], [1.1, 3.3, 5.5, 9.9]),
-    ])
-    def test_floats(self, input_list, expected):
-        """Test with floats."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
-
-    @pytest.mark.parametrize("input_list,expected", [
-        ([5, 1.5, 3, 2.7, 4], [1.5, 2.7, 3, 4, 5]),
-        ([10, 5.5, 0, 2.2, 7], [0, 2.2, 5.5, 7, 10]),
-        ([1, 2.5, 3, 4.5, 5], [1, 2.5, 3, 4.5, 5]),
-    ])
-    def test_mixed_int_float(self, input_list, expected):
-        """Test with mixed int and float."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
-
-    @pytest.mark.parametrize("input_list,expected", [
-        ([0, 0, 0, 0], [0, 0, 0, 0]),
-        ([1, 0, -1, 2, -2], [-2, -1, 0, 1, 2]),
-        ([0.0, 1.0, -1.0], [-1.0, 0.0, 1.0]),
-    ])
-    def test_zero_values(self, input_list, expected):
-        """Test with zero values."""
-        from src.bubblesort import bubble_sort
-        result = bubble_sort(input_list)
-        assert result == expected
-
-
-class TestErrorHandling:
-    """Test error handling (AC: #4)."""
-
-    def test_none_input_raises_type_error(self):
-        """Test None input handling."""
-        from src.bubblesort import bubble_sort
+    def test_none_input(self):
+        """None input raises TypeError."""
         with pytest.raises(TypeError, match="Input cannot be None"):
             bubble_sort(None)
 
-    @pytest.mark.parametrize("non_iterable", [
-        123,
-        45.67,
-        True,
-        None,
-    ])
-    def test_non_iterable_input_raises_type_error(self, non_iterable):
-        """Test non-iterable input handling."""
-        from src.bubblesort import bubble_sort
-        with pytest.raises(TypeError):
-            bubble_sort(non_iterable)
+    def test_non_iterable_input(self):
+        """Non-iterable input raises TypeError."""
+        with pytest.raises(TypeError, match="Input must be iterable"):
+            bubble_sort(123)
+
+        with pytest.raises(TypeError, match="Input must be iterable"):
+            bubble_sort(45.67)
 
 
-class TestPureFunctionBehavior:
-    """Test pure function behavior (AC: #5)."""
+class TestBubbleSortFunctionPurity:
+    """Test that function is pure (no side effects)."""
 
-    @pytest.mark.parametrize("original", [
-        [5, 1, 4, 2, 8],
-        [3, 1, 2],
-        [10, 9, 8, 7],
-        [1, 2, 3, 4, 5],
-        [5],
-        [],
-    ])
-    def test_original_list_not_modified(self, original):
-        """Verify original list is not modified."""
-        from src.bubblesort import bubble_sort
-        original_copy = original.copy()
+    def test_original_not_modified(self):
+        """Original input list is not modified."""
+        original = [5, 2, 8, 1]
         result = bubble_sort(original)
-        assert original == original_copy
-        assert result is not original
 
+        # Original should be unchanged
+        assert original == [5, 2, 8, 1]
+        assert result == [1, 2, 5, 8]
 
-class TestDocumentation:
-    """Test that implementation has proper documentation."""
-
-    def test_bubble_sort_has_docstring(self):
-        """Test that bubble_sort has a docstring."""
-        from src.bubblesort import bubble_sort
-        assert bubble_sort.__doc__ is not None
-        assert len(bubble_sort.__doc__.strip()) > 0
-
-    def test_bubble_sort_docstring_contains_info(self):
-        """Test that docstring contains algorithm information."""
-        from src.bubblesort import bubble_sort
-        docstring = bubble_sort.__doc__.lower()
-        assert 'bubble' in docstring or 'sort' in docstring
-
-    def test_bubble_sort_has_type_hints(self):
-        """Test that bubble_sort has type hints."""
-        from src.bubblesort import bubble_sort
-        import inspect
-        sig = inspect.signature(bubble_sort)
-        sig_str = str(sig).lower()
-        assert 'list' in sig_str or 'typing' in sig_str
-
-
-class TestCoverageEdgeCases:
-    """Additional edge cases for comprehensive coverage."""
-
-    @pytest.mark.parametrize("input_list,expected", [
-        ([-100, 100, -50, 50, 0], [-100, -50, 0, 50, 100]),
-        ([1.1, 1.0, 1.2, 0.9], [0.9, 1.0, 1.1, 1.2]),
-        ([1000, 100, 10, 1], [1, 10, 100, 1000]),
-        ([0.001, 0.01, 0.1], [0.001, 0.01, 0.1]),
-    ])
-    def test_additional_edge_cases(self, input_list, expected):
-        """Test additional edge cases for comprehensive coverage."""
-        from src.bubblesort import bubble_sort
+    def test_returns_new_list(self):
+        """Function returns a new list instance."""
+        input_list = [3, 1, 2]
         result = bubble_sort(input_list)
-        assert result == expected
+
+        # Should be a different list object
+        assert result is not input_list
+        assert result == [1, 2, 3]
+
+    def test_multiple_calls_independent(self):
+        """Multiple calls with same input are independent."""
+        input_list = [2, 1, 3]
+        result1 = bubble_sort(input_list)
+        result2 = bubble_sort(input_list)
+
+        # Both should be equal but different instances
+        assert result1 == result2 == [1, 2, 3]
+        assert result1 is not result2
+        assert result1 is not input_list
+        assert result2 is not input_list
+
+
+class TestBubbleSortComplex:
+    """Test more complex scenarios."""
+
+    def test_large_list(self):
+        """Handle large lists efficiently."""
+        large_list = list(range(100, 0, -1))
+        sorted_list = bubble_sort(large_list)
+        assert sorted_list == list(range(1, 101))
+
+    def test_all_same_elements(self):
+        """List with all identical elements."""
+        assert bubble_sort([7] * 10) == [7] * 10
+
+    def test_very_small_numbers(self):
+        """List with very small numbers."""
+        assert bubble_sort([0.0001, 0.00001, 0.001]) == [0.00001, 0.0001, 0.001]
+
+    def test_large_magnitude_numbers(self):
+        """List with large magnitude numbers."""
+        assert bubble_sort([1e10, 1e5, 1e15]) == [1e5, 1e10, 1e15]

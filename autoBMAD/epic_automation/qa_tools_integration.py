@@ -12,13 +12,14 @@ import sys
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class QAStatus(Enum):
     """QA tool execution status."""
+
     PASS = "PASS"
     CONCERNS = "CONCERNS"
     FAIL = "FAIL"
@@ -27,6 +28,7 @@ class QAStatus(Enum):
 
 class QAError(Exception):
     """QA tool execution error."""
+
     pass
 
 
@@ -48,7 +50,9 @@ class BasedPyrightWorkflowRunner:
     def _check_availability(self) -> bool:
         """Check if BasedPyright-Workflow is available."""
         if not self.workflow_dir.exists():
-            logger.warning(f"BasedPyright-Workflow directory not found: {self.workflow_dir}")
+            logger.warning(
+                f"BasedPyright-Workflow directory not found: {self.workflow_dir}"
+            )
             return False
 
         # Check for required scripts
@@ -61,7 +65,9 @@ class BasedPyrightWorkflowRunner:
         logger.info("BasedPyright-Workflow is available")
         return True
 
-    async def run_check(self, source_dir: str = "src", max_retries: int = 2) -> Dict[str, Any]:
+    async def run_check(
+        self, source_dir: str = "src", max_retries: int = 2
+    ) -> dict[str, Any]:
         """
         Run BasedPyright check.
 
@@ -75,7 +81,7 @@ class BasedPyrightWorkflowRunner:
         if not self.available:
             return self._create_unavailable_result()
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "status": QAStatus.PASS,
             "tool": "BasedPyright-Workflow",
             "timestamp": datetime.now().isoformat(),
@@ -84,7 +90,7 @@ class BasedPyrightWorkflowRunner:
             "warnings": 0,
             "details": [],
             "auto_fixable": 0,
-            "retry_count": 0
+            "retry_count": 0,
         }
 
         try:
@@ -94,14 +100,18 @@ class BasedPyrightWorkflowRunner:
             result["retry_count"] = result["retry_count"] + 1  # type: ignore[operator]
 
             # Parse results
-            errors_found, warnings_found, auto_fixable = self._parse_basedpyright_output(stdout, stderr, returncode)
+            errors_found, warnings_found, auto_fixable = (
+                self._parse_basedpyright_output(stdout, stderr, returncode)
+            )
 
             result["errors"] = errors_found
             result["warnings"] = warnings_found
             result["auto_fixable"] = auto_fixable
 
             if errors_found > 0 or warnings_found > 0:
-                logger.warning(f"BasedPyright found {errors_found} errors, {warnings_found} warnings")
+                logger.warning(
+                    f"BasedPyright found {errors_found} errors, {warnings_found} warnings"
+                )
 
                 # Try auto-fix if configured
                 if auto_fixable > 0 and result["retry_count"] < max_retries:
@@ -111,8 +121,12 @@ class BasedPyrightWorkflowRunner:
 
                     # Re-check after auto-fix
                     logger.info("Re-running check after auto-fix...")
-                    stdout, stderr, returncode = await self._run_basedpyright_check(source_dir)
-                    errors_found, warnings_found, _ = self._parse_basedpyright_output(stdout, stderr, returncode)
+                    stdout, stderr, returncode = await self._run_basedpyright_check(
+                        source_dir
+                    )
+                    errors_found, warnings_found, _ = self._parse_basedpyright_output(
+                        stdout, stderr, returncode
+                    )
 
                     result["errors"] = errors_found
                     result["warnings"] = warnings_found
@@ -138,13 +152,24 @@ class BasedPyrightWorkflowRunner:
 
         return result
 
-    async def _run_basedpyright_check(self, source_dir: str) -> Tuple[str, str, Optional[int]]:
+    async def _run_basedpyright_check(
+        self, source_dir: str
+    ) -> tuple[str, str, int | None]:
         """Run BasedPyright check command."""
         # Calculate relative path from basedpyright-workflow directory
         # source_dir is relative to project root, need to convert to relative to workflow dir
-        workflow_to_project = Path("..")  # basedpyright-workflow is at project root level
+        workflow_to_project = Path(
+            ".."
+        )  # basedpyright-workflow is at project root level
         relative_path = workflow_to_project / source_dir
-        cmd = [sys.executable, "-m", "basedpyright_workflow", "check", "--path", str(relative_path)]
+        cmd = [
+            sys.executable,
+            "-m",
+            "basedpyright_workflow",
+            "check",
+            "--path",
+            str(relative_path),
+        ]
 
         logger.debug(f"Executing: {' '.join(cmd)} in {self.workflow_dir}")
 
@@ -154,13 +179,12 @@ class BasedPyrightWorkflowRunner:
                 *cmd,
                 cwd=self.workflow_dir,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             try:
                 stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=self.timeout
+                    process.communicate(), timeout=self.timeout
                 )
                 return stdout, stderr, process
             except asyncio.CancelledError:
@@ -172,21 +196,22 @@ class BasedPyrightWorkflowRunner:
                     pass
                 raise
 
-        process: Optional[asyncio.subprocess.Process] = None
+        process: asyncio.subprocess.Process | None = None
         try:
             stdout, stderr, process = await asyncio.shield(run_command())
+
             # Handle encoding errors gracefully
             def safe_decode(data: bytes) -> str:
                 try:
-                    return data.decode('utf-8')
+                    return data.decode("utf-8")
                 except UnicodeDecodeError:
                     # Try latin-1 as fallback (accepts any byte sequence)
-                    return data.decode('latin-1')
+                    return data.decode("latin-1")
 
             stdout_str = safe_decode(stdout)
             stderr_str = safe_decode(stderr)
             return stdout_str, stderr_str, process.returncode
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if process is not None:
                 process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
@@ -209,13 +234,12 @@ class BasedPyrightWorkflowRunner:
                 *cmd,
                 cwd=self.workflow_dir,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             try:
                 _stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=self.timeout
+                    process.communicate(), timeout=self.timeout
                 )
                 return _stdout, stderr, process
             except asyncio.CancelledError:
@@ -227,21 +251,25 @@ class BasedPyrightWorkflowRunner:
                     pass
                 raise
 
-        process: Optional[asyncio.subprocess.Process] = None
+        process: asyncio.subprocess.Process | None = None
         try:
             _stdout, stderr, process = await asyncio.shield(run_auto_fix())
 
             if process.returncode != 0:
-                logger.warning(f"Auto-fix completed with warnings: {stderr.decode('utf-8')}")
+                logger.warning(
+                    f"Auto-fix completed with warnings: {stderr.decode('utf-8')}"
+                )
             else:
                 logger.info("Auto-fix completed successfully")
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if process is not None:
                 process.kill()
             logger.warning("Auto-fix timed out")
 
-    def _parse_basedpyright_output(self, stdout: str, stderr: str, returncode: Optional[int]) -> Tuple[int, int, int]:
+    def _parse_basedpyright_output(
+        self, stdout: str, stderr: str, returncode: int | None
+    ) -> tuple[int, int, int]:
         """Parse BasedPyright output to extract error counts."""
         errors = 0
         warnings = 0
@@ -249,7 +277,7 @@ class BasedPyrightWorkflowRunner:
 
         # Look for error summary in output
         # BasedPyright typically outputs a summary at the end
-        lines = stdout.split('\n')
+        lines = stdout.split("\n")
         for line in lines:
             line = line.strip()
 
@@ -280,11 +308,13 @@ class BasedPyrightWorkflowRunner:
         # Simple heuristic: assume simple errors are auto-fixable
         auto_fixable = min(errors, 10)  # Cap at 10 for safety
 
-        logger.debug(f"Parsed output: {errors} errors, {warnings} warnings, {auto_fixable} auto-fixable")
+        logger.debug(
+            f"Parsed output: {errors} errors, {warnings} warnings, {auto_fixable} auto-fixable"
+        )
 
         return errors, warnings, auto_fixable
 
-    def _create_unavailable_result(self) -> Dict[str, Any]:
+    def _create_unavailable_result(self) -> dict[str, Any]:
         """Create result for when tool is unavailable."""
         return {
             "status": QAStatus.WAIVED,
@@ -294,7 +324,7 @@ class BasedPyrightWorkflowRunner:
             "warnings": 0,
             "details": [f"Tool not available at {self.workflow_dir}"],
             "auto_fixable": 0,
-            "retry_count": 0
+            "retry_count": 0,
         }
 
 
@@ -320,11 +350,7 @@ class FixtestWorkflowRunner:
             return False
 
         # Check for required scripts
-        required_files = [
-            "scan_test_files.py",
-            "run_tests.py",
-            "fix_tests.ps1"
-        ]
+        required_files = ["scan_test_files.py", "run_tests.py", "fix_tests.ps1"]
         for file in required_files:
             if not (self.workflow_dir / file).exists():
                 logger.warning(f"Fixtest-Workflow missing required file: {file}")
@@ -333,7 +359,9 @@ class FixtestWorkflowRunner:
         logger.info("Fixtest-Workflow is available")
         return True
 
-    async def run_check(self, source_dir: str = "tests", max_retries: int = 2) -> Dict[str, Any]:
+    async def run_check(
+        self, source_dir: str = "tests", max_retries: int = 2
+    ) -> dict[str, Any]:
         """
         Run Fixtest check.
 
@@ -347,7 +375,7 @@ class FixtestWorkflowRunner:
         if not self.available:
             return self._create_unavailable_result()
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "status": QAStatus.PASS,
             "tool": "Fixtest-Workflow",
             "timestamp": datetime.now().isoformat(),
@@ -356,7 +384,7 @@ class FixtestWorkflowRunner:
             "tests_failed": 0,
             "tests_errors": 0,
             "details": [],
-            "retry_count": 0
+            "retry_count": 0,
         }
 
         try:
@@ -405,7 +433,7 @@ class FixtestWorkflowRunner:
 
         return result
 
-    async def _scan_test_files(self) -> List[str]:
+    async def _scan_test_files(self) -> list[str]:
         """Scan for test files."""
         cmd = [sys.executable, "scan_test_files.py"]
 
@@ -417,13 +445,13 @@ class FixtestWorkflowRunner:
                 *cmd,
                 cwd=self.workflow_dir,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             try:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
-                    timeout=120  # 2 minute timeout for scanning
+                    timeout=120,  # 2 minute timeout for scanning
                 )
                 return stdout, stderr, process
             except asyncio.CancelledError:
@@ -435,31 +463,33 @@ class FixtestWorkflowRunner:
                     pass
                 raise
 
-        process: Optional[asyncio.subprocess.Process] = None
+        process: asyncio.subprocess.Process | None = None
         try:
             stdout, stderr, process = await asyncio.shield(run_scan())
 
             if process.returncode != 0:
-                logger.warning(f"Test scan completed with warnings: {stderr.decode('utf-8')}")
+                logger.warning(
+                    f"Test scan completed with warnings: {stderr.decode('utf-8')}"
+                )
 
             # Parse scan output to get test file count
-            output = stdout.decode('utf-8')
-            test_files: List[str] = []
+            output = stdout.decode("utf-8")
+            test_files: list[str] = []
 
             # Look for JSON output or file list
-            for line in output.split('\n'):
-                if 'test' in line.lower() and '.py' in line:
+            for line in output.split("\n"):
+                if "test" in line.lower() and ".py" in line:
                     test_files.append(line.strip())
 
             return test_files
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if process is not None:
                 process.kill()
             logger.warning("Test scan timed out")
             return []
 
-    async def _run_tests(self) -> Tuple[str, str, Optional[int]]:
+    async def _run_tests(self) -> tuple[str, str, int | None]:
         """Run pytest tests."""
         cmd = [sys.executable, "run_tests.py"]
 
@@ -471,13 +501,12 @@ class FixtestWorkflowRunner:
                 *cmd,
                 cwd=self.workflow_dir,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             try:
                 stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=self.timeout
+                    process.communicate(), timeout=self.timeout
                 )
                 return stdout, stderr, process
             except asyncio.CancelledError:
@@ -489,56 +518,63 @@ class FixtestWorkflowRunner:
                     pass
                 raise
 
-        process: Optional[asyncio.subprocess.Process] = None
+        process: asyncio.subprocess.Process | None = None
         try:
             stdout, stderr, process = await asyncio.shield(run_command())
+
             # Handle encoding errors gracefully
             def safe_decode(data: bytes) -> str:
                 try:
-                    return data.decode('utf-8')
+                    return data.decode("utf-8")
                 except UnicodeDecodeError:
                     # Try latin-1 as fallback (accepts any byte sequence)
-                    return data.decode('latin-1')
+                    return data.decode("latin-1")
 
             stdout_str = safe_decode(stdout)
             stderr_str = safe_decode(stderr)
             return stdout_str, stderr_str, process.returncode
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if process is not None:
                 process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
 
-    def _parse_test_output(self, stdout: str, stderr: str, returncode: Optional[int]) -> Tuple[int, int, int]:
+    def _parse_test_output(
+        self, stdout: str, stderr: str, returncode: int | None
+    ) -> tuple[int, int, int]:
         """Parse test output to extract test counts."""
         passed = 0
         failed = 0
         errors = 0
 
         # Look for test summary in output
-        lines = stdout.split('\n') + stderr.split('\n')
+        lines = stdout.split("\n") + stderr.split("\n")
 
         for line in lines:
             line = line.strip()
 
             # Parse pytest summary format
             # Example: "5 passed, 2 failed, 1 error in 10.50s"
-            if "passed" in line.lower() and ("failed" in line.lower() or "error" in line.lower()):
+            if "passed" in line.lower() and (
+                "failed" in line.lower() or "error" in line.lower()
+            ):
                 parts = line.split()
                 for i, part in enumerate(parts):
                     if part.isdigit():
                         count = int(part)
-                        if i > 0 and "passed" in parts[i-1].lower():
+                        if i > 0 and "passed" in parts[i - 1].lower():
                             passed = count
-                        elif i > 0 and "failed" in parts[i-1].lower():
+                        elif i > 0 and "failed" in parts[i - 1].lower():
                             failed = count
-                        elif i > 0 and "error" in parts[i-1].lower():
+                        elif i > 0 and "error" in parts[i - 1].lower():
                             errors = count
 
-        logger.debug(f"Parsed test output: {passed} passed, {failed} failed, {errors} errors")
+        logger.debug(
+            f"Parsed test output: {passed} passed, {failed} failed, {errors} errors"
+        )
 
         return passed, failed, errors
 
-    def _create_unavailable_result(self) -> Dict[str, Any]:
+    def _create_unavailable_result(self) -> dict[str, Any]:
         """Create result for when tool is unavailable."""
         return {
             "status": QAStatus.WAIVED,
@@ -548,18 +584,20 @@ class FixtestWorkflowRunner:
             "tests_failed": 0,
             "tests_errors": 0,
             "details": [f"Tool not available at {self.workflow_dir}"],
-            "retry_count": 0
+            "retry_count": 0,
         }
 
 
 class QAAutomationWorkflow:
     """Main QA automation workflow orchestrator."""
 
-    def __init__(self,
-                 basedpyright_dir: str = "basedpyright-workflow",
-                 fixtest_dir: str = "fixtest-workflow",
-                 timeout: int = 120,
-                 max_retries: int = 2):
+    def __init__(
+        self,
+        basedpyright_dir: str = "basedpyright-workflow",
+        fixtest_dir: str = "fixtest-workflow",
+        timeout: int = 120,
+        max_retries: int = 2,
+    ):
         """
         Initialize QA workflow.
 
@@ -574,9 +612,9 @@ class QAAutomationWorkflow:
         self.max_retries = max_retries
         logger.info("QA Automation Workflow initialized")
 
-    async def run_qa_checks(self,
-                           source_dir: str = "src",
-                           test_dir: str = "tests") -> Dict[str, Any]:
+    async def run_qa_checks(
+        self, source_dir: str = "src", test_dir: str = "tests"
+    ) -> dict[str, Any]:
         """
         Run complete QA checks using both tools.
 
@@ -590,7 +628,7 @@ class QAAutomationWorkflow:
         logger.info("Starting QA checks with Both Tools")
 
         # Track all tasks to prevent task leaks
-        tasks: List[asyncio.Task[Dict[str, Any]]] = []
+        tasks: list[asyncio.Task[dict[str, Any]]] = []
 
         # Run both checks in parallel
         basedpyright_task = asyncio.create_task(
@@ -604,8 +642,7 @@ class QAAutomationWorkflow:
         tasks.append(fixtest_task)
 
         basedpyright_result, fixtest_result = await asyncio.gather(
-            basedpyright_task,
-            fixtest_task
+            basedpyright_task, fixtest_task
         )
 
         # Ensure all tasks are completed
@@ -614,7 +651,9 @@ class QAAutomationWorkflow:
                 await task
 
         # Determine overall status
-        overall_status = self._determine_overall_status(basedpyright_result, fixtest_result)
+        overall_status = self._determine_overall_status(
+            basedpyright_result, fixtest_result
+        )
 
         # Compile comprehensive results
         results = {
@@ -622,16 +661,18 @@ class QAAutomationWorkflow:
             "basedpyright": basedpyright_result,
             "fixtest": fixtest_result,
             "overall_status": overall_status.value,
-            "summary": self._generate_summary(basedpyright_result, fixtest_result, overall_status)
+            "summary": self._generate_summary(
+                basedpyright_result, fixtest_result, overall_status
+            ),
         }
 
         logger.info(f"QA checks complete: Overall status = {overall_status.value}")
 
         return results
 
-    def _determine_overall_status(self,
-                                  bp_result: Dict[str, Any],
-                                  ft_result: Dict[str, Any]) -> QAStatus:
+    def _determine_overall_status(
+        self, bp_result: dict[str, Any], ft_result: dict[str, Any]
+    ) -> QAStatus:
         """
         Determine overall QA status from individual tool results.
 
@@ -660,25 +701,27 @@ class QAAutomationWorkflow:
         # Otherwise, overall is CONCERNS
         return QAStatus.CONCERNS
 
-    def _generate_summary(self,
-                         bp_result: Dict[str, Any],
-                         ft_result: Dict[str, Any],
-                         overall_status: QAStatus) -> Dict[str, Any]:
+    def _generate_summary(
+        self,
+        bp_result: dict[str, Any],
+        ft_result: dict[str, Any],
+        overall_status: QAStatus,
+    ) -> dict[str, Any]:
         """Generate human-readable summary of QA results."""
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "overall_status": overall_status.value,
             "tools_status": {
                 "BasedPyright": bp_result["status"],
-                "Fixtest": ft_result["status"]
+                "Fixtest": ft_result["status"],
             },
             "metrics": {
                 "basedpyright_errors": bp_result.get("errors", 0),
                 "basedpyright_warnings": bp_result.get("warnings", 0),
                 "fixtest_passed": ft_result.get("tests_passed", 0),
                 "fixtest_failed": ft_result.get("tests_failed", 0),
-                "fixtest_errors": ft_result.get("tests_errors", 0)
+                "fixtest_errors": ft_result.get("tests_errors", 0),
             },
-            "recommendations": []
+            "recommendations": [],
         }
 
         # Add recommendations based on results
@@ -698,6 +741,8 @@ class QAAutomationWorkflow:
             )
 
         if overall_status == QAStatus.PASS:
-            summary["recommendations"].append("All QA checks passed - ready for production")  # type: ignore[union-attr]
+            summary["recommendations"].append(
+                "All QA checks passed - ready for production"
+            )  # type: ignore[union-attr]
 
         return summary

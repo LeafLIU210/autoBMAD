@@ -16,16 +16,18 @@ import asyncio
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class SDKErrorType(Enum):
     """SDK 错误类型枚举"""
+
     SUCCESS = "success"
     TIMEOUT = "timeout"
     CANCELLED = "cancelled"
@@ -39,13 +41,14 @@ class SDKErrorType(Enum):
 @dataclass
 class SDKExecutionResult:
     """SDK 执行结果"""
+
     success: bool
     error_type: SDKErrorType = SDKErrorType.SUCCESS
-    error_message: Optional[str] = None
+    error_message: str | None = None
     duration_seconds: float = 0.0
     session_id: str = ""
     retry_count: int = 0
-    last_error: Optional[BaseException] = None
+    last_error: BaseException | None = None
 
     def is_cancelled(self) -> bool:
         """检查是否被取消"""
@@ -60,7 +63,7 @@ class SDKExecutionResult:
         return self.error_type in [
             SDKErrorType.TIMEOUT,
             SDKErrorType.NETWORK_ERROR,
-            SDKErrorType.SESSION_ERROR
+            SDKErrorType.SESSION_ERROR,
         ]
 
 
@@ -68,7 +71,7 @@ class SessionHealthChecker:
     """会话健康检查器"""
 
     def __init__(self):
-        self.health_history: Dict[str, List[Dict[str, Any]]] = {}
+        self.health_history: dict[str, list[dict[str, Any]]] = {}
         self.failure_threshold = 3  # 连续失败阈值
         self.recovery_threshold = 2  # 恢复所需成功数
 
@@ -79,11 +82,15 @@ class SessionHealthChecker:
 
         # 获取最近的健康记录
         recent_checks = self.health_history[session_id][-5:]  # 最近5次检查
-        recent_failures = sum(1 for check in recent_checks if not check.get("healthy", False))
+        recent_failures = sum(
+            1 for check in recent_checks if not check.get("healthy", False)
+        )
 
         return recent_failures < self.failure_threshold
 
-    def record_health_check(self, session_id: str, healthy: bool, details: Optional[Dict[str, Any]] = None):
+    def record_health_check(
+        self, session_id: str, healthy: bool, details: dict[str, Any] | None = None
+    ):
         """记录健康检查结果"""
         if session_id not in self.health_history:
             self.health_history[session_id] = []
@@ -91,7 +98,7 @@ class SessionHealthChecker:
         check_result = {
             "timestamp": time.time(),
             "healthy": healthy,
-            "details": details or {}
+            "details": details or {},
         }
 
         self.health_history[session_id].append(check_result)
@@ -106,7 +113,9 @@ class SessionHealthChecker:
             return False
 
         recent_checks = self.health_history[session_id][-5:]  # 最近5次检查
-        recent_successes = sum(1 for check in recent_checks if check.get("healthy", False))
+        recent_successes = sum(
+            1 for check in recent_checks if check.get("healthy", False)
+        )
 
         return 0 < recent_successes < self.recovery_threshold
 
@@ -123,7 +132,7 @@ class IsolatedSDKContext:
         self.session_id = session_id
         self._cancel_event = asyncio.Event()
         self._is_active = False
-        self._start_time: Optional[float] = None
+        self._start_time: float | None = None
         self._health_checker = SessionHealthChecker()
 
     async def __aenter__(self) -> "IsolatedSDKContext":
@@ -134,10 +143,7 @@ class IsolatedSDKContext:
         return self
 
     async def __aexit__(
-        self,
-        exc_type: Optional[type],
-        exc_val: Optional[BaseException],
-        exc_tb: Any
+        self, exc_type: type | None, exc_val: BaseException | None, exc_tb: Any
     ) -> bool:
         self._is_active = False
 
@@ -152,7 +158,7 @@ class IsolatedSDKContext:
         self._health_checker.record_health_check(
             self.session_id,
             is_healthy,
-            {"duration": duration, "exception": str(exc_val) if exc_val else None}
+            {"duration": duration, "exception": str(exc_val) if exc_val else None},
         )
 
         return False  # 不吞没异常
@@ -160,7 +166,9 @@ class IsolatedSDKContext:
     def request_cancel(self) -> None:
         """请求取消当前会话"""
         self._cancel_event.set()
-        logger.info(f"[{self.agent_name}] Cancel requested for session {self.session_id[:8]}")
+        logger.info(
+            f"[{self.agent_name}] Cancel requested for session {self.session_id[:8]}"
+        )
 
     def is_cancelled(self) -> bool:
         """检查会话是否已被取消"""
@@ -196,7 +204,7 @@ class SDKSessionManager:
     """
 
     def __init__(self) -> None:
-        self._active_sessions: Dict[str, "IsolatedSDKContext"] = {}
+        self._active_sessions: dict[str, IsolatedSDKContext] = {}
         self._lock = asyncio.Lock()
         self._total_sessions = 0
         self._successful_sessions = 0
@@ -205,7 +213,7 @@ class SDKSessionManager:
             "max_retries": 3,
             "base_delay": 1.0,
             "max_delay": 10.0,
-            "backoff_factor": 2.0
+            "backoff_factor": 2.0,
         }
 
     @asynccontextmanager
@@ -237,8 +245,8 @@ class SDKSessionManager:
         self,
         agent_name: str,
         sdk_func: Callable[[], Any],
-        timeout: Optional[float] = None,
-        max_retries: Optional[int] = None
+        timeout: float | None = None,
+        max_retries: int | None = None,
     ) -> SDKExecutionResult:
         """
         在隔离上下文中执行 SDK 调用。
@@ -261,7 +269,9 @@ class SDKSessionManager:
             async with self.create_session(agent_name) as context:
                 # 检查是否被取消
                 if context.is_cancelled():
-                    raise asyncio.CancelledError("Session was cancelled before execution")
+                    raise asyncio.CancelledError(
+                        "Session was cancelled before execution"
+                    )
 
                 # 执行SDK调用 - 使用asyncio.shield保护免受外部取消影响
                 result = await asyncio.shield(sdk_func())
@@ -277,17 +287,17 @@ class SDKSessionManager:
 
                 return SDKExecutionResult(
                     success=bool(result),
-                    error_type=SDKErrorType.SUCCESS if result else SDKErrorType.SDK_ERROR,
+                    error_type=SDKErrorType.SUCCESS
+                    if result
+                    else SDKErrorType.SDK_ERROR,
                     duration_seconds=duration,
                     session_id=session_id,
-                    retry_count=0
+                    retry_count=0,
                 )
 
         except asyncio.CancelledError as e:
             duration = time.time() - start_time
-            logger.info(
-                f"[{agent_name}] SDK cancelled after {duration:.1f}s"
-            )
+            logger.info(f"[{agent_name}] SDK cancelled after {duration:.1f}s")
 
             async with self._lock:
                 self._failed_sessions += 1
@@ -299,7 +309,7 @@ class SDKSessionManager:
                 duration_seconds=duration,
                 session_id=session_id,
                 retry_count=0,
-                last_error=e
+                last_error=e,
             )
 
         except RuntimeError as e:
@@ -318,7 +328,7 @@ class SDKSessionManager:
                     duration_seconds=duration,
                     session_id=session_id,
                     retry_count=0,
-                    last_error=e
+                    last_error=e,
                 )
 
                 # Cancel scope错误通常不可重试
@@ -337,7 +347,7 @@ class SDKSessionManager:
                 duration_seconds=duration,
                 session_id=session_id,
                 retry_count=0,
-                last_error=e
+                last_error=e,
             )
 
             async with self._lock:
@@ -357,7 +367,7 @@ class SDKSessionManager:
                 duration_seconds=duration,
                 session_id=session_id,
                 retry_count=0,
-                last_error=e
+                last_error=e,
             )
 
             async with self._lock:
@@ -370,10 +380,10 @@ class SDKSessionManager:
         backoff_factor = self._retry_config["backoff_factor"]
         max_delay = self._retry_config["max_delay"]
 
-        delay = base_delay * (backoff_factor ** retry_count)
+        delay = base_delay * (backoff_factor**retry_count)
         return min(delay, max_delay)
 
-    def get_active_sessions(self) -> List[str]:
+    def get_active_sessions(self) -> list[str]:
         """获取当前活动的会话 ID 列表"""
         return list(self._active_sessions.keys())
 
@@ -381,7 +391,7 @@ class SDKSessionManager:
         """获取当前活动会话数"""
         return len(self._active_sessions)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """获取会话统计信息"""
         total = self._total_sessions
         success_rate = (self._successful_sessions / total * 100) if total > 0 else 0
@@ -392,7 +402,7 @@ class SDKSessionManager:
             "failed_sessions": self._failed_sessions,
             "active_sessions": len(self._active_sessions),
             "success_rate": success_rate,
-            "failure_rate": 100 - success_rate
+            "failure_rate": 100 - success_rate,
         }
 
     async def cancel_all_sessions(self) -> int:
@@ -411,7 +421,7 @@ class SDKSessionManager:
                     logger.info(f"Cancelled session {session_id[:8]}")
         return cancelled_count
 
-    async def get_session_health_summary(self) -> Dict[str, Any]:
+    async def get_session_health_summary(self) -> dict[str, Any]:
         """获取会话健康摘要"""
         total_sessions = self._total_sessions
         active_sessions = len(self._active_sessions)
@@ -432,12 +442,14 @@ class SDKSessionManager:
             "active_sessions": active_sessions,
             "healthy_sessions": healthy_sessions,
             "unhealthy_sessions": unhealthy_sessions,
-            "health_rate": (healthy_sessions / active_sessions * 100) if active_sessions > 0 else 0
+            "health_rate": (healthy_sessions / active_sessions * 100)
+            if active_sessions > 0
+            else 0,
         }
 
 
 # 全局单例
-_global_session_manager: Optional[SDKSessionManager] = None
+_global_session_manager: SDKSessionManager | None = None
 
 
 def get_session_manager() -> SDKSessionManager:

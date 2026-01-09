@@ -5,13 +5,13 @@ This module provides the base agent class and configuration that the
 specific agents (DevAgent, QAAgent, SMAgent) inherit from.
 """
 
-import os
-import uuid
 import logging
+import os
 import subprocess
-from typing import Dict, Any, Optional, List, Type
+import uuid
 from pathlib import Path
 from types import TracebackType
+from typing import Any
 
 try:
     from anthropic import Anthropic  # pyright: ignore[reportMissingImports]
@@ -30,7 +30,7 @@ class AgentConfig:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """
         Initialize agent configuration.
@@ -64,7 +64,7 @@ class BaseAgent:
         self.client = None
 
         # Initialize Anthropic client
-        api_key = config.api_key or os.environ.get('ANTHROPIC_API_KEY')
+        api_key = config.api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise RuntimeError("API key not found in config or environment")
 
@@ -73,7 +73,7 @@ class BaseAgent:
         else:
             self.client = Anthropic(api_key=api_key)
 
-    async def process_request(self, input_text: str) -> Dict[str, Any]:  # type: ignore[misc]
+    async def process_request(self, input_text: str) -> dict[str, Any]:  # type: ignore[misc]
         """
         Process a request using the agent.
 
@@ -95,9 +95,7 @@ class BaseAgent:
             model=self.config.model,
             max_tokens=self.config.max_tokens,
             temperature=self.config.temperature,
-            messages=[
-                {"role": "user", "content": input_text}
-            ]
+            messages=[{"role": "user", "content": input_text}],
         )
 
         # Extract text content from response
@@ -106,11 +104,11 @@ class BaseAgent:
             first_content: Any = response.content[0]  # type: ignore[assignment]
             # Handle different content types
             if first_content is not None:
-                text_attr: Optional[str] = getattr(first_content, 'text', None)  # type: ignore[arg-type]
+                text_attr: str | None = getattr(first_content, "text", None)  # type: ignore[arg-type]
                 if text_attr is not None:
                     response_text = str(text_attr)
                 else:
-                    thinking_attr: str = getattr(first_content, 'thinking', '')  # type: ignore[arg-type]
+                    thinking_attr: str = getattr(first_content, "thinking", "")  # type: ignore[arg-type]
                     response_text = str(thinking_attr) if thinking_attr else ""
 
         return {
@@ -119,7 +117,7 @@ class BaseAgent:
             "model": self.config.model,
         }
 
-    def get_session_info(self) -> Dict[str, Any]:
+    def get_session_info(self) -> dict[str, Any]:
         """
         Get information about the current session.
 
@@ -139,17 +137,19 @@ class BaseAgent:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType]
-    ) -> Optional[bool]:
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         """Context manager exit."""
         self.client = None
         return None
 
     def __repr__(self) -> str:
         """String representation of the agent."""
-        return f"BaseAgent(task='{self.config.task_name}', session_id='{self.session_id}')"
+        return (
+            f"BaseAgent(task='{self.config.task_name}', session_id='{self.session_id}')"
+        )
 
 
 # Configuration classes for specific agents
@@ -166,7 +166,7 @@ class DevConfig(AgentConfig):
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """
         Initialize Dev configuration.
@@ -205,7 +205,7 @@ class QAConfig(AgentConfig):
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """Initialize QA configuration."""
         super().__init__(
@@ -228,7 +228,7 @@ class SMConfig(AgentConfig):
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """Initialize SM configuration."""
         super().__init__(
@@ -251,9 +251,9 @@ class QAResult:
         status_reason: str,
         quality_score: float = 0.0,
         reviewed_by: str = "QA Agent",
-        top_issues: Optional[List[str]] = None,
-        nfr_validation: Optional[Dict[str, Any]] = None,
-        recommendations: Optional[Dict[str, Any]] = None,
+        top_issues: list[str] | None = None,
+        nfr_validation: dict[str, Any] | None = None,
+        recommendations: dict[str, Any] | None = None,
     ):
         """
         Initialize QA result.
@@ -290,7 +290,7 @@ class QAResult:
 class DevAgent(BaseAgent):
     """Development agent for handling implementation tasks."""
 
-    def __init__(self, config: Optional[DevConfig] = None):
+    def __init__(self, config: DevConfig | None = None):
         """Initialize Dev agent."""
         if config is None:
             config = DevConfig()
@@ -302,9 +302,9 @@ class DevAgent(BaseAgent):
     def implement_story(
         self,
         story_path: str,
-        tasks: List[str],
-        acceptance_criteria: List[str],
-    ) -> Dict[str, Any]:
+        tasks: list[str],
+        acceptance_criteria: list[str],
+    ) -> dict[str, Any]:
         """
         Implement a story based on tasks and acceptance criteria.
 
@@ -334,10 +334,10 @@ class DevAgent(BaseAgent):
         {story_content}
 
         Tasks to implement:
-        {', '.join(tasks)}
+        {", ".join(tasks)}
 
         Acceptance Criteria:
-        {', '.join(acceptance_criteria)}
+        {", ".join(acceptance_criteria)}
         """
 
         # Call Claude API
@@ -353,10 +353,10 @@ class DevAgent(BaseAgent):
         if response.content:
             first_content: Any = response.content[0]  # type: ignore[assignment]
             # Handle different content types
-            if hasattr(first_content, 'text'):  # type: ignore[arg-type]
+            if hasattr(first_content, "text"):  # type: ignore[arg-type]
                 text_content: str = first_content.text  # type: ignore
                 implementation = text_content
-            elif hasattr(first_content, 'thinking'):  # type: ignore[arg-type]
+            elif hasattr(first_content, "thinking"):  # type: ignore[arg-type]
                 thinking_content: str = first_content.thinking  # type: ignore
                 implementation = thinking_content
 
@@ -370,9 +370,9 @@ class DevAgent(BaseAgent):
 
     def write_tests(  # type: ignore[misc]
         self,
-        test_specs: List[Dict[str, Any]],
+        test_specs: list[dict[str, Any]],
         test_type: str = "unit",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Write tests based on specifications.
 
@@ -406,10 +406,10 @@ class DevAgent(BaseAgent):
         if response.content:
             first_content: Any = response.content[0]  # type: ignore[assignment]
             # Handle different content types
-            if hasattr(first_content, 'text'):  # type: ignore[arg-type]
+            if hasattr(first_content, "text"):  # type: ignore[arg-type]
                 text_content: str = first_content.text  # type: ignore
                 tests = text_content
-            elif hasattr(first_content, 'thinking'):  # type: ignore[arg-type]
+            elif hasattr(first_content, "thinking"):  # type: ignore[arg-type]
                 thinking_content: str = first_content.thinking  # type: ignore
                 tests = thinking_content
 
@@ -422,9 +422,9 @@ class DevAgent(BaseAgent):
 
     def execute_validations(  # type: ignore[misc]
         self,
-        source_files: List[str],
-        test_files: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        source_files: list[str],
+        test_files: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Execute validations on source and test files.
 
@@ -436,7 +436,7 @@ class DevAgent(BaseAgent):
             Dictionary with validation results
         """
         test_files = test_files or []
-        validations: List[Dict[str, Any]] = []
+        validations: list[dict[str, Any]] = []
 
         # Run type checking on source files
         for source_file in source_files:
@@ -447,26 +447,32 @@ class DevAgent(BaseAgent):
                     text=True,
                     timeout=30,
                 )
-                validations.append({
-                    "file": source_file,
-                    "type": "syntax_check",
-                    "status": "pass" if result.returncode == 0 else "fail",
-                    "output": result.stderr if result.returncode != 0 else "OK",
-                })
+                validations.append(
+                    {
+                        "file": source_file,
+                        "type": "syntax_check",
+                        "status": "pass" if result.returncode == 0 else "fail",
+                        "output": result.stderr if result.returncode != 0 else "OK",
+                    }
+                )
             except subprocess.TimeoutExpired:
-                validations.append({
-                    "file": source_file,
-                    "type": "syntax_check",
-                    "status": "timeout",
-                    "output": "Validation timed out",
-                })
+                validations.append(
+                    {
+                        "file": source_file,
+                        "type": "syntax_check",
+                        "status": "timeout",
+                        "output": "Validation timed out",
+                    }
+                )
             except Exception as e:
-                validations.append({
-                    "file": source_file,
-                    "type": "syntax_check",
-                    "status": "error",
-                    "output": str(e),
-                })
+                validations.append(
+                    {
+                        "file": source_file,
+                        "type": "syntax_check",
+                        "status": "error",
+                        "output": str(e),
+                    }
+                )
 
         # Run pytest on test files if requested
         if test_files and self.config.run_tests:
@@ -478,26 +484,32 @@ class DevAgent(BaseAgent):
                         text=True,
                         timeout=60,
                     )
-                    validations.append({
-                        "file": test_file,
-                        "type": "test_execution",
-                        "status": "pass" if result.returncode == 0 else "fail",
-                        "output": result.stdout + result.stderr,
-                    })
+                    validations.append(
+                        {
+                            "file": test_file,
+                            "type": "test_execution",
+                            "status": "pass" if result.returncode == 0 else "fail",
+                            "output": result.stdout + result.stderr,
+                        }
+                    )
                 except subprocess.TimeoutExpired:
-                    validations.append({
-                        "file": test_file,
-                        "type": "test_execution",
-                        "status": "timeout",
-                        "output": "Test execution timed out",
-                    })
+                    validations.append(
+                        {
+                            "file": test_file,
+                            "type": "test_execution",
+                            "status": "timeout",
+                            "output": "Test execution timed out",
+                        }
+                    )
                 except Exception as e:
-                    validations.append({
-                        "file": test_file,
-                        "type": "test_execution",
-                        "status": "error",
-                        "output": str(e),
-                    })
+                    validations.append(
+                        {
+                            "file": test_file,
+                            "type": "test_execution",
+                            "status": "error",
+                            "output": str(e),
+                        }
+                    )
 
         return {
             "status": "success",
@@ -511,9 +523,9 @@ class DevAgent(BaseAgent):
     def update_story_status(
         self,
         story_path: str,
-        completed_tasks: List[str],
-        file_list: List[str],
-    ) -> Dict[str, Any]:
+        completed_tasks: list[str],
+        file_list: list[str],
+    ) -> dict[str, Any]:
         """
         Update story file with completion status.
 
@@ -536,10 +548,10 @@ class DevAgent(BaseAgent):
         updated_content = f"""# Story Status Update
 
 ## Completed Tasks
-{chr(10).join(f'- [x] {task}' for task in completed_tasks)}
+{chr(10).join(f"- [x] {task}" for task in completed_tasks)}
 
 ## Modified Files
-{chr(10).join(f'- {f}' for f in file_list)}
+{chr(10).join(f"- {f}" for f in file_list)}
 
 ## Original Story
 {story_content}
@@ -555,7 +567,7 @@ class DevAgent(BaseAgent):
             "file_list": file_list,
         }
 
-    def get_agent_info(self) -> Dict[str, Any]:
+    def get_agent_info(self) -> dict[str, Any]:
         """
         Get information about the agent.
 
@@ -575,7 +587,7 @@ class DevAgent(BaseAgent):
 class QAAgent(BaseAgent):
     """Quality Assurance agent for validating implementations."""
 
-    def __init__(self, config: Optional[QAConfig] = None):
+    def __init__(self, config: QAConfig | None = None):
         """Initialize QA agent."""
         if config is None:
             config = QAConfig()
@@ -584,9 +596,9 @@ class QAAgent(BaseAgent):
 
     def validate_implementation(
         self,
-        source_files: List[str],
-        test_files: List[str],
-    ) -> List[QAResult]:
+        source_files: list[str],
+        test_files: list[str],
+    ) -> list[QAResult]:
         """
         Validate an implementation against requirements.
 
@@ -597,37 +609,45 @@ class QAAgent(BaseAgent):
         Returns:
             List of QA validation results
         """
-        results: List[QAResult] = []
+        results: list[QAResult] = []
 
         # Check if source files exist
         for source_file in source_files:
             if not Path(source_file).exists():
-                results.append(QAResult(
-                    gate="FAIL",
-                    status_reason=f"Source file not found: {source_file}",
-                ))
+                results.append(
+                    QAResult(
+                        gate="FAIL",
+                        status_reason=f"Source file not found: {source_file}",
+                    )
+                )
             else:
-                results.append(QAResult(
-                    gate="PASS",
-                    status_reason=f"Source file exists: {source_file}",
-                ))
+                results.append(
+                    QAResult(
+                        gate="PASS",
+                        status_reason=f"Source file exists: {source_file}",
+                    )
+                )
 
         # Check if test files exist
         for test_file in test_files:
             if not Path(test_file).exists():
-                results.append(QAResult(
-                    gate="FAIL",
-                    status_reason=f"Test file not found: {test_file}",
-                ))
+                results.append(
+                    QAResult(
+                        gate="FAIL",
+                        status_reason=f"Test file not found: {test_file}",
+                    )
+                )
             else:
-                results.append(QAResult(
-                    gate="PASS",
-                    status_reason=f"Test file exists: {test_file}",
-                ))
+                results.append(
+                    QAResult(
+                        gate="PASS",
+                        status_reason=f"Test file exists: {test_file}",
+                    )
+                )
 
         return results
 
-    def get_agent_info(self) -> Dict[str, Any]:
+    def get_agent_info(self) -> dict[str, Any]:
         """Get information about the agent."""
         return {
             "agent_type": "QA",
@@ -640,9 +660,9 @@ class SMAgent(BaseAgent):
 
     def __init__(
         self,
-        config: Optional[SMConfig] = None,
-        project_root: Optional[str] = None,
-        tasks_path: Optional[str] = None,
+        config: SMConfig | None = None,
+        project_root: str | None = None,
+        tasks_path: str | None = None,
     ):
         """Initialize SM agent."""
         if config is None:
@@ -652,7 +672,7 @@ class SMAgent(BaseAgent):
         self.project_root = project_root
         self.tasks_path = tasks_path
 
-    def get_agent_info(self) -> Dict[str, Any]:
+    def get_agent_info(self) -> dict[str, Any]:
         """Get information about the agent."""
         return {
             "agent_type": "Story Master",

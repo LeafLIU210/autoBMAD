@@ -1,24 +1,39 @@
+"""Spec Automation Package
+
+This module provides functionality for automating specification parsing,
+generation, and validation for the autoBMAD system.
 """
-Spec Automation Module
 
-Independent workflow module for handling non-BMAD format planning documents.
-Provides document-centric development and QA automation.
-"""
-
-__version__ = "1.0.0"
-__author__ = "BMAD Automation System"
-
-# Import main components
-from .doc_parser import DocParser
-from .spec_state_manager import SpecStateManager
-from .spec_dev_agent import SpecDevAgent
-from .spec_qa_agent import SpecQAAgent
-from .spec_driver import SpecDriver
+from .spec_generator import (
+    SpecGenerator,
+    create_test_spec,
+    generate_specification,
+)
+from .spec_parser import (
+    SpecificationData,
+    SpecParser,
+    extract_requirements,
+    parse_specification,
+    validate_specification,
+)
+from .spec_validator import (
+    SpecValidator,
+    ValidationResult,
+    check_spec_consistency,
+    validate_spec_completeness,
+)
 
 __all__ = [
-    "DocParser",
-    "SpecStateManager",
-    "SpecDevAgent",
-    "SpecQAAgent",
-    "SpecDriver",
+    "SpecParser",
+    "SpecificationData",
+    "parse_specification",
+    "validate_specification",
+    "extract_requirements",
+    "SpecGenerator",
+    "generate_specification",
+    "create_test_spec",
+    "SpecValidator",
+    "ValidationResult",
+    "validate_spec_completeness",
+    "check_spec_consistency",
 ]

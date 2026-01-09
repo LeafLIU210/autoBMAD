@@ -7,19 +7,27 @@ Uses Claude Code CLI for actual implementation.
 """
 
 import logging
-import subprocess
-from typing import Any, Dict, List, Optional, cast, TYPE_CHECKING
 import re
+import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
-    from claude_agent_sdk import query, ClaudeAgentOptions
+    from claude_agent_sdk import ClaudeAgentOptions, query
 
 # Import LogManager for runtime use
 from autoBMAD.epic_automation.log_manager import LogManager
 
 try:
-    from claude_agent_sdk import query as _query, ClaudeAgentOptions as _ClaudeAgentOptions, ResultMessage as _ResultMessage
+    from claude_agent_sdk import (
+        ClaudeAgentOptions as _ClaudeAgentOptions,
+    )
+    from claude_agent_sdk import (
+        ResultMessage as _ResultMessage,
+    )
+    from claude_agent_sdk import (
+        query as _query,
+    )
 except ImportError:
     # For development without SDK installed
     _query = None
@@ -47,7 +55,9 @@ logger = logging.getLogger(__name__)
 class DevAgent:
     """Development agent for handling implementation tasks."""
 
-    def __init__(self, use_claude: bool = True, log_manager: Optional[LogManager] = None):
+    def __init__(
+        self, use_claude: bool = True, log_manager: LogManager | None = None
+    ):
         """
         Initialize Dev agent.
 
@@ -68,7 +78,8 @@ class DevAgent:
 
         # Initialize StatusParser for robust status parsing
         try:
-            from autoBMAD.epic_automation.status_parser import StatusParser
+            from autoBMAD.epic_automation.story_parser import StatusParser
+
             # 创建 SafeClaudeSDK 实例并传入，提供必需的参数
             # SafeClaudeSDK 可能为 None（导入失败时），需要检查
             if SafeClaudeSDK is not None:
@@ -76,23 +87,26 @@ class DevAgent:
                 options = None
                 if _ClaudeAgentOptions:
                     options = _ClaudeAgentOptions(
-                        permission_mode="bypassPermissions",
-                        cwd=str(Path.cwd())
+                        permission_mode="bypassPermissions", cwd=str(Path.cwd())
                     )
                 sdk_instance = SafeClaudeSDK(
                     prompt="Parse story status",
                     options=options,
                     timeout=None,
-                    log_manager=log_manager
+                    log_manager=log_manager,
                 )
                 self.status_parser = StatusParser(sdk_wrapper=sdk_instance)
             else:
                 self.status_parser = None
         except ImportError:
             self.status_parser = None
-            logger.warning("[Dev Agent] StatusParser not available, using fallback parsing")
+            logger.warning(
+                "[Dev Agent] StatusParser not available, using fallback parsing"
+            )
 
-        logger.info(f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})")
+        logger.info(
+            f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})"
+        )
 
     def _validate_prompt_format(self, prompt: str) -> bool:
         """Validate prompt format for BMAD commands."""
@@ -101,36 +115,46 @@ class DevAgent:
             if not prompt or len(prompt.strip()) == 0:
                 logger.error("[Prompt Validation] Empty prompt")
                 return False
-            
+
             # BMAD命令格式检查
-            if not prompt.startswith('@'):
-                logger.warning(f"[Prompt Validation] Prompt doesn't start with @: {prompt[:50]}...")
-            
+            if not prompt.startswith("@"):
+                logger.warning(
+                    f"[Prompt Validation] Prompt doesn't start with @: {prompt[:50]}..."
+                )
+
             # 检查是否包含develop-story命令
-            if '*develop-story' not in prompt:
-                logger.warning(f"[Prompt Validation] Missing *develop-story command: {prompt[:100]}...")
-            
+            if "*develop-story" not in prompt:
+                logger.warning(
+                    f"[Prompt Validation] Missing *develop-story command: {prompt[:100]}..."
+                )
+
             # 检查文件路径格式
             if '"' in prompt:
                 # 提取引号内的路径
                 path_matches = re.findall(r'"([^"]+)"', prompt)
                 for path in path_matches:
-                    if not path.endswith('.md'):
-                        logger.warning(f"[Prompt Validation] Non-markdown file path: {path}")
+                    if not path.endswith(".md"):
+                        logger.warning(
+                            f"[Prompt Validation] Non-markdown file path: {path}"
+                        )
                     # 检查路径是否存在
                     path_obj = Path(path)
                     if not path_obj.exists():
-                        logger.warning(f"[Prompt Validation] Story file not found: {path}")
-            
+                        logger.warning(
+                            f"[Prompt Validation] Story file not found: {path}"
+                        )
+
             # 检查编码问题（非ASCII字符）
             try:
-                _ = prompt.encode('ascii')
+                _ = prompt.encode("ascii")
             except UnicodeEncodeError:
-                logger.warning("[Prompt Validation] Prompt contains non-ASCII characters")
-            
+                logger.warning(
+                    "[Prompt Validation] Prompt contains non-ASCII characters"
+                )
+
             logger.info("[Prompt Validation] Prompt format validation passed")
             return True
-            
+
         except Exception as e:
             logger.error(f"[Prompt Validation] Validation error: {str(e)}")
             return False
@@ -144,10 +168,10 @@ class DevAgent:
         timeout = 30  # Increased from 10 to 30 seconds
 
         possible_commands = [
-            ['claude', '--version'],
-            [r'C:\Users\Administrator\AppData\Roaming\npm\claude', '--version'],
-            [r'C:\Users\Administrator\AppData\Roaming\npm\claude.cmd', '--version'],
-            ['where', 'claude']
+            ["claude", "--version"],
+            [r"C:\Users\Administrator\AppData\Roaming\npm\claude", "--version"],
+            [r"C:\Users\Administrator\AppData\Roaming\npm\claude.cmd", "--version"],
+            ["where", "claude"],
         ]
 
         env = os.environ.copy()
@@ -162,35 +186,43 @@ class DevAgent:
                             text=True,
                             timeout=timeout,
                             shell=True,
-                            env=env
+                            env=env,
                         )
                         if result.returncode == 0:
-                            if cmd[0] == 'where':
-                                paths = result.stdout.strip().split('\n')
+                            if cmd[0] == "where":
+                                paths = result.stdout.strip().split("\n")
                                 if paths:
                                     verify = subprocess.run(
-                                        [paths[0], '--version'],
+                                        [paths[0], "--version"],
                                         capture_output=True,
                                         text=True,
                                         timeout=timeout,
                                         shell=True,
-                                        env=env
+                                        env=env,
                                     )
                                     if verify.returncode == 0:
-                                        logger.info(f"Claude Code CLI available: {verify.stdout.strip()}")
+                                        logger.info(
+                                            f"Claude Code CLI available: {verify.stdout.strip()}"
+                                        )
                                         return True
                             else:
-                                logger.info(f"Claude Code CLI available: {result.stdout.strip()}")
+                                logger.info(
+                                    f"Claude Code CLI available: {result.stdout.strip()}"
+                                )
                                 return True
                     except subprocess.TimeoutExpired:
-                        logger.warning(f"CLI check timeout for {cmd[0]} (attempt {attempt + 1}/{max_retries})")
+                        logger.warning(
+                            f"CLI check timeout for {cmd[0]} (attempt {attempt + 1}/{max_retries})"
+                        )
                         continue
                     except Exception:
                         continue
 
                 # If no command worked in this attempt, try again
                 if attempt < max_retries - 1:
-                    logger.warning(f"CLI check attempt {attempt + 1} failed, retrying in 2s...")
+                    logger.warning(
+                        f"CLI check attempt {attempt + 1} failed, retrying in 2s..."
+                    )
                     time.sleep(2)
 
             except Exception as e:
@@ -205,7 +237,7 @@ class DevAgent:
         self,
         story_content: str,
         story_path: str = "",
-        qa_feedback: Optional[Dict[str, Any]] = None
+        qa_feedback: dict[str, Any] | None = None,
     ) -> bool:
         """
         Execute Dev phase for a story with QA feedback loop support.
@@ -233,16 +265,16 @@ class DevAgent:
                 return False
 
             # Add story_path to requirements if available in context
-            requirements['story_path'] = self._current_story_path
+            requirements["story_path"] = self._current_story_path
 
             # Handle QA feedback if provided
-            if qa_feedback and qa_feedback.get('needs_fix'):
+            if qa_feedback and qa_feedback.get("needs_fix"):
                 logger.info(f"{self.name} Handling QA feedback loop")
-                requirements['qa_prompt'] = qa_feedback.get('dev_prompt', '')
+                requirements["qa_prompt"] = qa_feedback.get("dev_prompt", "")
 
             # Validate requirements
             validation = await self._validate_requirements(requirements)
-            if not validation['valid']:
+            if not validation["valid"]:
                 logger.warning(f"Requirement validation issues: {validation['issues']}")
 
             # Execute development tasks
@@ -263,130 +295,154 @@ class DevAgent:
             logger.error(f"{self.name} Dev phase failed: {e}")
             return False
 
-    async def _extract_requirements(self, story_content: str) -> Dict[str, Any]:
+    async def _extract_requirements(self, story_content: str) -> dict[str, Any]:
         """Extract requirements from story content."""
         logger.info("Extracting requirements from story")
 
         try:
             # Basic requirement extraction from markdown
             # Type the requirements dict structure explicitly
-            requirements: Dict[str, Any] = {
-                'title': '',
-                'acceptance_criteria': [],
-                'tasks': [],
-                'subtasks': [],
-                'dev_notes': {},
-                'testing': {}
+            requirements: dict[str, Any] = {
+                "title": "",
+                "acceptance_criteria": [],
+                "tasks": [],
+                "subtasks": [],
+                "dev_notes": {},
+                "testing": {},
             }
 
             # Extract title
-            title_match = re.search(r'^# .+:(.+)$', story_content, re.MULTILINE)
+            title_match = re.search(r"^# .+:(.+)$", story_content, re.MULTILINE)
             if title_match:
-                requirements['title'] = title_match.group(1).strip()
+                requirements["title"] = title_match.group(1).strip()
             else:
                 # Try alternative pattern
-                title_match = re.search(r'^# Story \d+:\s*(.+)$', story_content, re.MULTILINE)
+                title_match = re.search(
+                    r"^# Story \d+:\s*(.+)$", story_content, re.MULTILINE
+                )
                 if title_match:
-                    requirements['title'] = title_match.group(1).strip()
+                    requirements["title"] = title_match.group(1).strip()
 
             # Extract acceptance criteria
-            ac_section = re.search(r'## Acceptance Criteria\n(.*?)(?=\n##|\Z)', story_content, re.DOTALL)
+            ac_section = re.search(
+                r"## Acceptance Criteria\n(.*?)(?=\n##|\Z)", story_content, re.DOTALL
+            )
             if ac_section:
-                ac_lines = ac_section.group(1).strip().split('\n')
+                ac_lines = ac_section.group(1).strip().split("\n")
                 for line in ac_lines:
-                    if line.strip() and re.match(r'^\d+\.', line.strip()):
+                    if line.strip() and re.match(r"^\d+\.", line.strip()):
                         # Cast to List[str] to help type checker
-                        acceptance_criteria = cast(List[str], requirements['acceptance_criteria'])
+                        acceptance_criteria = cast(
+                            list[str], requirements["acceptance_criteria"]
+                        )
                         acceptance_criteria.append(line.strip())
             else:
                 # Try alternative pattern with checkboxes
-                ac_section = re.search(r'## Acceptance Criteria\s*\n(.*?)(?=\n---|\n##|$)', story_content, re.DOTALL)
+                ac_section = re.search(
+                    r"## Acceptance Criteria\s*\n(.*?)(?=\n---|\n##|$)",
+                    story_content,
+                    re.DOTALL,
+                )
                 if ac_section:
-                    ac_lines = ac_section.group(1).strip().split('\n')
+                    ac_lines = ac_section.group(1).strip().split("\n")
                     for line in ac_lines:
-                        if line.strip().startswith('-'):
+                        if line.strip().startswith("-"):
                             # Cast to List[str] to help type checker
-                            acceptance_criteria = cast(List[str], requirements['acceptance_criteria'])
+                            acceptance_criteria = cast(
+                                list[str], requirements["acceptance_criteria"]
+                            )
                             acceptance_criteria.append(line.strip())
 
             # Extract tasks
-            tasks_section = re.search(r'## Tasks / Subtasks\n(.*?)(?=\n##|\Z)', story_content, re.DOTALL)
+            tasks_section = re.search(
+                r"## Tasks / Subtasks\n(.*?)(?=\n##|\Z)", story_content, re.DOTALL
+            )
             if tasks_section:
-                task_lines = tasks_section.group(1).strip().split('\n')
+                task_lines = tasks_section.group(1).strip().split("\n")
                 for line in task_lines:
-                    if line.strip().startswith('- [ ]'):
+                    if line.strip().startswith("- [ ]"):
                         # Cast to List[str] to help type checker
-                        tasks = cast(List[str], requirements['tasks'])
+                        tasks = cast(list[str], requirements["tasks"])
                         tasks.append(line.strip())
             else:
                 # Try alternative pattern
-                tasks_section = re.search(r'## Tasks / Subtasks\s*\n(.*?)(?=\n---|\n##|$)', story_content, re.DOTALL)
+                tasks_section = re.search(
+                    r"## Tasks / Subtasks\s*\n(.*?)(?=\n---|\n##|$)",
+                    story_content,
+                    re.DOTALL,
+                )
                 if tasks_section:
-                    task_lines = tasks_section.group(1).strip().split('\n')
+                    task_lines = tasks_section.group(1).strip().split("\n")
                     for line in task_lines:
-                        if line.strip().startswith('-'):
+                        if line.strip().startswith("-"):
                             # Cast to List[str] to help type checker
-                            tasks = cast(List[str], requirements['tasks'])
+                            tasks = cast(list[str], requirements["tasks"])
                             tasks.append(line.strip())
 
             # Extract subtasks (nested)
-            subtask_pattern = r'^\s*-\s*\[x\]\s*(.+)'
-            for line in story_content.split('\n'):
+            subtask_pattern = r"^\s*-\s*\[x\]\s*(.+)"
+            for line in story_content.split("\n"):
                 if re.match(subtask_pattern, line):
                     # Cast to List[str] to help type checker
-                    subtasks = cast(List[str], requirements['subtasks'])
+                    subtasks = cast(list[str], requirements["subtasks"])
                     subtasks.append(line.strip())
 
             # Extract dev notes
-            dev_notes_section = re.search(r'## Dev Notes\s*\n(.*?)(?=\n---|\n##|$)', story_content, re.DOTALL)
+            dev_notes_section = re.search(
+                r"## Dev Notes\s*\n(.*?)(?=\n---|\n##|$)", story_content, re.DOTALL
+            )
             if dev_notes_section:
                 # Cast to Dict[str, str] to help type checker
-                dev_notes = cast(Dict[str, str], requirements['dev_notes'])
-                dev_notes['content'] = dev_notes_section.group(1).strip()
+                dev_notes = cast(dict[str, str], requirements["dev_notes"])
+                dev_notes["content"] = dev_notes_section.group(1).strip()
 
             # Extract testing info
-            testing_section = re.search(r'## Testing\s*\n(.*?)(?=\n---|\n##|$)', story_content, re.DOTALL)
+            testing_section = re.search(
+                r"## Testing\s*\n(.*?)(?=\n---|\n##|$)", story_content, re.DOTALL
+            )
             if testing_section:
                 # Cast to Dict[str, str] to help type checker
-                testing = cast(Dict[str, str], requirements['testing'])
-                testing['content'] = testing_section.group(1).strip()
+                testing = cast(dict[str, str], requirements["testing"])
+                testing["content"] = testing_section.group(1).strip()
 
             # Log with explicit type casting to help type checker
-            acceptance_criteria_len = len(cast(List[str], requirements['acceptance_criteria']))
-            tasks_len = len(cast(List[str], requirements['tasks']))
-            subtasks_len = len(cast(List[str], requirements['subtasks']))
+            acceptance_criteria_len = len(
+                cast(list[str], requirements["acceptance_criteria"])
+            )
+            tasks_len = len(cast(list[str], requirements["tasks"]))
+            subtasks_len = len(cast(list[str], requirements["subtasks"]))
 
-            logger.info(f"Extracted requirements: {acceptance_criteria_len} AC, {tasks_len} tasks, {subtasks_len} subtasks")
+            logger.info(
+                f"Extracted requirements: {acceptance_criteria_len} AC, {tasks_len} tasks, {subtasks_len} subtasks"
+            )
             return requirements
 
         except Exception as e:
             logger.error(f"Failed to extract requirements: {e}")
             return {}
 
-    async def _validate_requirements(self, requirements: Dict[str, Any]) -> Dict[str, Any]:
+    async def _validate_requirements(
+        self, requirements: dict[str, Any]
+    ) -> dict[str, Any]:
         """Validate extracted requirements."""
         # Initialize with explicit types to help type checker
-        issues: List[str] = []
-        warnings: List[str] = []
+        issues: list[str] = []
+        warnings: list[str] = []
 
-        if not requirements.get('acceptance_criteria'):
-            issues.append('No acceptance criteria found')
+        if not requirements.get("acceptance_criteria"):
+            issues.append("No acceptance criteria found")
 
-        if not requirements.get('tasks'):
-            warnings.append('No tasks found')
+        if not requirements.get("tasks"):
+            warnings.append("No tasks found")
 
         # Check for minimum viable content
-        if not requirements.get('title'):
-            issues.append('No title found')
+        if not requirements.get("title"):
+            issues.append("No title found")
 
         # Return with explicit type
-        return {
-            'valid': len(issues) == 0,
-            'issues': issues,
-            'warnings': warnings
-        }
+        return {"valid": len(issues) == 0, "issues": issues, "warnings": warnings}
 
-    async def _execute_development_tasks(self, requirements: Dict[str, Any]) -> bool:
+    async def _execute_development_tasks(self, requirements: dict[str, Any]) -> bool:
         """Execute development tasks using Claude Agent SDK with single call."""
         logger.info("Executing development tasks")
 
@@ -394,54 +450,75 @@ class DevAgent:
             # Check if SDK is available
             if query is None or ClaudeAgentOptions is None:
                 raise RuntimeError(
-                    "Claude Agent SDK is required but not available. " +
-                    "Please install and configure claude-agent-sdk."
+                    "Claude Agent SDK is required but not available. "
+                    + "Please install and configure claude-agent-sdk."
                 )
 
             # Get story path
-            story_path = requirements.get('story_path', self._current_story_path or '')
+            story_path = requirements.get("story_path", self._current_story_path or "")
 
             # Check if story status is already completed
             if story_path:
                 story_status = await self._check_story_status(story_path)
 
                 # Check for "Ready for Done" or "Done" status - skip entire dev-qa cycle
-                if story_status and (story_status.lower() == 'ready for done' or story_status.lower() == 'done'):
-                    logger.info(f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle")
+                if story_status and (
+                    story_status.lower() == "ready for done"
+                    or story_status.lower() == "done"
+                ):
+                    logger.info(
+                        f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle"
+                    )
                     return True
 
                 # Check for "Ready for Review" status - skip dev but notify QA
                 elif story_status == "Ready for Review":
-                    logger.info(f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls")
+                    logger.info(
+                        f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls"
+                    )
                     # Development is considered complete, notify QA agent directly
                     _ = await self._notify_qa_agent(story_path)
                     return True
                 elif story_status:
-                    logger.info(f"[Dev Agent] Story status: {story_status}, proceeding with development")
+                    logger.info(
+                        f"[Dev Agent] Story status: {story_status}, proceeding with development"
+                    )
                 else:
-                    logger.warning(f"[Dev Agent] Could not determine story status for {story_path}, proceeding anyway")
+                    logger.warning(
+                        f"[Dev Agent] Could not determine story status for {story_path}, proceeding anyway"
+                    )
 
             # Check if this is a QA feedback mode (requirements contains qa_prompt)
-            if 'qa_prompt' in requirements:
+            if "qa_prompt" in requirements:
                 # Handle QA feedback mode - execute single SDK call
                 logger.info(f"{self.name} Handling QA feedback with single SDK call")
-                result = await self._execute_single_claude_sdk(requirements['qa_prompt'], story_path, self._log_manager)
+                result = await self._execute_single_claude_sdk(
+                    requirements["qa_prompt"], story_path, self._log_manager
+                )
                 return result
 
             # Normal development mode - execute single SDK call
-            logger.info(f"{self.name} Executing normal development with single SDK call")
-            base_prompt = f'/ralph-wiggum:ralph-loop "@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @D:\\GITHUB\\pytQt_template\\autoBMAD\\spec_automation\\tests. Perform Test-Driven Development (TDD) iteratively until achieving 100% tests pass with comprehensive coverage. Run "pytest -v --tb=short --cov" to verify tests and coverage. Change story Status to "Ready for Review" when complete. ONLY ALL tests PASS with FULL COVERAGE lead to DONE<promise>DONE</promise>" --max-iterations 5 --completion-promise "DONE"'
+            logger.info(
+                f"{self.name} Executing normal development with single SDK call"
+            )
+            base_prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @D:\\GITHUB\\pytQt_template\\autoBMAD\\spec_automation\\tests. Perform Test-Driven Development (TDD) iteratively until achieving 100% tests pass with comprehensive coverage. Run "pytest -v --tb=short --cov" to verify tests and coverage. Change story Status to "Ready for Review" when complete. '
 
             # Execute single SDK call
-            result = await self._execute_single_claude_sdk(base_prompt, story_path, self._log_manager)
+            result = await self._execute_single_claude_sdk(
+                base_prompt, story_path, self._log_manager
+            )
 
             if result:
                 # Development completed successfully, notify QA agent
                 _ = await self._notify_qa_agent(story_path)
-                logger.info(f"Development tasks completed successfully for: {requirements.get('title', 'Unknown')}")
+                logger.info(
+                    f"Development tasks completed successfully for: {requirements.get('title', 'Unknown')}"
+                )
                 return True
             else:
-                logger.error(f"Development tasks failed for: {requirements.get('title', 'Unknown')}")
+                logger.error(
+                    f"Development tasks failed for: {requirements.get('title', 'Unknown')}"
+                )
                 return False
 
         except Exception as e:
@@ -465,10 +542,12 @@ class DevAgent:
             logger.info(f"{self.name} handling QA feedback for: {story_path}")
 
             # Build prompt for QA feedback
-            prompt = f'@.bmad-core/agents/dev.md {qa_prompt}'
+            prompt = f"@.bmad-core/agents/dev.md {qa_prompt}"
 
             # Execute single SDK call for fixing
-            result = await self._execute_single_claude_sdk(prompt, story_path, self._log_manager)
+            result = await self._execute_single_claude_sdk(
+                prompt, story_path, self._log_manager
+            )
 
             if result:
                 logger.info(f"{self.name} QA feedback handling completed successfully")
@@ -485,7 +564,9 @@ class DevAgent:
             logger.error(f"Failed to handle QA feedback: {e}")
             return False
 
-    async def _execute_single_claude_sdk(self, prompt: str, story_path: str, log_manager: Optional[LogManager] = None) -> bool:
+    async def _execute_single_claude_sdk(
+        self, prompt: str, story_path: str, log_manager: LogManager | None = None
+    ) -> bool:
         """
         Execute Claude SDK call with safe wrapper, isolation, and detailed diagnostics.
 
@@ -502,7 +583,9 @@ class DevAgent:
         """
         # Check if SDK classes are available
         if ClaudeAgentOptions is None or query is None:
-            logger.warning("[Dev Agent] Claude Agent SDK not available - using simulation mode")
+            logger.warning(
+                "[Dev Agent] Claude Agent SDK not available - using simulation mode"
+            )
             return True
 
         # 预检提示词格式
@@ -517,12 +600,14 @@ class DevAgent:
                 return False
             # Safe to call ClaudeAgentOptions since we already checked it's not None
             # Use assert to satisfy type checker
-            assert ClaudeAgentOptions is not None, "ClaudeAgentOptions should not be None"
+            assert ClaudeAgentOptions is not None, (
+                "ClaudeAgentOptions should not be None"
+            )
             options = ClaudeAgentOptions(
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd()),
                 max_turns=100,  # 增加最大轮数，以支持复杂故事开发
-                cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe"
+                cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe",
             )
             sdk = SafeClaudeSDK(prompt, options, timeout=None, log_manager=log_manager)
             return await sdk.execute()
@@ -537,21 +622,25 @@ class DevAgent:
             result = await self._session_manager.execute_isolated(
                 agent_name="DevAgent",
                 sdk_func=sdk_call,
-                timeout=None  # No external timeout
+                timeout=None,  # No external timeout
             )
 
             if result.success:
-                logger.info(f"[Dev Agent] SDK call succeeded for {story_path} in {result.duration_seconds:.1f}s")
+                logger.info(
+                    f"[Dev Agent] SDK call succeeded for {story_path} in {result.duration_seconds:.1f}s"
+                )
                 return True
             else:
                 logger.warning(f"[Dev Agent] SDK call failed: {result.error_message}")
                 return False
 
         except Exception as e:
-            logger.error(f"[Dev Agent] SDK call exception: {type(e).__name__}: {str(e)}")
+            logger.error(
+                f"[Dev Agent] SDK call exception: {type(e).__name__}: {str(e)}"
+            )
             return False
 
-    async def _notify_qa_agent(self, story_path: str) -> Optional[Dict[str, Any]]:
+    async def _notify_qa_agent(self, story_path: str) -> dict[str, Any] | None:
         """
         Notify QA agent after development completion and get feedback.
 
@@ -570,32 +659,29 @@ class DevAgent:
                 logger.error(f"[Dev Agent] Story file not found: {story_path}")
                 return None
 
-            with open(story_file, 'r', encoding='utf-8') as f:
+            with open(story_file, encoding="utf-8") as f:
                 story_content = f.read()
 
             # Import and instantiate QA agent
             try:
                 from .qa_agent import QAAgent
             except ImportError:
-                logger.warning("[Dev Agent] QA agent not available - simulating QA review")
-                return {
-                    'passed': True,
-                    'completed': True,
-                    'needs_fix': False
-                }
+                logger.warning(
+                    "[Dev Agent] QA agent not available - simulating QA review"
+                )
+                return {"passed": True, "completed": True, "needs_fix": False}
 
             qa_agent = QAAgent()
 
             # Execute QA review
             qa_result = await qa_agent.execute(
-                story_content=story_content,
-                story_path=story_path
+                story_content=story_content, story_path=story_path
             )
 
             logger.info(f"[Dev Agent] QA review completed: {qa_result}")
 
             # Check if QA found issues
-            if qa_result.get('needs_fix'):
+            if qa_result.get("needs_fix"):
                 logger.info("[Dev Agent] QA found issues, will trigger Dev-QA loop")
                 return qa_result
             else:
@@ -606,7 +692,9 @@ class DevAgent:
             logger.error(f"Failed to notify QA agent: {e}")
             return None
 
-    async def _update_story_completion(self, story_content: str, requirements: Dict[str, Any]) -> None:
+    async def _update_story_completion(
+        self, story_content: str, requirements: dict[str, Any]
+    ) -> None:
         """Update story file with completion information."""
         logger.info("Updating story file with completion")
 
@@ -620,28 +708,30 @@ class DevAgent:
                 return
 
             # Read current content
-            with open(story_path, 'r', encoding='utf-8') as f:
+            with open(story_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Update status to "Ready for Review"
-            status_pattern = r'(\*\*Status\*\*:\s*)Draft'
+            status_pattern = r"(\*\*Status\*\*:\s*)Draft"
             if re.search(status_pattern, content):
-                content = re.sub(status_pattern, r'\1Ready for Review', content)
+                content = re.sub(status_pattern, r"\1Ready for Review", content)
 
             # Add file list if not present
-            if '### File List' not in content:
+            if "### File List" not in content:
                 file_list_section = """
 ### File List
 - `src/main.py`
 - `tests/test_main.py`
 """
                 # Insert before Dev Agent Record section
-                dev_record_pattern = r'(## Dev Agent Record)'
+                dev_record_pattern = r"(## Dev Agent Record)"
                 if re.search(dev_record_pattern, content):
-                    content = re.sub(dev_record_pattern, rf'{file_list_section}\1', content)
+                    content = re.sub(
+                        dev_record_pattern, rf"{file_list_section}\1", content
+                    )
 
             # Write updated content
-            with open(story_path, 'w', encoding='utf-8') as f:
+            with open(story_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
             logger.info(f"Updated story file: {story_path}")
@@ -649,7 +739,7 @@ class DevAgent:
         except Exception as e:
             logger.error(f"Failed to update story file: {e}")
 
-    async def _check_story_status(self, story_path: str) -> Optional[str]:
+    async def _check_story_status(self, story_path: str) -> str | None:
         """
         Check the status field in a story document using hybrid parsing strategy.
 
@@ -666,7 +756,7 @@ class DevAgent:
                 logger.warning(f"[Dev Agent] Story file not found: {story_path}")
                 return None
 
-            with open(story_file, 'r', encoding='utf-8') as f:
+            with open(story_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Use StatusParser if available (AI-powered parsing)
@@ -675,24 +765,30 @@ class DevAgent:
                     # Note: parse_status is now async in SimpleStatusParser
                     status_text = await self.status_parser.parse_status(content)
                     if status_text and status_text != "unknown":
-                        logger.debug(f"[Dev Agent story] Found status using AI parsing: '{status_text}'")
+                        logger.debug(
+                            f"[Dev Agent story] Found status using AI parsing: '{status_text}'"
+                        )
                         return status_text
                     else:
-                        logger.warning(f"[Dev Agent] StatusParser failed to parse status from {story_path}")
+                        logger.warning(
+                            f"[Dev Agent] StatusParser failed to parse status from {story_path}"
+                        )
                 except Exception as e:
-                    logger.warning(f"[Dev Agent] StatusParser error: {e}, falling back to regex")
+                    logger.warning(
+                        f"[Dev Agent] StatusParser error: {e}, falling back to regex"
+                    )
 
             # Fallback to original regex pattern
             logger.debug(f"[Dev Agent] Using fallback regex parsing for {story_path}")
             status_match = re.search(
-                r'## Status\s*\n\s*\*\*([^*]+)\*\*',
-                content,
-                re.MULTILINE
+                r"## Status\s*\n\s*\*\*([^*]+)\*\*", content, re.MULTILINE
             )
 
             if status_match:
                 status_text = status_match.group(1).strip()
-                logger.debug(f"[Dev Agent story] Found status using regex: '{status_text}'")
+                logger.debug(
+                    f"[Dev Agent story] Found status using regex: '{status_text}'"
+                )
                 return status_text
             else:
                 logger.warning(f"[Dev Agent] Status section not found in {story_path}")
@@ -701,4 +797,3 @@ class DevAgent:
         except Exception as e:
             logger.error(f"[Dev Agent] Error checking story status: {e}")
             return None
-

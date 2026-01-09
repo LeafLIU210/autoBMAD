@@ -18,17 +18,18 @@ import logging
 import re
 import shutil
 import sqlite3
+from contextlib import asynccontextmanager
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Union, Optional
-from contextlib import asynccontextmanager
+from typing import Any, Union
 
 logger = logging.getLogger(__name__)
 
 
 class StoryStatus(Enum):
     """Story status enumeration - 使用标准处理状态值"""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     REVIEW = "review"
@@ -40,6 +41,7 @@ class StoryStatus(Enum):
 
 class QAResult(Enum):
     """QA result enumeration."""
+
     PASS = "PASS"
     CONCERNS = "CONCERNS"
     FAIL = "FAIL"
@@ -63,7 +65,7 @@ def get_story_status_enum(status_str: str) -> StoryStatus:
         return StoryStatus.PENDING
 
 
-def is_story_status_completed(status: Union[StoryStatus, str]) -> bool:
+def is_story_status_completed(status: StoryStatus | str) -> bool:
     """
     检查故事是否已完成
 
@@ -79,7 +81,7 @@ def is_story_status_completed(status: Union[StoryStatus, str]) -> bool:
         return status.lower() == "completed"
 
 
-def is_story_status_failed(status: Union[StoryStatus, str]) -> bool:
+def is_story_status_failed(status: StoryStatus | str) -> bool:
     """
     检查故事是否失败
 
@@ -95,7 +97,7 @@ def is_story_status_failed(status: Union[StoryStatus, str]) -> bool:
         return status.lower() == "failed"
 
 
-def is_story_status_in_progress(status: Union[StoryStatus, str]) -> bool:
+def is_story_status_in_progress(status: StoryStatus | str) -> bool:
     """
     检查故事是否正在进行中
 
@@ -115,7 +117,7 @@ class DeadlockDetector:
     """死锁检测器"""
 
     def __init__(self):
-        self.lock_waiters: Dict[str, asyncio.Task[None]] = {}
+        self.lock_waiters: dict[str, asyncio.Task[None]] = {}
         self.lock_timeout = 30.0  # 30秒超时
         self.deadlock_detected = False
 
@@ -131,7 +133,7 @@ class DeadlockDetector:
             # 使用超时等待
             result = await asyncio.wait_for(lock.acquire(), timeout=self.lock_timeout)
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(f"Deadlock detected for lock: {lock_name}")
             self.deadlock_detected = True
             return False
@@ -144,7 +146,9 @@ class DatabaseConnectionPool:
 
     def __init__(self, max_connections: int = 5):
         self.max_connections = max_connections
-        self.connections: asyncio.Queue[sqlite3.Connection] = asyncio.Queue(maxsize=max_connections)
+        self.connections: asyncio.Queue[sqlite3.Connection] = asyncio.Queue(
+            maxsize=max_connections
+        )
         self.connection_params = {}
 
     async def initialize(self, db_path: Path):
@@ -164,7 +168,7 @@ class DatabaseConnectionPool:
                 self.connections.get(), timeout=5.0
             )
             return conn
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise RuntimeError("Database connection pool exhausted")
 
     async def return_connection(self, conn: sqlite3.Connection):
@@ -181,7 +185,7 @@ class StateManager:
     db_path: Path
     _lock: asyncio.Lock
     _deadlock_detector: DeadlockDetector
-    _connection_pool: Optional[DatabaseConnectionPool]
+    _connection_pool: DatabaseConnectionPool | None
 
     def __init__(self, db_path: str = "progress.db", use_connection_pool: bool = True):
         """
@@ -194,13 +198,21 @@ class StateManager:
         self.db_path = Path(db_path)
         self._lock = asyncio.Lock()
         self._deadlock_detector = DeadlockDetector()
-        self._connection_pool = DatabaseConnectionPool() if use_connection_pool else None
+        self._connection_pool = (
+            DatabaseConnectionPool() if use_connection_pool else None
+        )
 
         self._init_db_sync()
 
-        # 初始化连接池
-        if self._connection_pool:
-            asyncio.create_task(self._connection_pool.initialize(self.db_path))
+        # 延迟初始化连接池，避免在同步上下文中创建任务
+        # 连接池将在第一次使用时初始化
+        self._connection_pool_initialized = False
+
+    async def _ensure_connection_pool_initialized(self):
+        """确保连接池在使用前被初始化"""
+        if self._connection_pool and not self._connection_pool_initialized:
+            await self._connection_pool.initialize(self.db_path)
+            self._connection_pool_initialized = True
 
     def _init_db_sync(self):
         """初始化数据库模式（同步）。"""
@@ -213,7 +225,7 @@ class StateManager:
         cursor = conn.cursor()
 
         # 创建stories表
-        cursor.execute('''
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS stories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 epic_path TEXT NOT NULL,
@@ -227,18 +239,18 @@ class StateManager:
                 phase TEXT,
                 version INTEGER DEFAULT 1
             )
-        ''')
+        """)
 
         # 创建索引
-        cursor.execute('''
+        cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_story_path
             ON stories(story_path)
-        ''')
+        """)
 
-        cursor.execute('''
+        cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_status
             ON stories(status)
-        ''')
+        """)
 
         # Database migration: ensure version column exists
         try:
@@ -256,6 +268,10 @@ class StateManager:
     @asynccontextmanager
     async def _get_db_connection(self):
         """获取数据库连接的上下文管理器"""
+        # 确保连接池在使用前被初始化
+        if self._connection_pool:
+            await self._ensure_connection_pool_initialized()
+
         if self._connection_pool:
             conn = await self._connection_pool.get_connection()
             try:
@@ -273,14 +289,14 @@ class StateManager:
         self,
         story_path: str,
         status: str,
-        phase: Union[str, None] = None,
-        iteration: Union[int, None] = None,
+        phase: str | None = None,
+        iteration: int | None = None,
         qa_result: Union["dict[str, Any]", None] = None,
-        error: Union[str, None] = None,
-        epic_path: Union[str, None] = None,
+        error: str | None = None,
+        epic_path: str | None = None,
         lock_timeout: float = 30.0,
-        expected_version: Union[int, None] = None
-    ) -> "tuple[bool, Union[int, None]]":
+        expected_version: int | None = None,
+    ) -> "tuple[bool, int | None]":
         """
         更新或插入故事状态，优化锁管理和错误处理。
 
@@ -303,14 +319,22 @@ class StateManager:
             # _update_story_internal already has lock protection
             return await asyncio.wait_for(
                 self._update_story_internal(
-                    story_path, status, phase, iteration, qa_result, error,
-                    epic_path, expected_version
+                    story_path,
+                    status,
+                    phase,
+                    iteration,
+                    qa_result,
+                    error,
+                    epic_path,
+                    expected_version,
                 ),
-                timeout=lock_timeout
+                timeout=lock_timeout,
             )
 
-        except asyncio.TimeoutError:
-            logger.warning(f"Update operation timeout for {story_path} (>{lock_timeout}s)")
+        except TimeoutError:
+            logger.warning(
+                f"Update operation timeout for {story_path} (>{lock_timeout}s)"
+            )
             return False, None
         except asyncio.CancelledError:
             logger.warning(f"Update operation cancelled for {story_path}")
@@ -324,13 +348,13 @@ class StateManager:
         self,
         story_path: str,
         status: str,
-        phase: Union[str, None],
-        iteration: Union[int, None],
+        phase: str | None,
+        iteration: int | None,
         qa_result: Union["dict[str, Any]", None],
-        error: Union[str, None],
-        epic_path: Union[str, None],
-        expected_version: Union[int, None]
-    ) -> "tuple[bool, Union[int, None]]":
+        error: str | None,
+        epic_path: str | None,
+        expected_version: int | None,
+    ) -> "tuple[bool, int | None]":
         """内部更新逻辑 - 使用锁保护"""
         # Use lock to protect database operations
         async with self._lock:
@@ -339,8 +363,8 @@ class StateManager:
 
                 # 检查故事是否存在
                 cursor.execute(
-                    'SELECT id, version FROM stories WHERE story_path = ?',
-                    (story_path,)
+                    "SELECT id, version FROM stories WHERE story_path = ?",
+                    (story_path,),
                 )
                 existing = cursor.fetchone()
 
@@ -353,7 +377,10 @@ class StateManager:
                     _, current_version = existing
 
                     # 乐观锁检查
-                    if expected_version is not None and current_version != expected_version:
+                    if (
+                        expected_version is not None
+                        and current_version != expected_version
+                    ):
                         logger.warning(
                             f"Version conflict for {story_path}: "
                             f"expected {expected_version}, got {current_version}"
@@ -361,7 +388,8 @@ class StateManager:
                         return False, current_version
 
                     # 更新现有记录
-                    cursor.execute('''
+                    cursor.execute(
+                        """
                         UPDATE stories
                         SET status = ?,
                             phase = ?,
@@ -371,43 +399,45 @@ class StateManager:
                             updated_at = CURRENT_TIMESTAMP,
                             version = version + 1
                         WHERE story_path = ?
-                    ''', (
-                        status,
-                        phase,
-                        iteration,
-                        qa_result_str,
-                        error,
-                        story_path
-                    ))
-                    logger.info(f"Updated status for {story_path}: {status} (version {current_version + 1})")
+                    """,
+                        (status, phase, iteration, qa_result_str, error, story_path),
+                    )
+                    logger.info(
+                        f"Updated status for {story_path}: {status} (version {current_version + 1})"
+                    )
                     current_version = current_version + 1
                 else:
                     # 插入新记录
-                    cursor.execute('''
+                    cursor.execute(
+                        """
                         INSERT INTO stories
                         (epic_path, story_path, status, phase, iteration, qa_result, error_message, version)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-                    ''', (
-                        epic_path or '',
-                        story_path,
-                        status,
-                        phase,
-                        iteration or 0,
-                        qa_result_str,
-                        error
-                    ))
-                    logger.info(f"Inserted new record for {story_path}: {status} (version 1)")
+                    """,
+                        (
+                            epic_path or "",
+                            story_path,
+                            status,
+                            phase,
+                            iteration or 0,
+                            qa_result_str,
+                            error,
+                        ),
+                    )
+                    logger.info(
+                        f"Inserted new record for {story_path}: {status} (version 1)"
+                    )
                     current_version = 1
 
                 conn.commit()
                 return True, current_version
 
-    def _clean_qa_result_for_json(self, qa_result: Any) -> Optional[str]:
+    def _clean_qa_result_for_json(self, qa_result: Any) -> str | None:
         """清理QA结果以便JSON序列化"""
         try:
             # 移除不可序列化的对象
             def clean_for_json(obj: Any) -> Any:
-                if hasattr(obj, 'value'):
+                if hasattr(obj, "value"):
                     return obj.value
                 elif isinstance(obj, dict):
                     return {k: clean_for_json(v) for k, v in obj.items()}
@@ -472,35 +502,38 @@ class StateManager:
                 async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
-                    cursor.execute('''
+                    cursor.execute(
+                        """
                         SELECT epic_path, story_path, status, iteration, qa_result,
                                error_message, created_at, updated_at, phase, version
                         FROM stories
                         WHERE story_path = ?
-                    ''', (story_path,))
+                    """,
+                        (story_path,),
+                    )
 
                     row = cursor.fetchone()
 
                     if row:
                         result = {
-                            'epic_path': row[0],
-                            'story_path': row[1],
-                            'status': row[2],
-                            'iteration': row[3],
-                            'created_at': row[6],
-                            'updated_at': row[7],
-                            'phase': row[8],
-                            'version': row[9]
+                            "epic_path": row[0],
+                            "story_path": row[1],
+                            "status": row[2],
+                            "iteration": row[3],
+                            "created_at": row[6],
+                            "updated_at": row[7],
+                            "phase": row[8],
+                            "version": row[9],
                         }
 
                         if row[4]:  # qa_result
                             try:
-                                result['qa_result'] = json.loads(row[4])
+                                result["qa_result"] = json.loads(row[4])
                             except json.JSONDecodeError:
-                                result['qa_result'] = row[4]
+                                result["qa_result"] = row[4]
 
                         if row[5]:  # error_message
-                            result['error'] = row[5]
+                            result["error"] = row[5]
 
                         return result
 
@@ -523,36 +556,36 @@ class StateManager:
                 async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
-                    cursor.execute('''
+                    cursor.execute("""
                         SELECT epic_path, story_path, status, iteration, qa_result,
                                error_message, created_at, updated_at, phase, version
                         FROM stories
                         ORDER BY created_at
-                    ''')
+                    """)
 
                     rows = cursor.fetchall()
                     stories = []
 
                     for row in rows:
                         story = {
-                            'epic_path': row[0],
-                            'story_path': row[1],
-                            'status': row[2],
-                            'iteration': row[3],
-                            'created_at': row[6],
-                            'updated_at': row[7],
-                            'phase': row[8],
-                            'version': row[9]
+                            "epic_path": row[0],
+                            "story_path": row[1],
+                            "status": row[2],
+                            "iteration": row[3],
+                            "created_at": row[6],
+                            "updated_at": row[7],
+                            "phase": row[8],
+                            "version": row[9],
                         }
 
                         if row[4]:  # qa_result
                             try:
-                                story['qa_result'] = json.loads(row[4])
+                                story["qa_result"] = json.loads(row[4])
                             except json.JSONDecodeError:
-                                story['qa_result'] = row[4]
+                                story["qa_result"] = row[4]
 
                         if row[5]:  # error_message
-                            story['error'] = row[5]
+                            story["error"] = row[5]
 
                         stories.append(story)
 
@@ -575,11 +608,11 @@ class StateManager:
                 async with self._get_db_connection() as conn:
                     cursor = conn.cursor()
 
-                    cursor.execute('''
+                    cursor.execute("""
                         SELECT status, COUNT(*) as count
                         FROM stories
                         GROUP BY status
-                    ''')
+                    """)
 
                     rows = cursor.fetchall()
                     stats = {}
@@ -593,7 +626,7 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return {}
 
-    async def create_backup(self) -> Union[str, None]:
+    async def create_backup(self) -> str | None:
         """
         创建数据库备份。
 
@@ -602,7 +635,10 @@ class StateManager:
         """
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_path = self.db_path.parent / f"{self.db_path.stem}_backup_{timestamp}{self.db_path.suffix}"
+            backup_path = (
+                self.db_path.parent
+                / f"{self.db_path.stem}_backup_{timestamp}{self.db_path.suffix}"
+            )
 
             # 使用文件复制而不是数据库备份，因为SQLite支持热备份
             shutil.copy2(self.db_path, backup_path)
@@ -631,11 +667,13 @@ class StateManager:
                     cursor = conn.cursor()
 
                     # 清理旧的stories记录
-                    cursor.execute('''
+                    cursor.execute(
+                        f"""
                         DELETE FROM stories
-                        WHERE updated_at < datetime('now', '-{} days')
+                        WHERE updated_at < datetime('now', '-{days} days')
                         AND status IN ('completed', 'failed')
-                    '''.format(days))
+                    """
+                    )
 
                     deleted_count = cursor.rowcount
 
@@ -648,7 +686,6 @@ class StateManager:
             logger.error(f"Failed to cleanup old records: {e}")
             logger.debug(f"Error details: {e}", exc_info=True)
             return 0
-
 
     def get_health_status(self) -> "dict[str, Any]":
         """
@@ -664,7 +701,9 @@ class StateManager:
                 "lock_locked": self._lock.locked(),
                 "deadlock_detected": self._deadlock_detector.deadlock_detected,
                 "connection_pool_enabled": self._connection_pool is not None,
-                "connection_pool_size": self._connection_pool.max_connections if self._connection_pool else 0
+                "connection_pool_size": self._connection_pool.max_connections
+                if self._connection_pool
+                else 0,
             }
         except Exception as e:
             logger.error(f"Failed to get health status: {e}")
@@ -681,7 +720,7 @@ class StateManager:
         results: dict[str, Any] = {
             "success_count": 0,
             "error_count": 0,
-            "errors": []  # type: ignore[assignment]
+            "errors": [],  # type: ignore[assignment]
         }
 
         try:
@@ -690,8 +729,8 @@ class StateManager:
             logger.info(f"找到 {len(stories)} 个故事记录")
 
             for story in stories:
-                story_path = story.get('story_path')
-                db_status = story.get('status')
+                story_path = story.get("story_path")
+                db_status = story.get("status")
 
                 if not story_path or not db_status:
                     logger.warning(f"跳过无效的故事记录: {story}")
@@ -708,7 +747,9 @@ class StateManager:
                     errors_list.append(error_msg)
                     logger.error(error_msg)
 
-            logger.info(f"同步完成: 成功 {results['success_count']}, 失败 {results['error_count']}")
+            logger.info(
+                f"同步完成: 成功 {results['success_count']}, 失败 {results['error_count']}"
+            )
             return results
 
         except Exception as e:
@@ -733,13 +774,11 @@ class StateManager:
                 # 完成状态
                 "completed": "Done",
                 "done": "Done",
-
                 # 开发流程状态
                 "ready_for_development": "Ready for Development",
                 "in_progress": "In Progress",
                 "ready_for_review": "Ready for Review",
                 "ready_for_done": "Ready for Done",
-
                 # 其他状态
                 "draft": "Draft",
                 "failed": "Failed",
@@ -750,20 +789,27 @@ class StateManager:
 
             story_file = Path(story_path)
             if not story_file.exists():
-                raise FileNotFoundError(f"故事文件不存在: {story_path}")
+                # 如果文件不存在，尝试查找实际存在的文件
+                actual_file = self._find_actual_story_file(story_path)
+                if actual_file:
+                    story_file = actual_file
+                else:
+                    # 如果找不到实际文件，记录警告并跳过，而不是抛出异常
+                    logger.warning(f"跳过不存在的故事文件: {story_path}")
+                    return
 
             # 读取文件内容
-            with open(story_file, 'r', encoding='utf-8') as f:
+            with open(story_file, encoding="utf-8") as f:
                 content = f.read()
 
             # 更新Status字段的正则表达式 - 支持多种格式
             status_patterns = [
                 # 格式1: ### Status\n**Status**: <value>
-                r'(^### Status\s*\n\s*\*\*Status\*\*:\s*\*\*).*?(\*\*?)',
+                r"(^### Status\s*\n\s*\*\*Status\*\*:\s*\*\*).*?(\*\*?)",
                 # 格式2: ### Status\n**<value>**
-                r'(^### Status\s*\n\s*\*\*)(.*?)(\*\*?)',
+                r"(^### Status\s*\n\s*\*\*)(.*?)(\*\*?)",
                 # 格式3: ## Status\n**<value>** (兼容旧格式)
-                r'(^## Status\s*\n\s*\*\*)(.*?)(\*\*?)',
+                r"(^## Status\s*\n\s*\*\*)(.*?)(\*\*?)",
             ]
 
             updated_content = content
@@ -772,12 +818,22 @@ class StateManager:
                 match = re.search(pattern, content, re.MULTILINE | re.IGNORECASE)
                 if match:
                     # 使用正则表达式的替换功能
-                    if r'Status\*\*:' in pattern:
+                    if r"Status\*\*:" in pattern:
                         # 格式1: **Status**: <value> - 替换整个值部分
-                        updated_content = re.sub(pattern, f'\\g<1>{markdown_status}\\2', content, flags=re.MULTILINE)
+                        updated_content = re.sub(
+                            pattern,
+                            f"\\g<1>{markdown_status}\\2",
+                            content,
+                            flags=re.MULTILINE,
+                        )
                     else:
                         # 格式2/3: **<value>** - 替换中间的值部分
-                        updated_content = re.sub(pattern, f'\\g<1>{markdown_status}\\3', content, flags=re.MULTILINE)
+                        updated_content = re.sub(
+                            pattern,
+                            f"\\g<1>{markdown_status}\\3",
+                            content,
+                            flags=re.MULTILINE,
+                        )
 
                     if updated_content != content:
                         logger.debug(f"Updated status using pattern: {pattern}")
@@ -790,11 +846,15 @@ class StateManager:
                 # 如果没有找到Status字段，在文件开头添加
                 if "### Status" not in content:
                     # 在第一个标题前插入Status
-                    first_header_match = re.search(r'^#', content, re.MULTILINE)
+                    first_header_match = re.search(r"^#", content, re.MULTILINE)
                     if first_header_match:
                         insertion_point = first_header_match.start()
                         status_block = f"### Status\n**{markdown_status}**\n\n"
-                        updated_content = content[:insertion_point] + status_block + content[insertion_point:]
+                        updated_content = (
+                            content[:insertion_point]
+                            + status_block
+                            + content[insertion_point:]
+                        )
                     else:
                         # 如果没有标题，在文件开头添加
                         status_block = f"### Status\n**{markdown_status}**\n\n"
@@ -803,11 +863,83 @@ class StateManager:
                     logger.warning(f"Status字段未找到且无法添加: {story_path}")
 
             # 写回文件
-            with open(story_file, 'w', encoding='utf-8') as f:
+            with open(story_file, "w", encoding="utf-8") as f:
                 f.write(updated_content)
 
-            logger.debug(f"已更新 {story_path} 的Status字段为 {markdown_status} (从 {db_status} 映射)")
+            logger.debug(
+                f"已更新 {story_path} 的Status字段为 {markdown_status} (从 {db_status} 映射)"
+            )
 
         except Exception as e:
             logger.error(f"更新markdown状态失败 {story_path}: {str(e)}")
             raise
+
+    def _find_actual_story_file(self, db_story_path: str) -> Path | None:
+        """
+        根据数据库中的故事路径，查找实际存在的故事文件。
+
+        Args:
+            db_story_path: 数据库中存储的故事路径
+
+        Returns:
+            实际存在的故事文件路径，如果找不到则返回None
+        """
+        try:
+            db_path = Path(db_story_path)
+
+            # 如果文件直接存在，返回它
+            if db_path.exists():
+                return db_path
+
+            # 从数据库路径中提取文件名
+            filename = db_path.name
+
+            # 尝试不同的文件名转换格式
+
+            # 格式1: 1.1.module-foundation.md -> 1.1-project-setup-infrastructure.md
+            # 将点号替换为连字符，并尝试匹配实际存在的文件
+            if "." in filename:
+                base_name = filename.replace(".md", "")
+
+                # 尝试在stories目录中查找匹配的文件
+                stories_dir = db_path.parent
+                if stories_dir.exists():
+                    for story_file in stories_dir.glob("*.md"):
+                        # 检查文件名前缀是否匹配（数字部分）
+                        story_base = story_file.stem
+
+                        # 提取数字部分进行比较
+                        db_numbers = re.findall(r"\d+(?:\.\d+)?", base_name)
+                        story_numbers = re.findall(r"\d+(?:\.\d+)?", story_base)
+
+                        if (
+                            db_numbers
+                            and story_numbers
+                            and db_numbers[0] == story_numbers[0]
+                        ):
+                            # 数字部分匹配，可能是同一个故事
+                            logger.debug(
+                                f"找到可能匹配的故事文件: {db_story_path} -> {story_file}"
+                            )
+                            return story_file
+
+            # 格式2: 直接在数据库路径的目录中查找
+            parent_dir = db_path.parent
+            if parent_dir.exists():
+                # 尝试精确匹配文件名
+                exact_match = parent_dir / filename
+                if exact_match.exists():
+                    return exact_match
+
+                # 尝试带连字符的版本
+                hyphen_version = filename.replace(".", "-")
+                hyphen_match = parent_dir / hyphen_version
+                if hyphen_match.exists():
+                    return hyphen_match
+
+            logger.debug(f"未找到匹配的故事文件: {db_story_path}")
+            return None
+
+        except Exception as e:
+            logger.debug(f"查找实际故事文件时出错 {db_story_path}: {str(e)}")
+            return None

@@ -12,7 +12,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, TextIO
+from typing import TextIO
 
 
 class LogManager:
@@ -36,9 +36,9 @@ class LogManager:
         """
         self.base_dir = Path(base_dir)
         self.logs_dir = self.base_dir / "logs"
-        self.current_log_file: Optional[Path] = None
-        self.log_file_handle: Optional[TextIO] = None
-        self.start_time: Optional[datetime] = None
+        self.current_log_file: Path | None = None
+        self.log_file_handle: TextIO | None = None
+        self.start_time: datetime | None = None
 
         # Ensure logs directory exists
         self._ensure_logs_dir()
@@ -64,11 +64,7 @@ class LogManager:
 
         try:
             # Create file with UTF-8 encoding
-            self.log_file_handle = open(
-                self.current_log_file,
-                'w',
-                encoding='utf-8'
-            )
+            self.log_file_handle = open(self.current_log_file, "w", encoding="utf-8")
 
             # Write header
             header = f"""
@@ -135,14 +131,18 @@ class LogManager:
 
             # Format SDK message
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            log_entry = f"[{timestamp}] [SDK {msg_type:12s}] [{elapsed_str:>8s}] {message}\n"
+            log_entry = (
+                f"[{timestamp}] [SDK {msg_type:12s}] [{elapsed_str:>8s}] {message}\n"
+            )
 
             # Write to file
             self.log_file_handle.write(log_entry)
             self.log_file_handle.flush()
 
         except Exception as e:
-            _original_stdout.write(f"Warning: Failed to write SDK message to log: {e}\n")
+            _original_stdout.write(
+                f"Warning: Failed to write SDK message to log: {e}\n"
+            )
 
     def write_exception(self, exception: Exception, context: str = ""):
         """
@@ -164,16 +164,16 @@ class LogManager:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             log_entry = f"""
-[{'='*80}]
+[{"=" * 80}]
 [{timestamp}] [ERROR     ] [{elapsed_str:>8s}] EXCEPTION OCCURRED
-[{'='*80}]
+[{"=" * 80}]
 Context: {context}
 Exception Type: {type(exception).__name__}
 Exception Message: {str(exception)}
 
 Traceback:
 {traceback.format_exc()}
-[{'='*80}]
+[{"=" * 80}]
 
 """
 
@@ -199,7 +199,7 @@ Traceback:
 ╠══════════════════════════════════════════════════════════════╣
 ║ End Time: {end_time.strftime("%Y-%m-%d %H:%M:%S")}
 ║ Duration: {duration.total_seconds():.1f} seconds
-║ Log File: {self.current_log_file.name if self.current_log_file else 'N/A'}
+║ Log File: {self.current_log_file.name if self.current_log_file else "N/A"}
 ╚══════════════════════════════════════════════════════════════╝
 """
             self.log_file_handle.write(footer)
@@ -213,7 +213,7 @@ Traceback:
             self.log_file_handle = None
             self.current_log_file = None
 
-    def get_current_log_path(self) -> Optional[Path]:
+    def get_current_log_path(self) -> Path | None:
         """
         Get path to current log file.
 
@@ -304,7 +304,9 @@ class DualWriteStream:
     Used for capturing stdout/stderr while maintaining console output.
     """
 
-    def __init__(self, original_stream: TextIO, log_manager: LogManager, stream_name: str):
+    def __init__(
+        self, original_stream: TextIO, log_manager: LogManager, stream_name: str
+    ):
         """
         Initialize dual write stream.
 
@@ -326,7 +328,7 @@ class DualWriteStream:
         except UnicodeEncodeError:
             # Handle Unicode characters that can't be encoded in the console's encoding
             # Replace problematic characters with ASCII equivalents
-            safe_text = text.encode('ascii', errors='replace').decode('ascii')
+            safe_text = text.encode("ascii", errors="replace").decode("ascii")
             self.original_stream.write(safe_text)
             self.original_stream.flush()
 
@@ -336,7 +338,9 @@ class DualWriteStream:
                 self.log_manager.write_log(f"[{self.stream_name}] {text.strip()}")
             except UnicodeEncodeError:
                 # If log file has encoding issues, sanitize the message
-                safe_message = text.strip().encode('utf-8', errors='replace').decode('utf-8')
+                safe_message = (
+                    text.strip().encode("utf-8", errors="replace").decode("utf-8")
+                )
                 self.log_manager.write_log(f"[{self.stream_name}] {safe_message}")
 
     def flush(self) -> None:
@@ -353,14 +357,14 @@ class DualWriteStream:
 
 
 # Global log manager instance
-_log_manager: Optional[LogManager] = None
+_log_manager: LogManager | None = None
 
 # Store original stdout/stderr before any redirection
 _original_stdout = sys.stdout
 _original_stderr = sys.stderr
 
 
-def get_log_manager() -> Optional[LogManager]:
+def get_log_manager() -> LogManager | None:
     """
     Get global log manager instance.
 
@@ -386,10 +390,12 @@ def init_logging(log_manager: LogManager):
     # Setup logging configuration
     logging.basicConfig(
         level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.StreamHandler(sys.stdout)  # Console output only (avoid duplicate file writing)
-        ]
+            logging.StreamHandler(
+                sys.stdout
+            )  # Console output only (avoid duplicate file writing)
+        ],
     )
 
     # Log initialization

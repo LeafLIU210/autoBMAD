@@ -31,7 +31,7 @@ def create_tables(conn: sqlite3.Connection) -> None:
     cursor = conn.cursor()
 
     # Create stories table
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS stories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             epic_path TEXT NOT NULL,
@@ -44,22 +44,22 @@ def create_tables(conn: sqlite3.Connection) -> None:
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             phase TEXT
         )
-    ''')
+    """)
 
     # Create index on story_path for faster lookups
-    cursor.execute('''
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_story_path
         ON stories(story_path)
-    ''')
+    """)
 
     # Create index on status for filtering
-    cursor.execute('''
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_status
         ON stories(status)
-    ''')
+    """)
 
     # Create code_quality_phase table (for quality gates)
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS code_quality_phase (
             record_id TEXT PRIMARY KEY,
             epic_id TEXT NOT NULL,
@@ -71,10 +71,10 @@ def create_tables(conn: sqlite3.Connection) -> None:
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (epic_id) REFERENCES stories(epic_path)
         )
-    ''')
+    """)
 
     # Create test_automation_phase table (for test automation)
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS test_automation_phase (
             record_id TEXT PRIMARY KEY,
             epic_id TEXT NOT NULL,
@@ -85,21 +85,21 @@ def create_tables(conn: sqlite3.Connection) -> None:
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (epic_id) REFERENCES stories(epic_path)
         )
-    ''')
+    """)
 
     # Create indexes for performance on epic_id columns
-    cursor.execute('''
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_quality_epic
         ON code_quality_phase(epic_id)
-    ''')
+    """)
 
-    cursor.execute('''
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_test_epic
         ON test_automation_phase(epic_id)
-    ''')
+    """)
 
     # Create epic_processing table (for tracking epic-level progress)
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS epic_processing (
             epic_id TEXT PRIMARY KEY,
             file_path TEXT NOT NULL,
@@ -113,7 +113,7 @@ def create_tables(conn: sqlite3.Connection) -> None:
             quality_phase_errors INTEGER DEFAULT 0,
             test_phase_failures INTEGER DEFAULT 0
         )
-    ''')
+    """)
 
     conn.commit()
     print("[OK] All tables created successfully")
@@ -142,18 +142,18 @@ def verify_tables(conn: sqlite3.Connection, verbose: bool = False) -> bool:
 
     # Required tables
     required_tables = {
-        'stories',
-        'code_quality_phase',
-        'test_automation_phase',
-        'epic_processing'
+        "stories",
+        "code_quality_phase",
+        "test_automation_phase",
+        "epic_processing",
     }
 
     # Required indexes
     required_indexes = {
-        'idx_story_path',
-        'idx_status',
-        'idx_quality_epic',
-        'idx_test_epic'
+        "idx_story_path",
+        "idx_status",
+        "idx_quality_epic",
+        "idx_test_epic",
     }
 
     # Check tables
@@ -213,12 +213,13 @@ def check_database_exists(db_path: Path, force: bool = False) -> bool:
         else:
             print(f"[WARNING] Database already exists: {db_path}")
             response = input("Do you want to verify the existing database? (y/n): ")
-            return response.lower() == 'y'
+            return response.lower() == "y"
     return True
 
 
-def initialize_database(db_path: str, force: bool = False, verify_only: bool = False,
-                       verbose: bool = False) -> int:
+def initialize_database(
+    db_path: str, force: bool = False, verify_only: bool = False, verbose: bool = False
+) -> int:
     """
     Initialize the database.
 
@@ -282,6 +283,7 @@ def initialize_database(db_path: str, force: bool = False, verify_only: bool = F
         print(f"[ERROR] Error initializing database: {e}")
         if verbose:
             import traceback
+
             traceback.print_exc()
         return 1
 
@@ -289,7 +291,7 @@ def initialize_database(db_path: str, force: bool = False, verify_only: bool = F
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description='Initialize autoBMAD Epic Automation Database',
+        description="Initialize autoBMAD Epic Automation Database",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -310,33 +312,28 @@ Examples:
 
   # Create with verbose output
   python init_db.py --verbose
-        """
+        """,
     )
 
     parser.add_argument(
-        '--db-path',
+        "--db-path",
         type=str,
-        default='progress.db',
-        help='Path to database file (default: progress.db)'
+        default="progress.db",
+        help="Path to database file (default: progress.db)",
     )
 
     parser.add_argument(
-        '--force',
-        action='store_true',
-        help='Force recreation of existing database'
+        "--force", action="store_true", help="Force recreation of existing database"
     )
 
     parser.add_argument(
-        '--verify',
-        action='store_true',
-        help='Verify existing database structure without creating'
+        "--verify",
+        action="store_true",
+        help="Verify existing database structure without creating",
     )
 
     parser.add_argument(
-        '--verbose',
-        '-v',
-        action='store_true',
-        help='Enable verbose output'
+        "--verbose", "-v", action="store_true", help="Enable verbose output"
     )
 
     args = parser.parse_args()
@@ -346,11 +343,11 @@ Examples:
         db_path=args.db_path,
         force=args.force,
         verify_only=args.verify,
-        verbose=args.verbose
+        verbose=args.verbose,
     )
 
     sys.exit(exit_code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
