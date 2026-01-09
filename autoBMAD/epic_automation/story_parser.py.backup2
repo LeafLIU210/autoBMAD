@@ -394,6 +394,60 @@ class SimpleStoryParser:
         logger.info("Regex fallback returned default: 'Draft'")
         return "Draft"
 
+
+def _normalize_story_status(status: str) -> str:
+    """
+    标准化故事状态值
+
+    此函数处理各种格式的状态值，确保返回标准状态值。
+    如果输入是核心状态值，直接返回；
+    如果输入是处理状态值，转换为核心状态值；
+    如果输入是其他格式，尝试标准化。
+
+    Args:
+        status: 输入的状态值
+
+    Returns:
+        标准核心状态值
+    """
+    # 如果已经是标准核心状态值，直接返回
+    if is_core_status_valid(status):
+        return status
+
+    # 如果是处理状态值，转换为核心状态值
+    if is_processing_status_valid(status):
+        return processing_status_to_core(status)
+
+    # 处理特殊情况
+    status_lower = status.lower().strip()
+
+    # 匹配完成状态
+    if status_lower in ["done", "completed", "complete"]:
+        return CORE_STATUS_DONE
+
+    # 匹配失败状态
+    if status_lower in ["failed", "fail", "failure"]:
+        return "Failed"
+
+    # 匹配进行中状态
+    if status_lower in ["in progress", "in_progress", "progress"]:
+        return "In Progress"
+
+    # 匹配审查状态
+    if status_lower in ["ready for review", "review", "ready_for_review"]:
+        return "Ready for Review"
+
+    # 匹配准备完成状态
+    if status_lower in ["ready for done", "ready_for_done", "ready_done"]:
+        return CORE_STATUS_READY_FOR_DONE
+
+    # 匹配准备开发状态
+    if status_lower in ["ready for development", "ready_for_development", "ready"]:
+        return "Ready for Development"
+
+    # 默认返回 Draft
+    return "Draft"
+
     def _clean_response_string(self, response: str) -> str:
         """
         深度清理SDK响应中的各种前缀和标记
@@ -846,70 +900,6 @@ def parse_story_status(
     except Exception as e:
         logger.error(f"parse_story_status failed: {e}")
         return "unknown"
-
-
-# =============================================================================
-# 独立函数
-# =============================================================================
-
-
-def _normalize_story_status(status: str) -> str:
-    """
-    标准化故事状态值
-
-    此函数处理各种格式的状态值，确保返回标准状态值。
-    如果输入是核心状态值，直接返回；
-    如果输入是处理状态值，转换为核心状态值；
-    如果输入是其他格式，尝试标准化。
-
-    Args:
-        status: 输入的状态值
-
-    Returns:
-        标准核心状态值
-    """
-    # 如果已经是标准核心状态值，直接返回
-    if is_core_status_valid(status):
-        return status
-
-    # 如果是处理状态值，转换为核心状态值
-    if is_processing_status_valid(status):
-        return processing_status_to_core(status)
-
-    # 处理特殊情况
-    status_lower = status.lower().strip()
-
-    # 匹配完成状态
-    if status_lower in ["done", "completed", "complete"]:
-        return CORE_STATUS_DONE
-
-    # 匹配失败状态
-    if status_lower in ["failed", "fail", "failure"]:
-        return "Failed"
-
-    # 匹配进行中状态
-    if status_lower in ["in progress", "in_progress", "progress"]:
-        return "In Progress"
-
-    # 匹配审查状态
-    if status_lower in ["ready for review", "review", "ready_for_review"]:
-        return "Ready for Review"
-
-    # 匹配准备完成状态
-    if status_lower in ["ready for done", "ready_for_done", "ready_done"]:
-        return CORE_STATUS_READY_FOR_DONE
-
-    # 匹配准备开发状态
-    if status_lower in ["ready for development", "ready_for_development", "ready"]:
-        return "Ready for Development"
-
-    # 默认返回 Draft
-    return "Draft"
-
-
-# =============================================================================
-# 向后兼容性别名
-# =============================================================================
 
 
 if __name__ == "__main__":

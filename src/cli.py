@@ -38,7 +38,7 @@ def read_from_file(file_path: str) -> list[int | float]:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
     try:
-        content = path.read_text().strip()
+        content = path.read_text(encoding='utf-8-sig').strip()
         if not content:
             raise ValueError("File is empty")
         return parse_array_input(content)

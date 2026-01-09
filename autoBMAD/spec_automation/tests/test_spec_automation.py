@@ -363,7 +363,19 @@ requirements:
         assert "Special chars" in spec.description
         assert len(spec.requirements) >= 1
 
-def test_parse_yaml_with_markdown_after(self):        """Test parsing YAML with markdown content after (should fail and fall back)."""        spec_content = """# Fallback to markdown## NameMarkdown Fallback## Version1.0"""        parser = SpecParser()        spec = parser.parse(spec_content)        assert spec.name == "Fallback to markdown"        assert spec.version == "1.0"
+    def test_parse_yaml_with_markdown_after(self):
+        """Test parsing YAML with markdown content after (should fail and fall back)."""
+        spec_content = """# Fallback to markdown
+## Name
+Markdown Fallback
+## Version
+1.0
+"""
+        parser = SpecParser()
+        spec = parser.parse(spec_content)
+        assert spec.name == "Markdown Fallback"
+        assert spec.version == "1.0"
+
     def test_parse_empty_yaml_section(self):
         """Test parsing YAML with empty sections."""
         spec_content = """---
@@ -875,6 +887,7 @@ class TestSpecValidator:
         assert 0.0 <= score <= 1.0
 
 
+class TestUtilityFunctions:
     """Test utility functions."""
 
     def test_parse_specification_function(self):

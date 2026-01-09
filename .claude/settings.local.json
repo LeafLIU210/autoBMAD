@@ -69,7 +69,8 @@
       "Bash(chmod:*)",
       "Skill(review)",
       "Skill(review:*)",
-      "Bash(venv/Scripts/python.exe:*)"
+      "Bash(venv/Scripts/python.exe:*)",
+      "Bash(copy:*)"
     ],
     "deny": [
       "Bash(curl:*)",

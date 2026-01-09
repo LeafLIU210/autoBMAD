@@ -461,6 +461,11 @@ class DevAgent:
             if story_path:
                 story_status = await self._check_story_status(story_path)
 
+                # DEBUG: Log the actual status for debugging
+                logger.info(
+                    f"[DEBUG] Story status check for '{story_path}': '{story_status}' (type: {type(story_status).__name__})"
+                )
+
                 # Check for "Ready for Done" or "Done" status - skip entire dev-qa cycle
                 if story_status and (
                     story_status.lower() == "ready for done"
@@ -498,8 +503,8 @@ class DevAgent:
                 return result
 
             # Normal development mode - execute single SDK call
-            logger.info(
-                f"{self.name} Executing normal development with single SDK call"
+            logger.warning(
+                f"[WARNING] {self.name} Executing SDK call for '{story_path}' - this should only happen if status is NOT 'Ready for Review'"
             )
             base_prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @D:\\GITHUB\\pytQt_template\\autoBMAD\\spec_automation\\tests. Perform Test-Driven Development (TDD) iteratively until achieving 100% tests pass with comprehensive coverage. Run "pytest -v --tb=short --cov" to verify tests and coverage. Change story Status to "Ready for Review" when complete. '
 

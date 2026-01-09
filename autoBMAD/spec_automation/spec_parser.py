@@ -75,6 +75,19 @@ class SpecParser:
             if content.endswith("---"):
                 content = content[:-3]
 
+            # Remove leading indentation from all lines (handle indented YAML)
+            lines = content.split('\n')
+            dedented_lines = []
+            for line in lines:
+                # Count leading spaces
+                leading_spaces = len(line) - len(line.lstrip())
+                # Remove leading spaces (at least 2, or all if less)
+                if leading_spaces >= 2:
+                    dedented_lines.append(line[2:])
+                else:
+                    dedented_lines.append(line)
+            content = '\n'.join(dedented_lines)
+
             data = yaml.safe_load(content)
             return SpecificationData.from_dict(data)
         except Exception:

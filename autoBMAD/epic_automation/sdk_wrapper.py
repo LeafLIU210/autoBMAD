@@ -201,7 +201,7 @@ class SDKMessageTracker:
         return time.time() - self.start_time
 
     async def start_periodic_display(self):
-        """Start periodic display of latest message every 10 seconds."""
+        """Start periodic display of latest message every 30 seconds."""
         # Only create task if not already created
         if self._display_task is None or self._display_task.done():
             self._stop_event.clear()  # Reset stop event
@@ -235,14 +235,14 @@ class SDKMessageTracker:
         self._stop_event.set()
 
     async def _periodic_display(self):
-        """Display latest message every 10 seconds."""
+        """Display latest message every 30 seconds."""
         try:
             while not self._stop_event.is_set():
                 try:
-                    await asyncio.wait_for(self._stop_event.wait(), timeout=10.0)
+                    await asyncio.wait_for(self._stop_event.wait(), timeout=30.0)
                     break  # Stop event was set
                 except TimeoutError:
-                    # 10 seconds passed, display latest message
+                    # 30 seconds passed, display latest message
                     if self.latest_message and not self._stop_event.is_set():
                         elapsed = self.get_elapsed_time()
                         # Clean display format: [Type] Message content
