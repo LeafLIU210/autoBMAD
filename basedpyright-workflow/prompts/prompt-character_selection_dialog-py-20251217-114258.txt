@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\character_selection_dialog.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\character_selection_dialog.py
+Line: 257, Column: 9
+Rule: reportRedeclaration
+Error: "accept_selection" 方法的声明被同名声明遮蔽 (reportRedeclaration)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

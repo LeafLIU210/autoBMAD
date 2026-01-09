@@ -1,0 +1,128 @@
+{
+  "metadata": {
+    "source_file": "basedpyright-workflow\\results\\basedpyright_check_result_20251220_121057.txt",
+    "extraction_time": "2025-12-20T12:11:11.806133",
+    "total_files_with_errors": 4,
+    "total_errors": 11,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_data_model_unified.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportCallIssue": 2,
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 748,
+          "column": 13,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 748,
+          "column": 13,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 752,
+          "column": 13,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 752,
+          "column": 13,
+          "message": "\"int | None\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"SupportsIndex\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\test_fixes.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 179,
+          "column": 40,
+          "message": "\"QTreeWidget\" 类型的实参无法赋值给函数 \"find_event_items\" 中 \"SegmentTreeItem\" 类型的形参 \"segment_item\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\controllers\\main_ui_controller.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 181,
+          "column": 56,
+          "message": "无法访问 \"ScriptUIController\" 类的 \"get_preview_component\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 466,
+          "column": 48,
+          "message": "无法访问 \"ScriptUIController\" 类的 \"get_preview_component\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\widgets\\script_preview_tree.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportOptionalMemberAccess": 4
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 1471,
+          "column": 63,
+          "message": "`None` 没有 \"find_event_location\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1477,
+          "column": 52,
+          "message": "`None` 没有 \"remove_event\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1510,
+          "column": 94,
+          "message": "`None` 没有 \"segments\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 1513,
+          "column": 94,
+          "message": "`None` 没有 \"segments\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        }
+      ]
+    }
+  ]
+}

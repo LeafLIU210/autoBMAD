@@ -1,0 +1,32 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\pyinstaller_main.py
+
+Total errors: 4
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\pyinstaller_main.py
+Line: 317, Column: 15
+Rule: reportUndefinedVariable
+Error: "QApplication" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\pyinstaller_main.py
+Line: 319, Column: 19
+Rule: reportUndefinedVariable
+Error: "QApplication" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\pyinstaller_main.py
+Line: 381, Column: 25
+Rule: reportUndefinedVariable
+Error: "QMessageBox" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\pyinstaller_main.py
+Line: 382, Column: 31
+Rule: reportUndefinedVariable
+Error: "QMessageBox" 未定义 (reportUndefinedVariable)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

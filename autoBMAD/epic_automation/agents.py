@@ -14,7 +14,7 @@ from pathlib import Path
 from types import TracebackType
 
 try:
-    from anthropic import Anthropic
+    from anthropic import Anthropic  # pyright: ignore[reportMissingImports]
 except ImportError:
     Anthropic = None
 

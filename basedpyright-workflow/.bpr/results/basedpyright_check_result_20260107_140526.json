@@ -1,0 +1,632 @@
+{
+  "version": "1.36.1",
+  "time": "1767765927443",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\bubble_sort.py",
+      "severity": "error",
+      "message": "条件的计算结果始终为 `False`，因为类型 \"List[Any]\" 和 \"None\" 之间不存在交集",
+      "range": {
+        "start": {
+          "line": 48,
+          "character": 7
+        },
+        "end": {
+          "line": 48,
+          "character": 18
+        }
+      },
+      "rule": "reportUnnecessaryComparison"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"TextIO\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 5,
+          "character": 42
+        },
+        "end": {
+          "line": 5,
+          "character": 48
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "返回类型 \"Tuple[List[Unknown], int, int]\" 部分未知",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 4
+        },
+        "end": {
+          "line": 10,
+          "character": 24
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"arr\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 25
+        },
+        "end": {
+          "line": 10,
+          "character": 28
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 30
+        },
+        "end": {
+          "line": 10,
+          "character": 34
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 45
+        },
+        "end": {
+          "line": 10,
+          "character": 49
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "条件的计算结果始终为 `False`，因为类型 \"List[Unknown]\" 和 \"None\" 之间不存在交集",
+      "range": {
+        "start": {
+          "line": 20,
+          "character": 7
+        },
+        "end": {
+          "line": 20,
+          "character": 18
+        }
+      },
+      "rule": "reportUnnecessaryComparison"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"List[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 23,
+          "character": 18
+        },
+        "end": {
+          "line": 23,
+          "character": 21
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 27,
+          "character": 11
+        },
+        "end": {
+          "line": 27,
+          "character": 17
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 30,
+          "character": 12
+        },
+        "end": {
+          "line": 30,
+          "character": 18
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "返回类型 \"Tuple[List[Unknown], List[Tuple[int, List[Unknown]]]]\" 部分未知",
+      "range": {
+        "start": {
+          "line": 45,
+          "character": 4
+        },
+        "end": {
+          "line": 45,
+          "character": 21
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"arr\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 45,
+          "character": 22
+        },
+        "end": {
+          "line": 45,
+          "character": 25
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 45,
+          "character": 27
+        },
+        "end": {
+          "line": 45,
+          "character": 31
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 45,
+          "character": 42
+        },
+        "end": {
+          "line": 45,
+          "character": 46
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 45,
+          "character": 64
+        },
+        "end": {
+          "line": 45,
+          "character": 68
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "条件的计算结果始终为 `False`，因为类型 \"List[Unknown]\" 和 \"None\" 之间不存在交集",
+      "range": {
+        "start": {
+          "line": 55,
+          "character": 7
+        },
+        "end": {
+          "line": 55,
+          "character": 18
+        }
+      },
+      "rule": "reportUnnecessaryComparison"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"List[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 58,
+          "character": 18
+        },
+        "end": {
+          "line": 58,
+          "character": 21
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 61,
+          "character": 11
+        },
+        "end": {
+          "line": 61,
+          "character": 17
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 64,
+          "character": 12
+        },
+        "end": {
+          "line": 64,
+          "character": 18
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 71,
+          "character": 34
+        },
+        "end": {
+          "line": 71,
+          "character": 40
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 133,
+          "character": 37
+        },
+        "end": {
+          "line": 133,
+          "character": 43
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"result\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 212,
+          "character": 25
+        },
+        "end": {
+          "line": 212,
+          "character": 31
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 212,
+          "character": 33
+        },
+        "end": {
+          "line": 212,
+          "character": 37
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"object\" 形参\n  参数类型为 \"List[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 214,
+          "character": 15
+        },
+        "end": {
+          "line": 214,
+          "character": 21
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"original\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 217,
+          "character": 27
+        },
+        "end": {
+          "line": 217,
+          "character": 35
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 217,
+          "character": 37
+        },
+        "end": {
+          "line": 217,
+          "character": 41
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"result\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 217,
+          "character": 43
+        },
+        "end": {
+          "line": 217,
+          "character": 49
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 217,
+          "character": 51
+        },
+        "end": {
+          "line": 217,
+          "character": 55
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"original\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 228,
+          "character": 24
+        },
+        "end": {
+          "line": 228,
+          "character": 32
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 228,
+          "character": 34
+        },
+        "end": {
+          "line": 228,
+          "character": 38
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"result\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 228,
+          "character": 40
+        },
+        "end": {
+          "line": 228,
+          "character": 46
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 228,
+          "character": 48
+        },
+        "end": {
+          "line": 228,
+          "character": 52
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"steps\" 参数的类型部分未知\n  参数为 \"List[Tuple[int, List[Unknown]]]\" 类型",
+      "range": {
+        "start": {
+          "line": 228,
+          "character": 54
+        },
+        "end": {
+          "line": 228,
+          "character": 59
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 228,
+          "character": 77
+        },
+        "end": {
+          "line": 228,
+          "character": 81
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"arr\" 参数的类型部分未知\n  参数为 \"List[Unknown]\" 类型",
+      "range": {
+        "start": {
+          "line": 275,
+          "character": 23
+        },
+        "end": {
+          "line": 275,
+          "character": 26
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "\"List\" 泛型类应有类型参数",
+      "range": {
+        "start": {
+          "line": 275,
+          "character": 28
+        },
+        "end": {
+          "line": 275,
+          "character": 32
+        }
+      },
+      "rule": "reportMissingTypeArgument"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"List[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 286,
+          "character": 20
+        },
+        "end": {
+          "line": 286,
+          "character": 23
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\src\\cli.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"bubble_sort\" 函数中的 \"arr\" 形参\n  参数类型为 \"List[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 295,
+          "character": 29
+        },
+        "end": {
+          "line": 295,
+          "character": 32
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 4,
+    "errorCount": 38,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.248
+  },
+  "metadata": {
+    "check_time": "2026-01-07T14:05:27.462059",
+    "check_directory": "D:\\GITHUB\\pytQt_template\\src",
+    "python_files_count": 4,
+    "python_files": [
+      "D:\\GITHUB\\pytQt_template\\src\\__init__.py",
+      "D:\\GITHUB\\pytQt_template\\src\\__main__.py",
+      "D:\\GITHUB\\pytQt_template\\src\\bubble_sort.py",
+      "D:\\GITHUB\\pytQt_template\\src\\cli.py"
+    ]
+  }
+}

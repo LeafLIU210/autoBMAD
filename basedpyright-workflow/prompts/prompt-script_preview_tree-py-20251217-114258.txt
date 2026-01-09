@@ -1,0 +1,350 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+
+Total errors: 57
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 32, Column: 9
+Rule: unknown
+Error: "type[Project_recorder.script_data_model_unified.ScriptData]" 类型不匹配声明的 "type[Project_recorder.ui.widgets.script_preview_tree.ScriptData]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 32, Column: 21
+Rule: unknown
+Error: "type[Project_recorder.script_data_model_unified.ScriptSegment]" 类型不匹配声明的 "type[Project_recorder.ui.widgets.script_preview_tree.ScriptSegment]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 32, Column: 36
+Rule: unknown
+Error: "type[Project_recorder.script_data_model_unified.ScriptEvent]" 类型不匹配声明的 "type[Project_recorder.ui.widgets.script_preview_tree.ScriptEvent]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 32, Column: 49
+Rule: unknown
+Error: "type[Project_recorder.script_data_model_unified.ScriptSegmentType]" 类型不匹配声明的 "type[Project_recorder.ui.widgets.script_preview_tree.ScriptSegmentType]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 156, Column: 26
+Rule: unknown
+Error: "QPlainTextEdit | None" 类型的实参无法赋值给函数 "addWidget" 中 "QWidget" 类型的形参 "arg__1"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 330, Column: 73
+Rule: unknown
+Error: 无法将 "None" 类型的表达式赋值给 "str" 类型的参数
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 409, Column: 9
+Rule: unknown
+Error: "float" 类型的实参无法赋值给函数 "__setitem__" 中 "int" 类型的形参 "value"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 410, Column: 9
+Rule: unknown
+Error: "float" 类型的实参无法赋值给函数 "__setitem__" 中 "int" 类型的形参 "value"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 411, Column: 9
+Rule: unknown
+Error: "float" 类型的实参无法赋值给函数 "__setitem__" 中 "int" 类型的形参 "value"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 439, Column: 72
+Rule: unknown
+Error: 无法将 "None" 类型的表达式赋值给 "List[str]" 类型的参数
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 439, Column: 109
+Rule: unknown
+Error: 无法将 "None" 类型的表达式赋值给 "List[str]" 类型的参数
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 480, Column: 64
+Rule: unknown
+Error: "ScriptSegment" 类型的实参无法赋值给函数 "create_segment_item" 中 "ScriptSegment" 类型的形参 "segment"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 599, Column: 75
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 600, Column: 51
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 603, Column: 86
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 605, Column: 38
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "event_id" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 605, Column: 38
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "event_id" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 606, Column: 51
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 619, Column: 38
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 624, Column: 9
+Rule: reportRedeclaration
+Error: "_find_tree_item_by_event_id" 方法的声明被同名声明遮蔽 (reportRedeclaration)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 651, Column: 38
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 658, Column: 78
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 661, Column: 30
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "event_id" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 661, Column: 30
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "event_id" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 663, Column: 60
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 993, Column: 35
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1011, Column: 39
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1015, Column: 43
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1018, Column: 43
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1021, Column: 83
+Rule: unknown
+Error: 无法访问 "ScriptData" 类的 "metadata" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1022, Column: 56
+Rule: unknown
+Error: 无法访问 "ScriptData" 类的 "metadata" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1024, Column: 43
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1026, Column: 43
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1028, Column: 39
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setPlainText" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1060, Column: 42
+Rule: unknown
+Error: "Project_recorder.ui.widgets.tree_items.ScriptEvent | Project_recorder.script_data_model_unified.ScriptEvent" 类型的实参无法赋值给函数 "__init__" 中 "ScriptEvent" 类型的形参 "event"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1074, Column: 36
+Rule: unknown
+Error: "ScriptSegment" 类型的实参无法赋值给函数 "__init__" 中 "ScriptSegment" 类型的形参 "segment"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1074, Column: 58
+Rule: unknown
+Error: "Self@EnhancedScriptPreviewTree" 类型的实参无法赋值给函数 "__init__" 中 "QDialog | None" 类型的形参 "parent"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1139, Column: 43
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "action_name" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1160, Column: 34
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "action_name" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1160, Column: 34
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "action_name" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1180, Column: 70
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1182, Column: 28
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "event_id" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1182, Column: 28
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "event_id" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1183, Column: 35
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "event_id" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1273, Column: 30
+Rule: unknown
+Error: 无法访问 "EnhancedScriptPreviewTree*" 类的 "events_delete_requested_by_index" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1387, Column: 73
+Rule: unknown
+Error: "Literal['normal']" 类型的实参无法赋值给函数 "_convert_events_to_segment_type" 中 "ScriptSegmentType" 类型的形参 "target_segment_type"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1409, Column: 73
+Rule: unknown
+Error: "Literal['loop']" 类型的实参无法赋值给函数 "_convert_events_to_segment_type" 中 "ScriptSegmentType" 类型的形参 "target_segment_type"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1429, Column: 63
+Rule: unknown
+Error: 无法访问 "ScriptSegmentType" 类的 "value" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1450, Column: 82
+Rule: unknown
+Error: 无法访问 "ScriptEvent" 类的 "action_name" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1472, Column: 41
+Rule: unknown
+Error: 无法为 "ScriptData" 类的 "segments" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1544, Column: 20
+Rule: unknown
+Error: "Literal['normal']" 类型不匹配返回类型 "ScriptSegmentType"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1552, Column: 16
+Rule: unknown
+Error: "Literal['normal']" 类型不匹配返回类型 "ScriptSegmentType"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1561, Column: 21
+Rule: reportCallIssue
+Error: "get" 的重载与提供的参数不匹配 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1561, Column: 36
+Rule: unknown
+Error: "ScriptSegmentType" 类型的实参无法赋值给函数 "get" 中 "str" 类型的形参 "key"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1565, Column: 54
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "segments" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1778, Column: 37
+Rule: reportUndefinedVariable
+Error: "traceback" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\script_preview_tree.py
+Line: 1811, Column: 28
+Rule: unknown
+Error: "Project_recorder.ui.widgets.script_preview_tree.ScriptData | Project_recorder.script_data_model_unified.ScriptData | None" 类型的实参无法赋值给函数 "save_to_file" 中 "ScriptData" 类型的形参 "script"
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

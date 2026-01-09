@@ -1,0 +1,31 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-09 01:13:31
+检查目录: ..\autoBMAD
+Python文件数量: 15
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. ..\autoBMAD\__init__.py
+  2. ..\autoBMAD\epic_automation\__init__.py
+  3. ..\autoBMAD\epic_automation\agents.py
+  4. ..\autoBMAD\epic_automation\dev_agent.py
+  5. ..\autoBMAD\epic_automation\epic_driver.py
+  6. ..\autoBMAD\epic_automation\init_db.py
+  7. ..\autoBMAD\epic_automation\log_manager.py
+  8. ..\autoBMAD\epic_automation\qa_agent.py
+  9. ..\autoBMAD\epic_automation\qa_tools_integration.py
+ 10. ..\autoBMAD\epic_automation\quality_agents.py
+ 11. ..\autoBMAD\epic_automation\sdk_session_manager.py
+ 12. ..\autoBMAD\epic_automation\sdk_wrapper.py
+ 13. ..\autoBMAD\epic_automation\sm_agent.py
+ 14. ..\autoBMAD\epic_automation\state_manager.py
+ 15. ..\autoBMAD\epic_automation\status_parser.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+0 errors, 0 warnings, 0 notes
+

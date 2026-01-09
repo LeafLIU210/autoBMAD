@@ -1,0 +1,194 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+
+Total errors: 31
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 58, Column: 32
+Rule: unknown
+Error: "None" 类型不匹配声明的 "Dict[str, Any]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 142, Column: 39
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "log_structured" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 224, Column: 48
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "create_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 234, Column: 57
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "create_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 280, Column: 48
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "load_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 286, Column: 43
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "cache_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 330, Column: 63
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "validate_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 341, Column: 48
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "save_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 345, Column: 43
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "cache_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 383, Column: 48
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "delete_script" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 387, Column: 37
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "delete" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 425, Column: 48
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "list_scripts" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 466, Column: 48
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "search_scripts" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 466, Column: 70
+Rule: unknown
+Error: "List[str] | None" 类型的实参无法赋值给函数 "search_scripts" 中 "List[str]" 类型的形参 "search_fields"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 509, Column: 42
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "get" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 524, Column: 47
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "get_script_statistics" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 554, Column: 39
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "optimize_performance" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 557, Column: 39
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "reset_metrics" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 560, Column: 33
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "reset_stats" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 720, Column: 27
+Rule: unknown
+Error: "UnifiedCacheManager | None" 类型的实参无法赋值给函数 "__init__" 中 "UnifiedCacheManager" 类型的形参 "cache_manager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 721, Column: 33
+Rule: unknown
+Error: "PerformanceMonitor | None" 类型的实参无法赋值给函数 "__init__" 中 "PerformanceMonitor" 类型的形参 "performance_monitor"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 726, Column: 28
+Rule: unknown
+Error: "ConfigManager | None" 类型的实参无法赋值给函数 "__init__" 中 "ConfigManager" 类型的形参 "config_manager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 727, Column: 29
+Rule: unknown
+Error: "LoggingManager | None" 类型的实参无法赋值给函数 "__init__" 中 "LoggingManager" 类型的形参 "logging_manager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 733, Column: 27
+Rule: unknown
+Error: "UnifiedCacheManager | None" 类型的实参无法赋值给函数 "__init__" 中 "UnifiedCacheManager" 类型的形参 "cache_manager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 734, Column: 33
+Rule: unknown
+Error: "PerformanceMonitor | None" 类型的实参无法赋值给函数 "__init__" 中 "PerformanceMonitor" 类型的形参 "performance_monitor"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 735, Column: 29
+Rule: unknown
+Error: "LoggingManager | None" 类型的实参无法赋值给函数 "__init__" 中 "LoggingManager" 类型的形参 "logging_manager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 736, Column: 28
+Rule: unknown
+Error: "ConfigManager | None" 类型的实参无法赋值给函数 "__init__" 中 "ConfigManager" 类型的形参 "config_manager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 786, Column: 16
+Rule: unknown
+Error: "UnifiedCacheManager | None" 类型不匹配返回类型 "UnifiedCacheManager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 792, Column: 16
+Rule: unknown
+Error: "PerformanceMonitor | None" 类型不匹配返回类型 "PerformanceMonitor"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 798, Column: 16
+Rule: unknown
+Error: "ConfigManager | None" 类型不匹配返回类型 "ConfigManager"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\unified_script_service.py
+Line: 804, Column: 16
+Rule: unknown
+Error: "LoggingManager | None" 类型不匹配返回类型 "LoggingManager"
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

@@ -1,0 +1,26 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_data_access_adapter.py
+
+Total errors: 3
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_data_access_adapter.py
+Line: 43, Column: 36
+Rule: unknown
+Error: "None" 类型不匹配声明的 "List[str]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_data_access_adapter.py
+Line: 45, Column: 32
+Rule: unknown
+Error: "None" 类型不匹配声明的 "Dict[str, Any]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_data_access_adapter.py
+Line: 549, Column: 50
+Rule: unknown
+Error: 无法将 "None" 类型的表达式赋值给 "List[str]" 类型的参数
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

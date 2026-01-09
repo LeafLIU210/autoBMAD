@@ -1,0 +1,32 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\tree_items.py
+
+Total errors: 4
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\tree_items.py
+Line: 24, Column: 9
+Rule: reportCallIssue
+Error: "__init__" 的重载与提供的参数不匹配 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\tree_items.py
+Line: 24, Column: 26
+Rule: unknown
+Error: "QTreeWidget | None" 类型的实参无法赋值给函数 "__init__" 中 "int" 类型的形参 "type"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\tree_items.py
+Line: 195, Column: 28
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "relative_time" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\tree_items.py
+Line: 201, Column: 24
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "action_name" 属性赋值
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

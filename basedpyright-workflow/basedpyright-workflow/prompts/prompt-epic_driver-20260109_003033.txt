@@ -1,0 +1,15 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (4):  Line 104, Col 5: [reportUnusedFunction] "_convert_core_to_processing_status" 函数未使用 (reportUnusedFunction)
+  Line 344, Col 13: [reportUnusedVariable] 变量 "state_manager" 未使用 (reportUnusedVariable)
+  Line 580, Col 63: [reportUndefinedVariable] "SafeClaudeSDK" 未定义 (reportUndefinedVariable)
+  Line 580, Col 63: [unknown] 参数类型未知
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

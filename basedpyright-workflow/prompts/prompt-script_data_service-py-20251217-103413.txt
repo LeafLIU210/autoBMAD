@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\script_data_service.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\script_data_service.py
+Line: 304, Column: 9
+Rule: reportRedeclaration
+Error: "add_event" 方法的声明被同名声明遮蔽 (reportRedeclaration)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

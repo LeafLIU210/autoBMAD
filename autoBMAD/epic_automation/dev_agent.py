@@ -8,8 +8,7 @@ Uses Claude Code CLI for actual implementation.
 
 import logging
 import subprocess
-from typing import Any, cast, TYPE_CHECKING
-from typing import Dict, List, Optional  # For compatibility with older Python versions
+from typing import Any, Dict, List, Optional, cast, TYPE_CHECKING
 import re
 from pathlib import Path
 
@@ -48,18 +47,14 @@ logger = logging.getLogger(__name__)
 class DevAgent:
     """Development agent for handling implementation tasks."""
 
-    name: str
-    use_claude: bool
-    _current_story_path: Optional[str]
-    _claude_available: bool
-
-    def __init__(self, use_claude: bool = True):
+    def __init__(self, use_claude: bool = True, log_manager: Optional[LogManager] = None):
         """
         Initialize Dev agent.
 
         Args:
             use_claude: If True, use Claude Code CLI for real implementation.
                        If False, use simulation mode (for testing).
+            log_manager: Optional LogManager instance for logging.
         """
         self.name = "Dev Agent"
         self.use_claude = use_claude
@@ -67,6 +62,36 @@ class DevAgent:
         self._claude_available = self._check_claude_available() if use_claude else False
         # 每个DevAgent实例创建独立的会话管理器，消除跨Agent cancel scope污染
         self._session_manager = SDKSessionManager()
+
+        # Store log_manager for use in SDK calls
+        self._log_manager = log_manager
+
+        # Initialize StatusParser for robust status parsing
+        try:
+            from autoBMAD.epic_automation.status_parser import StatusParser
+            # 创建 SafeClaudeSDK 实例并传入，提供必需的参数
+            # SafeClaudeSDK 可能为 None（导入失败时），需要检查
+            if SafeClaudeSDK is not None:
+                # Create proper options object for status parsing
+                options = None
+                if _ClaudeAgentOptions:
+                    options = _ClaudeAgentOptions(
+                        permission_mode="bypassPermissions",
+                        cwd=str(Path.cwd())
+                    )
+                sdk_instance = SafeClaudeSDK(
+                    prompt="Parse story status",
+                    options=options,
+                    timeout=None,
+                    log_manager=log_manager
+                )
+                self.status_parser = StatusParser(sdk_wrapper=sdk_instance)
+            else:
+                self.status_parser = None
+        except ImportError:
+            self.status_parser = None
+            logger.warning("[Dev Agent] StatusParser not available, using fallback parsing")
+
         logger.info(f"{self.name} initialized (claude_mode={self.use_claude}, claude_available={self._claude_available})")
 
     def _validate_prompt_format(self, prompt: str) -> bool:
@@ -88,14 +113,13 @@ class DevAgent:
             # 检查文件路径格式
             if '"' in prompt:
                 # 提取引号内的路径
-                import re
                 path_matches = re.findall(r'"([^"]+)"', prompt)
                 for path in path_matches:
                     if not path.endswith('.md'):
                         logger.warning(f"[Prompt Validation] Non-markdown file path: {path}")
                     # 检查路径是否存在
-                    from pathlib import Path
-                    if not Path(path).exists():
+                    path_obj = Path(path)
+                    if not path_obj.exists():
                         logger.warning(f"[Prompt Validation] Story file not found: {path}")
             
             # 检查编码问题（非ASCII字符）
@@ -382,7 +406,7 @@ class DevAgent:
                 story_status = await self._check_story_status(story_path)
 
                 # Check for "Ready for Done" or "Done" status - skip entire dev-qa cycle
-                if story_status and ('ready for done' in story_status.lower() or story_status.lower() == 'done'):
+                if story_status and (story_status.lower() == 'ready for done' or story_status.lower() == 'done'):
                     logger.info(f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle")
                     return True
 
@@ -397,22 +421,19 @@ class DevAgent:
                 else:
                     logger.warning(f"[Dev Agent] Could not determine story status for {story_path}, proceeding anyway")
 
-            # Get log_manager from epic_driver context if available
-            log_manager = getattr(self, '_log_manager', None)
-
             # Check if this is a QA feedback mode (requirements contains qa_prompt)
             if 'qa_prompt' in requirements:
                 # Handle QA feedback mode - execute single SDK call
                 logger.info(f"{self.name} Handling QA feedback with single SDK call")
-                result = await self._execute_single_claude_sdk(requirements['qa_prompt'], story_path, log_manager)
+                result = await self._execute_single_claude_sdk(requirements['qa_prompt'], story_path, self._log_manager)
                 return result
 
             # Normal development mode - execute single SDK call
             logger.info(f"{self.name} Executing normal development with single SDK call")
-            base_prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @tests/, perform test-driven development until all tests pass completely. Change story document Status to "Ready for Review".'
+            base_prompt = f'/ralph-wiggum:ralph-loop "@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @D:\\GITHUB\\pytQt_template\\autoBMAD\\spec_automation\\tests. Perform Test-Driven Development (TDD) iteratively until achieving 100% tests pass with comprehensive coverage. Run "pytest -v --tb=short --cov" to verify tests and coverage. Change story Status to "Ready for Review" when complete. ONLY ALL tests PASS with FULL COVERAGE lead to DONE<promise>DONE</promise>" --max-iterations 5 --completion-promise "DONE"'
 
             # Execute single SDK call
-            result = await self._execute_single_claude_sdk(base_prompt, story_path, log_manager)
+            result = await self._execute_single_claude_sdk(base_prompt, story_path, self._log_manager)
 
             if result:
                 # Development completed successfully, notify QA agent
@@ -447,7 +468,7 @@ class DevAgent:
             prompt = f'@.bmad-core/agents/dev.md {qa_prompt}'
 
             # Execute single SDK call for fixing
-            result = await self._execute_single_claude_sdk(prompt, story_path)
+            result = await self._execute_single_claude_sdk(prompt, story_path, self._log_manager)
 
             if result:
                 logger.info(f"{self.name} QA feedback handling completed successfully")
@@ -499,7 +520,9 @@ class DevAgent:
             assert ClaudeAgentOptions is not None, "ClaudeAgentOptions should not be None"
             options = ClaudeAgentOptions(
                 permission_mode="bypassPermissions",
-                cwd=str(Path.cwd())
+                cwd=str(Path.cwd()),
+                max_turns=100,  # 增加最大轮数，以支持复杂故事开发
+                cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe"
             )
             sdk = SafeClaudeSDK(prompt, options, timeout=None, log_manager=log_manager)
             return await sdk.execute()
@@ -586,8 +609,6 @@ class DevAgent:
     async def _update_story_completion(self, story_content: str, requirements: Dict[str, Any]) -> None:
         """Update story file with completion information."""
         logger.info("Updating story file with completion")
-        _ = story_content  # Mark as intentionally unused - reading file directly
-        _ = requirements  # Mark as intentionally unused - requirements already processed
 
         try:
             if not self._current_story_path:
@@ -620,7 +641,7 @@ class DevAgent:
                     content = re.sub(dev_record_pattern, rf'{file_list_section}\1', content)
 
             # Write updated content
-            with open(story_path, 'w', encoding='utf-8') as f:  # type: ignore[assignment]
+            with open(story_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
             logger.info(f"Updated story file: {story_path}")
@@ -630,13 +651,13 @@ class DevAgent:
 
     async def _check_story_status(self, story_path: str) -> Optional[str]:
         """
-        Check the status field in a story document.
+        Check the status field in a story document using hybrid parsing strategy.
 
         Args:
             story_path: Path to the story file
 
         Returns:
-            Status string (e.g., "Ready for Review", "Ready for Done", "Done", "Approved", "Draft")
+            Status string (e.g., "Ready for Review", "Ready for Done", "Done", "Ready for Development", "Draft")
             or None if not found/error
         """
         try:
@@ -648,7 +669,21 @@ class DevAgent:
             with open(story_file, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-            # Match the Status section pattern: ## Status\n**Status Text**
+            # Use StatusParser if available (AI-powered parsing)
+            if self.status_parser:
+                try:
+                    # Note: parse_status is now async in SimpleStatusParser
+                    status_text = await self.status_parser.parse_status(content)
+                    if status_text and status_text != "unknown":
+                        logger.debug(f"[Dev Agent story] Found status using AI parsing: '{status_text}'")
+                        return status_text
+                    else:
+                        logger.warning(f"[Dev Agent] StatusParser failed to parse status from {story_path}")
+                except Exception as e:
+                    logger.warning(f"[Dev Agent] StatusParser error: {e}, falling back to regex")
+
+            # Fallback to original regex pattern
+            logger.debug(f"[Dev Agent] Using fallback regex parsing for {story_path}")
             status_match = re.search(
                 r'## Status\s*\n\s*\*\*([^*]+)\*\*',
                 content,
@@ -657,7 +692,7 @@ class DevAgent:
 
             if status_match:
                 status_text = status_match.group(1).strip()
-                logger.debug(f"[Dev Agent story] Found status: '{status_text}'")
+                logger.debug(f"[Dev Agent story] Found status using regex: '{status_text}'")
                 return status_text
             else:
                 logger.warning(f"[Dev Agent] Status section not found in {story_path}")

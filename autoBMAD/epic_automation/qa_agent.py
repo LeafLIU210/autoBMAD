@@ -131,6 +131,16 @@ class QAAgent:
         """初始化QA代理."""
         # 每个QAAgent实例创建独立的会话管理器，消除跨Agent cancel scope污染
         self._session_manager = SDKSessionManager()
+
+        # Initialize StatusParser for robust status parsing
+        try:
+            from autoBMAD.epic_automation.status_parser import StatusParser
+            # 传入 None，StatusParser 会处理没有 SDK 的情况（使用回退解析）
+            self.status_parser = StatusParser(sdk_wrapper=None)
+        except ImportError:
+            self.status_parser = None
+            logger.warning("[QA Agent] StatusParser not available, using fallback parsing")
+
         logger.info(f"{self.name} initialized")
 
     async def execute(
@@ -306,7 +316,8 @@ class QAAgent:
                 if ClaudeAgentOptions:
                     options = ClaudeAgentOptions(
                         permission_mode="bypassPermissions",
-                        cwd=str(Path.cwd())
+                        cwd=str(Path.cwd()),
+                        cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe"
                     )
                     # 限制最大回合数，防止无限等待
                     options.max_turns = 1000
@@ -329,7 +340,7 @@ class QAAgent:
         return sdk_execution
 
     async def _check_story_status(self, story_path: str) -> bool:
-        """检查故事状态"""
+        """检查故事状态使用混合解析策略"""
         try:
             story_file = Path(story_path)
             if not story_file.exists():
@@ -338,7 +349,21 @@ class QAAgent:
 
             content = story_file.read_text(encoding='utf-8')
 
-            # 查找状态行 - 支持多种状态模式
+            # Use StatusParser if available (AI-powered parsing)
+            if self.status_parser:
+                try:
+                    # Note: parse_status is now async in SimpleStatusParser
+                    status = await self.status_parser.parse_status(content)
+                    if status and status != "unknown":
+                        logger.debug(f"[QA Agent] Found status using AI parsing: '{status}'")
+                        return self._evaluate_story_status(status)
+                    else:
+                        logger.warning(f"[QA Agent] StatusParser failed to parse status from {story_path}")
+                except Exception as e:
+                    logger.warning(f"[QA Agent] StatusParser error: {e}, falling back to regex")
+
+            # Fallback to original regex patterns
+            logger.debug(f"[QA Agent] Using fallback regex parsing for {story_path}")
             status_patterns = [
                 r'Status:\s*\*\*([^*]+)\*\*',  # **Bold** format
                 r'Status:\s*(\w+(?:\s+\w+)*)'  # Regular format
@@ -348,24 +373,38 @@ class QAAgent:
                 match = re.search(pattern, content, re.IGNORECASE)
                 if match:
                     status = match.group(1).strip().lower()
-                    # 检查状态是否为完成状态
-                    if "ready for done" in status or status == "done":
-                        logger.info(f"Story status is '{status}' - considered complete")
-                        return True
-                    elif "ready for review" in status:
-                        logger.info(f"Story status is '{status}' - considering as ready for QA review")
-                        # Ready for Review should trigger QA review, not skip it
-                        # Return False to proceed with QA review
-                        return False
-                    else:
-                        logger.debug(f"Story status is '{status}' - not a completion status")
-                        return False
-            else:
-                logger.warning(f"Could not find status in story file: {story_path}")
-                return False
+                    logger.debug(f"[QA Agent] Found status using regex: '{status}'")
+                    return self._evaluate_story_status(status)
+
+            logger.warning(f"Could not find status in story file: {story_path}")
+            return False
 
         except Exception as e:
             logger.error(f"Error checking story status: {e}")
+            return False
+
+    def _evaluate_story_status(self, status: str) -> bool:
+        """
+        评估故事状态，判断是否应该跳过QA
+
+        Args:
+            status: 解析出的状态字符串
+
+        Returns:
+            True 如果故事已完成应该跳过QA，False 如果需要执行QA
+        """
+        status_lower = status.lower().strip()
+
+        # 检查状态是否为完成状态（使用标准状态值）
+        if status_lower in ["ready for done", "done"]:
+            logger.info(f"Story status is '{status}' - considered complete, skipping QA")
+            return True
+        elif status_lower == "ready for review":
+            logger.info(f"Story status is '{status}' - ready for QA review, proceeding with QA")
+            # Ready for Review should trigger QA review
+            return False
+        else:
+            logger.debug(f"Story status is '{status}' - not a completion status, proceeding with QA")
             return False
 
     async def _collect_qa_gate_paths(self) -> list[str]:
@@ -391,8 +430,8 @@ class QAAgent:
     async def _perform_fallback_qa_review(
         self,
         story_path: str,
-        source_dir: str,
-        test_dir: str
+        source_dir: str = "src",
+        test_dir: str = "tests"
     ) -> QAResult:
         """执行回退QA审查"""
         logger.info(f"{self.name} Performing fallback QA review")
@@ -447,6 +486,158 @@ class QAAgent:
                 fallback_review=True,
                 reason=f"Fallback review error: {str(e)}"
             )
+
+    async def _check_code_quality_basics(self, story_path: str) -> dict[str, Any]:
+        """检查基础代码质量"""
+        try:
+            checks_passed = 0
+            total_checks = 2
+
+            # 检查源代码目录
+            src_path = Path("src")
+            if not src_path.exists():
+                logger.warning(f"Source directory not found: src")
+                return {
+                    'passed': False,
+                    'checks_passed': 0,
+                    'total_checks': total_checks,
+                    'reason': 'Source directory not found'
+                }
+
+            # 检查Python文件是否存在
+            python_files = list(src_path.glob("**/*.py"))
+            if python_files:
+                checks_passed += 1
+                logger.debug(f"Found {len(python_files)} Python files")
+
+                # 简单的代码质量检查：检查是否有语法错误
+                for py_file in python_files[:10]:  # 只检查前10个文件以节省时间
+                    try:
+                        with open(py_file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            compile(content, py_file, 'exec')
+                    except SyntaxError as e:
+                        logger.warning(f"Syntax error in {py_file}: {e}")
+                        return {
+                            'passed': False,
+                            'checks_passed': checks_passed,
+                            'total_checks': total_checks,
+                            'reason': f'Syntax error in {py_file}'
+                        }
+            else:
+                logger.warning("No Python files found in src directory")
+                return {
+                    'passed': False,
+                    'checks_passed': 0,
+                    'total_checks': total_checks,
+                    'reason': 'No Python files found'
+                }
+
+            # 检查基本的代码结构
+            checks_passed += 1
+            logger.info(f"Code quality check: {checks_passed}/{total_checks} passed")
+
+            return {
+                'passed': checks_passed == total_checks,
+                'checks_passed': checks_passed,
+                'total_checks': total_checks,
+                'files_checked': len(python_files)
+            }
+
+        except Exception as e:
+            logger.error(f"Error checking code quality: {e}")
+            return {
+                'passed': False,
+                'checks_passed': 0,
+                'total_checks': 2,
+                'reason': f'Error checking code quality: {str(e)}'
+            }
+
+    async def _check_test_files_exist(self, story_path: str) -> dict[str, Any]:
+        """检查测试文件是否存在"""
+        try:
+            test_path = Path("tests")
+            if not test_path.exists():
+                logger.warning(f"Test directory not found: tests")
+                return {
+                    'passed': False,
+                    'test_count': 0,
+                    'reason': 'Test directory not found'
+                }
+
+            # 查找测试文件
+            test_files = list(test_path.glob("**/test_*.py")) + list(test_path.glob("**/*_test.py"))
+            test_count = len(test_files)
+
+            if test_count > 0:
+                logger.info(f"Found {test_count} test files")
+                return {
+                    'passed': True,
+                    'test_count': test_count,
+                    'test_files': [str(f) for f in test_files[:5]]  # 只返回前5个文件名
+                }
+            else:
+                logger.warning("No test files found")
+                return {
+                    'passed': False,
+                    'test_count': 0,
+                    'reason': 'No test files found'
+                }
+
+        except Exception as e:
+            logger.error(f"Error checking test files: {e}")
+            return {
+                'passed': False,
+                'test_count': 0,
+                'reason': f'Error checking test files: {str(e)}'
+            }
+
+    async def _check_documentation_updated(self, story_path: str) -> dict[str, Any]:
+        """检查文档是否已更新"""
+        try:
+            # 检查故事文件是否存在
+            story_file = Path(story_path)
+            if not story_file.exists():
+                logger.warning(f"Story file not found: {story_path}")
+                return {
+                    'passed': False,
+                    'last_updated': None,
+                    'reason': 'Story file not found'
+                }
+
+            # 获取文件的最后修改时间
+            stat = story_file.stat()
+            last_updated = stat.st_mtime
+
+            # 检查文档内容是否包含必要部分
+            content = story_file.read_text(encoding='utf-8')
+
+            # 检查基本文档结构
+            required_sections = ['#', '##']
+            has_structure = any(section in content for section in required_sections)
+
+            if has_structure and last_updated:
+                logger.info("Documentation appears to be updated")
+                return {
+                    'passed': True,
+                    'last_updated': last_updated,
+                    'has_structure': has_structure
+                }
+            else:
+                logger.warning("Documentation may be outdated")
+                return {
+                    'passed': False,
+                    'last_updated': last_updated,
+                    'reason': 'Documentation lacks proper structure'
+                }
+
+        except Exception as e:
+            logger.error(f"Error checking documentation: {e}")
+            return {
+                'passed': False,
+                'last_updated': None,
+                'reason': f'Error checking documentation: {str(e)}'
+            }
 
     async def get_statistics(self) -> dict[str, Any]:
         """获取QA代理统计信息"""

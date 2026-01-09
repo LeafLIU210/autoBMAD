@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260107_114826.txt",
+    "extraction_time": "2026-01-07T11:48:29.800894",
+    "total_files_with_errors": 1,
+    "total_errors": 2,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 18,
+          "column": 50,
+          "message": "\"Callable\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 122,
+          "column": 50,
+          "message": "\"object\" 类型不匹配声明的 \"Awaitable[Any]\" 类型",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}

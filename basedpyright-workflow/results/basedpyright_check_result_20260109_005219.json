@@ -1,0 +1,18 @@
+{
+  "version": "1.37.0",
+  "time": "1767891140952",
+  "generalDiagnostics": [],
+  "summary": {
+    "filesAnalyzed": 1,
+    "errorCount": 0,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.341
+  },
+  "metadata": {
+    "check_time": "2026-01-09T00:52:20.976342",
+    "check_directory": "../autoBMAD/epic_automation/sm_agent.py",
+    "python_files_count": 0,
+    "python_files": []
+  }
+}

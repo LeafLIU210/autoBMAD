@@ -1,0 +1,921 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260108_122043.txt",
+    "extraction_time": "2026-01-08T12:20:45.366118",
+    "total_files_with_errors": 4,
+    "total_errors": 141,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "reportInvalidTypeForm": 1,
+        "unknown": 6
+      },
+      "errors_by_tool": {
+        "basedpyright": 8
+      },
+      "errors": [
+        {
+          "line": 18,
+          "column": 33,
+          "message": "\"Message\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 109,
+          "column": 37,
+          "message": "类型表达式中不允许使用变量 (reportInvalidTypeForm)",
+          "rule": "reportInvalidTypeForm"
+        },
+        {
+          "line": 111,
+          "column": 37,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 113,
+          "column": 41,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 355,
+          "column": 24,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 357,
+          "column": 26,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 406,
+          "column": 24,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 408,
+          "column": 26,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 76,
+      "errors_by_rule": {
+        "unknown": 34,
+        "reportIndexIssue": 19,
+        "reportOptionalSubscript": 8,
+        "reportCallIssue": 8,
+        "reportOptionalMemberAccess": 7
+      },
+      "errors_by_tool": {
+        "basedpyright": 76
+      },
+      "errors": [
+        {
+          "line": 77,
+          "column": 12,
+          "message": "\"str\" 与 \"bool | float | dict[str, str | dict[str, str | None]] | list[Unknown] | None\" 类型不支持 \"in\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "message": "\"bool\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "message": "\"float\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "message": "\"__getitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__getitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"s\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 78,
+          "column": 13,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "\"bool\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "\"float\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "\"__getitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__getitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"s\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 80,
+          "column": 17,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "\"bool\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "\"float\" 类型上未定义 \"__getitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "\"__getitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__getitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"s\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "\"str\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 82,
+          "column": 17,
+          "message": "\"float\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"str | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 96,
+          "column": 9,
+          "message": "\"bool\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 96,
+          "column": 9,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 96,
+          "column": 9,
+          "message": "\"float\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 96,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 96,
+          "column": 9,
+          "message": "\"Literal['current_phase']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 124,
+          "column": 40,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 124,
+          "column": 40,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 124,
+          "column": 40,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 124,
+          "column": 40,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 135,
+          "column": 36,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 135,
+          "column": 36,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 135,
+          "column": 36,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 135,
+          "column": 36,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 150,
+          "column": 9,
+          "message": "\"bool\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 150,
+          "column": 9,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 150,
+          "column": 9,
+          "message": "\"float\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 150,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 150,
+          "column": 9,
+          "message": "\"Literal['current_phase']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 178,
+          "column": 40,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 178,
+          "column": 40,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 178,
+          "column": 40,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 178,
+          "column": 40,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 189,
+          "column": 36,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 189,
+          "column": 36,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 189,
+          "column": 36,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 189,
+          "column": 36,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 204,
+          "column": 9,
+          "message": "\"bool\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 204,
+          "column": 9,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 204,
+          "column": 9,
+          "message": "\"float\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 204,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 204,
+          "column": 9,
+          "message": "\"Literal['current_phase']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 239,
+          "column": 40,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 239,
+          "column": 40,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 239,
+          "column": 40,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 239,
+          "column": 40,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 250,
+          "column": 36,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 250,
+          "column": 36,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 250,
+          "column": 36,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 250,
+          "column": 36,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 269,
+          "column": 9,
+          "message": "\"bool\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 269,
+          "column": 9,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 269,
+          "column": 9,
+          "message": "\"float\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 269,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 269,
+          "column": 9,
+          "message": "\"Literal['current_phase']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 304,
+          "column": 36,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 304,
+          "column": 36,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 304,
+          "column": 36,
+          "message": "无法访问 \"float\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 304,
+          "column": 36,
+          "message": "无法访问 \"dict[str, str | dict[str, str | None]]\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 312,
+          "column": 17,
+          "message": "\"float | dict[str, str | dict[str, str | None]] | list[Unknown] | Literal[True]\" 类型的实参无法赋值给函数 \"_calculate_duration\" 中 \"float\" 类型的形参 \"start_time\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 319,
+          "column": 72,
+          "message": "\"float | dict[str, str | dict[str, str | None]] | list[Unknown] | Literal[True]\" 类型的实参无法赋值给函数 \"len\" 中 \"Sized\" 类型的形参 \"obj\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 324,
+          "column": 9,
+          "message": "\"bool\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 324,
+          "column": 9,
+          "message": "`None` 不支持下标访问 (reportOptionalSubscript)",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "line": 324,
+          "column": 9,
+          "message": "\"float\" 类型上未定义 \"__setitem__\" 方法 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 324,
+          "column": 9,
+          "message": "\"__setitem__\" 的重载与提供的参数不匹配 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 324,
+          "column": 9,
+          "message": "\"Literal['current_phase']\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"slice[Any, Any, Any]\" 类型的形参 \"key\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "error_count": 29,
+      "errors_by_rule": {
+        "reportUnusedVariable": 2,
+        "reportUnnecessaryIsInstance": 1,
+        "unknown": 20,
+        "reportOptionalMemberAccess": 6
+      },
+      "errors_by_tool": {
+        "basedpyright": 29
+      },
+      "errors": [
+        {
+          "line": 82,
+          "column": 21,
+          "message": "变量 \"stderr\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 151,
+          "column": 51,
+          "message": "\"type[ResultMessage]\" 一定是 \"type\" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)",
+          "rule": "reportUnnecessaryIsInstance"
+        },
+        {
+          "line": 215,
+          "column": 41,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 225,
+          "column": 13,
+          "message": "\"int | list[Unknown]\" 与 \"int\" 类型不支持 \"+=\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 230,
+          "column": 17,
+          "message": "\"int | list[Unknown]\" 与 \"Literal[1]\" 类型不支持 \"+=\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 232,
+          "column": 41,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 260,
+          "column": 17,
+          "message": "\"int | list[Unknown]\" 与 \"Literal[1]\" 类型不支持 \"+=\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 261,
+          "column": 17,
+          "message": "\"int | list[Unknown]\" 与 \"int\" 类型不支持 \"+=\" 运算符",
+          "rule": "unknown"
+        },
+        {
+          "line": 264,
+          "column": 37,
+          "message": "无法访问 \"int\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 404,
+          "column": 21,
+          "message": "变量 \"stderr\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 430,
+          "column": 46,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 641,
+          "column": 13,
+          "message": "\"Dict[str, Any]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | list[Unknown] | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 647,
+          "column": 44,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 647,
+          "column": 44,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 651,
+          "column": 13,
+          "message": "\"dict[str, bool | str]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | list[Unknown] | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 653,
+          "column": 40,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 653,
+          "column": 40,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 663,
+          "column": 17,
+          "message": "\"Dict[str, Any]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | list[Unknown] | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 669,
+          "column": 48,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 669,
+          "column": 48,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 673,
+          "column": 17,
+          "message": "\"dict[str, bool | str]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | list[Unknown] | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 675,
+          "column": 44,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 675,
+          "column": 44,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 685,
+          "column": 17,
+          "message": "\"Dict[str, Any]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | list[Unknown] | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 690,
+          "column": 48,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 690,
+          "column": 48,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 694,
+          "column": 17,
+          "message": "\"dict[str, bool | str]\" 类型的实参无法赋值给函数 \"__setitem__\" 中 \"bool | list[Unknown] | None\" 类型的形参 \"value\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 696,
+          "column": 44,
+          "message": "无法访问 \"bool\" 类的 \"append\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 696,
+          "column": 44,
+          "message": "`None` 没有 \"append\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "error_count": 28,
+      "errors_by_rule": {
+        "reportUnusedImport": 4,
+        "reportIndexIssue": 16,
+        "unknown": 4,
+        "reportUnusedVariable": 2,
+        "reportUnnecessaryComparison": 1,
+        "reportUnnecessaryIsInstance": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 28
+      },
+      "errors": [
+        {
+          "line": 36,
+          "column": 18,
+          "message": "\"_query\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 37,
+          "column": 31,
+          "message": "\"_ClaudeAgentOptions\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 38,
+          "column": 26,
+          "message": "\"_ResultMessage\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 62,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 93,
+          "column": 38,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 93,
+          "column": 43,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 94,
+          "column": 53,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 105,
+          "column": 105,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 109,
+          "column": 13,
+          "message": "变量 \"stdout\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 109,
+          "column": 21,
+          "message": "变量 \"stderr\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 127,
+          "column": 64,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 127,
+          "column": 69,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 151,
+          "column": 41,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 151,
+          "column": 46,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 194,
+          "column": 20,
+          "message": "条件的计算结果始终为 `True`，因为类型 \"type[ResultMessage]\" 和 \"None\" 之间不存在交集 (reportUnnecessaryComparison)",
+          "rule": "reportUnnecessaryComparison"
+        },
+        {
+          "line": 194,
+          "column": 51,
+          "message": "\"type[ResultMessage]\" 一定是 \"type\" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)",
+          "rule": "reportUnnecessaryIsInstance"
+        },
+        {
+          "line": 226,
+          "column": 51,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 226,
+          "column": 56,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 262,
+          "column": 67,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 262,
+          "column": 86,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 277,
+          "column": 20,
+          "message": "\"debugpy\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 314,
+          "column": 10,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 379,
+          "column": 65,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 381,
+          "column": 47,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 381,
+          "column": 72,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 421,
+          "column": 45,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 421,
+          "column": 71,
+          "message": "在 \"list\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        },
+        {
+          "line": 421,
+          "column": 76,
+          "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式 (reportIndexIssue)",
+          "rule": "reportIndexIssue"
+        }
+      ]
+    }
+  ]
+}

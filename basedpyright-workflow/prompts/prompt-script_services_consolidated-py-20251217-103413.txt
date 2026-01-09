@@ -1,0 +1,62 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+
+Total errors: 9
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 161, Column: 28
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 182, Column: 27
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 203, Column: 28
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 220, Column: 29
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 237, Column: 28
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 254, Column: 28
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 421, Column: 18
+Rule: unknown
+Error: 无法访问 "ConsolidatedScriptServices*" 类的 "repository" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 479, Column: 16
+Rule: unknown
+Error: 无法为 "ScriptData" 类的 "characters" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 505, Column: 16
+Rule: unknown
+Error: 无法为 "ScriptData" 类的 "characters" 属性赋值
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

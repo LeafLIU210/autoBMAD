@@ -1,0 +1,32 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\logging_manager_unified.py
+
+Total errors: 4
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\logging_manager_unified.py
+Line: 120, Column: 24
+Rule: unknown
+Error: "int | None" 类型的实参无法赋值给函数 "__init__" 中 "int" 类型的形参 "process_id"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\logging_manager_unified.py
+Line: 494, Column: 13
+Rule: reportCallIssue
+Error: "update" 的重载与提供的参数不匹配 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\logging_manager_unified.py
+Line: 494, Column: 26
+Rule: unknown
+Error: "dict[str, int | str | bool]" 类型的实参无法赋值给函数 "update" 中 "Iterable[tuple[str, int]]" 类型的形参 "m"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\infrastructure\logging_manager_unified.py
+Line: 663, Column: 24
+Rule: unknown
+Error: "int | None" 类型的实参无法赋值给函数 "__init__" 中 "int" 类型的形参 "process_id"
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

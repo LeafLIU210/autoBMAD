@@ -21,7 +21,10 @@ import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Any, Awaitable, Callable, cast, override
+from typing import Any, Optional
+
+# Note: 'override' decorator removed for Python 3.8+ compatibility
+# Using implicit override (Python 3.8-3.11 compatible)
 
 try:
     from claude_agent_sdk import ClaudeAgentOptions as _ClaudeAgentOptions
@@ -57,7 +60,7 @@ class CodeQualityAgent:
 
     async def execute_check(
         self, source_dir: Path
-    ) -> tuple[bool, list[dict[str, Any]]]:  # type: ignore[reportExplicitAny, type-arg]
+    ) -> tuple[bool, list[dict[str, Any]]]:
         """
         Execute quality check on source directory.
 
@@ -75,32 +78,54 @@ class CodeQualityAgent:
 
             logger.info(f"Executing {self.tool_name} check: {command}")
 
-            # Execute command without asyncio.shield to avoid cancel scope errors
-            async def create_and_communicate():
-                # Execute command using asyncio subprocess
-                # Note: Using venv\Scripts for Windows compatibility
-                process = await asyncio.create_subprocess_shell(
-                    command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    shell=True,
-                )
+            # Use synchronous subprocess to completely isolate from anyio cancel scope
+            # Run in a separate thread to avoid cancel scope propagation
+            import subprocess
+            import concurrent.futures
 
+            def run_subprocess_sync():
+                """Run subprocess synchronously in a thread to isolate from cancel scopes."""
                 try:
-                    stdout, _stderr = await process.communicate()
-                    return stdout, _stderr, process
-                except asyncio.CancelledError:
-                    logger.warning(
-                        f"Cancelled during {self.tool_name} check, cleaning up process"
+                    result = subprocess.run(
+                        command,
+                        capture_output=True,
+                        shell=True,
+                        timeout=300,  # 5 minute timeout
                     )
-                    try:
-                        process.terminate()
-                        await process.wait()
-                    except Exception:
-                        pass
-                    raise
+                    return result.stdout, result.stderr, result.returncode
+                except subprocess.TimeoutExpired as e:
+                    logger.error(f"Subprocess timed out after 300s: {e}")
+                    return b"", b"", -1
+                except Exception as e:
+                    logger.error(f"Subprocess error: {e}")
+                    return b"", str(e).encode(), -1
 
-            stdout, _stderr, process = await create_and_communicate()
+            # Run in thread pool using asyncio.shield to protect from cancel scope
+            loop = asyncio.get_running_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Submit directly to executor to get a concurrent.futures.Future that supports timeout
+                cf_future = executor.submit(run_subprocess_sync)
+
+                # Convert to asyncio Future for await
+                async_future = loop.run_in_executor(None, cf_future.result)
+                try:
+                    stdout, _stderr, _returncode = await asyncio.shield(async_future)
+                except asyncio.CancelledError as e:
+                    # If still cancelled, wait for the thread to complete anyway
+                    error_str = str(e)
+                    if "cancel scope" in error_str.lower():
+                        logger.warning(f"Cancel scope propagated to shield, waiting for subprocess: {error_str}")
+                        # Wait for the concurrent.futures.Future directly with timeout
+                        try:
+                            stdout, _stderr, _returncode = cf_future.result(timeout=60)
+                        except concurrent.futures.TimeoutError:
+                            logger.error("Subprocess timed out while waiting after cancel scope")
+                            return False, []
+                        except Exception as inner_e:
+                            logger.error(f"Failed to get subprocess result: {inner_e}")
+                            return False, []
+                    else:
+                        raise
 
             # Parse JSON output
             if stdout and stdout.strip():
@@ -125,10 +150,10 @@ class CodeQualityAgent:
 
     async def fix_issues(
         self,
-        issues: list[dict[str, Any]],  # type: ignore[type-arg]
+        issues: list[dict[str, Any]],
         source_dir: Path,
         max_turns: int = 150,
-    ) -> tuple[bool, str, int]:  # type: ignore[reportExplicitAny]
+    ) -> tuple[bool, str, int]:
         """
         Use Claude SDK to generate fixes for identified issues.
 
@@ -150,70 +175,102 @@ class CodeQualityAgent:
             logger.warning("Claude SDK not available, cannot generate fixes")
             return False, "Claude SDK not available", 0
 
-        try:
-            # Generate fix prompt
-            prompt = self._generate_fix_prompt(issues, source_dir)
+        # Run SDK call in a separate task to isolate cancel scope
+        async def _run_sdk_call():
+            try:
+                # Check if SDK is available
+                if _query is None or _ClaudeAgentOptions is None:
+                    logger.warning("Claude SDK not available, cannot generate fixes")
+                    return False, "Claude SDK not available", 0
 
-            logger.info(f"Requesting fixes for {len(issues)} issues")
+                # Generate fix prompt
+                prompt = self._generate_fix_prompt(issues, source_dir)
 
-            # Execute SDK query with max_turns protection (NO external timeouts)
-            options = (
-                _ClaudeAgentOptions(max_turns=max_turns)
-                if _ClaudeAgentOptions
-                else None
-            )
+                logger.info(f"Requesting fixes for {len(issues)} issues")
 
-            # Execute query - using prompt parameter (not messages)
-            # The SDK returns an AsyncIterator of messages
-            response_iterator = _query(prompt=prompt, options=options)
+                # Execute SDK query with max_turns protection (NO external timeouts)
+                options = _ClaudeAgentOptions(max_turns=max_turns)
 
-            # Collect messages from the iterator
-            messages: list[Any] = []
-            async for message in response_iterator:
-                messages.append(message)  # type: ignore[arg-type]
-                # Check if we got a ResultMessage
-                if _ResultMessage is not None:
-                    if isinstance(message, _ResultMessage):
-                        if hasattr(message, "is_error") and message.is_error:
-                            error_msg = getattr(message, "result", "Unknown error")
-                            logger.error(f"SDK error: {error_msg}")
-                            return False, f"SDK error: {error_msg}", 0
-                        else:
-                            # Success - count fixes
-                            fixed_count = len(issues)  # Assume all issues can be fixed
+                # Execute query - using prompt parameter (not messages)
+                # The SDK returns an AsyncIterator of messages
+                response_iterator = _query(prompt=prompt, options=options)
+
+                # Collect messages from the iterator
+                messages: list[Any] = []
+                async for message in response_iterator:
+                    messages.append(message)
+                    # Check if we got a ResultMessage
+                    if _ResultMessage is not None:
+                        if isinstance(message, _ResultMessage):
+                            if hasattr(message, "is_error") and message.is_error:
+                                error_msg = getattr(message, "result", "Unknown error")
+                                logger.error(f"SDK error: {error_msg}")
+                                return False, f"SDK error: {error_msg}", 0
+                            else:
+                                # Success - count fixes
+                                fixed_count = len(issues)  # Assume all issues can be fixed
+                                logger.info(f"Generated fixes for {fixed_count} issues")
+                                return (
+                                    True,
+                                    f"Successfully generated fixes for {fixed_count} issues",
+                                    fixed_count,
+                                )
+                    else:
+                        # If _ResultMessage is not available or is mocked, just check for result attribute
+                        if hasattr(message, "result"):
+                            fixed_count = len(issues)
                             logger.info(f"Generated fixes for {fixed_count} issues")
                             return (
                                 True,
                                 f"Successfully generated fixes for {fixed_count} issues",
                                 fixed_count,
                             )
+
+                # If we get here, no ResultMessage was received
+                if messages:
+                    # Some messages were received but no final result
+                    logger.warning("SDK returned messages but no final result")
+                    return False, "Incomplete response from SDK", 0
                 else:
-                    # If _ResultMessage is not available or is mocked, just check for result attribute
-                    if hasattr(message, "result"):
-                        fixed_count = len(issues)
-                        logger.info(f"Generated fixes for {fixed_count} issues")
-                        return (
-                            True,
-                            f"Successfully generated fixes for {fixed_count} issues",
-                            fixed_count,
-                        )
+                    return False, "No response from SDK", 0
 
-            # If we get here, no ResultMessage was received
-            if messages:
-                # Some messages were received but no final result
-                logger.warning("SDK returned messages but no final result")
-                return False, "Incomplete response from SDK", 0
-            else:
-                return False, "No response from SDK", 0
+            except asyncio.CancelledError as e:
+                # Check if this is a cancel scope error from anyio (SDK cleanup)
+                error_str = str(e)
+                if "cancel scope" in error_str.lower():
+                    logger.warning(f"Cancel scope during fix_issues (normal SDK cleanup): {error_str}")
+                    # This is expected when SDK async generator closes
+                    # Return False to indicate fix failed, but allow retry
+                    return False, "SDK cancelled (will retry)", 0
+                else:
+                    # This is a genuine cancellation, re-raise
+                    raise
+            except Exception as e:
+                logger.error(f"Error generating fixes: {e}")
+                # Return simple error without external timeout mechanisms
+                return False, f"Error generating fixes: {str(e)}", 0
 
-        except Exception as e:
-            logger.error(f"Error generating fixes: {e}")
-            # Return simple error without external timeout mechanisms
-            return False, f"Error generating fixes: {str(e)}", 0
+        # Run in a separate task to isolate cancel scope
+        # Use asyncio.shield to protect from external cancellation
+        task = asyncio.create_task(_run_sdk_call())
+        try:
+            result = await asyncio.shield(task)
+            return result
+        except asyncio.CancelledError:
+            # Cancel the task and wait for it to finish cleanup
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+            # Return False to allow retry
+            return False, "Task cancelled", 0
 
     async def retry_cycle(
         self, source_dir: Path, max_cycles: int = 3, retries_per_cycle: int = 2
-    ) -> dict[str, Any]:  # type: ignore[type-arg]
+    ) -> dict[str, Any]:
         """
         Execute check and fix cycle with retry logic.
 
@@ -225,7 +282,7 @@ class CodeQualityAgent:
         Returns:
             Dictionary with cycle results
         """
-        cycle_results: dict[str, Any] = {  # type: ignore[type-arg]
+        cycle_results: dict[str, Any] = {
             "total_cycles": 0,
             "successful_cycles": 0,
             "total_issues_found": 0,
@@ -242,7 +299,7 @@ class CodeQualityAgent:
             if not success:
                 logger.error(f"Check failed in cycle {cycle_num}")
                 cycle_results["cycles"].append(
-                    {  # type: ignore[arg-type]
+                    {
                         "cycle": cycle_num,
                         "success": False,
                         "issues_found": 0,
@@ -261,7 +318,7 @@ class CodeQualityAgent:
                 cycle_results["successful_cycles"] += 1
                 cycle_results["total_cycles"] = cycle_num
                 cycle_results["cycles"].append(
-                    {  # type: ignore[arg-type]
+                    {
                         "cycle": cycle_num,
                         "success": True,
                         "issues_found": 0,
@@ -274,11 +331,22 @@ class CodeQualityAgent:
                 logger.info("=== 执行代码格式化 ===")
                 format_method = getattr(self, 'format_code', None)
                 if format_method is not None and callable(format_method):
-                    # Cast to proper type to satisfy type checkers
-                    format_func = cast(Callable[[Path], Awaitable[bool]], format_method)
-                    format_success = await format_func(source_dir)
-                    if not format_success:
-                        logger.warning("格式化执行完成，但有警告（不影响整体成功）")
+                    try:
+                        # Check if the method is async before awaiting
+                        if asyncio.iscoroutinefunction(format_method):
+                            format_success = await format_method(source_dir)
+                        else:
+                            # Call sync method without await
+                            format_success = format_method(source_dir)
+                        if not format_success:
+                            logger.warning("格式化执行完成，但有警告（不影响整体成功）")
+                    except asyncio.CancelledError:
+                        logger.warning("格式化被取消，但继续执行流程")
+                        # Don't re-raise CancelledError, just mark as not successful but continue
+                        format_success = False
+                    except Exception as e:
+                        logger.warning(f"格式化执行异常，但继续流程: {e}")
+                        format_success = False
                 else:
                     logger.info("格式化功能不可用，跳过格式化步骤")
 
@@ -298,6 +366,19 @@ class CodeQualityAgent:
                     issues, source_dir
                 )
 
+                # Add a small delay after SDK call to allow anyio cancel scope cleanup
+                # This prevents cancel scope propagation to subsequent subprocess calls
+                # We need to catch CancelledError from anyio's cancel scope cleanup
+                try:
+                    await asyncio.sleep(0.5)
+                except asyncio.CancelledError as e:
+                    error_str = str(e)
+                    if "cancel scope" in error_str.lower():
+                        logger.warning(f"Cancel scope during post-fix sleep (ignored): {error_str}")
+                        # This is expected during SDK cleanup, continue execution
+                    else:
+                        raise
+
                 if fix_success:
                     logger.info(
                         f"Cycle {cycle_num}, Retry {retry_num} successful: {fix_message}"
@@ -314,7 +395,7 @@ class CodeQualityAgent:
 
             cycle_results["total_cycles"] = cycle_num
             cycle_results["cycles"].append(
-                {  # type: ignore[arg-type]
+                {
                     "cycle": cycle_num,
                     "success": fix_success,
                     "issues_found": issues_found,
@@ -331,7 +412,7 @@ class CodeQualityAgent:
 
     def _generate_fix_prompt(
         self, issues: list[dict[str, Any]], source_dir: Path
-    ) -> str:  # type: ignore[type-arg]
+    ) -> str:
         """
         Generate a prompt for the Claude SDK to fix issues.
 
@@ -342,7 +423,7 @@ class CodeQualityAgent:
         Returns:
             Prompt string for SDK
         """
-        issues_summary: list[dict[str, Any]] = []  # type: ignore[type-arg]
+        issues_summary: list[dict[str, Any]] = []
         for issue in issues[:10]:  # Limit to first 10 issues for prompt size
             issues_summary.append(
                 {
@@ -437,10 +518,9 @@ class RuffAgent(CodeQualityAgent):
             logger.warning(f"格式化执行异常，但继续流程: {e}")
             return False
 
-    @override
     async def execute_check(
         self, source_dir: Path
-    ) -> tuple[bool, list[dict[str, Any]]]:  # type: ignore[reportExplicitAny, type-arg]
+    ) -> tuple[bool, list[dict[str, Any]]]:
         """
         Execute Ruff check on source directory.
 
@@ -452,13 +532,12 @@ class RuffAgent(CodeQualityAgent):
         """
         return await super().execute_check(source_dir)
 
-    @override
     async def fix_issues(
         self,
-        issues: list[dict[str, Any]],  # type: ignore[type-arg]
+        issues: list[dict[str, Any]],
         source_dir: Path,
         max_turns: int = 150,
-    ) -> tuple[bool, str, int]:  # type: ignore[reportExplicitAny]
+    ) -> tuple[bool, str, int]:
         """
         Fix Ruff-identified issues using Claude SDK.
 
@@ -485,14 +564,13 @@ class BasedpyrightAgent(CodeQualityAgent):
         """Initialize BasedPyright agent."""
         super().__init__(
             tool_name="basedpyright",
-            command_template="basedpyright --outputjson {source_dir}",
+            command_template="basedpyright --outputformat=json {source_dir}",
         )
         logger.info("BasedpyrightAgent initialized")
 
-    @override
     async def execute_check(
         self, source_dir: Path
-    ) -> tuple[bool, list[dict[str, Any]]]:  # type: ignore[reportExplicitAny, type-arg]
+    ) -> tuple[bool, list[dict[str, Any]]]:
         """
         Execute BasedPyright type check on source directory.
 
@@ -566,7 +644,7 @@ class BasedpyrightAgent(CodeQualityAgent):
 
                     # Convert diagnostics to issue format expected by parent class
                     issues: list[dict[str, Any]] = []
-                    for diag in diagnostics:  # type: ignore[assignment]
+                    for diag in diagnostics:
                         issue = {
                             "file": diag.get("file", ""),
                             "line": diag.get("range", {})
@@ -587,14 +665,13 @@ class BasedpyrightAgent(CodeQualityAgent):
                         }
                         issues.append(issue)
 
-                    # type: ignore[arg-type]  # BasedPyright sometimes struggles with len() on generic lists
                     logger.info(f"Found {len(issues)} type issues")
                     return True, issues
 
                 except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse JSON output: {e}")
                     logger.error(
-                        f"Raw output: {stdout.decode('utf-8') if stdout else 'None'}"
+                        f"Raw output: {_stdout.decode('utf-8') if _stdout else 'None'}"
                     )
                     return False, []
             else:
@@ -605,13 +682,12 @@ class BasedpyrightAgent(CodeQualityAgent):
             logger.error(f"Unexpected error during {self.tool_name} check: {e}")
             return False, []
 
-    @override
     async def fix_issues(
         self,
-        issues: list[dict[str, Any]],  # type: ignore[type-arg]
+        issues: list[dict[str, Any]],
         source_dir: Path,
         max_turns: int = 150,
-    ) -> tuple[bool, str, int]:  # type: ignore[reportExplicitAny]
+    ) -> tuple[bool, str, int]:
         """
         Fix BasedPyright-identified type issues using Claude SDK.
 
@@ -627,7 +703,7 @@ class BasedpyrightAgent(CodeQualityAgent):
 
     def _generate_fix_prompt(
         self, issues: list[dict[str, Any]], source_dir: Path
-    ) -> str:  # type: ignore[type-arg]
+    ) -> str:
         """
         Generate a prompt for the Claude SDK to fix type checking issues.
 
@@ -638,7 +714,7 @@ class BasedpyrightAgent(CodeQualityAgent):
         Returns:
             Prompt string for SDK
         """
-        issues_summary: list[dict[str, Any]] = []  # type: ignore[type-arg]
+        issues_summary: list[dict[str, Any]] = []
         for issue in issues[:10]:  # Limit to first 10 issues for prompt size
             issues_summary.append(
                 {
@@ -680,7 +756,7 @@ class PytestAgent:
         """Initialize Pytest agent."""
         self.logger = logging.getLogger(f"{__name__}.pytest")
 
-    async def run_tests(self, test_dir: str, source_dir: str) -> dict[str, Any]:  # type: ignore[type-arg]
+    async def run_tests(self, test_dir: str, source_dir: str) -> dict[str, Any]:
         """
         Run pytest on test directory.
 
@@ -715,7 +791,7 @@ class PytestAgent:
             # Execute pytest
             command = f"{pytest_path} -v --tb=short --cov={source_dir}"
 
-            # Use asyncio.shield to protect subprocess operations from cancellation
+            # Execute pytest with proper cancellation handling
             async def run_pytest():
                 process = await asyncio.create_subprocess_shell(
                     command,
@@ -753,7 +829,7 @@ class PytestAgent:
             self.logger.error(f"Pytest execution failed: {e}")
             return {"success": False, "output": "", "errors": [str(e)]}
 
-    def _find_venv_path(self) -> Path | None:
+    def _find_venv_path(self) -> Optional[Path]:
         """Find virtual environment path."""
         cwd = Path.cwd()
         venv_candidates = [
@@ -791,7 +867,7 @@ class QualityGatePipeline:
 
     async def execute_pipeline(
         self, source_dir: str, test_dir: str, max_cycles: int = 3
-    ) -> dict[str, Any]:  # type: ignore[type-arg]
+    ) -> dict[str, Any]:
         """
         Execute complete quality gate pipeline.
 
@@ -805,7 +881,7 @@ class QualityGatePipeline:
         """
         self.logger.info("Starting quality gate pipeline")
 
-        pipeline_results: dict[str, Any] = {  # type: ignore[type-arg]
+        pipeline_results: dict[str, Any] = {
             "success": True,
             "ruff": None,
             "basedpyright": None,

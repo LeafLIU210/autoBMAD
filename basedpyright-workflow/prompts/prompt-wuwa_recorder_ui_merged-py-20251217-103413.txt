@@ -1,0 +1,158 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+
+Total errors: 25
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 156, Column: 38
+Rule: unknown
+Error: 无法为 "WuwaRecorderUI*" 类的 "script_events" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 160, Column: 38
+Rule: unknown
+Error: 无法为 "WuwaRecorderUI*" 类的 "script_events" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 404, Column: 45
+Rule: unknown
+Error: 无法访问 "ScriptDataModel" 类的 "get_script_data" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 978, Column: 41
+Rule: unknown
+Error: 无法访问 "WuwaRecorderUI*" 类的 "save_script_btn" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 979, Column: 41
+Rule: unknown
+Error: 无法访问 "WuwaRecorderUI*" 类的 "delete_event_btn" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1077, Column: 38
+Rule: unknown
+Error: 无法为 "WuwaRecorderUI*" 类的 "script_events" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1112, Column: 41
+Rule: unknown
+Error: 无法访问 "WuwaRecorderUI*" 类的 "save_script_btn" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1126, Column: 30
+Rule: unknown
+Error: 无法访问 "WuwaRecorderUI*" 类的 "setup_events_table" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1148, Column: 29
+Rule: reportUndefinedVariable
+Error: "selected_events" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1149, Column: 37
+Rule: unknown
+Error: 无法访问 "WuwaRecorderUI*" 类的 "delete_event_btn" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1183, Column: 22
+Rule: unknown
+Error: 无法访问 "WuwaRecorderUI*" 类的 "set_as_start_events" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1198, Column: 16
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1200, Column: 53
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1204, Column: 45
+Rule: unknown
+Error: 无法访问 "ScriptDataModel" 类的 "create_segments_from_selection" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1204, Column: 76
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1215, Column: 54
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1231, Column: 16
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1233, Column: 53
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1237, Column: 45
+Rule: unknown
+Error: 无法访问 "ScriptDataModel" 类的 "create_segments_from_selection" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1237, Column: 76
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1248, Column: 54
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1264, Column: 16
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1266, Column: 60
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1269, Column: 35
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\wuwa_recorder_ui_merged.py
+Line: 1277, Column: 49
+Rule: reportUndefinedVariable
+Error: "selected_rows" 未定义 (reportUndefinedVariable)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

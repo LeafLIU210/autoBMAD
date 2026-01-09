@@ -1,0 +1,50 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+
+Total errors: 7
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 72, Column: 40
+Rule: unknown
+Error: 无法访问 "UnifiedCacheManager" 类的 "cache_manager" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 73, Column: 40
+Rule: unknown
+Error: 无法访问 "UnifiedCacheManager" 类的 "cache_manager" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 123, Column: 47
+Rule: unknown
+Error: 无法访问 "str" 类的 "value" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 144, Column: 26
+Rule: unknown
+Error: "dict[str, int]" 类型的实参无法赋值给函数 "record_operation" 中 "Dict[str, str] | None" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 168, Column: 75
+Rule: unknown
+Error: "dict[str, bool]" 类型的实参无法赋值给函数 "record_counter" 中 "Dict[str, str] | None" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 189, Column: 75
+Rule: unknown
+Error: "dict[str, bool]" 类型的实参无法赋值给函数 "record_counter" 中 "Dict[str, str] | None" 类型的形参 "tags"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\adapters\script_performance_adapter.py
+Line: 281, Column: 26
+Rule: unknown
+Error: "dict[str, int]" 类型的实参无法赋值给函数 "record_operation" 中 "Dict[str, str] | None" 类型的形参 "tags"
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

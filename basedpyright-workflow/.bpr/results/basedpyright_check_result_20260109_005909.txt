@@ -1,0 +1,39 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-09 00:59:10
+检查目录: D:\GITHUB\pytQt_template\autoBMAD\epic_automation
+Python文件数量: 14
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\__init__.py
+  2. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents.py
+  3. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py
+  4. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  5. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\init_db.py
+  6. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\log_manager.py
+  7. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_agent.py
+  8. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py
+  9. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\quality_agents.py
+ 10. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_session_manager.py
+ 11. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py
+ 12. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py
+ 13. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py
+ 14. D:\GITHUB\pytQt_template\autoBMAD\epic_automation\status_parser.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\dev_agent.py:69:59 - error: "type[SafeClaudeSDK] | None" 类型的实参无法赋值给函数 "__init__" 中 "SafeClaudeSDK | None" 类型的形参 "sdk_wrapper"
+    "type[SafeClaudeSDK] | None" 类型与 "SafeClaudeSDK | None" 类型不兼容
+      "type[SafeClaudeSDK]" 类型与 "SafeClaudeSDK | None" 类型不兼容
+        "type[SafeClaudeSDK]" 类型与 "SafeClaudeSDK" 类型不兼容
+        类型与 `None` 不匹配 (reportArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:151:5 - error: "results" 变量声明被同名声明遮蔽 (reportRedeclaration)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:598:63 - error: 参数 "prompt", "options" 缺少传入值 (reportCallIssue)
+3 errors, 0 warnings, 0 notes
+

@@ -1,0 +1,31 @@
+{
+  "version": "1.37.0",
+  "time": "1767655612988",
+  "generalDiagnostics": [],
+  "summary": {
+    "filesAnalyzed": 12,
+    "errorCount": 0,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.938
+  },
+  "metadata": {
+    "check_time": "2026-01-06T07:26:53.048146",
+    "check_directory": "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation",
+    "python_files_count": 12,
+    "python_files": [
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\__init__.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py"
+    ]
+  }
+}

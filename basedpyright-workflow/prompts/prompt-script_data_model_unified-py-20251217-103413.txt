@@ -1,0 +1,20 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_data_model_unified.py
+
+Total errors: 2
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_data_model_unified.py
+Line: 882, Column: 13
+Rule: reportCallIssue
+Error: "characters" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_data_model_unified.py
+Line: 882, Column: 29
+Rule: unknown
+Error: 无法访问 "ScriptData*" 类的 "characters" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

@@ -1,0 +1,12 @@
+{
+  "metadata": {
+    "source_file": "basedpyright-workflow\\results\\basedpyright_check_result_20251219_110227.txt",
+    "extraction_time": "2025-12-19T11:02:35.660927",
+    "total_files_with_errors": 0,
+    "total_errors": 0,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": []
+}

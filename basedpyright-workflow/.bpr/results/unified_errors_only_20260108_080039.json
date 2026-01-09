@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260108_080030.txt",
+    "extraction_time": "2026-01-08T08:00:39.796968",
+    "total_files_with_errors": 2,
+    "total_errors": 3,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportUnusedImport": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 11,
+          "column": 8,
+          "message": "\"asyncio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 32,
+          "column": 53,
+          "message": "\"SDKErrorType\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 20,
+          "column": 8,
+          "message": "\"uuid\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    }
+  ]
+}

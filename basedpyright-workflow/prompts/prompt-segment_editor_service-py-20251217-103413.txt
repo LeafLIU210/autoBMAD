@@ -1,0 +1,74 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+
+Total errors: 11
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 70, Column: 59
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "ERROR" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 102, Column: 59
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "ERROR" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 209, Column: 27
+Rule: unknown
+Error: 无法为 "ScriptEvent" 类的 "relative_time" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 258, Column: 37
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "INFO" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 289, Column: 20
+Rule: reportCallIssue
+Error: 参数 "is_valid", "errors", "warnings", "info" 缺少传入值 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 289, Column: 37
+Rule: reportCallIssue
+Error: "level" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 289, Column: 54
+Rule: reportCallIssue
+Error: "message" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 291, Column: 20
+Rule: reportCallIssue
+Error: 参数 "is_valid", "errors", "warnings", "info" 缺少传入值 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 291, Column: 37
+Rule: reportCallIssue
+Error: "level" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 291, Column: 59
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "SUCCESS" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\segment_editor_service.py
+Line: 291, Column: 68
+Rule: reportCallIssue
+Error: "message" 参数不存在 (reportCallIssue)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

@@ -1,0 +1,48 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-08 20:52:37
+检查目录: ..\autoBMAD\epic_automation
+Python文件数量: 18
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. ..\autoBMAD\epic_automation\__init__.py
+  2. ..\autoBMAD\epic_automation\agents.py
+  3. ..\autoBMAD\epic_automation\dev_agent.py
+  4. ..\autoBMAD\epic_automation\epic_driver.py
+  5. ..\autoBMAD\epic_automation\init_db.py
+  6. ..\autoBMAD\epic_automation\log_manager.py
+  7. ..\autoBMAD\epic_automation\qa_agent.py
+  8. ..\autoBMAD\epic_automation\qa_tools_integration.py
+  9. ..\autoBMAD\epic_automation\quality_agents.py
+ 10. ..\autoBMAD\epic_automation\sdk_session_manager.py
+ 11. ..\autoBMAD\epic_automation\sdk_wrapper.py
+ 12. ..\autoBMAD\epic_automation\sm_agent.py
+ 13. ..\autoBMAD\epic_automation\state_manager.py
+ 14. ..\autoBMAD\epic_automation\status_parser.py
+ 15. ..\autoBMAD\epic_automation\test_automation_agent.py
+ 16. ..\autoBMAD\epic_automation\test_logging.py
+ 17. ..\autoBMAD\epic_automation\test_simple.py
+ 18. ..\autoBMAD\epic_automation\test_status_parser.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:242:17 - error: 变量 "has_test_automation" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:244:17 - error: 变量 "has_test_automation" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:1110:17 - error: 变量 "i" 未使用 (reportUnusedVariable)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\quality_agents.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\quality_agents.py:24:25 - error: "cast" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\quality_agents.py:106:30 - error: 变量 "process" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\quality_agents.py:280:44 - error: "object" 不支持 `await`
+    "object" 与 Protocol 类 "Awaitable[_T_co@Awaitable]" 不兼容
+      "__await__" 不存在 (reportGeneralTypeIssues)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_simple.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_simple.py:107:12 - error: 部分参数的类型未知
+    实参对应于 "all" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+7 errors, 0 warnings, 0 notes
+

@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\main_window\preview_panel_styles.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\main_window\preview_panel_styles.py
+Line: 209, Column: 55
+Rule: unknown
+Error: 无法访问 "ColorSystem" 类的 "info_container" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

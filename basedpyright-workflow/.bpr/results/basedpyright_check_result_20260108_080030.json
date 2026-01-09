@@ -1,0 +1,81 @@
+{
+  "version": "1.37.0",
+  "time": "1767830437922",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"asyncio\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 10,
+          "character": 7
+        },
+        "end": {
+          "line": 10,
+          "character": 14
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"SDKErrorType\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 31,
+          "character": 52
+        },
+        "end": {
+          "line": 31,
+          "character": 64
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"uuid\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 19,
+          "character": 7
+        },
+        "end": {
+          "line": 19,
+          "character": 11
+        }
+      },
+      "rule": "reportUnusedImport"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 13,
+    "errorCount": 3,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.929
+  },
+  "metadata": {
+    "check_time": "2026-01-08T08:00:37.977580",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 13,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

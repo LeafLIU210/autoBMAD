@@ -122,32 +122,36 @@ class TestCodeQualityAgent:
         assert fixed_count == 0
 
     @patch('autoBMAD.epic_automation.quality_agents._query')
-    @patch('autoBMAD.epic_automation.quality_agents._ResultMessage')
-    async def test_fix_issues_success(self, mock_result_message, mock_query):
+    async def test_fix_issues_success(self, mock_query):
         """Test successful issue fixing."""
-        # Mock SDK response as an async iterator
-        mock_result_message.return_value = Mock(
-            is_error=False,
-            result="Fixed code"
-        )
+        # Create a mock ResultMessage class
+        class MockResultMessage:
+            def __init__(self, is_error=False, result="Fixed code"):
+                self.is_error = is_error
+                self.result = result
 
-        async def mock_async_iterator():
-            yield mock_result_message.return_value
+        # Patch _ResultMessage at the module level where it's imported
+        with patch('autoBMAD.epic_automation.quality_agents._ResultMessage', MockResultMessage):
+            # Mock SDK response as an async iterator
+            mock_message = MockResultMessage(is_error=False, result="Fixed code")
 
-        mock_query.return_value = mock_async_iterator()
+            async def mock_async_iterator():
+                yield mock_message
 
-        agent = CodeQualityAgent("test", "test {source_dir}")
-        issues = [
-            {"code": "E501", "message": "Line too long"},
-            {"code": "E302", "message": "Expected 2 blank lines"}
-        ]
-        source_dir = Path("/test/source")
+            mock_query.return_value = mock_async_iterator()
 
-        success, message, fixed_count = await agent.fix_issues(issues, source_dir)
+            agent = CodeQualityAgent("test", "test {source_dir}")
+            issues = [
+                {"code": "E501", "message": "Line too long"},
+                {"code": "E302", "message": "Expected 2 blank lines"}
+            ]
+            source_dir = Path("/test/source")
 
-        assert success is True
-        assert "Successfully generated fixes" in message
-        assert fixed_count == 2
+            success, message, fixed_count = await agent.fix_issues(issues, source_dir)
+
+            assert success is True
+            assert "Successfully generated fixes" in message
+            assert fixed_count == 2
 
     @patch('autoBMAD.epic_automation.quality_agents._query')
     async def test_fix_issues_exception(self, mock_query):

@@ -59,7 +59,10 @@
       "Skill(BMad:agents:architect)",
       "Skill(BMad:agents:architect:*)",
       "Skill(BMad:tasks:create-doc)",
-      "Skill(BMad:tasks:create-doc:*)"
+      "Skill(BMad:tasks:create-doc:*)",
+      "Bash(grep:*)",
+      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template python:*)",
+      "Bash(PYTHONPATH=/d/GITHUB/pytQt_template timeout 30 python:*)"
     ],
     "deny": [
       "Bash(curl:*)",

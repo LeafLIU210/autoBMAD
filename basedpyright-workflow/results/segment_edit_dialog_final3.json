@@ -1,0 +1,46 @@
+
+{
+    "version": "1.36.1",
+    "time": "1765941105521",
+    "generalDiagnostics": [
+        {
+            "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\dialogs\\segment_edit_dialog.py",
+            "severity": "error",
+            "message": "\"type[Project_recorder.script_data_model_unified.ScriptSegment]\" 类型不匹配声明的 \"type[Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegment]\" 类型\n  \"Project_recorder.script_data_model_unified.ScriptSegment\" 与 \"Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegment\" 不兼容\n  \"type[Project_recorder.script_data_model_unified.ScriptSegment]\" 类型与 \"type[Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegment]\" 类型不兼容",
+            "range": {
+                "start": {
+                    "line": 22,
+                    "character": 59
+                },
+                "end": {
+                    "line": 22,
+                    "character": 72
+                }
+            },
+            "rule": "reportAssignmentType"
+        },
+        {
+            "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\ui\\dialogs\\segment_edit_dialog.py",
+            "severity": "error",
+            "message": "\"type[Project_recorder.script_data_model_unified.ScriptSegmentType]\" 类型不匹配声明的 \"type[Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegmentType]\" 类型\n  \"Project_recorder.script_data_model_unified.ScriptSegmentType\" 与 \"Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegmentType\" 不兼容\n  \"type[Project_recorder.script_data_model_unified.ScriptSegmentType]\" 类型与 \"type[Project_recorder.ui.dialogs.segment_edit_dialog.ScriptSegmentType]\" 类型不兼容",
+            "range": {
+                "start": {
+                    "line": 22,
+                    "character": 74
+                },
+                "end": {
+                    "line": 22,
+                    "character": 91
+                }
+            },
+            "rule": "reportAssignmentType"
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 2,
+        "warningCount": 0,
+        "informationCount": 0,
+        "timeInSec": 0.489
+    }
+}

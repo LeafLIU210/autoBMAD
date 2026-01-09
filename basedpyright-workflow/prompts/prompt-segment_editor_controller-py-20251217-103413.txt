@@ -1,0 +1,86 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+
+Total errors: 13
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 389, Column: 20
+Rule: reportCallIssue
+Error: 参数 "is_valid", "errors", "warnings", "info" 缺少传入值 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 389, Column: 37
+Rule: reportCallIssue
+Error: "level" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 389, Column: 59
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "ERROR" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 389, Column: 66
+Rule: reportCallIssue
+Error: "message" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 395, Column: 23
+Rule: unknown
+Error: 无法访问 "ValidationResult" 类的 "level" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 395, Column: 48
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "SUCCESS" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 397, Column: 25
+Rule: unknown
+Error: 无法访问 "ValidationResult" 类的 "level" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 398, Column: 72
+Rule: unknown
+Error: 无法访问 "ValidationResult" 类的 "message" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 400, Column: 70
+Rule: unknown
+Error: 无法访问 "ValidationResult" 类的 "message" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 405, Column: 20
+Rule: reportCallIssue
+Error: 参数 "is_valid", "errors", "warnings", "info" 缺少传入值 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 405, Column: 37
+Rule: reportCallIssue
+Error: "level" 参数不存在 (reportCallIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 405, Column: 59
+Rule: unknown
+Error: 无法访问 "type[ValidationLevel]" 类的 "ERROR" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\controllers\segment_editor_controller.py
+Line: 405, Column: 66
+Rule: reportCallIssue
+Error: "message" 参数不存在 (reportCallIssue)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

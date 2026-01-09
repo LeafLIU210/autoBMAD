@@ -1,0 +1,354 @@
+{
+  "version": "1.37.0",
+  "time": "1767891472567",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "severity": "error",
+      "message": "\"type[SafeClaudeSDK] | None\" 类型的实参无法赋值给函数 \"__init__\" 中 \"SafeClaudeSDK | None\" 类型的形参 \"sdk_wrapper\"\n  \"type[SafeClaudeSDK] | None\" 类型与 \"SafeClaudeSDK | None\" 类型不兼容\n    \"type[SafeClaudeSDK]\" 类型与 \"SafeClaudeSDK | None\" 类型不兼容\n      \"type[SafeClaudeSDK]\" 类型与 \"SafeClaudeSDK\" 类型不兼容\n      类型与 `None` 不匹配",
+      "range": {
+        "start": {
+          "line": 68,
+          "character": 58
+        },
+        "end": {
+          "line": 68,
+          "character": 71
+        }
+      },
+      "rule": "reportArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"results\" 变量声明被同名声明遮蔽",
+      "range": {
+        "start": {
+          "line": 150,
+          "character": 4
+        },
+        "end": {
+          "line": 150,
+          "character": 11
+        }
+      },
+      "rule": "reportRedeclaration"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "返回类型未知",
+      "range": {
+        "start": {
+          "line": 201,
+          "character": 14
+        },
+        "end": {
+          "line": 201,
+          "character": 32
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"Dict\" 未定义",
+      "range": {
+        "start": {
+          "line": 201,
+          "character": 59
+        },
+        "end": {
+          "line": 201,
+          "character": 63
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"List\" 未定义",
+      "range": {
+        "start": {
+          "line": 259,
+          "character": 31
+        },
+        "end": {
+          "line": 259,
+          "character": 35
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "返回类型未知",
+      "range": {
+        "start": {
+          "line": 267,
+          "character": 14
+        },
+        "end": {
+          "line": 267,
+          "character": 40
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"Dict\" 未定义",
+      "range": {
+        "start": {
+          "line": 267,
+          "character": 67
+        },
+        "end": {
+          "line": 267,
+          "character": 71
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"List\" 未定义",
+      "range": {
+        "start": {
+          "line": 325,
+          "character": 31
+        },
+        "end": {
+          "line": 325,
+          "character": 35
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "返回类型未知",
+      "range": {
+        "start": {
+          "line": 333,
+          "character": 14
+        },
+        "end": {
+          "line": 333,
+          "character": 34
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"Dict\" 未定义",
+      "range": {
+        "start": {
+          "line": 333,
+          "character": 59
+        },
+        "end": {
+          "line": 333,
+          "character": 63
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"StateManager\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 347,
+          "character": 67
+        },
+        "end": {
+          "line": 347,
+          "character": 79
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"List\" 未定义",
+      "range": {
+        "start": {
+          "line": 419,
+          "character": 31
+        },
+        "end": {
+          "line": 419,
+          "character": 35
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "返回类型未知",
+      "range": {
+        "start": {
+          "line": 427,
+          "character": 14
+        },
+        "end": {
+          "line": 427,
+          "character": 35
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"Dict\" 未定义",
+      "range": {
+        "start": {
+          "line": 427,
+          "character": 59
+        },
+        "end": {
+          "line": 427,
+          "character": 63
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"List\" 未定义",
+      "range": {
+        "start": {
+          "line": 475,
+          "character": 31
+        },
+        "end": {
+          "line": 475,
+          "character": 35
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "返回类型未知",
+      "range": {
+        "start": {
+          "line": 479,
+          "character": 8
+        },
+        "end": {
+          "line": 479,
+          "character": 25
+        }
+      },
+      "rule": "reportUnknownParameterType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"Dict\" 未定义",
+      "range": {
+        "start": {
+          "line": 479,
+          "character": 35
+        },
+        "end": {
+          "line": 479,
+          "character": 39
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "参数 \"prompt\", \"options\" 缺少传入值",
+      "range": {
+        "start": {
+          "line": 590,
+          "character": 62
+        },
+        "end": {
+          "line": 590,
+          "character": 77
+        }
+      },
+      "rule": "reportCallIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "参数类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参",
+      "range": {
+        "start": {
+          "line": 1817,
+          "character": 82
+        },
+        "end": {
+          "line": 1817,
+          "character": 88
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "severity": "error",
+      "message": "\"type[SafeClaudeSDK]\" 类型的实参无法赋值给函数 \"__init__\" 中 \"SafeClaudeSDK | None\" 类型的形参 \"sdk_wrapper\"\n  \"type[SafeClaudeSDK]\" 类型与 \"SafeClaudeSDK | None\" 类型不兼容\n    \"type[SafeClaudeSDK]\" 类型与 \"SafeClaudeSDK\" 类型不兼容\n    类型与 `None` 不匹配",
+      "range": {
+        "start": {
+          "line": 138,
+          "character": 58
+        },
+        "end": {
+          "line": 138,
+          "character": 71
+        }
+      },
+      "rule": "reportArgumentType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 14,
+    "errorCount": 20,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.078
+  },
+  "metadata": {
+    "check_time": "2026-01-09T00:57:52.605520",
+    "check_directory": "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation",
+    "python_files_count": 14,
+    "python_files": [
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\__init__.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\init_db.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\log_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "D:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\status_parser.py"
+    ]
+  }
+}

@@ -47,6 +47,16 @@ class SMAgent:
         self.project_root = Path(project_root) if project_root else None
         self.tasks_path = Path(tasks_path) if tasks_path else None
         self.config = config or {}
+
+        # Initialize StatusParser for robust status parsing
+        try:
+            from autoBMAD.epic_automation.status_parser import StatusParser
+            # 传入 None，StatusParser 会处理没有 SDK 的情况
+            self.status_parser = StatusParser(sdk_wrapper=None)
+        except ImportError:
+            self.status_parser = None
+            logger.warning("[SM Agent] StatusParser not available, using fallback parsing")
+
         logger.info(f"{self.name} initialized")
 
     @staticmethod
@@ -390,7 +400,7 @@ class SMAgent:
         # Get relative path from current directory
         epic_rel_path = str(Path(epic_path))
 
-        prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from "Draft" to "Approved".'
+        prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md {epic_rel_path} Create all story documents from epic: {story_list}. Save to @docs/stories. Change story document Status from "Draft" to "Ready for Development".'
 
         logger.debug(f"Built prompt: {prompt}")
         return prompt
@@ -453,7 +463,8 @@ class SMAgent:
 
             options = ClaudeAgentOptions(
                 permission_mode="bypassPermissions",
-                cwd=str(Path.cwd())
+                cwd=str(Path.cwd()),
+                cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe"
             )
             sdk = SafeClaudeSDK(prompt, options, timeout=None)
             # Execute SDK call and ensure it returns a bool
@@ -568,7 +579,7 @@ class SMAgent:
 
     async def _update_story_statuses(self, story_ids: List[str], stories_dir: Path) -> None:
         """
-        Update story status from Draft to Ready for Development.
+        Update story status from Draft to Ready for Development using hybrid parsing.
 
         Args:
             story_ids: List of story IDs to update
@@ -589,12 +600,28 @@ class SMAgent:
                 with open(story_file, 'r', encoding='utf-8') as f:
                     content = f.read()
 
-                # Update status from Draft to Ready for Development
+                # Use StatusParser to detect current status and update intelligently
+                if self.status_parser:
+                    try:
+                        # Note: parse_status is now async in SimpleStatusParser
+                        current_status = await self.status_parser.parse_status(content)
+                        if current_status and current_status.lower() in ["draft", "ready for development"]:
+                            # Status is already appropriate, skip update
+                            logger.debug(f"[SM Agent] Story {story_id} already has status: {current_status}, skipping update")
+                            continue
+                        else:
+                            logger.debug(f"[SM Agent] Story {story_id} current status: {current_status}, updating to Ready for Development")
+                    except Exception as e:
+                        logger.warning(f"[SM Agent] StatusParser error: {e}, using fallback patterns")
+
+                # Fallback to original regex patterns for status update
+                updated_content = content
+
                 # Pattern 1: "**Status**: Draft"
                 updated_content = re.sub(
                     r'(\*\*Status\*\*:\s*)Draft',
                     r'\1Ready for Development',
-                    content
+                    updated_content
                 )
 
                 # Pattern 2: "## Status\n**Draft**"
@@ -604,11 +631,28 @@ class SMAgent:
                     updated_content
                 )
 
-                # Write updated content back to file
-                with open(story_file, 'w', encoding='utf-8') as f:
-                    f.write(updated_content)
+                # Pattern 3: "### Status\n**Draft**" (newer format)
+                updated_content = re.sub(
+                    r'(### Status\s*\n\*\*)(Draft)(\*\*)',
+                    r'\1Ready for Development\3',
+                    updated_content
+                )
 
-                logger.info(f"[SM Agent] Updated status for story {story_id}: Draft → Ready for Development")
+                # Pattern 4: Generic status field update
+                updated_content = re.sub(
+                    r'(Status:\s*).*',
+                    r'\1Ready for Development',
+                    updated_content,
+                    flags=re.IGNORECASE
+                )
+
+                # Write updated content back to file if changed
+                if updated_content != content:
+                    with open(story_file, 'w', encoding='utf-8') as f:
+                        f.write(updated_content)
+                    logger.info(f"[SM Agent] Updated status for story {story_id}: Draft → Ready for Development")
+                else:
+                    logger.debug(f"[SM Agent] No status update needed for story {story_id}")
 
             except Exception as e:
                 logger.error(f"[SM Agent] Failed to update status for story {story_id}: {e}")

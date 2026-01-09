@@ -1,0 +1,21 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-09 00:51:38
+检查目录: ../autoBMAD/epic_automation/sm_agent.py
+Python文件数量: 0
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sm_agent.py:55:59 - error: "type[SafeClaudeSDK]" 类型的实参无法赋值给函数 "__init__" 中 "SafeClaudeSDK | None" 类型的形参 "sdk_wrapper"
+    "type[SafeClaudeSDK]" 类型与 "SafeClaudeSDK | None" 类型不兼容
+      "type[SafeClaudeSDK]" 类型与 "SafeClaudeSDK" 类型不兼容
+      类型与 `None` 不匹配 (reportArgumentType)
+1 error, 0 warnings, 0 notes
+

@@ -1,0 +1,82 @@
+{
+  "version": "1.37.0",
+  "time": "1767890605784",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"SafeClaudeSDK\" 未定义",
+      "range": {
+        "start": {
+          "line": 583,
+          "character": 62
+        },
+        "end": {
+          "line": 583,
+          "character": 75
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "参数类型未知\n  实参对应于 \"__init__\" 函数中的 \"sdk_wrapper\" 形参",
+      "range": {
+        "start": {
+          "line": 583,
+          "character": 62
+        },
+        "end": {
+          "line": 583,
+          "character": 75
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\status_parser.py",
+      "severity": "error",
+      "message": "变量 \"loop\" 未使用",
+      "range": {
+        "start": {
+          "line": 301,
+          "character": 8
+        },
+        "end": {
+          "line": 301,
+          "character": 12
+        }
+      },
+      "rule": "reportUnusedVariable"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 14,
+    "errorCount": 3,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.045
+  },
+  "metadata": {
+    "check_time": "2026-01-09T00:43:25.850384",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 14,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\quality_agents.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\status_parser.py"
+    ]
+  }
+}

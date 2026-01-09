@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\character_selection_dialog.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\character_selection_dialog.py
+Line: 301, Column: 34
+Rule: unknown
+Error: 无法访问 "type[Qt]" 类的 "Key_Enter" 属性
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

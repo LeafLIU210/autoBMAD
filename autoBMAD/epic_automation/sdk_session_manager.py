@@ -263,8 +263,8 @@ class SDKSessionManager:
                 if context.is_cancelled():
                     raise asyncio.CancelledError("Session was cancelled before execution")
 
-                # 执行SDK调用 - 无外部超时
-                result = await sdk_func()
+                # 执行SDK调用 - 使用asyncio.shield保护免受外部取消影响
+                result = await asyncio.shield(sdk_func())
 
                 duration = time.time() - start_time
 

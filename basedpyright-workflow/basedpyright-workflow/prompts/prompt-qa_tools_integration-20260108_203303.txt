@@ -1,0 +1,15 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\qa_tools_integration.py
+
+BasedPyright type errors (4):  Line 189, Col 13: [reportPossiblyUnboundVariable] "process" 可能未绑定 (reportPossiblyUnboundVariable)
+  Line 237, Col 13: [reportPossiblyUnboundVariable] "process" 可能未绑定 (reportPossiblyUnboundVariable)
+  Line 452, Col 13: [reportPossiblyUnboundVariable] "process" 可能未绑定 (reportPossiblyUnboundVariable)
+  Line 500, Col 13: [reportPossiblyUnboundVariable] "process" 可能未绑定 (reportPossiblyUnboundVariable)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

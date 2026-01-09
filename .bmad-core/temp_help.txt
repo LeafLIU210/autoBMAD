@@ -1,0 +1,15 @@
+Available Commands:
+
+1. *help - Show this list of commands
+2. *gate {story} - Execute qa-gate task to write/update quality gate decision
+3. *nfr-assess {story} - Execute nfr-assess task to validate non-functional requirements
+4. *review {story} - Execute comprehensive review (adaptive, risk-aware)
+   - Produces: QA Results update in story file + gate file
+   - Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+5. *risk-profile {story} - Execute risk-profile task to generate risk assessment matrix
+6. *test-design {story} - Execute test-design task to create comprehensive test scenarios
+7. *trace {story} - Execute trace-requirements task to map requirements to tests using Given-When-Then
+8. *exit - Say goodbye and exit QA persona
+
+Usage: Type a command number or name to execute
+Example: "*review 1.4.spec-driver" for comprehensive QA review

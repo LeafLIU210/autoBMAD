@@ -1,0 +1,593 @@
+{
+  "version": "1.36.1",
+  "time": "1765948015118",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\export_encrypted_script.py",
+      "severity": "error",
+      "message": "无法将 \"None\" 类型的表达式赋值给 \"str\" 类型的参数\n  \"None\" 与 \"str\" 不兼容",
+      "range": {
+        "start": {
+          "line": 30,
+          "character": 85
+        },
+        "end": {
+          "line": 30,
+          "character": 89
+        }
+      },
+      "rule": "reportArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "\"type[ScriptData]\" 类型不匹配声明的 \"() -> dict[str, Unknown]\" 类型\n  \"type[ScriptData]\" 类型与 \"() -> dict[str, Unknown]\" 类型不兼容\n    函数返回类型 \"ScriptData\" 与 \"dict[str, Unknown]\" 类型不兼容\n      \"ScriptData\" 与 \"dict[str, Unknown]\" 不兼容",
+      "range": {
+        "start": {
+          "line": 25,
+          "character": 8
+        },
+        "end": {
+          "line": 25,
+          "character": 18
+        }
+      },
+      "rule": "reportAssignmentType"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "无法访问 \"dict[str, Unknown]\" 类的 \"add_event\" 属性\n  属性 \"add_event\" 未知",
+      "range": {
+        "start": {
+          "line": 311,
+          "character": 35
+        },
+        "end": {
+          "line": 311,
+          "character": 44
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"add_event\" 属性\n  属性 \"add_event\" 未知",
+      "range": {
+        "start": {
+          "line": 311,
+          "character": 35
+        },
+        "end": {
+          "line": 311,
+          "character": 44
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "\"Literal['events']\" 与 \"ScriptSegment | dict[str, Unknown] | Any | dict[Unknown, Unknown]\" 类型不支持 \"not in\" 运算符\n  \"Literal['events']\" 与 \"ScriptSegment\" 类型不支持 \"not in\" 运算符",
+      "range": {
+        "start": {
+          "line": 314,
+          "character": 23
+        },
+        "end": {
+          "line": 314,
+          "character": 53
+        }
+      },
+      "rule": "reportOperatorIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "\"ScriptSegment\" 类型上未定义 \"__setitem__\" 方法",
+      "range": {
+        "start": {
+          "line": 315,
+          "character": 24
+        },
+        "end": {
+          "line": 315,
+          "character": 38
+        }
+      },
+      "rule": "reportIndexIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "\"ScriptSegment\" 类型上未定义 \"__getitem__\" 方法",
+      "range": {
+        "start": {
+          "line": 316,
+          "character": 20
+        },
+        "end": {
+          "line": 316,
+          "character": 34
+        }
+      },
+      "rule": "reportIndexIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "无法访问 \"dict[str, Unknown]\" 类的 \"sort_events\" 属性\n  属性 \"sort_events\" 未知",
+      "range": {
+        "start": {
+          "line": 319,
+          "character": 31
+        },
+        "end": {
+          "line": 319,
+          "character": 42
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "无法访问 \"dict[Unknown, Unknown]\" 类的 \"sort_events\" 属性\n  属性 \"sort_events\" 未知",
+      "range": {
+        "start": {
+          "line": 319,
+          "character": 31
+        },
+        "end": {
+          "line": 319,
+          "character": 42
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "无法为 \"dict[str, Unknown]\" 类的 \"events\" 属性赋值\n  属性 \"events\" 未知",
+      "range": {
+        "start": {
+          "line": 453,
+          "character": 49
+        },
+        "end": {
+          "line": 453,
+          "character": 55
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "无法访问 \"dict[str, Unknown]\" 类的 \"update_duration\" 属性\n  属性 \"update_duration\" 未知",
+      "range": {
+        "start": {
+          "line": 455,
+          "character": 53
+        },
+        "end": {
+          "line": 455,
+          "character": 68
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "severity": "error",
+      "message": "\"(title: str = \"新脚本\", author: str = \"\") -> ScriptData\" 类型不匹配声明的 \"() -> dict[str, Unknown]\" 类型\n  \"(title: str = \"新脚本\", author: str = \"\") -> ScriptData\" 类型与 \"() -> dict[str, Unknown]\" 类型不兼容\n    函数返回类型 \"ScriptData\" 与 \"dict[str, Unknown]\" 类型不兼容\n      \"ScriptData\" 与 \"dict[str, Unknown]\" 不兼容",
+      "range": {
+        "start": {
+          "line": 463,
+          "character": 17
+        },
+        "end": {
+          "line": 463,
+          "character": 54
+        }
+      },
+      "rule": "reportAssignmentType"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_migration_service.py",
+      "severity": "error",
+      "message": "无法访问 \"ScriptData\" 类的 \"characters\" 属性\n  属性 \"characters\" 未知",
+      "range": {
+        "start": {
+          "line": 132,
+          "character": 33
+        },
+        "end": {
+          "line": 132,
+          "character": 43
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_migration_service.py",
+      "severity": "error",
+      "message": "无法访问 \"ScriptData\" 类的 \"characters\" 属性\n  属性 \"characters\" 未知",
+      "range": {
+        "start": {
+          "line": 140,
+          "character": 33
+        },
+        "end": {
+          "line": 140,
+          "character": 43
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_migration_service.py",
+      "severity": "error",
+      "message": "无法为 \"ScriptData\" 类的 \"characters\" 属性赋值\n  属性 \"characters\" 未知",
+      "range": {
+        "start": {
+          "line": 263,
+          "character": 15
+        },
+        "end": {
+          "line": 263,
+          "character": 25
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_migration_service.py",
+      "severity": "error",
+      "message": "无法为 \"ScriptData\" 类的 \"characters\" 属性赋值\n  属性 \"characters\" 未知",
+      "range": {
+        "start": {
+          "line": 281,
+          "character": 15
+        },
+        "end": {
+          "line": 281,
+          "character": 25
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_performance_service.py",
+      "severity": "error",
+      "message": "无法访问 \"str\" 类的 \"value\" 属性\n  属性 \"value\" 未知",
+      "range": {
+        "start": {
+          "line": 250,
+          "character": 42
+        },
+        "end": {
+          "line": 250,
+          "character": 47
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_performance_service.py",
+      "severity": "error",
+      "message": "\"time\" 未定义",
+      "range": {
+        "start": {
+          "line": 381,
+          "character": 26
+        },
+        "end": {
+          "line": 381,
+          "character": 30
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\script_performance_service.py",
+      "severity": "error",
+      "message": "\"time\" 未定义",
+      "range": {
+        "start": {
+          "line": 387,
+          "character": 25
+        },
+        "end": {
+          "line": 387,
+          "character": 29
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\__init__.py",
+      "severity": "warning",
+      "message": "\"KeyCombination\" 已在 `__all__` 中声明，但未在模块中定义",
+      "range": {
+        "start": {
+          "line": 175,
+          "character": 4
+        },
+        "end": {
+          "line": 175,
+          "character": 20
+        }
+      },
+      "rule": "reportUnsupportedDunderAll"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\__init__.py",
+      "severity": "warning",
+      "message": "\"KeyEventData\" 已在 `__all__` 中声明，但未在模块中定义",
+      "range": {
+        "start": {
+          "line": 175,
+          "character": 36
+        },
+        "end": {
+          "line": 175,
+          "character": 50
+        }
+      },
+      "rule": "reportUnsupportedDunderAll"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\__init__.py",
+      "severity": "warning",
+      "message": "\"MouseEventData\" 已在 `__all__` 中声明，但未在模块中定义",
+      "range": {
+        "start": {
+          "line": 175,
+          "character": 52
+        },
+        "end": {
+          "line": 175,
+          "character": 68
+        }
+      },
+      "rule": "reportUnsupportedDunderAll"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\services\\script_migration_service.py",
+      "severity": "error",
+      "message": "无法解析导入 \"services.infrastructure.event_manager\"",
+      "range": {
+        "start": {
+          "line": 44,
+          "character": 9
+        },
+        "end": {
+          "line": 44,
+          "character": 46
+        }
+      },
+      "rule": "reportMissingImports"
+    },
+    {
+      "file": "d:\\GITHUB\\wuwa_actionseq_recorder\\Project_recorder\\test_fixes.py",
+      "severity": "error",
+      "message": "无法为 \"WuwaRecorderUI\" 类的 \"logger\" 属性赋值\n  无法将 \"None\" 类型的表达式赋值给 \"WuwaRecorderUI\" 类的 \"logger\" 属性\n    \"None\" 与 \"Logger\" 不兼容",
+      "range": {
+        "start": {
+          "line": 116,
+          "character": 11
+        },
+        "end": {
+          "line": 116,
+          "character": 17
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 189,
+    "errorCount": 21,
+    "warningCount": 3,
+    "informationCount": 0,
+    "timeInSec": 3.881
+  },
+  "metadata": {
+    "check_time": "2025-12-17T13:06:55.165547",
+    "check_directory": "Project_recorder",
+    "python_files_count": 189,
+    "python_files": [
+      "Project_recorder\\__init__.py",
+      "Project_recorder\\about_dialog.py",
+      "Project_recorder\\analysis_dialog.py",
+      "Project_recorder\\build_with_pyinstaller.py",
+      "Project_recorder\\calculator-1.py",
+      "Project_recorder\\character_list_management_dialog.py",
+      "Project_recorder\\character_manager.py",
+      "Project_recorder\\character_selection_dialog.py",
+      "Project_recorder\\cleanup_legacy_services.py",
+      "Project_recorder\\color_config.py",
+      "Project_recorder\\config\\validation_rules.py",
+      "Project_recorder\\config_manager.py",
+      "Project_recorder\\conflict_detector.py",
+      "Project_recorder\\core\\application.py",
+      "Project_recorder\\core\\application_container.py",
+      "Project_recorder\\core\\application_factory.py",
+      "Project_recorder\\core\\bootstrap.py",
+      "Project_recorder\\core\\event_index_manager.py",
+      "Project_recorder\\core\\service_discovery.py",
+      "Project_recorder\\core\\ultra_compact_collection.py",
+      "Project_recorder\\core\\unified_application.py",
+      "Project_recorder\\core\\unified_application_factory.py",
+      "Project_recorder\\cross_platform_color_patch.py",
+      "Project_recorder\\dpi_manager.py",
+      "Project_recorder\\duplicate_detector.py",
+      "Project_recorder\\export_encrypted_script.py",
+      "Project_recorder\\final_migration.py",
+      "Project_recorder\\fix_hardcoded_imports.py",
+      "Project_recorder\\fix_imports_clean.py",
+      "Project_recorder\\fix_imports_comprehensive.py",
+      "Project_recorder\\font_manager.py",
+      "Project_recorder\\global_hotkey_manager.py",
+      "Project_recorder\\hotkey_config_manager.py",
+      "Project_recorder\\hotkey_integration.py",
+      "Project_recorder\\hotkey_models.py",
+      "Project_recorder\\hotkey_ui.py",
+      "Project_recorder\\import_adapter.py",
+      "Project_recorder\\material_design_components.py",
+      "Project_recorder\\performance_benchmark.py",
+      "Project_recorder\\performance_test_unified.py",
+      "Project_recorder\\pyinstaller_main.py",
+      "Project_recorder\\pyinstaller_runtime_hook.py",
+      "Project_recorder\\pyinstaller_spec_optimized.py",
+      "Project_recorder\\report_generator.py",
+      "Project_recorder\\responsive_layout_manager.py",
+      "Project_recorder\\script_analyzer.py",
+      "Project_recorder\\script_data_manager.py",
+      "Project_recorder\\script_data_manager_unified.py",
+      "Project_recorder\\script_data_model.py",
+      "Project_recorder\\script_data_model_services.py",
+      "Project_recorder\\script_data_model_unified.py",
+      "Project_recorder\\script_editor_core.py",
+      "Project_recorder\\script_event_utils.py",
+      "Project_recorder\\script_file_manager.py",
+      "Project_recorder\\script_file_manager_ui.py",
+      "Project_recorder\\script_integration_service.py",
+      "Project_recorder\\script_migration_service.py",
+      "Project_recorder\\script_migration_tool.py",
+      "Project_recorder\\script_path_dialog.py",
+      "Project_recorder\\script_performance_service.py",
+      "Project_recorder\\script_service.py",
+      "Project_recorder\\script_service_core.py",
+      "Project_recorder\\script_services_consolidated.py",
+      "Project_recorder\\script_ui_controller.py",
+      "Project_recorder\\script_validation_service.py",
+      "Project_recorder\\segment_editor.py",
+      "Project_recorder\\services\\__init__.py",
+      "Project_recorder\\services\\adapters\\__init__.py",
+      "Project_recorder\\services\\adapters\\script_data_access_adapter.py",
+      "Project_recorder\\services\\adapters\\script_integration_adapter.py",
+      "Project_recorder\\services\\adapters\\script_performance_adapter.py",
+      "Project_recorder\\services\\backup_security_service.py",
+      "Project_recorder\\services\\character_service.py",
+      "Project_recorder\\services\\config_service.py",
+      "Project_recorder\\services\\hotkey_service.py",
+      "Project_recorder\\services\\infrastructure\\__init__.py",
+      "Project_recorder\\services\\infrastructure\\cache_manager.py",
+      "Project_recorder\\services\\infrastructure\\config_manager.py",
+      "Project_recorder\\services\\infrastructure\\logging_manager.py",
+      "Project_recorder\\services\\infrastructure\\logging_manager_unified.py",
+      "Project_recorder\\services\\infrastructure\\performance_monitor.py",
+      "Project_recorder\\services\\input_base.py",
+      "Project_recorder\\services\\input_events.py",
+      "Project_recorder\\services\\input_permission_service.py",
+      "Project_recorder\\services\\input_service.py",
+      "Project_recorder\\services\\input_types.py",
+      "Project_recorder\\services\\keyboard_listener_service.py",
+      "Project_recorder\\services\\log_formatter_service.py",
+      "Project_recorder\\services\\log_storage_service.py",
+      "Project_recorder\\services\\logging_service.py",
+      "Project_recorder\\services\\mouse_listener_service.py",
+      "Project_recorder\\services\\path_service.py",
+      "Project_recorder\\services\\performance_monitoring_service.py",
+      "Project_recorder\\services\\script_data_service.py",
+      "Project_recorder\\services\\script_library_service.py",
+      "Project_recorder\\services\\script_migration_service.py",
+      "Project_recorder\\services\\script_model_service.py",
+      "Project_recorder\\services\\script_performance_service.py",
+      "Project_recorder\\services\\segment_editor_service.py",
+      "Project_recorder\\services\\unified_script_service.py",
+      "Project_recorder\\services\\user_communication_service.py",
+      "Project_recorder\\services\\validation_service.py",
+      "Project_recorder\\settings_dialog.py",
+      "Project_recorder\\sub_window_manager.py",
+      "Project_recorder\\system_tray_manager.py",
+      "Project_recorder\\test_encrypt.py",
+      "Project_recorder\\test_fixes.py",
+      "Project_recorder\\test_fixes_v2.py",
+      "Project_recorder\\tests\\test_character_hierarchy.py",
+      "Project_recorder\\ui\\__init__.py",
+      "Project_recorder\\ui\\compatibility_layer.py",
+      "Project_recorder\\ui\\components\\__init__.py",
+      "Project_recorder\\ui\\components\\cross_platform_color_patch.py",
+      "Project_recorder\\ui\\components\\dpi_manager.py",
+      "Project_recorder\\ui\\components\\font_manager.py",
+      "Project_recorder\\ui\\components\\material_design_components.py",
+      "Project_recorder\\ui\\components\\responsive_layout_manager.py",
+      "Project_recorder\\ui\\controllers\\__init__.py",
+      "Project_recorder\\ui\\controllers\\base_ui_controller.py",
+      "Project_recorder\\ui\\controllers\\library_ui_controller.py",
+      "Project_recorder\\ui\\controllers\\main_ui_controller.py",
+      "Project_recorder\\ui\\controllers\\script_ui_controller.py",
+      "Project_recorder\\ui\\controllers\\segment_editor_controller.py",
+      "Project_recorder\\ui\\controllers\\timeline_ui_controller.py",
+      "Project_recorder\\ui\\dialogs\\__init__.py",
+      "Project_recorder\\ui\\dialogs\\about_dialog.py",
+      "Project_recorder\\ui\\dialogs\\analysis_dialog.py",
+      "Project_recorder\\ui\\dialogs\\character_list_management_dialog.py",
+      "Project_recorder\\ui\\dialogs\\character_selection_dialog.py",
+      "Project_recorder\\ui\\dialogs\\event_edit_dialog.py",
+      "Project_recorder\\ui\\dialogs\\event_edit_dialog_enhanced.py",
+      "Project_recorder\\ui\\dialogs\\script_path_dialog.py",
+      "Project_recorder\\ui\\dialogs\\segment_edit_dialog.py",
+      "Project_recorder\\ui\\dialogs\\settings_dialog.py",
+      "Project_recorder\\ui\\dialogs\\usage_instruction_dialog.py",
+      "Project_recorder\\ui\\legacy_adapter.py",
+      "Project_recorder\\ui\\main_window.py",
+      "Project_recorder\\ui\\main_window_styled.py",
+      "Project_recorder\\ui\\styles\\__init__.py",
+      "Project_recorder\\ui\\styles\\components\\__init__.py",
+      "Project_recorder\\ui\\styles\\components\\button_styles.py",
+      "Project_recorder\\ui\\styles\\components\\card_styles.py",
+      "Project_recorder\\ui\\styles\\components\\dialog_styles.py",
+      "Project_recorder\\ui\\styles\\components\\input_style_cache.py",
+      "Project_recorder\\ui\\styles\\components\\input_styles.py",
+      "Project_recorder\\ui\\styles\\components\\label_styles.py",
+      "Project_recorder\\ui\\styles\\components\\responsive_input_scaler.py",
+      "Project_recorder\\ui\\styles\\layouts\\__init__.py",
+      "Project_recorder\\ui\\styles\\layouts\\form_layouts.py",
+      "Project_recorder\\ui\\styles\\layouts\\grid_layouts.py",
+      "Project_recorder\\ui\\styles\\layouts\\main_window_layouts.py",
+      "Project_recorder\\ui\\styles\\layouts\\responsive_layouts.py",
+      "Project_recorder\\ui\\styles\\main_window\\__init__.py",
+      "Project_recorder\\ui\\styles\\main_window\\control_panel_styles.py",
+      "Project_recorder\\ui\\styles\\main_window\\main_window_styles.py",
+      "Project_recorder\\ui\\styles\\main_window\\preview_panel_styles.py",
+      "Project_recorder\\ui\\styles\\main_window\\recording_panel_styles.py",
+      "Project_recorder\\ui\\styles\\styles_manager.py",
+      "Project_recorder\\ui\\styles\\themes\\__init__.py",
+      "Project_recorder\\ui\\styles\\themes\\color_system.py",
+      "Project_recorder\\ui\\styles\\themes\\material_theme.py",
+      "Project_recorder\\ui\\styles\\themes\\theme_manager.py",
+      "Project_recorder\\ui\\widgets\\__init__.py",
+      "Project_recorder\\ui\\widgets\\base_event_table.py",
+      "Project_recorder\\ui\\widgets\\hotkey_ui.py",
+      "Project_recorder\\ui\\widgets\\script_event_table.py",
+      "Project_recorder\\ui\\widgets\\script_file_manager_ui.py",
+      "Project_recorder\\ui\\widgets\\script_preview_tree.py",
+      "Project_recorder\\ui\\widgets\\script_preview_tree_phase2.py",
+      "Project_recorder\\ui\\widgets\\segment_editor.py",
+      "Project_recorder\\ui\\widgets\\segment_event_table.py",
+      "Project_recorder\\ui\\widgets\\segment_properties_dialog.py",
+      "Project_recorder\\ui\\widgets\\tree_items.py",
+      "Project_recorder\\undo_redo_manager.py",
+      "Project_recorder\\usage_instruction_dialog.py",
+      "Project_recorder\\utils\\__init__.py",
+      "Project_recorder\\utils\\encryption_helper.py",
+      "Project_recorder\\utils\\ui_helpers.py",
+      "Project_recorder\\validators\\__init__.py",
+      "Project_recorder\\validators\\base_validator.py",
+      "Project_recorder\\validators\\consistency_validator.py",
+      "Project_recorder\\validators\\event_validator.py",
+      "Project_recorder\\validators\\metadata_validator.py",
+      "Project_recorder\\validators\\segment_validator.py",
+      "Project_recorder\\validators\\validation_types.py",
+      "Project_recorder\\wuwa_recorder.py",
+      "Project_recorder\\wuwa_recorder_core.py",
+      "Project_recorder\\wuwa_recorder_ui_merged.py",
+      "Project_recorder\\wuwa_script_editor_main.py"
+    ]
+  }
+}

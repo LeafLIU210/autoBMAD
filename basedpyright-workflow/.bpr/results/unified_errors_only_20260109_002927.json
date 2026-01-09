@@ -1,0 +1,137 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260109_002924.txt",
+    "extraction_time": "2026-01-09T00:29:27.892538",
+    "total_files_with_errors": 3,
+    "total_errors": 14,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 9,
+      "errors_by_rule": {
+        "reportUnusedFunction": 1,
+        "reportUnusedVariable": 1,
+        "reportUndefinedVariable": 1,
+        "unknown": 1,
+        "reportInvalidStringEscapeSequence": 5
+      },
+      "errors_by_tool": {
+        "basedpyright": 9
+      },
+      "errors": [
+        {
+          "line": 104,
+          "column": 5,
+          "message": "\"_convert_core_to_processing_status\" 函数未使用 (reportUnusedFunction)",
+          "rule": "reportUnusedFunction"
+        },
+        {
+          "line": 344,
+          "column": 13,
+          "message": "变量 \"state_manager\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 580,
+          "column": 63,
+          "message": "\"SafeClaudeSDK\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 580,
+          "column": 63,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 853,
+          "column": 11,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 853,
+          "column": 18,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 853,
+          "column": 33,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 853,
+          "column": 38,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 868,
+          "column": 37,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportUnusedVariable": 4
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 112,
+          "column": 29,
+          "message": "变量 \"stderr\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 112,
+          "column": 37,
+          "message": "变量 \"returncode\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 120,
+          "column": 37,
+          "message": "变量 \"stderr\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 120,
+          "column": 45,
+          "message": "变量 \"returncode\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\status_parser.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedVariable": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 302,
+          "column": 9,
+          "message": "变量 \"loop\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    }
+  ]
+}

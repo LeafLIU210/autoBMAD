@@ -1,0 +1,258 @@
+{
+  "version": "1.37.0",
+  "time": "1767889767399",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"_convert_core_to_processing_status\" 函数未使用",
+      "range": {
+        "start": {
+          "line": 103,
+          "character": 4
+        },
+        "end": {
+          "line": 103,
+          "character": 38
+        }
+      },
+      "rule": "reportUnusedFunction"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "变量 \"state_manager\" 未使用",
+      "range": {
+        "start": {
+          "line": 343,
+          "character": 12
+        },
+        "end": {
+          "line": 343,
+          "character": 25
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"SafeClaudeSDK\" 未定义",
+      "range": {
+        "start": {
+          "line": 579,
+          "character": 62
+        },
+        "end": {
+          "line": 579,
+          "character": 75
+        }
+      },
+      "rule": "reportUndefinedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "参数类型未知\n  实参对应于 \"__init__\" 函数中的 \"sdk_wrapper\" 形参",
+      "range": {
+        "start": {
+          "line": 579,
+          "character": 62
+        },
+        "end": {
+          "line": 579,
+          "character": 75
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 852,
+          "character": 10
+        },
+        "end": {
+          "line": 852,
+          "character": 12
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 852,
+          "character": 17
+        },
+        "end": {
+          "line": 852,
+          "character": 19
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 852,
+          "character": 32
+        },
+        "end": {
+          "line": 852,
+          "character": 34
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 852,
+          "character": 37
+        },
+        "end": {
+          "line": 852,
+          "character": 39
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 867,
+          "character": 36
+        },
+        "end": {
+          "line": 867,
+          "character": 38
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "severity": "error",
+      "message": "变量 \"stderr\" 未使用",
+      "range": {
+        "start": {
+          "line": 111,
+          "character": 28
+        },
+        "end": {
+          "line": 111,
+          "character": 34
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "severity": "error",
+      "message": "变量 \"returncode\" 未使用",
+      "range": {
+        "start": {
+          "line": 111,
+          "character": 36
+        },
+        "end": {
+          "line": 111,
+          "character": 46
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "severity": "error",
+      "message": "变量 \"stderr\" 未使用",
+      "range": {
+        "start": {
+          "line": 119,
+          "character": 36
+        },
+        "end": {
+          "line": 119,
+          "character": 42
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "severity": "error",
+      "message": "变量 \"returncode\" 未使用",
+      "range": {
+        "start": {
+          "line": 119,
+          "character": 44
+        },
+        "end": {
+          "line": 119,
+          "character": 54
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\status_parser.py",
+      "severity": "error",
+      "message": "变量 \"loop\" 未使用",
+      "range": {
+        "start": {
+          "line": 301,
+          "character": 8
+        },
+        "end": {
+          "line": 301,
+          "character": 12
+        }
+      },
+      "rule": "reportUnusedVariable"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 14,
+    "errorCount": 14,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.015
+  },
+  "metadata": {
+    "check_time": "2026-01-09T00:29:27.472450",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 14,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents.py",
+      "..\\autoBMAD\\epic_automation\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "..\\autoBMAD\\epic_automation\\quality_agents.py",
+      "..\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py",
+      "..\\autoBMAD\\epic_automation\\status_parser.py"
+    ]
+  }
+}

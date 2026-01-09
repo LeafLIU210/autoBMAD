@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260108_203152.txt",
+    "extraction_time": "2026-01-08T20:31:55.234696",
+    "total_files_with_errors": 7,
+    "total_errors": 19,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedVariable": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 1077,
+          "column": 17,
+          "message": "变量 \"i\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportPossiblyUnboundVariable": 4
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 189,
+          "column": 13,
+          "message": "\"process\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 237,
+          "column": 13,
+          "message": "\"process\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 452,
+          "column": 13,
+          "message": "\"process\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        },
+        {
+          "line": 500,
+          "column": 13,
+          "message": "\"process\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\quality_agents.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedVariable": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 103,
+          "column": 30,
+          "message": "变量 \"process\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportUnusedVariable": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 696,
+          "column": 13,
+          "message": "变量 \"pattern_found\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 710,
+          "column": 25,
+          "message": "变量 \"pattern_found\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\status_parser.py",
+      "error_count": 7,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "unknown": 3,
+        "reportMissingParameterType": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 7
+      },
+      "errors": [
+        {
+          "line": 10,
+          "column": 20,
+          "message": "\"Optional\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 18,
+          "column": 24,
+          "message": "\"sdk_wrapper\" 参数的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 18,
+          "column": 24,
+          "message": "\"sdk_wrapper\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 243,
+          "column": 26,
+          "message": "\"sdk_wrapper\" 参数的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 243,
+          "column": 26,
+          "message": "\"sdk_wrapper\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 257,
+          "column": 38,
+          "message": "\"sdk_wrapper\" 参数的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 257,
+          "column": 38,
+          "message": "\"sdk_wrapper\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_simple.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 106,
+          "column": 12,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_status_parser.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "reportPrivateUsage": 1,
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 8,
+          "column": 8,
+          "message": "\"os\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 173,
+          "column": 25,
+          "message": "\"_normalize_status\" 在声明它受到保护的类之外被使用 (reportPrivateUsage)",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "line": 201,
+          "column": 12,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}

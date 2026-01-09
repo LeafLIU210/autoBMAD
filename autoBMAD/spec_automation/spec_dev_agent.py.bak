@@ -1,0 +1,33 @@
+"""
+Spec Dev Agent
+
+TDD-focused development agent for spec automation.
+"""
+
+from typing import Any
+
+
+class SpecDevAgent:
+    """Test-driven development agent for spec automation."""
+
+    def __init__(self, sdk: Any) -> None:
+        """
+        Initialize the spec dev agent.
+
+        Args:
+            sdk: Claude SDK instance
+        """
+        self.sdk = sdk
+
+    async def execute_tdd_cycle(self, story_path: str) -> bool:
+        """
+        Execute TDD cycle for a story.
+
+        Args:
+            story_path: Path to the story file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        # TODO: Implement TDD cycle
+        return True

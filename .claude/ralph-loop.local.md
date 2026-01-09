@@ -1,13 +1,9 @@
 ---
 active: true
 iteration: 1
-max_iterations: 5
+max_iterations: 10
 completion_promise: "DONE"
-started_at: "2026-01-08T07:49:05Z"
+started_at: "2026-01-09T01:15:14Z"
 ---
 
-采用 @BUGFIX_20260107\ 的相关调试工具 对 @autoBMAD\epic_automation
-工作流进行调试，执行相关Bash命令'source venv/Scripts/activate &&
-PYTHONPATH=/d/GITHUB/pytQt_template python /d/GITHUB/pytQt_template/autoBMAD/epic_automation/epic_driver.py docs/epics/epic-2-algorithm-optimization-and-analysis.md --verbose --max-iterations 2 --source-dir src --test-dir tests
-'，持续获取Bash终端输出，发现任何错误并持续修改代码。代码修改要求：1. **只允许修改位于 autoBMAD\epic_automation 的代码**； 2. 每次代码修改后，用basedpyright（不是basedpyright-workflow）检查代码
-是否有错误error，如有则修复错误；3. **严禁直接修改故事文档**；4. **严禁修改py文件中的prompt**；5. **严禁修改涉及claude_agent_sdk的任何相关参数和代码**。最终要求：1. @docs\stories 的全部故事文档Status 为 'Done' 或 'Ready for Done' (**严禁直接修改故事文档**); 2.该工作流Bash终端输出在60 min时长内执行无任何错误。
+根据 @C:\Users\Administrator\.claude\plans\cheerful-weaving-moonbeam.md，针对 @D:\GITHUB\pytQt_template 项目（源代码文件夹 @D:\GITHUB\pytQt_template\autoBMAD\spec_automation）执行开发。遇到任何问题，应当先分析原因。完成标志：1. cheerful-weaving-moonbeam.md文档的核心问题完全解决； 2. 源代码文件夹没有ruff和basedpyright的error

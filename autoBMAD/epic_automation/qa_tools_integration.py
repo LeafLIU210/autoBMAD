@@ -172,6 +172,7 @@ class BasedPyrightWorkflowRunner:
                     pass
                 raise
 
+        process: Optional[asyncio.subprocess.Process] = None
         try:
             stdout, stderr, process = await asyncio.shield(run_command())
             # Handle encoding errors gracefully
@@ -186,7 +187,8 @@ class BasedPyrightWorkflowRunner:
             stderr_str = safe_decode(stderr)
             return stdout_str, stderr_str, process.returncode
         except asyncio.TimeoutError:
-            process.kill()
+            if process is not None:
+                process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
 
     async def _run_auto_fix(self) -> None:
@@ -225,6 +227,7 @@ class BasedPyrightWorkflowRunner:
                     pass
                 raise
 
+        process: Optional[asyncio.subprocess.Process] = None
         try:
             _stdout, stderr, process = await asyncio.shield(run_auto_fix())
 
@@ -234,7 +237,8 @@ class BasedPyrightWorkflowRunner:
                 logger.info("Auto-fix completed successfully")
 
         except asyncio.TimeoutError:
-            process.kill()
+            if process is not None:
+                process.kill()
             logger.warning("Auto-fix timed out")
 
     def _parse_basedpyright_output(self, stdout: str, stderr: str, returncode: Optional[int]) -> Tuple[int, int, int]:
@@ -431,6 +435,7 @@ class FixtestWorkflowRunner:
                     pass
                 raise
 
+        process: Optional[asyncio.subprocess.Process] = None
         try:
             stdout, stderr, process = await asyncio.shield(run_scan())
 
@@ -449,7 +454,8 @@ class FixtestWorkflowRunner:
             return test_files
 
         except asyncio.TimeoutError:
-            process.kill()
+            if process is not None:
+                process.kill()
             logger.warning("Test scan timed out")
             return []
 
@@ -483,6 +489,7 @@ class FixtestWorkflowRunner:
                     pass
                 raise
 
+        process: Optional[asyncio.subprocess.Process] = None
         try:
             stdout, stderr, process = await asyncio.shield(run_command())
             # Handle encoding errors gracefully
@@ -497,7 +504,8 @@ class FixtestWorkflowRunner:
             stderr_str = safe_decode(stderr)
             return stdout_str, stderr_str, process.returncode
         except asyncio.TimeoutError:
-            process.kill()
+            if process is not None:
+                process.kill()
             raise subprocess.TimeoutExpired(cmd, self.timeout)
 
     def _parse_test_output(self, stdout: str, stderr: str, returncode: Optional[int]) -> Tuple[int, int, int]:

@@ -28,12 +28,14 @@ logger = logging.getLogger(__name__)
 
 
 class StoryStatus(Enum):
-    """Story status enumeration."""
+    """Story status enumeration - 使用标准处理状态值"""
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     REVIEW = "review"
-    PASS = "pass"
-    FAIL = "fail"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    ERROR = "error"
 
 
 class QAResult(Enum):
@@ -42,6 +44,71 @@ class QAResult(Enum):
     CONCERNS = "CONCERNS"
     FAIL = "FAIL"
     WAIVED = "WAIVED"
+
+
+def get_story_status_enum(status_str: str) -> StoryStatus:
+    """
+    将状态字符串转换为 StoryStatus 枚举
+
+    Args:
+        status_str: 状态字符串
+
+    Returns:
+        对应的 StoryStatus 枚举值
+    """
+    try:
+        return StoryStatus(status_str)
+    except ValueError:
+        # 如果不是枚举值，返回默认值
+        return StoryStatus.PENDING
+
+
+def is_story_status_completed(status: Union[StoryStatus, str]) -> bool:
+    """
+    检查故事是否已完成
+
+    Args:
+        status: 故事状态
+
+    Returns:
+        True 如果状态表示完成，False 否则
+    """
+    if isinstance(status, StoryStatus):
+        return status == StoryStatus.COMPLETED
+    else:
+        return status.lower() == "completed"
+
+
+def is_story_status_failed(status: Union[StoryStatus, str]) -> bool:
+    """
+    检查故事是否失败
+
+    Args:
+        status: 故事状态
+
+    Returns:
+        True 如果状态表示失败，False 否则
+    """
+    if isinstance(status, StoryStatus):
+        return status == StoryStatus.FAILED
+    else:
+        return status.lower() == "failed"
+
+
+def is_story_status_in_progress(status: Union[StoryStatus, str]) -> bool:
+    """
+    检查故事是否正在进行中
+
+    Args:
+        status: 故事状态
+
+    Returns:
+        True 如果状态表示进行中，False 否则
+    """
+    if isinstance(status, StoryStatus):
+        return status == StoryStatus.IN_PROGRESS
+    else:
+        return status.lower() == "in_progress"
 
 
 class DeadlockDetector:
@@ -173,6 +240,13 @@ class StateManager:
             ON stories(status)
         ''')
 
+        # Database migration: ensure version column exists
+        try:
+            cursor.execute("SELECT version FROM stories LIMIT 1")
+            logger.info("Database migration: version column exists")
+        except sqlite3.OperationalError:
+            logger.info("Database migration: adding version column")
+            cursor.execute("ALTER TABLE stories ADD COLUMN version INTEGER DEFAULT 1")
 
         conn.commit()
         conn.close()
@@ -656,11 +730,18 @@ class StateManager:
         try:
             # 映射数据库状态到markdown状态
             status_mapping = {
+                # 完成状态
                 "completed": "Done",
                 "done": "Done",
-                "ready_for_review": "Ready for Review",
-                "approved": "Approved",
+
+                # 开发流程状态
+                "ready_for_development": "Ready for Development",
                 "in_progress": "In Progress",
+                "ready_for_review": "Ready for Review",
+                "ready_for_done": "Ready for Done",
+
+                # 其他状态
+                "draft": "Draft",
                 "failed": "Failed",
             }
 
@@ -675,12 +756,34 @@ class StateManager:
             with open(story_file, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-            # 更新Status字段的正则表达式
-            status_pattern = r'(^### Status\s*\n)\*\*.*?\*\*'
-            new_status_line = f'\\g<1>**{markdown_status}**'
+            # 更新Status字段的正则表达式 - 支持多种格式
+            status_patterns = [
+                # 格式1: ### Status\n**Status**: <value>
+                r'(^### Status\s*\n\s*\*\*Status\*\*:\s*\*\*).*?(\*\*?)',
+                # 格式2: ### Status\n**<value>**
+                r'(^### Status\s*\n\s*\*\*)(.*?)(\*\*?)',
+                # 格式3: ## Status\n**<value>** (兼容旧格式)
+                r'(^## Status\s*\n\s*\*\*)(.*?)(\*\*?)',
+            ]
 
-            # 执行替换
-            updated_content = re.sub(status_pattern, new_status_line, content, flags=re.MULTILINE)
+            updated_content = content
+
+            for pattern in status_patterns:
+                match = re.search(pattern, content, re.MULTILINE | re.IGNORECASE)
+                if match:
+                    # 使用正则表达式的替换功能
+                    if r'Status\*\*:' in pattern:
+                        # 格式1: **Status**: <value> - 替换整个值部分
+                        updated_content = re.sub(pattern, f'\\g<1>{markdown_status}\\2', content, flags=re.MULTILINE)
+                    else:
+                        # 格式2/3: **<value>** - 替换中间的值部分
+                        updated_content = re.sub(pattern, f'\\g<1>{markdown_status}\\3', content, flags=re.MULTILINE)
+
+                    if updated_content != content:
+                        logger.debug(f"Updated status using pattern: {pattern}")
+                        break
+
+            # 如果没有找到任何模式，使用默认方法
 
             # 检查是否有更改
             if updated_content == content:

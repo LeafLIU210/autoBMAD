@@ -181,6 +181,7 @@ class SDKMessageTracker:
         # Only create task if not already created
         if self._display_task is None or self._display_task.done():
             self._stop_event.clear()  # Reset stop event
+            # Create task and shield the coroutine from external cancellation
             self._display_task = asyncio.create_task(self._periodic_display())
 
     async def stop_periodic_display(self, timeout: float = 1.0):
@@ -480,8 +481,9 @@ class SafeClaudeSDK:
         safe_generator = SafeAsyncGenerator(generator)
 
         # Run generator in isolated task to prevent cancel scope issues
+        # Use asyncio.shield to protect from external cancellation
         try:
-            result = await self._run_isolated_generator(safe_generator)
+            result = await asyncio.shield(self._run_isolated_generator(safe_generator))
             return result
         except Exception as e:
             logger.error(f"Error in isolated generator execution: {e}")
