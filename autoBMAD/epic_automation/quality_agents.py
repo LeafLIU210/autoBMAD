@@ -35,6 +35,16 @@ except ImportError:
     _ClaudeAgentOptions = None
     _ResultMessage = None
 
+# Import SafeClaudeSDK for unified SDK handling (fixes cancel scope cross-task errors)
+# Using aliases to avoid constant redefinition warnings
+try:
+    from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK, SDK_AVAILABLE
+    SafeClaudeSDK = SafeClaudeSDK
+    sdk_available = SDK_AVAILABLE  # Use lowercase to avoid constant redefinition
+except ImportError:
+    SafeClaudeSDK = None
+    sdk_available = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -179,66 +189,42 @@ class CodeQualityAgent:
             logger.warning("Claude SDK not available, cannot generate fixes")
             return False, "Claude SDK not available", 0
 
-        # Run SDK call in a separate task to isolate cancel scope
+        # Run SDK call using SafeClaudeSDK (fixes cancel scope cross-task errors)
         async def _run_sdk_call():
             try:
-                # Check if SDK is available
-                if _query is None or _ClaudeAgentOptions is None:
-                    logger.warning("Claude SDK not available, cannot generate fixes")
-                    return False, "Claude SDK not available", 0
+                # Check if SafeClaudeSDK is available
+                if SafeClaudeSDK is None or sdk_available is False:
+                    logger.warning("SafeClaudeSDK not available, cannot generate fixes")
+                    return False, "SafeClaudeSDK not available", 0
 
                 # Generate fix prompt
                 prompt = self._generate_fix_prompt(issues, source_dir)
 
                 logger.info(f"Requesting fixes for {len(issues)} issues")
 
-                # Execute SDK query with max_turns protection (NO external timeouts)
-                options = _ClaudeAgentOptions(max_turns=max_turns)
+                # Execute SDK query using SafeClaudeSDK for unified cancellation management
+                # SafeClaudeSDK handles cancel scope cross-task errors automatically
+                options = _ClaudeAgentOptions(max_turns=max_turns) if _ClaudeAgentOptions else None
 
-                # Execute query - using prompt parameter (not messages)
-                # The SDK returns an AsyncIterator of messages
-                response_iterator = _query(prompt=prompt, options=options)
+                sdk = SafeClaudeSDK(
+                    prompt=prompt,
+                    options=options,
+                    timeout=None,
+                    log_manager=None
+                )
 
-                # Collect messages from the iterator
-                messages: list[Any] = []
-                async for message in response_iterator:
-                    messages.append(message)
-                    # Check if we got a ResultMessage
-                    if _ResultMessage is not None:
-                        if isinstance(message, _ResultMessage):
-                            if hasattr(message, "is_error") and message.is_error:
-                                error_msg = getattr(message, "result", "Unknown error")
-                                logger.error(f"SDK error: {error_msg}")
-                                return False, f"SDK error: {error_msg}", 0
-                            else:
-                                # Success - count fixes
-                                fixed_count = len(
-                                    issues
-                                )  # Assume all issues can be fixed
-                                logger.info(f"Generated fixes for {fixed_count} issues")
-                                return (
-                                    True,
-                                    f"Successfully generated fixes for {fixed_count} issues",
-                                    fixed_count,
-                                )
-                    else:
-                        # If _ResultMessage is not available or is mocked, just check for result attribute
-                        if hasattr(message, "result"):
-                            fixed_count = len(issues)
-                            logger.info(f"Generated fixes for {fixed_count} issues")
-                            return (
-                                True,
-                                f"Successfully generated fixes for {fixed_count} issues",
-                                fixed_count,
-                            )
+                # Use SafeClaudeSDK.execute() - returns boolean success/failure
+                # SafeClaudeSDK internally handles all cancel scope complexities
+                success = await sdk.execute()
 
-                # If we get here, no ResultMessage was received
-                if messages:
-                    # Some messages were received but no final result
-                    logger.warning("SDK returned messages but no final result")
-                    return False, "Incomplete response from SDK", 0
+                if success:
+                    # SDK execution succeeded
+                    fixed_count = len(issues)
+                    logger.info(f"Successfully generated fixes for {fixed_count} issues")
+                    return True, f"Successfully generated fixes for {fixed_count} issues", fixed_count
                 else:
-                    return False, "No response from SDK", 0
+                    # SDK execution failed
+                    return False, "SDK execution failed", 0
 
             except asyncio.CancelledError as e:
                 # Check if this is a cancel scope error from anyio (SDK cleanup)
@@ -253,28 +239,41 @@ class CodeQualityAgent:
                 else:
                     # This is a genuine cancellation, re-raise
                     raise
+            except RuntimeError as e:
+                # 【新增】方案2：增强RuntimeError处理
+                error_msg = str(e)
+                if "cancel scope" in error_msg.lower():
+                    # Cancel Scope错误：功能可能已完成，记录警告但不中止
+                    logger.warning(
+                        f"RuntimeError during SDK cleanup (non-fatal): {error_msg}"
+                    )
+                    # 返回失败状态，允许重试机制介入
+                    return False, "SDK cleanup error (will retry)", 0
+                else:
+                    # 其他RuntimeError：记录但不抛出
+                    logger.error(f"RuntimeError during fix: {error_msg}")
+                    return False, f"Runtime error: {error_msg}", 0
             except Exception as e:
+                # 所有其他异常也不中止流程
                 logger.error(f"Error generating fixes: {e}")
-                # Return simple error without external timeout mechanisms
                 return False, f"Error generating fixes: {str(e)}", 0
 
-        # Run in a separate task to isolate cancel scope
-        # Use asyncio.shield to protect from external cancellation
-        task = asyncio.create_task(_run_sdk_call())
+        # Run SDK call - SafeClaudeSDK internally handles cancel scope and task isolation
+        # No need for external asyncio.shield or create_task isolation
         try:
-            result = await asyncio.shield(task)
+            result = await _run_sdk_call()
             return result
-        except asyncio.CancelledError:
-            # Cancel the task and wait for it to finish cleanup
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
-            except Exception:
-                pass
-            # Return False to allow retry
-            return False, "Task cancelled", 0
+        except asyncio.CancelledError as e:
+            error_str = str(e)
+            if "cancel scope" in error_str.lower():
+                logger.warning(
+                    f"Cancel scope during fix_issues outer wrapper (suppressed): {error_str}"
+                )
+                # This is expected during SDK cleanup, return False to allow retry
+                return False, "SDK cancelled (will retry)", 0
+            else:
+                # Genuine cancellation, re-raise
+                raise
 
     async def retry_cycle(
         self, source_dir: Path, max_cycles: int = 3, retries_per_cycle: int = 2
@@ -301,118 +300,142 @@ class CodeQualityAgent:
         for cycle_num in range(1, max_cycles + 1):
             logger.info(f"Starting cycle {cycle_num}/{max_cycles}")
 
-            # Execute check
-            success, issues = await self.execute_check(source_dir)
+            try:
+                # Execute check
+                success, issues = await self.execute_check(source_dir)
 
-            if not success:
-                logger.error(f"Check failed in cycle {cycle_num}")
-                cycle_results["cycles"].append(
-                    {
-                        "cycle": cycle_num,
-                        "success": False,
-                        "issues_found": 0,
-                        "issues_fixed": 0,
-                        "error": "Check execution failed",
-                    }
-                )
-                continue
+                if not success:
+                    logger.error(f"Check failed in cycle {cycle_num}")
+                    cycle_results["cycles"].append(
+                        {
+                            "cycle": cycle_num,
+                            "success": False,
+                            "issues_found": 0,
+                            "issues_fixed": 0,
+                            "error": "Check execution failed",
+                        }
+                    )
+                    continue
 
-            issues_found = len(issues)
-            cycle_results["total_issues_found"] += issues_found
+                issues_found = len(issues)
+                cycle_results["total_issues_found"] += issues_found
 
-            # If no issues, we're done
-            if not issues:
-                logger.info(f"No issues found in cycle {cycle_num}, stopping")
-                cycle_results["successful_cycles"] += 1
+                # If no issues, we're done
+                if not issues:
+                    logger.info(f"No issues found in cycle {cycle_num}, stopping")
+                    cycle_results["successful_cycles"] += 1
+                    cycle_results["total_cycles"] = cycle_num
+                    cycle_results["cycles"].append(
+                        {
+                            "cycle": cycle_num,
+                            "success": True,
+                            "issues_found": 0,
+                            "issues_fixed": 0,
+                            "message": "No issues found",
+                        }
+                    )
+
+                    # 【新增】在循环完成后执行一次format
+                    logger.info("=== 执行代码格式化 ===")
+                    format_method = getattr(self, "format_code", None)
+                    if format_method is not None and callable(format_method):
+                        try:
+                            # Check if the method is async before awaiting
+                            if asyncio.iscoroutinefunction(format_method):
+                                format_success = await format_method(source_dir)
+                            else:
+                                # Call sync method without await
+                                format_success = format_method(source_dir)
+                            if not format_success:
+                                logger.warning("格式化执行完成，但有警告（不影响整体成功）")
+                        except asyncio.CancelledError:
+                            logger.warning("格式化被取消，但继续执行流程")
+                            # Don't re-raise CancelledError, just mark as not successful but continue
+                            format_success = False
+                        except Exception as e:
+                            logger.warning(f"格式化执行异常，但继续流程: {e}")
+                            format_success = False
+                    else:
+                        logger.info("格式化功能不可用，跳过格式化步骤")
+
+                    break
+
+                # Try to fix issues with retry logic
+                # Each cycle can have retries_per_cycle attempts
+                fix_success = False
+                fix_message = ""
+                fixed_count = 0
+
+                for retry_num in range(1, retries_per_cycle + 1):
+                    logger.info(f"Cycle {cycle_num}, Retry {retry_num}/{retries_per_cycle}")
+
+                    try:
+                        # Try to fix issues
+                        fix_success, fix_message, fixed_count = await self.fix_issues(
+                            issues, source_dir
+                        )
+
+                        # Add a small delay after SDK call to allow anyio cancel scope cleanup
+                        # This prevents cancel scope propagation to subsequent subprocess calls
+                        # We need to catch CancelledError from anyio's cancel scope cleanup
+                        try:
+                            await asyncio.sleep(0.5)
+                        except asyncio.CancelledError as e:
+                            error_str = str(e)
+                            if "cancel scope" in error_str.lower():
+                                logger.warning(
+                                    f"Cancel scope during post-fix sleep (ignored): {error_str}"
+                                )
+                                # This is expected during SDK cleanup, continue execution
+                            else:
+                                raise
+
+                        if fix_success:
+                            logger.info(
+                                f"Cycle {cycle_num}, Retry {retry_num} successful: {fix_message}"
+                            )
+                            break
+                        else:
+                            logger.warning(
+                                f"Cycle {cycle_num}, Retry {retry_num} failed: {fix_message}"
+                            )
+
+                    except Exception as e:
+                        # 【新增】方案2：捕获所有异常，记录后继续重试
+                        logger.error(f"Exception in retry {retry_num}: {e}")
+                        if retry_num >= retries_per_cycle:
+                            # 最后一次重试失败，标记为失败但继续下一个周期
+                            fix_success = False
+                            fix_message = f"Max retries failed: {e}"
+                            fixed_count = 0
+                        continue
+
+                if fix_success:
+                    cycle_results["successful_cycles"] += 1
+                    cycle_results["total_issues_fixed"] += fixed_count
+
                 cycle_results["total_cycles"] = cycle_num
                 cycle_results["cycles"].append(
                     {
                         "cycle": cycle_num,
-                        "success": True,
-                        "issues_found": 0,
-                        "issues_fixed": 0,
-                        "message": "No issues found",
+                        "success": fix_success,
+                        "issues_found": issues_found,
+                        "issues_fixed": fixed_count,
+                        "message": fix_message,
                     }
                 )
 
-                # 【新增】在循环完成后执行一次format
-                logger.info("=== 执行代码格式化 ===")
-                format_method = getattr(self, "format_code", None)
-                if format_method is not None and callable(format_method):
-                    try:
-                        # Check if the method is async before awaiting
-                        if asyncio.iscoroutinefunction(format_method):
-                            format_success = await format_method(source_dir)
-                        else:
-                            # Call sync method without await
-                            format_success = format_method(source_dir)
-                        if not format_success:
-                            logger.warning("格式化执行完成，但有警告（不影响整体成功）")
-                    except asyncio.CancelledError:
-                        logger.warning("格式化被取消，但继续执行流程")
-                        # Don't re-raise CancelledError, just mark as not successful but continue
-                        format_success = False
-                    except Exception as e:
-                        logger.warning(f"格式化执行异常，但继续流程: {e}")
-                        format_success = False
-                else:
-                    logger.info("格式化功能不可用，跳过格式化步骤")
-
-                break
-
-            # Try to fix issues with retry logic
-            # Each cycle can have retries_per_cycle attempts
-            fix_success = False
-            fix_message = ""
-            fixed_count = 0
-
-            for retry_num in range(1, retries_per_cycle + 1):
-                logger.info(f"Cycle {cycle_num}, Retry {retry_num}/{retries_per_cycle}")
-
-                # Try to fix issues
-                fix_success, fix_message, fixed_count = await self.fix_issues(
-                    issues, source_dir
-                )
-
-                # Add a small delay after SDK call to allow anyio cancel scope cleanup
-                # This prevents cancel scope propagation to subsequent subprocess calls
-                # We need to catch CancelledError from anyio's cancel scope cleanup
-                try:
-                    await asyncio.sleep(0.5)
-                except asyncio.CancelledError as e:
-                    error_str = str(e)
-                    if "cancel scope" in error_str.lower():
-                        logger.warning(
-                            f"Cancel scope during post-fix sleep (ignored): {error_str}"
-                        )
-                        # This is expected during SDK cleanup, continue execution
-                    else:
-                        raise
-
-                if fix_success:
-                    logger.info(
-                        f"Cycle {cycle_num}, Retry {retry_num} successful: {fix_message}"
-                    )
-                    break
-                else:
-                    logger.warning(
-                        f"Cycle {cycle_num}, Retry {retry_num} failed: {fix_message}"
-                    )
-
-            if fix_success:
-                cycle_results["successful_cycles"] += 1
-                cycle_results["total_issues_fixed"] += fixed_count
-
-            cycle_results["total_cycles"] = cycle_num
-            cycle_results["cycles"].append(
-                {
+            except Exception as e:
+                # 【新增】方案2：周期级别的异常也不中止整个流程
+                logger.error(f"Exception in cycle {cycle_num}: {e}")
+                cycle_results["cycles"].append({
                     "cycle": cycle_num,
-                    "success": fix_success,
-                    "issues_found": issues_found,
-                    "issues_fixed": fixed_count,
-                    "message": fix_message,
-                }
-            )
+                    "success": False,
+                    "issues_found": 0,
+                    "issues_fixed": 0,
+                    "error": f"Cycle exception: {e}"
+                })
+                continue
 
         logger.info(
             f"Cycle complete: {cycle_results['successful_cycles']}/{cycle_results['total_cycles']} successful, {cycle_results['total_issues_fixed']} issues fixed"
@@ -941,9 +964,9 @@ class QualityGatePipeline:
             "errors": [],
         }
 
-        # Step 1: Ruff check and fix
-        self.logger.info("=== Step 1: Ruff Linting ===")
         try:
+            # Step 1: Ruff check and fix
+            self.logger.info("=== Step 1: Ruff Linting ===")
             ruff_result = await self.ruff_agent.retry_cycle(
                 source_dir=Path(source_dir), max_cycles=max_cycles
             )
@@ -955,57 +978,68 @@ class QualityGatePipeline:
                 pipeline_results["success"] = False
                 pipeline_results["errors"].append("Ruff quality gate failed")
 
-        except Exception as e:
-            self.logger.error(f"Ruff execution failed: {e}")
-            pipeline_results["ruff"] = {"success": False, "error": str(e)}
-            pipeline_results["success"] = False
-            pipeline_results["errors"].append(f"Ruff failed: {e}")
-
-        # Step 2: BasedPyright check and fix (if Ruff succeeded)
-        if pipeline_results["success"]:
-            self.logger.info("=== Step 2: BasedPyright Type Checking ===")
-            try:
-                basedpyright_result = await self.basedpyright_agent.retry_cycle(
-                    source_dir=Path(source_dir), max_cycles=max_cycles
-                )
-                pipeline_results["basedpyright"] = basedpyright_result
-
-                # Check if retry_cycle was successful (successful_cycles > 0)
-                if not basedpyright_result.get("successful_cycles", 0) > 0:
-                    self.logger.warning("BasedPyright quality gate failed")
-                    pipeline_results["success"] = False
-                    pipeline_results["errors"].append(
-                        "BasedPyright quality gate failed"
+            # Step 2: BasedPyright check and fix (if Ruff succeeded)
+            if pipeline_results["success"]:
+                self.logger.info("=== Step 2: BasedPyright Type Checking ===")
+                try:
+                    basedpyright_result = await self.basedpyright_agent.retry_cycle(
+                        source_dir=Path(source_dir), max_cycles=max_cycles
                     )
+                    pipeline_results["basedpyright"] = basedpyright_result
 
-            except Exception as e:
-                self.logger.error(f"BasedPyright execution failed: {e}")
-                pipeline_results["basedpyright"] = {"success": False, "error": str(e)}
-                pipeline_results["success"] = False
-                pipeline_results["errors"].append(f"BasedPyright failed: {e}")
+                    # Check if retry_cycle was successful (successful_cycles > 0)
+                    if not basedpyright_result.get("successful_cycles", 0) > 0:
+                        self.logger.warning("BasedPyright quality gate failed")
+                        pipeline_results["success"] = False
+                        pipeline_results["errors"].append(
+                            "BasedPyright quality gate failed"
+                        )
 
-        # Step 3: Pytest execution (if previous steps succeeded)
-        if pipeline_results["success"]:
-            self.logger.info("=== Step 3: Pytest Execution ===")
-            try:
-                pytest_result = await self.pytest_agent.run_tests(
-                    test_dir=test_dir, source_dir=source_dir
-                )
-                pipeline_results["pytest"] = pytest_result
-
-                if not pytest_result["success"]:
-                    self.logger.warning("Pytest quality gate failed")
+                except Exception as e:
+                    self.logger.error(f"BasedPyright execution failed: {e}")
+                    pipeline_results["basedpyright"] = {"success": False, "error": str(e)}
                     pipeline_results["success"] = False
-                    pipeline_results["errors"].append("Pytest quality gate failed")
+                    pipeline_results["errors"].append(f"BasedPyright failed: {e}")
 
-            except Exception as e:
-                self.logger.error(f"Pytest execution failed: {e}")
-                pipeline_results["pytest"] = {"success": False, "error": str(e)}
-                pipeline_results["success"] = False
-                pipeline_results["errors"].append(f"Pytest failed: {e}")
+            # Step 3: Pytest execution (if previous steps succeeded)
+            if pipeline_results["success"]:
+                self.logger.info("=== Step 3: Pytest Execution ===")
+                try:
+                    pytest_result = await self.pytest_agent.run_tests(
+                        test_dir=test_dir, source_dir=source_dir
+                    )
+                    pipeline_results["pytest"] = pytest_result
 
-        self.logger.info(
-            f"Quality gate pipeline complete: {'SUCCESS' if pipeline_results['success'] else 'FAILED'}"
-        )
+                    if not pytest_result["success"]:
+                        self.logger.warning("Pytest quality gate failed")
+                        pipeline_results["success"] = False
+                        pipeline_results["errors"].append("Pytest quality gate failed")
 
-        return pipeline_results
+                except Exception as e:
+                    self.logger.error(f"Pytest execution failed: {e}")
+                    pipeline_results["pytest"] = {"success": False, "error": str(e)}
+                    pipeline_results["success"] = False
+                    pipeline_results["errors"].append(f"Pytest failed: {e}")
+
+            self.logger.info(
+                f"Quality gate pipeline complete: {'SUCCESS' if pipeline_results['success'] else 'FAILED'}"
+            )
+
+            return pipeline_results
+
+        except Exception as e:
+            # 【新增】方案2：即使质量门控完全失败，也返回结构化结果而非抛异常
+            self.logger.error(f"Quality gate pipeline failed with exception: {e}")
+            return {
+                "success": False,
+                "ruff": None,
+                "basedpyright": None,
+                "pytest": None,
+                "errors": [f"Pipeline exception: {e}"],
+                "total_cycles": 0,
+                "successful_cycles": 0,
+                "total_issues_found": 0,
+                "total_issues_fixed": 0,
+                "cycles": [],
+                "status": "failed_with_exception"
+            }

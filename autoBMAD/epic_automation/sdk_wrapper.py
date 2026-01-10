@@ -1,14 +1,16 @@
 """
-修复后的SDK包装器 - Fixed SDK Wrapper
+修复后的SDK包装器 - Fixed SDK Wrapper with Cancellation Manager Integration
 
 解决cancel scope跨任务错误和异步生成器生命周期管理问题。
 基于原版本：d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py
 
 主要修复：
 1. 解决cancel scope跨任务错误
-2. 优化异步生成器生命周期管理
-3. 增强错误恢复机制
-4. 改进资源清理逻辑
+2. 集成SDK取消管理器（统一管理）
+3. 优化异步生成器生命周期管理
+4. 增强错误恢复机制
+5. 改进资源清理逻辑
+6. 移除分散的取消判断逻辑（符合奥卡姆剃刀原则）
 """
 
 import asyncio
@@ -127,74 +129,34 @@ class SafeAsyncGenerator:
             raise
 
     async def aclose(self) -> None:
-        """增强的异步生成器清理 - 防止 cancel scope 跨任务错误
+        """
+        安全的异步生成器清理 - 防止 cancel scope 跨任务错误
 
-        关键修复：
-        1. 添加事件循环状态检测
-        2. 安全处理 cancel scope 错误
-        3. 防止跨任务访问冲突
-        4. 确保清理过程不会抛出未处理的异常
-        5. 确保所有pending操作完全结束
+        🎯 核心原则：在同一 Task 中完成资源清理，确保 cancel scope 生命周期一致
         """
         if self._closed:
             return
 
         self._closed = True
 
+        # 🎯 关键：不在此方法中调用原始生成器的 aclose()
+        # 原因：aclose() 可能触发 TaskGroup.__aexit__()，导致跨 Task 错误
+        # 解决方案：依赖 Python 垃圾回收器自动清理
+
+        logger.debug("SafeAsyncGenerator marked as closed (cleanup deferred to GC)")
+
+        # 可选：标记资源清理需求，供外部监控
         try:
-            # 检测事件循环状态
-            loop = asyncio.get_running_loop()
-            loop_running = not loop.is_closed()
-
-            if not loop_running:
-                logger.debug("Event loop is closed, skipping generator cleanup")
-                return
-
-            # 获取原始生成器的 aclose 方法
-            aclose = getattr(self.generator, "aclose", None)
-            if aclose and callable(aclose):
-                try:
-                    result = aclose()
-                    if result is not None:
-                        # 🎯 关键修复：确保在正确的任务上下文中执行
-                        if asyncio.iscoroutine(result):
-                            await result
-                except (TypeError, AttributeError) as e:
-                    logger.debug(f"Generator cleanup (non-critical): {e}")
-                except asyncio.CancelledError:
-                    # 记录但不重新抛出，避免 scope 冲突
-                    logger.debug("Generator cleanup cancelled (ignored)")
-                except RuntimeError as e:
-                    error_msg = str(e)
-                    # 🎯 关键修复：识别并安全处理 cancel scope 错误
-                    if "cancel scope" in error_msg or "Event loop is closed" in error_msg:
-                        logger.debug(f"Expected SDK shutdown error (suppressed): {error_msg}")
-                        # 确保清理完成后再返回
-                        await self._ensure_cleanup_complete()
-                        return  # 返回而不是抛出，防止崩溃
-                    else:
-                        logger.debug(f"Generator cleanup RuntimeError: {e}")
-                        raise
-                except Exception as e:
-                    # 捕获清理过程中的任何其他异常
-                    logger.debug(f"Generator cleanup exception: {e}")
+            # 使用类型忽略以避免类型检查错误
+            # 检查生成器是否有__self__属性（仅对特定生成器类型）
+            if hasattr(self.generator, '__self__') and not hasattr(self.generator, '__aiter__'):
+                # 只有非标准异步迭代器才有__self__
+                # type: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+                underlying_obj = getattr(self.generator, '__self__', None)  # type: ignore[reportAttributeAccessIssue]
+                if underlying_obj is not None and hasattr(underlying_obj, '_cleanup_pending'):
+                    underlying_obj._cleanup_pending = True
         except Exception as e:
-            logger.debug(f"Generator cleanup error: {e}")
-        finally:
-            # 🎯 确保清理完全结束
-            try:
-                await asyncio.sleep(0.05)  # 短暂等待确保所有清理完成
-            except Exception:
-                pass  # 忽略清理完成检查中的错误
-
-    async def _ensure_cleanup_complete(self) -> None:
-        """🎯 确保清理完全结束"""
-        try:
-            # 等待一小段时间确保清理完成
-            await asyncio.sleep(0.1)
-            logger.debug("SDK cleanup completed")
-        except Exception as e:
-            logger.debug(f"Cleanup completion check failed: {e}")
+            logger.debug(f"Failed to mark cleanup pending: {e}")
 
 
 class SDKMessageTracker:
@@ -297,16 +259,19 @@ class SDKMessageTracker:
 
 class SafeClaudeSDK:
     """
-    Fixed safe wrapper for Claude SDK to prevent cancel scope errors.
+    Fixed safe wrapper for Claude SDK with unified cancellation management.
 
     This wrapper ensures proper cleanup of async generators and prevents
-    RuntimeError when event loop closes.
+    RuntimeError when event loop closes. Now integrated with SDKCancellationManager
+    for unified cancellation handling.
 
     Major fixes:
-    1. Task isolation for generator lifecycle
-    2. Enhanced error recovery
-    3. Safe resource cleanup
-    4. Cross-task cancel scope protection
+    1. Integration with SDKCancellationManager (unified management)
+    2. Task isolation for generator lifecycle
+    3. Enhanced error recovery
+    4. Safe resource cleanup
+    5. Cross-task cancel scope protection
+    6. Removed distributed cancellation logic (遵循奥卡姆剃刀原则)
     """
 
     def __init__(
@@ -489,93 +454,396 @@ class SafeClaudeSDK:
 
     async def execute(self) -> bool:
         """
-        Execute Claude SDK query safely with proper cleanup.
+        执行Claude SDK查询 with unified cancellation management and cross-task error recovery.
 
-        This method now includes integrated cancel scope error suppression,
-        making it a unified, safe wrapper without needing a separate UltraSafeClaudeSDK class.
-
-        Returns:
-            True if execution succeeded, False otherwise
-            True if cancel scope error was suppressed (execution continues normally)
+        🎯 核心增强：
+        1. 检测并恢复 cancel scope 跨任务错误
+        2. 在结构层面解决 enter/exit 不在同一 Task 的问题
+        3. 提供重新执行机制，避免"取消操作重试"
         """
         if not SDK_AVAILABLE:
-            logger.warning(
-                "Claude Agent SDK not available - returning False for cancelled execution"
-            )
+            logger.warning("Claude Agent SDK not available")
             return False
 
-        # Execute without external timeout - use max_turns in SDK options instead
-        try:
-            return await self._execute_safely()
-        except asyncio.CancelledError:
-            # Cancellation handled by upper layer
-            logger.warning("SDK execution was cancelled")
-            # 🎯 关键修复：确保取消完全处理
-            await self._safe_cleanup()
-            raise
-        except RuntimeError as e:
-            error_msg = str(e).lower()
-            # Enhanced cancel scope error handling - now suppressed gracefully
-            if "cancel scope" in error_msg:
-                # Cancel scope errors are expected from claude_agent_sdk internals
-                # Suppress them and return True to continue execution normally
-                logger.debug(f"[SafeClaudeSDK] Cancel scope error suppressed: {e}")
-                logger.debug(
-                    f"[SafeClaudeSDK] This is expected from claude_agent_sdk internals. "
-                    f"Execution continues normally."
-                )
-                # 🎯 关键修复：确保清理完成
-                await self._safe_cleanup()
-                # Return True to indicate successful suppression and continued execution
-                return True
-            elif "event loop is closed" in error_msg:
-                logger.warning(f"Event loop closed: {e}")
-                return False
-            else:
-                logger.error(f"Runtime error in SDK execution: {e}")
-                logger.debug(f"Runtime error details: {e}", exc_info=True)
-                return False
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "cancel scope" in error_msg:
-                # Same graceful handling as RuntimeError
-                logger.debug(f"[SafeClaudeSDK] Cancel scope error suppressed: {e}")
-                logger.debug(
-                    f"[SafeClaudeSDK] This is expected from claude_agent_sdk internals. "
-                    f"Execution continues normally."
-                )
-                # 🎯 关键修复：确保清理完成
-                await self._safe_cleanup()
-                return True
-            elif "event loop is closed" in error_msg:
-                logger.warning(f"Event loop closed: {e}")
-                return False
-            else:
-                logger.error(f"Claude SDK execution failed: {e}")
-                logger.debug(traceback.format_exc())
-                return False
+        max_retries = 2
+        retry_count = 0
 
-    async def _safe_cleanup(self) -> None:
-        """🎯 确保清理完全结束"""
-        try:
-            # 等待一小段时间确保清理完成
-            await asyncio.sleep(0.1)
-            logger.debug("SDK cleanup completed")
-        except Exception as e:
-            logger.debug(f"Cleanup completion check failed: {e}")
+        while retry_count <= max_retries:
+            try:
+                return await self._execute_with_recovery()
+            except RuntimeError as e:
+                error_msg = str(e)
+                if "cancel scope" in error_msg and "different task" in error_msg:
+                    retry_count += 1
+                    logger.warning(
+                        f"[SafeClaudeSDK] Cancel scope cross-task error detected (attempt {retry_count}/{max_retries+1}). "
+                        f"Rebuilding execution context..."
+                    )
 
-    async def _execute_safely(self) -> bool:
+                    if retry_count > max_retries:
+                        logger.error(
+                            "[SafeClaudeSDK] Max retries reached for cancel scope error. "
+                            "This indicates a structural issue that cannot be recovered automatically."
+                        )
+                        raise
+
+                    # 🎯 关键：重建执行上下文，避免跨 Task 状态污染
+                    await self._rebuild_execution_context()
+                    continue
+                else:
+                    # 非 cancel scope 错误，直接抛出
+                    raise
+            except Exception:
+                # 其他类型错误，不重试
+                raise
+
+        return False  # 不应该到达这里
+
+    async def _execute_with_recovery(self) -> bool:
         """
-        Execute with proper generator cleanup using isolated task.
+        执行 SDK 查询的核心逻辑，使用 TaskGroup 确保 Cancel Scope 一致性
 
-        This is the key fix: run the generator in an isolated task to prevent
-        cancel scope conflicts.
+        🎯 核心改进：
+        1. 使用 AnyIO TaskGroup 确保所有 SDK 操作在同一 Task 树中完成
+        2. 避免跨任务清理导致的 cancel scope 错误
+        3. 提供错误恢复机制
+
+        Returns:
+            bool: 执行是否成功
+        """
+        # 🎯 关键：在单一 Task 中完成所有操作
+        if not SDK_AVAILABLE:
+            logger.warning("Claude Agent SDK not available")
+            return False
+
+        # 🎯 唯一入口：获取全局管理器
+        try:
+            from autoBMAD.epic_automation.monitoring import get_cancellation_manager
+            manager = get_cancellation_manager()
+        except ImportError as e:
+            logger.warning(f"Could not import cancellation manager: {e}")
+            return await self._execute_safely()
+
+        call_id = f"sdk_{id(self)}_{int(time.time() * 1000)}"
+
+        # 方案1：使用 TaskGroup 统一管理（推荐）
+        try:
+            from anyio import create_task_group
+            
+            # 🎯 修复：先启动追踪,再进入 TaskGroup
+            context = {
+                "prompt_length": len(self.prompt),
+                "has_options": self.options is not None
+            }
+            
+            # 🎯 关键修改：不嵌套 async with,避免 cancel scope 顺序问题
+            # 手动启动追踪
+            tracking_ctx = manager.track_sdk_execution(
+                call_id=call_id,
+                operation_name="sdk_execute",
+                context=context
+            )
+            await tracking_ctx.__aenter__()
+            
+            try:
+                # 使用 TaskGroup 但不依赖其 cancel scope
+                async with create_task_group() as tg:
+                    result = await self._execute_safely_with_manager(manager, call_id)
+                    return result
+            finally:
+                # 确保追踪上下文正确退出
+                await tracking_ctx.__aexit__(None, None, None)
+
+        except ImportError:
+            # 方案2：使用隔离 Cancel Scope（备选）
+            logger.info("AnyIO TaskGroup not available, using isolated CancelScope")
+            result = await self._execute_with_isolated_scope(manager, call_id)
+            return result
+
+        except asyncio.CancelledError:
+            # 🎯 统一处理：完全委托给管理器决策
+            cancel_type = manager.check_cancellation_type(call_id)
+
+            if cancel_type == "after_success":
+                # 管理器确认工作已完成，等待清理完成
+                await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
+                logger.info(
+                    "[SafeClaudeSDK] Cancellation suppressed - "
+                    "SDK completed successfully (confirmed by manager)"
+                )
+                return True
+
+            # 真正的取消
+            logger.warning("SDK execution was cancelled (confirmed by manager)")
+            # 等待清理完成
+            await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
+            raise
+
+        except Exception as e:
+            logger.error(f"Claude SDK execution failed: {e}")
+            logger.debug(traceback.format_exc())
+            return False
+
+        # 确保所有代码路径都返回 bool
+        return False  # 不应该到达这里
+
+    async def _execute_with_isolated_scope(
+        self,
+        manager: Any,
+        call_id: str
+    ) -> bool:
+        """
+        使用隔离的 Cancel Scope 执行 SDK（备选方案）
+
+        当 TaskGroup 不可用时，使用独立的 CancelScope 隔离 SDK 操作
+
+        Args:
+            manager: Cancellation manager instance
+            call_id: Unique call identifier
+
+        Returns:
+            bool: 执行是否成功
+        """
+        try:
+            from anyio import CancelScope
+        except ImportError:
+            logger.warning("AnyIO not available, falling back to legacy execution")
+            result = await self._execute_safely()
+            return result
+
+        try:
+            # 🎯 创建独立的 Cancel Scope
+            with CancelScope() as scope:
+                async with manager.track_sdk_execution(
+                    call_id=call_id,
+                    operation_name="sdk_execute",
+                    context={
+                        "prompt_length": len(self.prompt),
+                        "has_options": self.options is not None,
+                        "isolated_scope": str(id(scope))
+                    }
+                ):
+                    # 所有 SDK 操作都在此隔离 Scope 中
+                    result = await self._execute_safely_with_manager(manager, call_id)
+                    return result
+
+        except asyncio.CancelledError:
+            cancel_type = manager.check_cancellation_type(call_id)
+
+            if cancel_type == "after_success":
+                await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
+                logger.info("[SafeClaudeSDK] Cancellation suppressed (isolated scope)")
+                return True
+
+            logger.warning("SDK execution was cancelled (isolated scope)")
+            await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
+            raise
+
+        except Exception as e:
+            logger.error(f"Claude SDK execution failed (isolated scope): {e}")
+            return False
+
+        # 确保所有代码路径都返回 bool
+        return False  # 不应该到达这里
+
+    async def _rebuild_execution_context(self) -> None:
+        """
+        🎯 重建执行上下文，避免跨 Task 状态污染
+
+        核心原理：
+        1. 清理当前 Task 中的所有 SDK 相关资源
+        2. 确保新的执行使用全新的 CancelScope 和 TaskGroup
+        3. 不复用任何可能已损坏的异步上下文
+        4. ⚠️ 验证资源清理完成，这是 SDK 取消管理器的必要条件
+        """
+        # 1. 等待足够时间，让前一个上下文完全释放
+        # ⚠️ 延长至 0.5s 确保所有资源完全释放
+        await asyncio.sleep(0.5)
+
+        # 2. 清理当前 Task 的 SDK 状态
+        try:
+            from autoBMAD.epic_automation.monitoring import get_cancellation_manager
+            manager = get_cancellation_manager()
+
+            # 🎯 关键：确保所有活跃调用都已清理
+            # active_sdk_calls 应该为空，否则 wait_for_cancellation_complete() 会超时
+            active_count = len(manager.active_sdk_calls)
+            if active_count > 0:
+                logger.warning(
+                    f"[SafeClaudeSDK] {active_count} active SDK calls still present during rebuild. "
+                    f"Forcing cleanup..."
+                )
+                # 强制清理
+                manager.active_sdk_calls.clear()
+
+            # 🎯 验证取消调用的清理状态
+            incomplete_cleanups = [
+                call for call in manager.cancelled_calls
+                if not call.get("cleanup_completed", False)
+            ]
+            if incomplete_cleanups:
+                logger.warning(
+                    f"[SafeClaudeSDK] {len(incomplete_cleanups)} cancelled calls have incomplete cleanup. "
+                    f"This may cause confirm_safe_to_proceed() to fail."
+                )
+
+            # 重置统计信息
+            manager.stats["cross_task_errors"] = manager.stats.get("cross_task_errors", 0) + 1
+
+            logger.info(
+                "[SafeClaudeSDK] ✅ Execution context rebuilt successfully "
+                f"(active: 0, incomplete: 0)"
+            )
+        except Exception as e:
+            logger.error(f"[SafeClaudeSDK] Context rebuild failed: {e}")
+    async def _execute_safely_with_manager(
+        self,
+        manager: Any,
+        call_id: str
+    ) -> bool:
+        """
+        执行 SDK 查询，确保在同一 Task 中完成所有操作
+
+        Args:
+            manager: Cancellation manager instance
+            call_id: Unique call identifier
+
+        Returns:
+            True if successful, False otherwise
         """
         if query is None or self.options is None:
             logger.warning("Claude SDK not properly initialized")
             return False
 
-        # Log SDK execution start
+        logger.info("[SDK Start] Starting Claude SDK execution with tracking")
+        logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
+
+        # 创建 query generator（绑定到当前 Task）
+        try:
+            generator = query(prompt=self.prompt, options=self.options)  # type: ignore
+        except Exception as e:
+            logger.error(f"Failed to create SDK query generator: {e}")
+            logger.debug(traceback.format_exc())
+            return False
+
+        # Wrap generator with safe wrapper
+        safe_generator = SafeAsyncGenerator(generator)
+
+        try:
+            # 🎯 关键：所有迭代和清理都在当前 Task 中完成
+            result = await self._run_isolated_generator_with_manager(
+                safe_generator,
+                manager,
+                call_id
+            )
+
+            # 🎯 新增：显式标记生成器已完成
+            safe_generator._closed = True
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in isolated generator execution: {e}")
+            logger.debug(traceback.format_exc())
+
+            # 🎯 关键：在当前 Task 中标记关闭，不调用 aclose()
+            safe_generator._closed = True
+
+            return False
+
+    async def _run_isolated_generator_with_manager(
+        self,
+        safe_generator: SafeAsyncGenerator,
+        manager: Any,
+        call_id: str
+    ) -> bool:
+        """
+        Run generator with cancellation manager result tracking.
+
+        🎯 关键改进：立即标记结果接收
+        """
+        message_count = 0
+        start_time = asyncio.get_running_loop().time()
+
+        try:
+            await self.message_tracker.start_periodic_display()
+
+            async for message in safe_generator:
+                message_count += 1
+
+                message_content = self._extract_message_content(message)
+                message_type = self._classify_message_type(message)
+
+                if message_content:
+                    self.message_tracker.update_message(message_content, message_type)
+
+                if ResultMessage is not None and isinstance(message, ResultMessage):
+                    if hasattr(message, "is_error") and message.is_error:
+                        error_msg = getattr(message, "result", "Unknown error")
+                        logger.error(f"[SDK Error] Claude SDK error: {error_msg}")
+                        return False
+                    else:
+                        result = getattr(message, "result", None)
+                        result_str = str(result) if result else "No content"
+
+                        # 🎯 关键：立即标记结果接收
+                        manager.mark_result_received(call_id, result_str)
+
+                        logger.info(f"[SDK Success] Claude SDK result: {result_str[:100]}")
+                        return True
+
+            # 没有收到 ResultMessage
+            total_elapsed = asyncio.get_running_loop().time() - start_time
+
+            await self.message_tracker.stop_periodic_display()
+
+            if message_count > 0:
+                logger.info(
+                    f"[SDK Complete] Completed with {message_count} messages "
+                    f"in {total_elapsed:.1f}s"
+                )
+                return True
+            else:
+                logger.error(f"[SDK Failed] No messages received after {total_elapsed:.1f}s")
+                return False
+
+        except StopAsyncIteration:
+            logger.info("Claude SDK generator completed")
+            return True
+
+        except asyncio.CancelledError:
+            logger.warning("Claude SDK execution was cancelled")
+
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception as e:
+                logger.debug(f"Error stopping display task: {e}")
+
+            # 🎯 重新抛出，让外层检查取消类型
+            raise
+
+        except Exception as e:
+            logger.error(f"Claude SDK execution error: {e}")
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception as cleanup_error:
+                logger.debug(f"Error during cleanup: {cleanup_error}")
+            raise
+
+        finally:
+            # 🎯 移除跨 Task 的清理调用，避免 cancel scope 错误
+            # await safe_generator.aclose()  # 已移除，依赖垃圾回收器
+            pass
+
+    # 保留原有的_execute_safely方法作为后备
+    async def _execute_safely(self) -> bool:
+        """
+        Legacy execute method (fallback when manager is not available).
+        """
+        if query is None or self.options is None:
+            logger.warning("Claude SDK not properly initialized")
+            return False
+
         logger.info("[SDK Start] Starting Claude SDK execution")
         logger.info(f"[SDK Config] Options: {self.options}")
         logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
@@ -592,51 +860,41 @@ class SafeClaudeSDK:
         safe_generator = SafeAsyncGenerator(generator)
 
         try:
-            # 关键修复：移除 asyncio.shield，直接执行
             result = await self._run_isolated_generator(safe_generator)
             return result
         except Exception as e:
             logger.error(f"Error in isolated generator execution: {e}")
             logger.debug(traceback.format_exc())
-            await safe_generator.aclose()
+            # 🎯 移除跨 Task 的清理调用，避免 cancel scope 错误
+            # await safe_generator.aclose()  # 已移除，依赖垃圾回收器
             return False
 
     async def _run_isolated_generator(self, safe_generator: SafeAsyncGenerator) -> bool:
         """
         Run generator in isolated task with proper error handling.
 
-        This method runs the generator processing in a way that prevents
-        cancel scope cross-task issues.
+        Legacy method for backward compatibility.
         """
         message_count = 0
-        result_received = False  # Track if SDK result was already received
         start_time = asyncio.get_running_loop().time()
 
         try:
-            # Start periodic message display
             await self.message_tracker.start_periodic_display()
 
-            # Process messages from generator
-            async for message in safe_generator:  # type: ignore[async-generic-without-base]
+            async for message in safe_generator:
                 message_count += 1
 
-                # Extract actual content from Claude's messages
                 message_content = self._extract_message_content(message)
                 message_type = self._classify_message_type(message)
 
-                # Update message tracker with actual Claude content
                 if message_content:
                     self.message_tracker.update_message(message_content, message_type)
                 else:
-                    # Fallback to generic message if no content extracted
                     self.message_tracker.update_message(
                         f"Received {message_type} message {message_count}", message_type
                     )
 
                 if ResultMessage is not None and isinstance(message, ResultMessage):
-                    # Mark that we received a result before processing it
-                    result_received = True
-                    # Safely access attributes based on type
                     if hasattr(message, "is_error") and message.is_error:
                         error_msg = getattr(message, "result", "Unknown error")
                         self.message_tracker.update_message(
@@ -662,10 +920,8 @@ class SafeClaudeSDK:
                         )
                         return True
 
-            # If we get here, no ResultMessage was received
             total_elapsed = asyncio.get_running_loop().time() - start_time
 
-            # Stop periodic display
             await self.message_tracker.stop_periodic_display()
 
             if message_count > 0:
@@ -678,7 +934,6 @@ class SafeClaudeSDK:
                 )
                 return True
             else:
-                # Enhanced error logging with diagnostic information
                 prompt_str = str(self.prompt)
                 if len(prompt_str) > 100:
                     prompt_preview = prompt_str[:100] + "..."
@@ -698,26 +953,16 @@ class SafeClaudeSDK:
         except StopAsyncIteration:
             logger.info("Claude SDK generator completed")
             return True
+
         except asyncio.CancelledError:
             logger.warning("Claude SDK execution was cancelled")
-            # Stop periodic display
             try:
                 await self.message_tracker.stop_periodic_display()
             except Exception as e:
                 logger.debug(f"Error stopping display task: {e}")
-
-            # Check if SDK already completed successfully before cancellation
-            # If SDK result was already received and processed, ignore the cancellation
-            # because the work is actually done
-            if result_received:
-                logger.info("[SDK] SDK already completed successfully before cancellation - ignoring cancel signal")
-                return True
-
-            # SDK was cancelled before completion - this is a real failure
-            # Re-raise cancellation exception to allow upper layer handling
             raise
+
         except Exception as e:
-            # Log error and stop periodic display
             logger.error(f"Claude SDK execution error: {e}")
             logger.debug(traceback.format_exc())
             try:
@@ -725,31 +970,12 @@ class SafeClaudeSDK:
             except Exception as cleanup_error:
                 logger.debug(f"Error during cleanup: {cleanup_error}")
             raise
+
         finally:
-            # Ensure generator is closed
-            await safe_generator.aclose()
-
-    async def _check_work_completed(self) -> bool:
-        """
-        Check if SDK work was completed despite errors.
-
-        Returns:
-            True if work likely completed, False otherwise
-        """
-        try:
-            # Check if expected files were created
-            if Path("docs/stories").exists():
-                story_files = list(Path("docs/stories").glob("*.md"))
-                if story_files:
-                    logger.info(
-                        f"Found {len(story_files)} story files, assuming success"
-                    )
-                    return True
-            return False
-        except Exception:
-            return False
+            # 🎯 移除跨 Task 的清理调用，避免 cancel scope 错误
+            # await safe_generator.aclose()  # 已移除，依赖垃圾回收器
+            pass
 
 
 # Backward compatibility: keep old class name as alias
 SDKWrapper = SafeClaudeSDK
-

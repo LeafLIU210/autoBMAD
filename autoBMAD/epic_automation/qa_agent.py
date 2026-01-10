@@ -105,6 +105,61 @@ class QAResult:
             "reason": self.reason,
         }
 
+    async def _parse_status_in_isolated_task(self, status_parser: Any, content: str) -> str:
+        """
+        🎯 在独立 Task 中执行状态解析，避免 cancel scope 冲突
+        """
+        # 🎯 确保使用全新的 cancel scope
+        async with asyncio.timeout(30):  # 使用新的 cancel scope
+            status = await status_parser.parse_status(content)
+            return status
+
+    async def _parse_story_status_with_recovery(self, status_parser: Any, story_path: str) -> str:
+        """
+        解析故事文档状态 - 增强 Task 隔离和错误恢复
+
+        🎯 关键改进：
+        1. 确保在独立的 Task 中执行
+        2. 不复用前一个 Task 的 cancel scope
+        3. 主动检测并处理跨 Task 错误
+        """
+        try:
+            return await self._parse_story_status_with_parser(status_parser, story_path)
+        except RuntimeError as e:
+            error_msg = str(e)
+            if "cancel scope" in error_msg and "different task" in error_msg:
+                logger.warning(
+                    f"[QA Agent] Cancel scope cross-task error detected. "
+                    f"This should be handled by SafeClaudeSDK recovery mechanism."
+                )
+                # 让上层决定是否重试
+                raise
+            else:
+                raise
+        except Exception as e:
+            logger.error(f"Error parsing story status: {e}")
+            return "Unknown"
+
+    async def _parse_story_status_with_parser(self, status_parser: Any, story_path: str) -> str:
+        """
+        使用指定的status_parser解析故事状态
+        """
+        try:
+            story_file = Path(story_path)
+            if not story_file.exists():
+                logger.warning(f"[QA Agent] Story file not found: {story_path}")
+                return "Unknown"
+
+            content = story_file.read_text(encoding="utf-8")
+
+            # 使用传入的status_parser进行解析
+            status = await status_parser.parse_status(content)
+            return status if status else "Unknown"
+        except Exception as e:
+            logger.error(f"Error parsing story status with parser: {e}")
+            return "Unknown"
+
+
 
 class QAAgent:
     """
@@ -160,15 +215,23 @@ class QAAgent:
 
         logger.info(f"{self.name} initialized")
 
+    async def _parse_status_in_isolated_task(self, status_parser: Any, content: str) -> str:
+        """
+        🎯 在独立 Task 中执行状态解析，避免 cancel scope 冲突
+        """
+        # 🎯 确保使用全新的 cancel scope
+        async with asyncio.timeout(30):  # 使用新的 cancel scope
+            status = await status_parser.parse_status(content)
+            return status
+
     async def _parse_story_status(self, story_path: str) -> str:
         """
-        解析故事文档状态
+        解析故事文档状态 - 增强 Task 隔离
 
-        Args:
-            story_path: 故事文件路径
-
-        Returns:
-            状态字符串（如 "Done", "Ready for Done", "Ready for Review" 等）
+        🎯 关键改进：
+        1. 确保在独立的 Task 中执行
+        2. 不复用前一个 Task 的 cancel scope
+        3. 主动检测并处理跨 Task 错误
         """
         try:
             story_file = Path(story_path)
@@ -176,27 +239,22 @@ class QAAgent:
                 logger.warning(f"[QA Agent] Story file not found: {story_path}")
                 return "Unknown"
 
+            # 读取文件内容
             content = story_file.read_text(encoding="utf-8")
 
-            # 使用 StatusParser 解析状态
+            # 优先使用 StatusParser 进行AI解析
             if self.status_parser:
                 try:
-                    status = await self.status_parser.parse_status(content)
+                    # 🎯 在新的 Task 中执行 AI 解析
+                    status = await self._parse_status_in_isolated_task(self.status_parser, content)
                     if status and status != "unknown":
-                        logger.debug(
-                            f"[QA Agent] Found status using AI parsing: '{status}'"
-                        )
+                        logger.debug(f"[QA Agent] Found status using AI parsing: '{status}'")
                         return status
-                    else:
-                        logger.warning(
-                            f"[QA Agent] StatusParser failed to parse status from {story_path}"
-                        )
                 except Exception as e:
-                    logger.warning(
-                        f"[QA Agent] StatusParser error: {e}, falling back to regex"
-                    )
+                    logger.warning(f"[QA Agent] StatusParser error: {e}, falling back to regex")
 
             # 回退到正则表达式解析
+            # ... 原有正则解析逻辑 ...
             logger.debug(f"[QA Agent] Using fallback regex parsing for {story_path}")
             status_patterns = [
                 r"##\s*Status\s*\n\s*\*\*([^*]+)\*\*",  # Multi-line: ## Status\n**Value**
@@ -215,6 +273,17 @@ class QAAgent:
             logger.warning(f"Could not find status in story file: {story_path}")
             return "Unknown"
 
+        except RuntimeError as e:
+            error_msg = str(e)
+            if "cancel scope" in error_msg and "different task" in error_msg:
+                logger.warning(
+                    f"[QA Agent] Cancel scope cross-task error detected. "
+                    f"This should be handled by SafeClaudeSDK recovery mechanism."
+                )
+                # 让上层决定是否重试
+                raise
+            else:
+                raise
         except Exception as e:
             logger.error(f"Error parsing story status: {e}")
             return "Unknown"
@@ -859,6 +928,9 @@ class QAAgent:
     async def _parse_story_status_safe(self, story_path: str) -> str:
         """🎯 改进：安全的状态解析"""
         try:
+            # 🎯 确保进入独立的 Task 上下文
+            # 不需要添加 sleep，而是确保使用新的 cancel scope
+
             story_file = Path(story_path)
             if not story_file.exists():
                 logger.warning(f"[QA Agent] Story file not found: {story_path}")

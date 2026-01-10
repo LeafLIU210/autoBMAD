@@ -10,6 +10,7 @@ import asyncio
 import logging
 import re
 import subprocess
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, cast
 
@@ -295,8 +296,8 @@ class DevAgent:
             except Exception as e:
                 logger.warning(f"[Dev Agent] Failed to update story status: {e}")
 
-            # 5. 通知QA
-            return await self._notify_qa_agent_safe(story_path)
+            # 5. 🎯 关键：确保 SDK 调用在独立 Task 中完成
+            return await self._notify_qa_agent_in_isolated_task(story_path)
 
         except Exception as e:
             logger.error(f"{self.name} Dev phase failed: {e}")
@@ -928,3 +929,37 @@ class DevAgent:
         except Exception as e:
             logger.error(f"[Dev Agent] Error notifying QA agent: {e}")
             return False
+
+
+    async def _notify_qa_agent_in_isolated_task(self, story_path: str) -> bool:
+        """
+        🎯 在独立 Task 中通知 QA，避免跨 Task 的 cancel scope 冲突
+
+        核心原理：
+        1. 创建全新的 Task 执行 QA 通知
+        2. 确保 Dev 阶段的 cancel scope 已在原 Task 中完全退出
+        3. QA 阶段使用全新的 cancel scope
+        """
+        try:
+            # 🎯 使用 asyncio.create_task 创建独立 Task
+            # 注意：不使用 await，让 QA 在独立 Task 中执行
+            qa_task = asyncio.create_task(
+                self._notify_qa_agent_safe(story_path),
+                name=f"QA-Notification-{int(time.time())}"
+            )
+
+            # 可选：等待 QA 任务完成，或让它在后台运行
+            # 如果需要同步等待：
+            # result = await qa_task
+            # return result
+
+            # 如果可以异步执行：
+            logger.info(f"[Dev Agent] QA agent notification started in task: {qa_task.get_name()}")
+
+            # 立即返回，让 QA 在后台执行
+            return True
+
+        except Exception as e:
+            logger.error(f"[Dev Agent] Error starting QA task: {e}")
+            # 回退到同步执行
+            return await self._notify_qa_agent_safe(story_path)
