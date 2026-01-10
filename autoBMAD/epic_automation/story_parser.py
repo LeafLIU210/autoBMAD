@@ -16,6 +16,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
 # Import SafeClaudeSDK with proper type checking to avoid circular imports
@@ -64,15 +65,6 @@ CORE_STATUS_READY_FOR_DONE = "Ready for Done"
 CORE_STATUS_DONE = "Done"
 CORE_STATUS_FAILED = "Failed"
 
-# 处理状态值：用于数据库和内部状态跟踪
-PROCESSING_STATUS_PENDING = "pending"
-PROCESSING_STATUS_IN_PROGRESS = "in_progress"
-PROCESSING_STATUS_REVIEW = "review"
-PROCESSING_STATUS_COMPLETED = "completed"
-PROCESSING_STATUS_FAILED = "failed"
-PROCESSING_STATUS_CANCELLED = "cancelled"
-PROCESSING_STATUS_ERROR = "error"
-
 # 核心状态值集合
 CORE_STATUS_VALUES = {
     CORE_STATUS_DRAFT,
@@ -84,64 +76,51 @@ CORE_STATUS_VALUES = {
     CORE_STATUS_FAILED,
 }
 
-# 处理状态值集合
-PROCESSING_STATUS_VALUES = {
-    PROCESSING_STATUS_PENDING,
-    PROCESSING_STATUS_IN_PROGRESS,
-    PROCESSING_STATUS_REVIEW,
-    PROCESSING_STATUS_COMPLETED,
-    PROCESSING_STATUS_FAILED,
-    PROCESSING_STATUS_CANCELLED,
-    PROCESSING_STATUS_ERROR,
-}
 
-# 核心状态值 → 处理状态值映射
+class ProcessingStatus(Enum):
+    """统一的处理状态值系统"""
+
+    # === 故事处理状态 ===
+    PENDING = "pending"           # 故事未开始/草稿
+    IN_PROGRESS = "in_progress"   # 故事进行中
+    REVIEW = "review"            # 故事审查中
+    COMPLETED = "completed"       # 故事已完成
+    FAILED = "failed"           # 故事失败
+    CANCELLED = "cancelled"     # 故事取消
+
+    # === QA 相关处理状态 ===
+    QA_PASS = "qa_pass"          # QA 验证通过
+    QA_CONCERNS = "qa_concerns"  # QA 发现非关键问题
+    QA_FAIL = "qa_fail"         # QA 发现关键问题
+    QA_WAIVED = "qa_waived"     # QA 豁免
+
+    # === 特殊状态 ===
+    ERROR = "error"            # 系统错误
+    UNKNOWN = "unknown"        # 未知状态
+
+# 核心状态值 → 处理状态值映射（单向）
 CORE_TO_PROCESSING_MAPPING = {
-    CORE_STATUS_DRAFT: PROCESSING_STATUS_PENDING,
-    CORE_STATUS_READY_FOR_DEVELOPMENT: PROCESSING_STATUS_PENDING,
-    CORE_STATUS_IN_PROGRESS: PROCESSING_STATUS_IN_PROGRESS,
-    CORE_STATUS_READY_FOR_REVIEW: PROCESSING_STATUS_REVIEW,
-    CORE_STATUS_READY_FOR_DONE: PROCESSING_STATUS_REVIEW,
-    CORE_STATUS_DONE: PROCESSING_STATUS_COMPLETED,
-    CORE_STATUS_FAILED: PROCESSING_STATUS_FAILED,
-}
-
-# 处理状态值 → 核心状态值映射（反向映射）
-PROCESSING_TO_CORE_MAPPING = {
-    PROCESSING_STATUS_PENDING: CORE_STATUS_DRAFT,
-    PROCESSING_STATUS_IN_PROGRESS: CORE_STATUS_IN_PROGRESS,
-    PROCESSING_STATUS_REVIEW: CORE_STATUS_READY_FOR_REVIEW,
-    PROCESSING_STATUS_COMPLETED: CORE_STATUS_DONE,
-    PROCESSING_STATUS_FAILED: CORE_STATUS_FAILED,
-    PROCESSING_STATUS_CANCELLED: CORE_STATUS_DRAFT,  # cancelled 映射为 Draft
-    PROCESSING_STATUS_ERROR: CORE_STATUS_DRAFT,  # error 映射为 Draft
+    CORE_STATUS_DRAFT: "pending",
+    CORE_STATUS_READY_FOR_DEVELOPMENT: "pending",
+    CORE_STATUS_IN_PROGRESS: "in_progress",
+    CORE_STATUS_READY_FOR_REVIEW: "review",
+    CORE_STATUS_READY_FOR_DONE: "review",
+    CORE_STATUS_DONE: "completed",
+    CORE_STATUS_FAILED: "failed",
 }
 
 
 def core_status_to_processing(core_status: str) -> str:
     """
-    将核心状态值转换为处理状态值（用于StateManager数据库存储）
+    核心状态值 → 处理状态值转换（单向）
 
     Args:
-        core_status: 核心状态值（Draft, Ready for Development, In Progress, Ready for Review, Ready for Done, Done, Failed）
+        core_status: 核心状态值
 
     Returns:
-        处理状态值（pending, in_progress, review, completed, failed）
+        对应的处理状态值
     """
-    return CORE_TO_PROCESSING_MAPPING.get(core_status, PROCESSING_STATUS_PENDING)
-
-
-def processing_status_to_core(processing_status: str) -> str:
-    """
-    将处理状态值转换为核心状态值（用于显示和业务逻辑）
-
-    Args:
-        processing_status: 处理状态值（pending, in_progress, review, completed, failed, cancelled, error）
-
-    Returns:
-        核心状态值（Draft, Ready for Development, In Progress, Ready for Review, Ready for Done, Done, Failed）
-    """
-    return PROCESSING_TO_CORE_MAPPING.get(processing_status, CORE_STATUS_DRAFT)
+    return CORE_TO_PROCESSING_MAPPING.get(core_status, "unknown")
 
 
 def is_core_status_valid(core_status: str) -> bool:
@@ -155,19 +134,6 @@ def is_core_status_valid(core_status: str) -> bool:
         True 如果状态值有效，False 否则
     """
     return core_status in CORE_STATUS_VALUES
-
-
-def is_processing_status_valid(processing_status: str) -> bool:
-    """
-    检查处理状态值是否有效
-
-    Args:
-        processing_status: 状态值字符串
-
-    Returns:
-        True 如果状态值有效，False 否则
-    """
-    return processing_status in PROCESSING_STATUS_VALUES
 
 
 # =============================================================================
@@ -857,61 +823,55 @@ def _normalize_story_status(status: str) -> str:
     """
     标准化故事状态值
 
-    此函数处理各种格式的状态值，确保返回标准状态值。
-    如果输入是核心状态值，直接返回；
-    如果输入是处理状态值，转换为核心状态值；
-    如果输入是其他格式，尝试标准化。
+    重要: 此函数现在只处理核心状态值
+    禁止处理状态值反向影响核心状态值
 
     Args:
         status: 输入的状态值
 
     Returns:
-        标准核心状态值
+        标准化的核心状态值
     """
-    # 如果已经是标准核心状态值，直接返回
-    if is_core_status_valid(status):
+    # 1. 标准化为标题格式
+    status = status.strip().title()
+
+    # 2. 如果已经是标准核心状态值，直接返回
+    if status in CORE_STATUS_VALUES:
         return status
 
-    # 如果是处理状态值，转换为核心状态值
-    if is_processing_status_valid(status):
-        return processing_status_to_core(status)
+    # 3. 处理各种格式变体（小写匹配）
+    status_lower = status.lower()
 
-    # 处理特殊情况
-    status_lower = status.lower().strip()
+    # 草稿变体
+    if status_lower in ["draft", "草稿"]:
+        return CORE_STATUS_DRAFT
 
-    # 匹配完成状态
-    if status_lower in ["done", "completed", "complete"]:
-        return CORE_STATUS_DONE
+    # 开发就绪变体
+    if status_lower in ["ready for development", "ready"]:
+        return CORE_STATUS_READY_FOR_DEVELOPMENT
 
-    # 匹配失败状态
-    if status_lower in ["failed", "fail", "failure"]:
-        return "Failed"
+    # 进行中变体
+    if status_lower in ["in progress", "in_progress", "进行中", "开发中"]:
+        return CORE_STATUS_IN_PROGRESS
 
-    # 匹配进行中状态
-    if status_lower in ["in progress", "in_progress", "progress"]:
-        return "In Progress"
+    # 审查就绪变体
+    if status_lower in ["ready for review", "review", "待审查"]:
+        return CORE_STATUS_READY_FOR_REVIEW
 
-    # 匹配审查状态
-    if status_lower in ["ready for review", "review", "ready_for_review"]:
-        return "Ready for Review"
-
-    # 匹配准备完成状态
-    if status_lower in ["ready for done", "ready_for_done", "ready_done"]:
+    # 完成就绪变体
+    if status_lower in ["ready for done", "ready for completion"]:
         return CORE_STATUS_READY_FOR_DONE
 
-    # 匹配准备开发状态
-    if status_lower in ["ready for development", "ready_for_development", "ready"]:
-        return "Ready for Development"
+    # 已完成变体
+    if status_lower in ["done", "completed", "已完成", "完成"]:
+        return CORE_STATUS_DONE
 
-    # 处理特殊阶段状态
-    if status_lower == "dev_completed":
-        return "Ready for Review"  # Dev完成 → Ready for Review
+    # 失败变体
+    if status_lower in ["failed", "error", "失败", "错误"]:
+        return CORE_STATUS_FAILED
 
-    if status_lower == "sm_completed":
-        return "sm_completed"  # SM完成保持不变（特殊状态）
-
-    # 默认返回 Draft
-    return "Draft"
+    # 4. 默认返回草稿状态
+    return CORE_STATUS_DRAFT
 
 
 # =============================================================================

@@ -26,15 +26,13 @@ from autoBMAD.epic_automation.log_manager import (
 # Import SafeClaudeSDK for StatusParser initialization
 from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
-# Import status conversion utilities
+# Import status system
 from autoBMAD.epic_automation.story_parser import (
     _normalize_story_status,
     CORE_STATUS_DONE,
     CORE_STATUS_READY_FOR_DONE,
     core_status_to_processing,
     is_core_status_valid,
-    is_processing_status_valid,
-    processing_status_to_core,
 )
 
 # Import ClaudeAgentOptions for proper SDK configuration
@@ -1184,7 +1182,7 @@ class EpicDriver:
             self.dev_agent._log_manager = self.log_manager
 
             # Execute Dev phase with story_path parameter
-            result: bool = await self.dev_agent.execute(story_content, story_path)
+            result: bool = await self.dev_agent.execute(story_path)
 
             # Update state
             state_update_success = await self.state_manager.update_story_status(
@@ -1229,11 +1227,7 @@ class EpicDriver:
 
             # Execute QA phase with tools integration
             qa_result: dict[str, Any] = await self.qa_agent.execute(
-                story_content,
                 story_path=story_path,
-                use_qa_tools=True,
-                source_dir=self.source_dir,
-                test_dir=self.test_dir,
             )
 
             # QA phase completed - no intermediate qa_completed state set

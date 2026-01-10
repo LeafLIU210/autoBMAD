@@ -20,97 +20,12 @@ import shutil
 import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Union
 
+from .story_parser import ProcessingStatus
+
 logger = logging.getLogger(__name__)
-
-
-class StoryStatus(Enum):
-    """Story status enumeration - 使用标准处理状态值"""
-
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    REVIEW = "review"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    ERROR = "error"
-
-
-class QAResult(Enum):
-    """QA result enumeration."""
-
-    PASS = "PASS"
-    CONCERNS = "CONCERNS"
-    FAIL = "FAIL"
-    WAIVED = "WAIVED"
-
-
-def get_story_status_enum(status_str: str) -> StoryStatus:
-    """
-    将状态字符串转换为 StoryStatus 枚举
-
-    Args:
-        status_str: 状态字符串
-
-    Returns:
-        对应的 StoryStatus 枚举值
-    """
-    try:
-        return StoryStatus(status_str)
-    except ValueError:
-        # 如果不是枚举值，返回默认值
-        return StoryStatus.PENDING
-
-
-def is_story_status_completed(status: StoryStatus | str) -> bool:
-    """
-    检查故事是否已完成
-
-    Args:
-        status: 故事状态
-
-    Returns:
-        True 如果状态表示完成，False 否则
-    """
-    if isinstance(status, StoryStatus):
-        return status == StoryStatus.COMPLETED
-    else:
-        return status.lower() == "completed"
-
-
-def is_story_status_failed(status: StoryStatus | str) -> bool:
-    """
-    检查故事是否失败
-
-    Args:
-        status: 故事状态
-
-    Returns:
-        True 如果状态表示失败，False 否则
-    """
-    if isinstance(status, StoryStatus):
-        return status == StoryStatus.FAILED
-    else:
-        return status.lower() == "failed"
-
-
-def is_story_status_in_progress(status: StoryStatus | str) -> bool:
-    """
-    检查故事是否正在进行中
-
-    Args:
-        status: 故事状态
-
-    Returns:
-        True 如果状态表示进行中，False 否则
-    """
-    if isinstance(status, StoryStatus):
-        return status == StoryStatus.IN_PROGRESS
-    else:
-        return status.lower() == "in_progress"
 
 
 class DeadlockDetector:
@@ -769,29 +684,28 @@ class StateManager:
             db_status: 数据库状态
         """
         try:
-            # 映射数据库状态到markdown状态
-            status_mapping = {
-                # 完成状态
-                "completed": "Done",
-                "done": "Done",
-                "dev_completed": "Ready for Review",  # Dev完成 → Ready for Review
-
-                # 开发流程状态
+            # 单向映射：数据库状态 → Markdown文档状态
+            DATABASE_TO_MARKDOWN_MAPPING = {
+                # 故事状态
                 "pending": "Draft",
-                "ready_for_development": "Ready for Development",
                 "in_progress": "In Progress",
                 "review": "Ready for Review",
-                "ready_for_review": "Ready for Review",
-                "ready_for_done": "Ready for Done",
-
-                # 错误状态
+                "completed": "Done",
                 "failed": "Failed",
-                "error": "Failed",
                 "cancelled": "Draft",
+
+                # QA状态
+                "qa_pass": "Done",  # QA通过表示故事已完成
+                "qa_concerns": "Ready for Review",  # QA关注需要继续
+                "qa_fail": "Failed",  # QA失败表示故事失败
+                "qa_waived": "Done",  # QA豁免表示故事完成
+
+                # 特殊状态
+                "error": "Failed",
             }
 
             # 获取markdown状态，如果未映射则使用原状态
-            markdown_status = status_mapping.get(db_status.lower(), db_status)
+            markdown_status = DATABASE_TO_MARKDOWN_MAPPING.get(db_status, "Draft")
 
             story_file = Path(story_path)
             if not story_file.exists():

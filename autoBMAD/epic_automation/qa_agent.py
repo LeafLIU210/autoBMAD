@@ -17,7 +17,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -34,51 +33,38 @@ except ImportError:
     # For development without SDK installed
     ClaudeAgentOptions = None
 
+# Import status system
+from .story_parser import ProcessingStatus, SimpleStoryParser
+
 # Type annotations for QA tools
 if TYPE_CHECKING:
     pass
 else:
-    try:
-        from .qa_tools_integration import QAStatus  # type: ignore  # noqa: F401
+    class QAAutomationWorkflow:
+        """Fallback QA workflow when tools are not available."""
 
-        QA_TOOLS_AVAILABLE = True
-    except ImportError:
-        # Fallback classes for when qa_tools_integration is not available
-        class QAStatus(Enum):
-            """QA status enum with value attribute."""
+        def __init__(
+            self,
+            basedpyright_dir: str,
+            fixtest_dir: str,
+            timeout: int = 300,
+            max_retries: int = 1,
+        ):
+            self.basedpyright_dir = basedpyright_dir
+            self.fixtest_dir = fixtest_dir
+            self.timeout = timeout
+            self.max_retries = max_retries
 
-            PASS = "PASS"
-            FAIL = "FAIL"
-            CONCERNS = "CONCERNS"
-            WAIVED = "WAIVED"
-
-        class QAAutomationWorkflow:
-            """Fallback QA workflow when tools are not available."""
-
-            def __init__(
-                self,
-                basedpyright_dir: str,
-                fixtest_dir: str,
-                timeout: int = 300,
-                max_retries: int = 1,
-            ):
-                self.basedpyright_dir = basedpyright_dir
-                self.fixtest_dir = fixtest_dir
-                self.timeout = timeout
-                self.max_retries = max_retries
-
-            async def run_qa_checks(
-                self, source_dir: str, test_dir: str
-            ) -> dict[str, Any]:
-                """Fallback implementation when QA tools are not available."""
-                return {
-                    "overall_status": QAStatus.WAIVED.value,  # type: ignore
-                    "basedpyright": {"errors": 0, "warnings": 0},
-                    "fixtest": {"tests_failed": 0, "tests_errors": 0},
-                    "message": "QA tools not available",
-                }
-
-        # QA_TOOLS_AVAILABLE already set to False by default
+        async def run_qa_checks(
+            self, source_dir: str, test_dir: str
+        ) -> dict[str, Any]:
+            """Fallback implementation when QA tools are not available."""
+            return {
+                "overall_status": ProcessingStatus.QA_WAIVED.value,
+                "basedpyright": {"errors": 0, "warnings": 0},
+                "fixtest": {"tests_failed": 0, "tests_errors": 0},
+                "message": "QA tools not available",
+            }
 
 logger = logging.getLogger(__name__)
 
@@ -140,10 +126,8 @@ class QAAgent:
         # 每个QAAgent实例创建独立的会话管理器，消除跨Agent cancel scope污染
         self._session_manager = SDKSessionManager()
 
-        # Initialize StatusParser for robust status parsing
+        # Initialize SimpleStoryParser for robust status parsing
         try:
-            from autoBMAD.epic_automation.story_parser import StatusParser
-
             # 创建有效的SDK实例以支持AI解析
             sdk_instance = None
             if SafeClaudeSDK:
@@ -167,11 +151,11 @@ class QAAgent:
                     logger.warning(f"[QA Agent] Failed to create SDK instance: {e}")
 
             # 传入SDK实例（可能为None）
-            self.status_parser = StatusParser(sdk_wrapper=sdk_instance)
+            self.status_parser = SimpleStoryParser(sdk_wrapper=sdk_instance)
         except ImportError:
             self.status_parser = None
             logger.warning(
-                "[QA Agent] StatusParser not available, using fallback parsing"
+                "[QA Agent] SimpleStoryParser not available, using fallback parsing"
             )
 
         logger.info(f"{self.name} initialized")
@@ -237,111 +221,111 @@ class QAAgent:
 
     async def execute(
         self,
-        story_content: str,
-        story_path: str = "",
-        use_qa_tools: bool = True,
-        source_dir: str = "src",
-        test_dir: str = "tests",
-        max_retries: int = 3,
-        cached_status: str | None = None,  # 🎯 新增：缓存状态参数
+        story_path: str,
+        cached_status: str | None = None,
     ) -> dict[str, str | bool | list[str] | int | None]:
         """
-        执行QA阶段 - 根据故事状态决定执行路径。
+        QA执行流程（与其他agent保持一致）
+
+        流程:
+        1. 获取核心状态值（从文档）
+        2. 转换为处理状态值（用于程序内部）
+        3. 执行QA验证
+        4. 根据QA结果确定新的处理状态值
+        5. 更新数据库
+        6. 业务决策基于核心状态值
 
         Args:
-            story_content: 故事的原始markdown内容
             story_path: 故事文件路径
-            use_qa_tools: 是否使用QA工具
-            source_dir: 源代码目录
-            test_dir: 测试目录
-            max_retries: 最大重试次数
-            cached_status: 🎯 新增：缓存的故事状态，避免重复解析
+            cached_status: 缓存的状态值
 
         Returns:
             包含QA结果的字典
         """
         try:
-            # 1. 🎯 关键修复：等待QA审查任务的SDK完全结束
-            await self._wait_for_qa_sdk_completion()
-
-            # 2. 获取故事状态（使用缓存或解析）
-            status = None
+            # 步骤 1: 获取核心状态值（从文档）
             if cached_status:
                 logger.info(f"[QA Agent] Using cached status: {cached_status}")
-                status = cached_status
+                core_status = cached_status
             else:
-                # 只有在没有缓存时才解析状态
                 logger.info(f"[QA Agent] Parsing story status")
-                if story_path:
-                    status = await self._parse_story_status_safe(story_path)
+                core_status = await self._parse_story_status(story_path)
 
-                    # 3. 🎯 关键修复：等待状态解析的SDK完全结束
-                    await self._wait_for_status_sdk_completion()
-
-            if not status:
+            if not core_status or core_status == "unknown":
                 logger.warning(f"[QA Agent] No status available")
-                # 执行回退QA审查
-                logger.info(
-                    f"{self.name} No status available, executing fallback QA review"
-                )
-                qa_result = await self._perform_fallback_qa_review(
-                    story_path, source_dir, test_dir
-                )
-                return qa_result.to_dict()
-
-            # 4. 根据状态执行相应操作
-            status_lower = status.lower().strip()
-
-            # 如果状态是 "Done" 或 "Ready for Done"，跳过QA
-            if status_lower in ["done", "ready for done"]:
-                logger.info(f"{self.name} Story status is '{status}' - skipping QA")
-                return {
-                    "passed": True,
-                    "completed": True,
-                    "needs_fix": False,
-                    "dev_prompt": None,
-                    "fallback_review": False,
-                    "checks_passed": 0,
-                    "total_checks": 0,
-                    "reason": f"故事状态为'{status}'，QA跳过",
-                }
-
-            # 如果状态是 "Ready for Review"，执行完整QA审查
-            elif status_lower in ["ready for review"]:
-                logger.info(
-                    f"{self.name} Story status is '{status}' - executing QA review"
-                )
-                qa_result = await self._execute_qa_review(
-                    story_path, source_dir, test_dir
-                )
-                return qa_result.to_dict()
-
-            # 其他状态返回需要修复
-            else:
-                logger.info(
-                    f"{self.name} Story status is '{status}' - needs fixing"
-                )
                 return {
                     "passed": False,
                     "completed": False,
                     "needs_fix": True,
-                    "dev_prompt": f"*fix the qa gate file in @docs\\qa\\gates for {story_path} - Update story status from '{status}' to 'Ready for Review'",
-                    "fallback_review": False,
-                    "checks_passed": 0,
-                    "total_checks": 0,
-                    "reason": f"故事状态为'{status}'，需要修复",
+                    "dev_prompt": f"无法解析故事状态，需要检查故事文档",
+                    "reason": "无法解析故事状态"
+                }
+
+            # 步骤 2: 转换为处理状态值
+            processing_status = self._core_to_processing(core_status)
+
+            # 步骤 3: 执行QA验证
+            try:
+                from .qa_tools_integration import QAAutomationWorkflow
+                qa_workflow = QAAutomationWorkflow()
+                qa_result = await qa_workflow.run_qa_checks()
+            except ImportError:
+                # Fallback if QA tools not available
+                qa_result = {
+                    "overall_status": ProcessingStatus.QA_WAIVED.value,
+                    "basedpyright": {"errors": 0, "warnings": 0},
+                    "fixtest": {"tests_failed": 0, "tests_errors": 0},
+                    "message": "QA tools not available",
+                }
+
+            # 步骤 4: 根据QA结果确定新的处理状态值
+            if qa_result["overall_status"] == ProcessingStatus.QA_PASS.value:
+                new_processing_status = ProcessingStatus.QA_PASS
+            elif qa_result["overall_status"] == ProcessingStatus.QA_CONCERNS.value:
+                new_processing_status = ProcessingStatus.QA_CONCERNS
+            elif qa_result["overall_status"] == ProcessingStatus.QA_FAIL.value:
+                new_processing_status = ProcessingStatus.QA_FAIL
+            else:
+                new_processing_status = ProcessingStatus.QA_WAIVED
+
+            # 步骤 5: 更新数据库（使用处理状态值）
+            try:
+                from .state_manager import StateManager
+                state_manager = StateManager()
+                await state_manager.update_story_status(story_path, new_processing_status.value)
+            except Exception as e:
+                logger.warning(f"[QA Agent] Failed to update database: {e}")
+
+            # 步骤 6: 业务决策基于核心状态值
+            if core_status == "Done":
+                return {
+                    "passed": True,
+                    "completed": True,
+                    "needs_fix": False,
+                    "skip_reason": "故事已完成"
+                }
+            elif core_status == "Ready for Review":
+                return {
+                    "qa_result": new_processing_status.value,
+                    "proceed": True,
+                    "message": "QA验证完成"
+                }
+            else:
+                return {
+                    "passed": False,
+                    "needs_fix": True,
+                    "dev_prompt": f"故事状态为 {core_status}，需要完成开发后进行QA"
                 }
 
         except Exception as e:
             logger.error(f"[QA Agent] Error in QA phase: {e}")
-            # 状态检查失败时，执行回退QA审查
-            logger.info(
-                f"{self.name} Status check failed, executing fallback QA review"
-            )
-            qa_result = await self._perform_fallback_qa_review(
-                story_path, source_dir, test_dir
-            )
-            return qa_result.to_dict()
+            return {
+                "passed": False,
+                "completed": False,
+                "needs_fix": True,
+                "dev_prompt": f"QA执行错误: {str(e)}",
+                "reason": f"QA执行错误: {str(e)}"
+            }
 
     async def execute_qa_phase(
         self,
@@ -362,10 +346,7 @@ class QAAgent:
 
             # 执行QA
             result = await self.execute(
-                story_content=story_content,
                 story_path=story_path,
-                source_dir=source_dir,
-                test_dir=test_dir,
                 cached_status=cached_status,
             )
 
@@ -993,3 +974,15 @@ class QAAgent:
             logger.error(f"[QA Agent] Failed to parse status: {e}")
             return "Unknown"
 
+    def _core_to_processing(self, core_status: str) -> str:
+        """核心状态值 → 处理状态值转换"""
+        mapping = {
+            "Draft": "pending",
+            "Ready for Development": "pending",
+            "In Progress": "in_progress",
+            "Ready for Review": "review",
+            "Ready for Done": "review",
+            "Done": "completed",
+            "Failed": "failed",
+        }
+        return mapping.get(core_status, "pending")

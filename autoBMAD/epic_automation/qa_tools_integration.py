@@ -10,20 +10,12 @@ import logging
 import subprocess
 import sys
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .story_parser import ProcessingStatus
+
 logger = logging.getLogger(__name__)
-
-
-class QAStatus(Enum):
-    """QA tool execution status."""
-
-    PASS = "PASS"
-    CONCERNS = "CONCERNS"
-    FAIL = "FAIL"
-    WAIVED = "WAIVED"
 
 
 class QAError(Exception):
@@ -82,7 +74,7 @@ class BasedPyrightWorkflowRunner:
             return self._create_unavailable_result()
 
         result: dict[str, Any] = {
-            "status": QAStatus.PASS,
+            "status": ProcessingStatus.QA_PASS,
             "tool": "BasedPyright-Workflow",
             "timestamp": datetime.now().isoformat(),
             "source_dir": source_dir,
@@ -133,21 +125,21 @@ class BasedPyrightWorkflowRunner:
 
             # Determine status
             if result["errors"] == 0:
-                result["status"] = QAStatus.PASS
+                result["status"] = ProcessingStatus.QA_PASS
             elif result["auto_fixable"] > 0:
-                result["status"] = QAStatus.CONCERNS
+                result["status"] = ProcessingStatus.QA_CONCERNS
             else:
-                result["status"] = QAStatus.FAIL
+                result["status"] = ProcessingStatus.QA_FAIL
 
             logger.info(f"BasedPyright check complete: {result['status'].value}")
 
         except subprocess.TimeoutExpired:
             logger.error(f"BasedPyright check timed out after {self.timeout}s")
-            result["status"] = QAStatus.FAIL
+            result["status"] = ProcessingStatus.QA_FAIL
             result["details"].append(f"Check timed out after {self.timeout} seconds")  # type: ignore[union-attr]
         except Exception as e:
             logger.error(f"BasedPyright check failed: {e}")
-            result["status"] = QAStatus.FAIL
+            result["status"] = ProcessingStatus.QA_FAIL
             result["details"].append(f"Execution error: {str(e)}")  # type: ignore[union-attr]
 
         return result
@@ -317,7 +309,7 @@ class BasedPyrightWorkflowRunner:
     def _create_unavailable_result(self) -> dict[str, Any]:
         """Create result for when tool is unavailable."""
         return {
-            "status": QAStatus.WAIVED,
+            "status": ProcessingStatus.QA_WAIVED,
             "tool": "BasedPyright-Workflow",
             "timestamp": datetime.now().isoformat(),
             "errors": 0,
@@ -376,7 +368,7 @@ class FixtestWorkflowRunner:
             return self._create_unavailable_result()
 
         result: dict[str, Any] = {
-            "status": QAStatus.PASS,
+            "status": ProcessingStatus.QA_PASS,
             "tool": "Fixtest-Workflow",
             "timestamp": datetime.now().isoformat(),
             "source_dir": source_dir,
@@ -395,7 +387,7 @@ class FixtestWorkflowRunner:
 
             if len(test_files) == 0:
                 logger.warning("No test files found")
-                result["status"] = QAStatus.CONCERNS
+                result["status"] = ProcessingStatus.QA_CONCERNS
                 result["details"].append("No test files found in test directory")  # type: ignore[union-attr]
                 return result
 
@@ -413,22 +405,22 @@ class FixtestWorkflowRunner:
 
             # Determine status
             if passed > 0 and failed == 0 and errors == 0:
-                result["status"] = QAStatus.PASS
+                result["status"] = ProcessingStatus.QA_PASS
             elif failed > 0 or errors > 0:
-                result["status"] = QAStatus.CONCERNS
+                result["status"] = ProcessingStatus.QA_CONCERNS
             else:
-                result["status"] = QAStatus.FAIL
+                result["status"] = ProcessingStatus.QA_FAIL
 
             logger.info(f"Fixtest check complete: {result['status'].value}")
             logger.info(f"Tests: {passed} passed, {failed} failed, {errors} errors")
 
         except subprocess.TimeoutExpired:
             logger.error(f"Fixtest check timed out after {self.timeout}s")
-            result["status"] = QAStatus.FAIL
+            result["status"] = ProcessingStatus.QA_FAIL
             result["details"].append(f"Check timed out after {self.timeout} seconds")  # type: ignore[union-attr]
         except Exception as e:
             logger.error(f"Fixtest check failed: {e}")
-            result["status"] = QAStatus.FAIL
+            result["status"] = ProcessingStatus.QA_FAIL
             result["details"].append(f"Execution error: {str(e)}")  # type: ignore[union-attr]
 
         return result
@@ -577,7 +569,7 @@ class FixtestWorkflowRunner:
     def _create_unavailable_result(self) -> dict[str, Any]:
         """Create result for when tool is unavailable."""
         return {
-            "status": QAStatus.WAIVED,
+            "status": ProcessingStatus.QA_WAIVED,
             "tool": "Fixtest-Workflow",
             "timestamp": datetime.now().isoformat(),
             "tests_passed": 0,
@@ -672,40 +664,40 @@ class QAAutomationWorkflow:
 
     def _determine_overall_status(
         self, bp_result: dict[str, Any], ft_result: dict[str, Any]
-    ) -> QAStatus:
+    ) -> ProcessingStatus:
         """
-        Determine overall QA status from individual tool results.
+        确定整体QA状态
 
         Args:
-            bp_result: BasedPyright result
-            ft_result: Fixtest result
+            bp_result: BasedPyright 结果
+            ft_result: Fixtest 结果
 
         Returns:
-            Overall QA status
+            整体QA状态
         """
-        bp_status = QAStatus(bp_result["status"])
-        ft_status = QAStatus(ft_result["status"])
+        bp_status = ProcessingStatus(bp_result["status"])
+        ft_status = ProcessingStatus(ft_result["status"])
 
-        # If either tool has WAIVED status, propagate it
-        if bp_status == QAStatus.WAIVED or ft_status == QAStatus.WAIVED:
-            return QAStatus.WAIVED
+        # WAIVED 优先传播
+        if bp_status == ProcessingStatus.QA_WAIVED or ft_status == ProcessingStatus.QA_WAIVED:
+            return ProcessingStatus.QA_WAIVED
 
-        # If both tools PASS, overall is PASS
-        if bp_status == QAStatus.PASS and ft_status == QAStatus.PASS:
-            return QAStatus.PASS
+        # 两者都 PASS → QA_PASS
+        if bp_status == ProcessingStatus.QA_PASS and ft_status == ProcessingStatus.QA_PASS:
+            return ProcessingStatus.QA_PASS
 
-        # If either tool FAIL, overall is FAIL
-        if bp_status == QAStatus.FAIL or ft_status == QAStatus.FAIL:
-            return QAStatus.FAIL
+        # 任一 FAIL → QA_FAIL
+        if bp_status == ProcessingStatus.QA_FAIL or ft_status == ProcessingStatus.QA_FAIL:
+            return ProcessingStatus.QA_FAIL
 
-        # Otherwise, overall is CONCERNS
-        return QAStatus.CONCERNS
+        # 否则 → QA_CONCERNS
+        return ProcessingStatus.QA_CONCERNS
 
     def _generate_summary(
         self,
         bp_result: dict[str, Any],
         ft_result: dict[str, Any],
-        overall_status: QAStatus,
+        overall_status: ProcessingStatus,
     ) -> dict[str, Any]:
         """Generate human-readable summary of QA results."""
         summary: dict[str, Any] = {
@@ -740,7 +732,7 @@ class QAAutomationWorkflow:
                 f"Resolve {ft_result['tests_errors']} test execution errors"
             )
 
-        if overall_status == QAStatus.PASS:
+        if overall_status == ProcessingStatus.QA_PASS:
             summary["recommendations"].append(
                 "All QA checks passed - ready for production"
             )  # type: ignore[union-attr]

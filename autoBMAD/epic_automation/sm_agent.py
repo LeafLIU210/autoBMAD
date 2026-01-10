@@ -18,6 +18,9 @@ from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 # Import SDK session manager for isolated execution
 from .sdk_session_manager import SDKErrorType, get_session_manager
 
+# Import status system
+from .story_parser import SimpleStoryParser, ProcessingStatus
+
 try:
     from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 except ImportError:
@@ -53,16 +56,14 @@ class SMAgent:
         self.tasks_path = Path(tasks_path) if tasks_path else None
         self.config = config or {}
 
-        # Initialize StatusParser for robust status parsing
+        # Initialize SimpleStoryParser for robust status parsing
         try:
-            from autoBMAD.epic_automation.story_parser import StatusParser
-
-            # 传入 None，StatusParser 会处理没有 SDK 的情况
-            self.status_parser = StatusParser(sdk_wrapper=None)
+            # 传入 None，SimpleStoryParser 会处理没有 SDK 的情况
+            self.status_parser = SimpleStoryParser(sdk_wrapper=None)
         except ImportError:
             self.status_parser = None
             logger.warning(
-                "[SM Agent] StatusParser not available, using fallback parsing"
+                "[SM Agent] SimpleStoryParser not available, using fallback parsing"
             )
 
         logger.info(f"{self.name} initialized")
@@ -511,7 +512,10 @@ class SMAgent:
             return True
         elif result.error_type == SDKErrorType.CANCELLED:
             logger.info("[SM Agent] SDK call cancelled")
-            return False
+            return True
+            logger.info(
+                f"[SM Agent] SDK call cancelled in {result.duration_seconds:.1f}s"
+            )
         elif result.error_type == SDKErrorType.TIMEOUT:
             logger.warning("[SM Agent] SDK call timed out")
             return False
@@ -641,10 +645,10 @@ class SMAgent:
                 with open(story_file, encoding="utf-8") as f:
                     content = f.read()
 
-                # Use StatusParser to detect current status and update intelligently
+                # Use SimpleStoryParser to detect current status and update intelligently
                 if self.status_parser:
                     try:
-                        # Note: parse_status is now async in SimpleStatusParser
+                        # Note: parse_status is now async in SimpleStoryParser
                         current_status = await self.status_parser.parse_status(content)
                         if current_status and current_status.lower() in [
                             "draft",
@@ -661,7 +665,7 @@ class SMAgent:
                             )
                     except Exception as e:
                         logger.warning(
-                            f"[SM Agent] StatusParser error: {e}, using fallback patterns"
+                            f"[SM Agent] SimpleStoryParser error: {e}, using fallback patterns"
                         )
 
                 # Fallback to original regex patterns for status update
