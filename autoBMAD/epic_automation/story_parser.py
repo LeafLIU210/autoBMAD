@@ -903,6 +903,13 @@ def _normalize_story_status(status: str) -> str:
     if status_lower in ["ready for development", "ready_for_development", "ready"]:
         return "Ready for Development"
 
+    # 处理特殊阶段状态
+    if status_lower == "dev_completed":
+        return "Ready for Review"  # Dev完成 → Ready for Review
+
+    if status_lower == "sm_completed":
+        return "sm_completed"  # SM完成保持不变（特殊状态）
+
     # 默认返回 Draft
     return "Draft"
 

@@ -28,6 +28,7 @@ from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
 # Import status conversion utilities
 from autoBMAD.epic_automation.story_parser import (
+    _normalize_story_status,
     CORE_STATUS_DONE,
     CORE_STATUS_READY_FOR_DONE,
     core_status_to_processing,
@@ -55,59 +56,6 @@ DEV_TIMEOUT = None  # 45分钟（开发阶段）
 QA_TIMEOUT = None  # 30分钟（QA审查阶段）
 SM_TIMEOUT = None  # 30分钟（SM阶段）
 
-
-def _normalize_story_status(status: str) -> str:
-    """
-    标准化故事状态值
-
-    此函数处理各种格式的状态值，确保返回标准状态值。
-    如果输入是核心状态值，直接返回；
-    如果输入是处理状态值，转换为核心状态值；
-    如果输入是其他格式，尝试标准化。
-
-    Args:
-        status: 输入的状态值
-
-    Returns:
-        标准核心状态值
-    """
-    # 如果已经是标准核心状态值，直接返回
-    if is_core_status_valid(status):
-        return status
-
-    # 如果是处理状态值，转换为核心状态值
-    if is_processing_status_valid(status):
-        return processing_status_to_core(status)
-
-    # 处理特殊情况
-    status_lower = status.lower().strip()
-
-    # 匹配完成状态
-    if status_lower in ["done", "completed", "complete"]:
-        return CORE_STATUS_DONE
-
-    # 匹配失败状态
-    if status_lower in ["failed", "fail", "failure"]:
-        return "Failed"
-
-    # 匹配进行中状态
-    if status_lower in ["in progress", "in_progress", "progress"]:
-        return "In Progress"
-
-    # 匹配审查状态
-    if status_lower in ["ready for review", "review", "ready_for_review"]:
-        return "Ready for Review"
-
-    # 匹配准备完成状态
-    if status_lower in ["ready for done", "ready_for_done", "ready_done"]:
-        return CORE_STATUS_READY_FOR_DONE
-
-    # 匹配准备开发状态
-    if status_lower in ["ready for development", "ready_for_development", "ready"]:
-        return "Ready for Development"
-
-    # 默认返回 Draft
-    return "Draft"
 
 
 def _convert_core_to_processing_status(core_status: str, phase: str) -> str:  # type: ignore[reportUnusedFunction]
@@ -1241,7 +1189,7 @@ class EpicDriver:
             # Update state
             state_update_success = await self.state_manager.update_story_status(
                 story_path=story_path,
-                status="dev_completed",
+                status="completed",  # 从 "dev_completed" 更新为 "completed"
                 phase="dev",
                 iteration=iteration,
             )
@@ -1288,18 +1236,8 @@ class EpicDriver:
                 test_dir=self.test_dir,
             )
 
-            # Update state with QA result
-            qa_state_update_success = await self.state_manager.update_story_status(
-                story_path=story_path,
-                status="qa_completed",
-                phase="qa",
-                qa_result=qa_result,
-            )
-
-            if not qa_state_update_success:
-                logger.warning(
-                    f"QA state update failed for {story_path} but continuing with qa_completed status"
-                )
+            # QA phase completed - no intermediate qa_completed state set
+            # QA agent re-evaluates story document status via SDK
 
             if qa_result.get("passed", False):
                 logger.info(f"QA phase passed for {story_path}")
@@ -1313,11 +1251,14 @@ class EpicDriver:
                     logger.warning(
                         f"Completion state update failed for {story_path} but QA passed successfully"
                     )
-
                 return True
             else:
-                logger.warning(f"QA phase failed for {story_path}: {qa_result}")
-                return False
+                logger.info(f"QA phase failed for {story_path}, setting in_progress")
+                await self.state_manager.update_story_status(
+                    story_path=story_path, status="in_progress"
+                )
+
+                return True
 
         except Exception as e:
             logger.error(f"QA phase failed for {story_path}: {e}")
@@ -1417,16 +1358,16 @@ class EpicDriver:
                 qa_passed = await self.execute_qa_phase(story_path)
 
                 if qa_passed:
-                    # Check if story is ready for done
-                    if await self._is_story_ready_for_done(story_path):
-                        logger.info(
-                            f"Story {story_id} completed successfully (Ready for Done)"
-                        )
+                    # 🎯 关键修复：验证最终状态（确保状态真正更新）
+                    actual_status = await self._parse_story_status(story_path)
+
+                    if actual_status == "Done":
+                        logger.info(f"Story {story_id} completed successfully (Status: Done)")
                         return True
+                    elif actual_status == "Ready for Review":
+                        logger.info(f"QA passed but status is '{actual_status}', continuing cycle {iteration + 1}")
                     else:
-                        logger.info(
-                            f"QA passed but story not ready for done, continuing cycle {iteration + 1}"
-                        )
+                        logger.info(f"QA passed but status is '{actual_status}', continuing cycle {iteration + 1}")
 
                 # Increment iteration for next cycle
                 iteration += 1
@@ -1481,8 +1422,7 @@ class EpicDriver:
         """
         Synchronous wrapper for _parse_story_status.
 
-        This method is used in synchronous contexts where async/await cannot be used.
-        It checks if an event loop is running and uses the appropriate method.
+        This method now uses synchronous parsing to avoid async context conflicts.
 
         Args:
             story_path: Path to the story markdown file
@@ -1491,20 +1431,10 @@ class EpicDriver:
             Standard core status string (e.g., 'Draft', 'Ready for Development', 'In Progress', 'Ready for Review', 'Ready for Done', 'Done', 'Failed')
         """
         try:
-            import asyncio
+            # 🎯 关键修复：移除异步上下文检测，直接使用同步解析
+            logger.info(f"Using synchronous status parsing for: {story_path}")
+            return self._parse_story_status_fallback(story_path)
 
-            # Check if we're already in an async context
-            try:
-                asyncio.get_running_loop()
-                # If we're in an async context, we can't use asyncio.run()
-                # Fall back to the fallback parsing method
-                logger.warning("Already in async context, using fallback parsing")
-                return self._parse_story_status_fallback(story_path)
-            except RuntimeError:
-                # No event loop running, safe to use asyncio.run()
-                status = asyncio.run(self._parse_story_status(story_path))
-                # Normalize the status to ensure consistent format
-                return _normalize_story_status(status)
         except Exception as e:
             logger.error(f"Failed to parse story status (sync): {e}")
             return "Draft"  # Return standard status instead of legacy format

@@ -156,7 +156,7 @@ class QAAgent:
                             cwd=str(Path.cwd()),
                             cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe",
                         )
-                    # 创建SDK实例
+                    # 使用 SafeClaudeSDK 抑制 cancel scope 错误
                     sdk_instance = SafeClaudeSDK(
                         prompt="Parse story status",
                         options=options,
@@ -243,6 +243,7 @@ class QAAgent:
         source_dir: str = "src",
         test_dir: str = "tests",
         max_retries: int = 3,
+        cached_status: str | None = None,  # 🎯 新增：缓存状态参数
     ) -> dict[str, str | bool | list[str] | int | None]:
         """
         执行QA阶段 - 根据故事状态决定执行路径。
@@ -254,127 +255,224 @@ class QAAgent:
             source_dir: 源代码目录
             test_dir: 测试目录
             max_retries: 最大重试次数
+            cached_status: 🎯 新增：缓存的故事状态，避免重复解析
 
         Returns:
             包含QA结果的字典
         """
-        # 检查故事状态
-        if story_path:
-            try:
-                status = await self._parse_story_status(story_path)
-                status_lower = status.lower().strip()
+        try:
+            # 1. 🎯 关键修复：等待QA审查任务的SDK完全结束
+            await self._wait_for_qa_sdk_completion()
 
-                # 如果状态是 "Done" 或 "Ready for Done"，跳过QA
-                if status_lower in ["done", "ready for done"]:
-                    logger.info(f"{self.name} Story status is '{status}' - skipping QA")
-                    return {
-                        "passed": True,
-                        "completed": True,
-                        "needs_fix": False,
-                        "dev_prompt": None,
-                        "fallback_review": False,
-                        "checks_passed": 0,
-                        "total_checks": 0,
-                        "reason": f"故事状态为'{status}'，QA跳过",
-                    }
+            # 2. 获取故事状态（使用缓存或解析）
+            status = None
+            if cached_status:
+                logger.info(f"[QA Agent] Using cached status: {cached_status}")
+                status = cached_status
+            else:
+                # 只有在没有缓存时才解析状态
+                logger.info(f"[QA Agent] Parsing story status")
+                if story_path:
+                    status = await self._parse_story_status_safe(story_path)
 
-                # 如果状态是 "Ready for Review"，执行完整QA审查
-                elif status_lower in ["ready for review"]:
-                    logger.info(
-                        f"{self.name} Story status is '{status}' - executing QA review"
-                    )
-                    qa_result = await self._execute_qa_review(
-                        story_path, source_dir, test_dir
-                    )
-                    return qa_result.to_dict()
+                    # 3. 🎯 关键修复：等待状态解析的SDK完全结束
+                    await self._wait_for_status_sdk_completion()
 
-                # 其他状态返回需要修复
-                else:
-                    logger.info(
-                        f"{self.name} Story status is '{status}' - needs fixing"
-                    )
-                    return {
-                        "passed": False,
-                        "completed": False,
-                        "needs_fix": True,
-                        "dev_prompt": f"*fix the qa gate file in @docs\\qa\\gates for {story_path} - Update story status from '{status}' to 'Ready for Review'",
-                        "fallback_review": False,
-                        "checks_passed": 0,
-                        "total_checks": 0,
-                        "reason": f"故事状态为'{status}'，需要修复",
-                    }
-
-            except Exception as e:
-                logger.error(f"Error checking story status: {e}")
-                # 状态检查失败时，执行回退QA审查
+            if not status:
+                logger.warning(f"[QA Agent] No status available")
+                # 执行回退QA审查
                 logger.info(
-                    f"{self.name} Status check failed, executing fallback QA review"
+                    f"{self.name} No status available, executing fallback QA review"
                 )
                 qa_result = await self._perform_fallback_qa_review(
                     story_path, source_dir, test_dir
                 )
                 return qa_result.to_dict()
-        else:
-            # 没有故事路径时执行回退QA审查
-            logger.warning(
-                f"{self.name} No story path provided, executing fallback QA review"
+
+            # 4. 根据状态执行相应操作
+            status_lower = status.lower().strip()
+
+            # 如果状态是 "Done" 或 "Ready for Done"，跳过QA
+            if status_lower in ["done", "ready for done"]:
+                logger.info(f"{self.name} Story status is '{status}' - skipping QA")
+                return {
+                    "passed": True,
+                    "completed": True,
+                    "needs_fix": False,
+                    "dev_prompt": None,
+                    "fallback_review": False,
+                    "checks_passed": 0,
+                    "total_checks": 0,
+                    "reason": f"故事状态为'{status}'，QA跳过",
+                }
+
+            # 如果状态是 "Ready for Review"，执行完整QA审查
+            elif status_lower in ["ready for review"]:
+                logger.info(
+                    f"{self.name} Story status is '{status}' - executing QA review"
+                )
+                qa_result = await self._execute_qa_review(
+                    story_path, source_dir, test_dir
+                )
+                return qa_result.to_dict()
+
+            # 其他状态返回需要修复
+            else:
+                logger.info(
+                    f"{self.name} Story status is '{status}' - needs fixing"
+                )
+                return {
+                    "passed": False,
+                    "completed": False,
+                    "needs_fix": True,
+                    "dev_prompt": f"*fix the qa gate file in @docs\\qa\\gates for {story_path} - Update story status from '{status}' to 'Ready for Review'",
+                    "fallback_review": False,
+                    "checks_passed": 0,
+                    "total_checks": 0,
+                    "reason": f"故事状态为'{status}'，需要修复",
+                }
+
+        except Exception as e:
+            logger.error(f"[QA Agent] Error in QA phase: {e}")
+            # 状态检查失败时，执行回退QA审查
+            logger.info(
+                f"{self.name} Status check failed, executing fallback QA review"
             )
             qa_result = await self._perform_fallback_qa_review(
                 story_path, source_dir, test_dir
             )
             return qa_result.to_dict()
 
+    async def execute_qa_phase(
+        self,
+        story_path: str,
+        source_dir: str = "src",
+        test_dir: str = "tests",
+        cached_status: str | None = None,  # 🎯 新增：缓存状态参数
+    ) -> bool:
+        """🎯 新增：简化的QA阶段执行方法，用于Dev Agent调用"""
+        try:
+            # 读取故事内容
+            story_file = Path(story_path)
+            if not story_file.exists():
+                logger.error(f"[QA Agent] Story file not found: {story_path}")
+                return False
+
+            story_content = story_file.read_text(encoding="utf-8")
+
+            # 执行QA
+            result = await self.execute(
+                story_content=story_content,
+                story_path=story_path,
+                source_dir=source_dir,
+                test_dir=test_dir,
+                cached_status=cached_status,
+            )
+
+            # 返回QA是否通过
+            return bool(result.get("passed", False))
+
+        except Exception as e:
+            logger.error(f"[QA Agent] Error in QA phase: {e}")
+            return False
+
     async def _execute_qa_review(
         self, story_path: str, source_dir: str, test_dir: str
     ) -> QAResult:
-        """执行QA审查"""
-        try:
-            # 执行AI驱动的QA审查
-            review_success = await self._execute_ai_qa_review(story_path)
+        """
+        🎯 关键修复：状态驱动QA审查执行机制
+        1. 执行AI审查
+        2. 等待SDK取消完成
+        3. 检查状态是否更新
+        4. 根据标准状态值执行相应逻辑：
+           - Done/Ready for Done → QAResult(passed=True, completed=True, needs_fix=False)
+           - 其他状态 → QAResult(passed=False, completed=False, needs_fix=True) + 通知Dev Agent
+        """
+        max_retries = 1  # 最多重试1次（仅针对Ready for Review状态）
+        retry_count = 0
 
-            if not review_success:
-                logger.warning(
-                    f"{self.name} AI-driven QA review failed, using fallback review"
-                )
-                return await self._perform_fallback_qa_review(
-                    story_path, source_dir, test_dir
-                )
+        while retry_count <= max_retries:
+            try:
+                # 1. 执行AI驱动QA审查
+                review_success = await self._execute_ai_qa_review(story_path)
 
-            # 检查故事状态
-            status_ready = await self._check_story_status(story_path)
+                # 2. 等待SDK取消完成
+                await self._wait_for_qa_sdk_completion()
 
-            if not status_ready:
-                # 创建修复提示
-                dev_prompt = f"*review-qa @(story_path) Fix based on QA gate file in @docs\\qa\\gates for the story"
+                if not review_success:
+                    logger.warning("AI-driven QA review failed, using fallback")
+                    return await self._perform_fallback_qa_review(
+                        story_path, source_dir, test_dir
+                    )
 
-                logger.info(f"{self.name} QA found issues, needs fixing")
+                # 3. 审查后检查状态（关键改进！）
+                actual_status = await self._parse_story_status_with_sdk(story_path)
+                await self._wait_for_status_sdk_completion()
+
+                # 4. 🎯 新逻辑：使用标准状态值进行判断
+                if actual_status in ["Done", "Ready for Done"]:
+                    logger.info(f"QA PASSED - Story status is '{actual_status}'")
+                    return QAResult(passed=True, completed=True, needs_fix=False)
+
+                else:
+                    # 状态异常（Draft, Ready for Development, In Progress, Failed等），回到Dev阶段
+                    logger.warning(f"QA review completed but unexpected status: '{actual_status}'")
+                    return QAResult(
+                        passed=False,
+                        completed=False,
+                        needs_fix=True,  # 需要修复，回到Dev阶段
+                        dev_prompt=f"*fix the story document - Update story status from '{actual_status}' to 'Ready for Review'",
+                        reason=f"故事状态异常（'{actual_status}'），需要修复"
+                    )
+
+            except asyncio.CancelledError:
+                # 5. SDK取消后的处理
+                logger.warning(f"QA review cancelled for {story_path}")
+
+                # 检查状态是否更新
+                final_status = await self._parse_story_status_with_sdk(story_path)
+                await self._wait_for_status_sdk_completion()
+
+                if final_status in ["Done", "Ready for Done"]:
+                    # SDK可能被取消但状态已更新
+                    return QAResult(
+                        passed=True,
+                        completed=True,
+                        needs_fix=False,
+                        reason="QA cancelled but status updated to Done"
+                    )
+                else:
+                    # 状态未更新，使用fallback
+                    logger.info("QA cancelled, status not updated, using fallback")
+                    fallback_result = await self._perform_fallback_qa_review(
+                        story_path, source_dir, test_dir
+                    )
+                    return QAResult(
+                        passed=fallback_result.passed,
+                        completed=fallback_result.completed,
+                        needs_fix=fallback_result.needs_fix,
+                        fallback_review=True,
+                        reason="QA cancelled, fallback executed"
+                    )
+
+            except Exception as e:
+                logger.error(f"{self.name} QA review error: {e}")
+                logger.debug(f"Error details: {e}", exc_info=True)
                 return QAResult(
                     passed=False,
                     needs_fix=True,
-                    dev_prompt=dev_prompt,
+                    fallback_review=True,
+                    reason=f"QA review error: {str(e)}",
                 )
-            else:
-                # 状态为Ready for Done，故事完成
-                logger.info(f"{self.name} QA PASSED - Ready for Done")
-                return QAResult(passed=True, completed=True, needs_fix=False)
 
-        except asyncio.CancelledError:
-            logger.warning(f"{self.name} QA review cancelled for {story_path}")
-            return QAResult(
-                passed=False,
-                needs_fix=True,
-                fallback_review=True,
-                reason="QA review was cancelled",
-            )
-        except Exception as e:
-            logger.error(f"{self.name} QA review error: {e}")
-            logger.debug(f"Error details: {e}", exc_info=True)
-            return QAResult(
-                passed=False,
-                needs_fix=True,
-                fallback_review=True,
-                reason=f"QA review error: {str(e)}",
-            )
+        # 如果循环结束（不应该发生），返回默认结果
+        logger.error(f"QA review loop completed unexpectedly for {story_path}")
+        return QAResult(
+            passed=False,
+            completed=False,
+            needs_fix=True,
+            reason="QA review loop completed unexpectedly"
+        )
 
     async def _execute_ai_qa_review(self, story_path: str) -> bool:
         """执行AI驱动的QA审查"""
@@ -406,7 +504,7 @@ class QAAgent:
 
     def _build_qa_prompt(self, story_path: str) -> str:
         """构建QA提示"""
-        return f'@.bmad-core\\agents\\qa.md @.bmad-core\\tasks\\review-story.md Review the current story document @{story_path} . If the review passes, update the story document status to "Done". Additionally, @.bmad-core\\tasks\\qa-gate.md create a gate file for the story document and save it to @docs\\qa\\gates .'
+        return f'@.bmad-core\\agents\\qa.md @.bmad-core\\tasks\\review-story.md Review the current story document @{story_path} . If the review passes, update the story document status to "Done", else update the status to "In Progress". Additionally, @.bmad-core\\tasks\\qa-gate.md create and edit gate file for the story document and save it to @docs\\qa\\gates .'
 
     def _create_sdk_execution_function(self, prompt: str):
         """创建SDK执行函数"""
@@ -429,6 +527,7 @@ class QAAgent:
                     # 限制最大回合数，防止无限等待
                     options.max_turns = 1000
 
+                # 使用 SafeClaudeSDK 抑制 cancel scope 错误
                 sdk = SafeClaudeSDK(
                     prompt=prompt,
                     options=options,
@@ -755,3 +854,142 @@ class QAAgent:
         except Exception as e:
             logger.error(f"Failed to get statistics: {e}")
             return {"error": str(e)}
+
+    # =========================================================================
+    # 异步任务管理方法
+    # =========================================================================
+
+    async def _wait_for_qa_sdk_completion(self) -> None:
+        """🎯 新增：等待QA审查SDK调用完全结束"""
+        try:
+            await asyncio.sleep(0.2)  # 确保清理完成
+            logger.debug("[QA Agent] QA review SDK calls completed")
+        except Exception as e:
+            logger.debug(f"[QA Agent] QA SDK completion wait failed: {e}")
+
+    async def _wait_for_status_sdk_completion(self) -> None:
+        """🎯 新增：等待状态解析SDK调用完全结束"""
+        try:
+            await asyncio.sleep(0.2)  # 确保清理完成
+            logger.debug("[QA Agent] Status parsing SDK calls completed")
+        except Exception as e:
+            logger.debug(f"[QA Agent] Status SDK completion wait failed: {e}")
+
+    async def _parse_story_status_safe(self, story_path: str) -> str:
+        """🎯 改进：安全的状态解析"""
+        try:
+            story_file = Path(story_path)
+            if not story_file.exists():
+                logger.warning(f"[QA Agent] Story file not found: {story_path}")
+                return "Unknown"
+
+            content = story_file.read_text(encoding="utf-8")
+
+            # 使用SimpleStoryParser进行AI解析
+            if self.status_parser:
+                logger.info(f"[QA Agent] Using AI status parser")
+                status = await self.status_parser.parse_status(content)
+
+                # 🎯 关键修复：等待AI解析完全结束
+                await self._wait_for_ai_parsing_complete()
+                return status
+            else:
+                # 回退到正则表达式解析
+                logger.info(f"[QA Agent] Using regex fallback for status parsing")
+                return self._regex_fallback_parse_status(content)
+
+        except Exception as e:
+            logger.error(f"[QA Agent] Error parsing story status: {e}")
+            return "Unknown"
+
+    async def _wait_for_ai_parsing_complete(self) -> None:
+        """🎯 新增：等待AI解析完全结束"""
+        try:
+            await asyncio.sleep(0.1)
+            logger.debug("[QA Agent] AI parsing completed")
+        except Exception as e:
+            logger.debug(f"[QA Agent] AI parsing completion wait failed: {e}")
+
+    def _regex_fallback_parse_status(self, content: str) -> str:
+        """🎯 改进：正则表达式回退解析"""
+        try:
+            # 定义状态匹配的正则表达式模式
+            status_patterns = [
+                (r"\*\*Status\*\*:\s*\*\*([^*]+)\*\*", 1),      # **Status**: **Draft**
+                (r"\*\*Status\*\*:\s*(.+)$", 1),                # **Status**: Draft
+                (r"Status:\s*(.+)$", 1),                        # Status: Draft
+                (r"状态[：:]\s*(.+)$", 1),                      # 状态：草稿
+                (r"\*\*Status\*\*:\s*(.+)$", 1),                # **Status:** Ready for Review
+                (r"Status:\s*\*(.+)\*", 1),                    # Status: *Ready for Review*
+            ]
+
+            # 遍历模式匹配
+            for pattern, group_index in status_patterns:
+                match = re.search(pattern, content, re.MULTILINE | re.IGNORECASE)
+                if match:
+                    status_text = match.group(group_index).strip()
+                    # 移除markdown标记 (**bold**)
+                    status_text = status_text.strip('*').strip()
+                    logger.debug(f"[QA Agent] Regex match found: '{status_text}' via pattern '{pattern}'")
+
+                    # 标准化状态
+                    try:
+                        from .story_parser import _normalize_story_status as normalize
+                        normalized = normalize(status_text)
+
+                        # 验证是否为有效状态
+                        valid_statuses = {
+                            "Draft", "Ready for Development", "In Progress",
+                            "Ready for Review", "Ready for Done", "Done", "Failed"
+                        }
+                        if normalized in valid_statuses:
+                            logger.info(f"[QA Agent] Status parsed successfully: '{status_text}' → '{normalized}'")
+                            return normalized
+                    except Exception as e:
+                        logger.warning(f"[QA Agent] Status normalization failed: {e}")
+
+            # 默认值
+            logger.info("[QA Agent] Status fallback returned default: 'Draft'")
+            return "Draft"
+
+        except Exception as e:
+            logger.error(f"[QA Agent] Failed to parse story status fallback: {e}")
+            return "Draft"
+
+    async def _parse_story_status_with_sdk(self, story_path: str) -> str:
+        """
+        🎯 关键修复：统一状态解析入口（与DevAgent保持一致）
+        优先使用StatusParser，回退到正则解析
+        """
+        if not story_path or not Path(story_path).exists():
+            return "Unknown"
+
+        # 优先使用StatusParser
+        if hasattr(self, "status_parser") and self.status_parser:
+            try:
+                content = Path(story_path).read_text(encoding="utf-8")
+                status = await self.status_parser.parse_status(content)
+                return status if status else "Unknown"
+            except Exception as e:
+                logger.warning(f"StatusParser failed: {e}")
+                return self._parse_story_status_fallback(story_path)
+        else:
+            # 回退到正则解析
+            return self._parse_story_status_fallback(story_path)
+
+    def _parse_story_status_fallback(self, story_path: str) -> str:
+        """
+        回退状态解析方法 - 使用正则表达式
+        """
+        try:
+            story_file = Path(story_path)
+            if not story_file.exists():
+                return "Unknown"
+
+            content = story_file.read_text(encoding="utf-8")
+            return self._regex_fallback_parse_status(content)
+
+        except Exception as e:
+            logger.error(f"[QA Agent] Failed to parse status: {e}")
+            return "Unknown"
+

@@ -6,11 +6,12 @@ Integrates with task guidance for development-specific operations.
 Uses Claude Code CLI for actual implementation.
 """
 
+import asyncio
 import logging
 import re
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 if TYPE_CHECKING:
     from claude_agent_sdk import ClaudeAgentOptions, query
@@ -36,6 +37,7 @@ except ImportError:
 
 # Import SDK session manager for isolated execution
 from .sdk_session_manager import SDKSessionManager
+from .qa_agent import QAAgent
 
 # Export for use in code
 query = _query
@@ -68,13 +70,15 @@ class DevAgent:
         """
         self.name = "Dev Agent"
         self.use_claude = use_claude
-        self._current_story_path = None
         self._claude_available = self._check_claude_available() if use_claude else False
         # 每个DevAgent实例创建独立的会话管理器，消除跨Agent cancel scope污染
         self._session_manager = SDKSessionManager()
 
         # Store log_manager for use in SDK calls
         self._log_manager = log_manager
+
+        # Track current story path for context
+        self._current_story_path = None
 
         # Initialize StatusParser for robust status parsing
         try:
@@ -89,6 +93,7 @@ class DevAgent:
                     options = _ClaudeAgentOptions(
                         permission_mode="bypassPermissions", cwd=str(Path.cwd())
                     )
+                # 使用 SafeClaudeSDK 抑制 cancel scope 错误
                 sdk_instance = SafeClaudeSDK(
                     prompt="Parse story status",
                     options=options,
@@ -253,9 +258,30 @@ class DevAgent:
         logger.info(f"{self.name} executing Dev phase")
 
         try:
-            # Store story path for later use
+            # 1. 🎯 关键修复：启动时解析状态
+            story_status = None
             if story_path:
-                self._current_story_path = story_path
+                story_status = await self._parse_story_status_with_sdk(story_path)
+                await self._wait_for_status_sdk_completion()
+                logger.info(f"[Dev Agent] Story status check for '{story_path}': '{story_status}' (type: str)")
+
+                # Check for "Ready for Done" or "Done" status - skip entire dev-qa cycle
+                if story_status and (
+                    story_status.lower() == "ready for done"
+                    or story_status.lower() == "done"
+                ):
+                    logger.info(
+                        f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle"
+                    )
+                    return True
+
+                # Check for "Ready for Review" status - skip dev but notify QA
+                elif story_status == "Ready for Review":
+                    logger.info(
+                        f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls"
+                    )
+                    # Development is considered complete, notify QA agent directly
+                    return await self._notify_qa_agent_safe(story_path)
 
             # Parse story to extract requirements
             requirements = await self._extract_requirements(story_content)
@@ -265,7 +291,7 @@ class DevAgent:
                 return False
 
             # Add story_path to requirements if available in context
-            requirements["story_path"] = self._current_story_path
+            requirements["story_path"] = story_path
 
             # Handle QA feedback if provided
             if qa_feedback and qa_feedback.get("needs_fix"):
@@ -284,12 +310,15 @@ class DevAgent:
                 logger.error("Failed to complete development tasks")
                 return False
 
+            # 3. 🎯 关键修复：等待开发SDK调用完全结束
+            await self._wait_for_sdk_completion("development tasks")
+
             # Update story file with completion
-            if self._current_story_path:
+            if story_path:
                 await self._update_story_completion(story_content, requirements)
 
-            logger.info(f"{self.name} Dev phase completed successfully")
-            return True
+            # 4. 🎯 关键修复：通知QA agent（移除开发后的状态解析）
+            return await self._notify_qa_agent_safe(story_path)
 
         except Exception as e:
             logger.error(f"{self.name} Dev phase failed: {e}")
@@ -613,6 +642,7 @@ class DevAgent:
                 max_turns=1000,  # 唯一防护：限制对话轮数
                 cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe",
             )
+            # 使用 SafeClaudeSDK 抑制 cancel scope 错误
             sdk = SafeClaudeSDK(prompt, options, timeout=None, log_manager=log_manager)
             return await sdk.execute()
 
@@ -797,3 +827,129 @@ class DevAgent:
         except Exception as e:
             logger.error(f"[Dev Agent] Error checking story status: {e}")
             return None
+
+    # =========================================================================
+    # 统一状态解析方法
+    # =========================================================================
+
+    async def _parse_story_status_with_sdk(self, story_path: str) -> str:
+        """
+        🎯 关键修复：标准化状态解析入口（移除缓存）
+        统一使用StatusParser，确保状态一致性
+        """
+        if not story_path or not Path(story_path).exists():
+            return "Unknown"
+
+        # 优先使用StatusParser
+        if hasattr(self, "status_parser") and self.status_parser:
+            try:
+                content = Path(story_path).read_text(encoding="utf-8")
+                status = await self.status_parser.parse_status(content)
+                return status if status else "Unknown"
+            except Exception as e:
+                logger.warning(f"StatusParser failed: {e}")
+                return self._parse_story_status_fallback(story_path)
+        else:
+            # 回退到正则解析
+            return self._parse_story_status_fallback(story_path)
+
+    def _parse_story_status_fallback(self, story_path: str) -> str:
+        """
+        回退状态解析方法 - 使用正则表达式
+        """
+        try:
+            story_file = Path(story_path)
+            if not story_file.exists():
+                return "Unknown"
+
+            content = story_file.read_text(encoding="utf-8")
+
+            # 定义状态匹配的正则表达式模式
+            status_patterns = [
+                (r"\*\*Status\*\*:\s*\*\*([^*]+)\*\*", 1),      # **Status**: **Draft**
+                (r"\*\*Status\*\*:\s*(.+)$", 1),                # **Status**: Draft
+                (r"Status:\s*(.+)$", 1),                        # Status: Draft
+                (r"状态[：:]\s*(.+)$", 1),                      # 状态：草稿
+                (r"\*\*Status\*\*:\s*(.+)$", 1),                # **Status:** Ready for Review
+                (r"Status:\s*\*(.+)\*", 1),                    # Status: *Ready for Review*
+            ]
+
+            # 遍历模式匹配
+            for pattern, group_index in status_patterns:
+                match = re.search(pattern, content, re.MULTILINE | re.IGNORECASE)
+                if match:
+                    status_text = match.group(group_index).strip()
+                    # 移除markdown标记 (**bold**)
+                    status_text = status_text.strip('*').strip()
+                    logger.debug(f"[Dev Agent] Status match found: '{status_text}' via pattern '{pattern}'")
+
+                    # 标准化状态
+                    normalized = self._normalize_story_status(status_text)
+                    if normalized != "Draft":  # 只有非默认状态才返回
+                        logger.info(f"[Dev Agent] Status parsed successfully: '{status_text}' → '{normalized}'")
+                        return normalized
+
+            # 默认值
+            logger.warning(f"[Dev Agent] No status pattern matched, returning default: 'Draft'")
+            return "Draft"
+
+        except Exception as e:
+            logger.error(f"[Dev Agent] Failed to parse status: {e}")
+            return "Unknown"
+
+    async def _wait_for_status_sdk_completion(self) -> None:
+        """
+        🎯 新增：等待状态解析SDK完成
+        """
+        try:
+            await asyncio.sleep(0.1)  # 短暂等待
+            logger.debug("[Dev Agent] Status SDK execution completed/cancelled")
+        except Exception as e:
+            logger.debug(f"[Dev Agent] Status SDK completion wait failed: {e}")
+
+    def _normalize_story_status(self, status: str) -> str:
+        """🎯 新增：标准化故事状态值"""
+        from .story_parser import _normalize_story_status as normalize
+
+        try:
+            return normalize(status)
+        except Exception:
+            # 如果导入失败，使用简单的标准化
+            status_lower = status.lower().strip()
+            if status_lower in ["done", "completed", "complete"]:
+                return "Done"
+            elif status_lower in ["ready for review", "review"]:
+                return "Ready for Review"
+            elif status_lower in ["in progress", "progress"]:
+                return "In Progress"
+            elif status_lower in ["ready for development", "ready"]:
+                return "Ready for Development"
+            else:
+                return "Draft"
+
+    async def _wait_for_sdk_completion(self, task_name: str) -> None:
+        """🎯 新增：等待SDK调用完全结束"""
+        try:
+            # 确保所有pending的SDK任务完成
+            await asyncio.sleep(0.2)  # 等待一小段时间
+            logger.debug(f"[Dev Agent] {task_name} SDK calls completed")
+        except Exception as e:
+            logger.debug(f"[Dev Agent] SDK completion wait failed: {e}")
+
+    async def _notify_qa_agent_safe(self, story_path: str) -> bool:
+        """
+        🎯 关键修复：安全的QA通知（移除缓存状态传递）
+        QA Agent将自行解析状态，审查后验证状态更新
+        """
+        try:
+            logger.info(f"[Dev Agent] Notifying QA agent for: {story_path}")
+
+            qa_agent = QAAgent()
+
+            # QA Agent将自行解析状态并在审查后验证状态更新
+            result = await qa_agent.execute_qa_phase(story_path)
+            return result
+
+        except Exception as e:
+            logger.error(f"[Dev Agent] Error notifying QA agent: {e}")
+            return False

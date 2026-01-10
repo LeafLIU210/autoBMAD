@@ -774,14 +774,20 @@ class StateManager:
                 # 完成状态
                 "completed": "Done",
                 "done": "Done",
+                "dev_completed": "Ready for Review",  # Dev完成 → Ready for Review
+
                 # 开发流程状态
+                "pending": "Draft",
                 "ready_for_development": "Ready for Development",
                 "in_progress": "In Progress",
+                "review": "Ready for Review",
                 "ready_for_review": "Ready for Review",
                 "ready_for_done": "Ready for Done",
-                # 其他状态
-                "draft": "Draft",
+
+                # 错误状态
                 "failed": "Failed",
+                "error": "Failed",
+                "cancelled": "Draft",
             }
 
             # 获取markdown状态，如果未映射则使用原状态

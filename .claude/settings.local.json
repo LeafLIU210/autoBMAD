@@ -72,7 +72,8 @@
       "Bash(venv/Scripts/python.exe:*)",
       "Bash(copy:*)",
       "Bash(.venvScriptsactivate:*)",
-      "Bash(venv/Scripts/python:*)"
+      "Bash(venv/Scripts/python:*)",
+      "Bash(d:\\\\GITHUB\\\\pytQt_template\\\\.venv\\\\Scripts\\\\python.exe:*)"
     ],
     "deny": [
       "Bash(curl:*)",
