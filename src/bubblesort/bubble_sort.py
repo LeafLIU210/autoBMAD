@@ -57,8 +57,8 @@ def bubble_sort[T: (int, float)](data: Iterable[T]) -> list[T]:
     try:
         # Convert to list to ensure we can iterate and index
         result = list(data)
-    except TypeError:
-        raise TypeError("Input must be iterable")
+    except TypeError as err:
+        raise TypeError("Input must be iterable") from err
 
     # Edge cases: empty list or single element
     n = len(result)

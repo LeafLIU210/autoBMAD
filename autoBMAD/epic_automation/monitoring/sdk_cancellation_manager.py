@@ -241,6 +241,12 @@ class SDKCancellationManager:
                 f"{result_preview}"
             )
 
+            # 🎯 增强：立即记录结果接收，用于 cancel scope 错误恢复
+            logger.info(
+                f"[SDK Tracking] ✅ Result confirmed for {call_id[:8]}... "
+                f"(result_preview: {result_preview})"
+            )
+
     async def wait_for_cancellation_complete(
         self,
         call_id: str,

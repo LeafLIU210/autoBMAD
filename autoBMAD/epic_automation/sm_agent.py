@@ -274,6 +274,9 @@ class SMAgent:
         """
         logger.info(f"[SM Agent] Starting to create stories from Epic: {epic_path}")
 
+        # Initialize story_ids to avoid unbound variable error
+        story_ids: list[str] = []
+
         try:
             # Read epic content
             with open(epic_path, encoding="utf-8") as f:
@@ -316,6 +319,33 @@ class SMAgent:
                     return False
             else:
                 logger.error("[SM Agent] Failed to create stories")
+                return False
+
+        except RuntimeError as e:
+            error_msg = str(e)
+
+            # 🎯 关键：cancel scope 错误特殊处理
+            if "cancel scope" in error_msg.lower():
+                logger.warning(
+                    f"[SM Agent] RuntimeError during SDK cleanup (non-fatal): {error_msg}"
+                )
+
+                # 检查 story 文件是否已创建成功
+                # 重新提取 story_ids 以确保在异常处理中可用
+                if story_ids and await self._verify_stories_created(story_ids, epic_path):
+                    logger.info(
+                        "[SM Agent] Stories verified on disk despite cleanup error. "
+                        "Treating as success."
+                    )
+                    return True
+                else:
+                    logger.warning(
+                        "[SM Agent] Stories not found on disk. Will retry if allowed."
+                    )
+                    return False
+            else:
+                # 其他 RuntimeError
+                logger.error(f"[SM Agent] RuntimeError: {error_msg}")
                 return False
 
         except Exception as e:
@@ -363,6 +393,32 @@ class SMAgent:
             f"Extracted {len(unique_story_ids)} unique story IDs: {unique_story_ids}"
         )
         return unique_story_ids
+
+    def _extract_story_ids_from_prompt(self, prompt: str) -> list[str]:
+        """
+        Extract story IDs from prompt string.
+
+        Args:
+            prompt: Prompt string that may contain story IDs
+
+        Returns:
+            List of story IDs (e.g., ["1.1", "1.2", ...])
+        """
+        story_ids: list[str] = []
+
+        # Look for pattern like "Build all the stories listed in: path1 path2 path3"
+        # and extract IDs from file paths
+        pattern = r'[/\\](\d+\.\d+)\.md'
+        matches = re.findall(pattern, prompt)
+        for story_num in matches:
+            if story_num not in story_ids:
+                story_ids.append(story_num)
+                logger.debug(f"Found story ID from prompt: {story_num}")
+
+        logger.debug(
+            f"Extracted {len(story_ids)} story IDs from prompt: {story_ids}"
+        )
+        return story_ids
 
     async def _call_claude_create_stories(
         self, epic_path: str, story_ids: list[str]
@@ -450,6 +506,34 @@ class SMAgent:
             elapsed = time.time() - start_time
             logger.info(f"[SM Agent] Call successful, took {elapsed:.2f} seconds")
             return result
+
+        except RuntimeError as e:
+            error_msg = str(e)
+
+            # 🎯 关键：cancel scope 错误特殊处理
+            if "cancel scope" in error_msg.lower():
+                logger.warning(
+                    f"[SM Agent] RuntimeError during SDK cleanup (non-fatal): {error_msg}"
+                )
+
+                # Check if story files were created despite the error
+                # Extract story IDs from the prompt if possible
+                story_ids = self._extract_story_ids_from_prompt(prompt)
+                if story_ids and self._verify_stories_created(story_ids, ""):
+                    logger.info(
+                        "[SM Agent] Stories verified on disk despite cleanup error. "
+                        "Treating as success."
+                    )
+                    return True
+                else:
+                    logger.warning(
+                        "[SM Agent] Stories not found on disk. Will retry if allowed."
+                    )
+                    return False
+            else:
+                # 其他 RuntimeError
+                logger.error(f"[SM Agent] RuntimeError: {error_msg}")
+                return False
 
         except Exception as e:
             logger.error(f"[SM Agent] Call exception: {type(e).__name__}: {e}")
@@ -757,3 +841,53 @@ class SMAgent:
         except Exception as e:
             logger.error(f"[SM Agent] Error checking existing stories: {e}")
             return False  # If check fails, assume files don't exist
+
+    async def _verify_stories_created(self, story_ids: list[str], epic_path: str) -> bool:
+        """
+        验证 story 文件是否已创建
+
+        Args:
+            story_ids: Story ID 列表
+            epic_path: Epic 文件路径
+
+        Returns:
+            True if all stories exist on disk
+        """
+        try:
+            # Determine story file directory
+            epic_path_obj = Path(epic_path)
+            docs_dir = epic_path_obj.parents[1]  # Go up to docs directory
+            stories_dir = docs_dir / "stories"
+
+            if not stories_dir.exists():
+                logger.warning(f"[SM Agent] Stories directory does not exist: {stories_dir}")
+                return False
+
+            # Extract story numbers for file matching
+            verified_count = 0
+            for story_id in story_ids:
+                # Extract story number: "1.1" or "1.1: Title" -> "1.1"
+                story_number = story_id.split(":")[0].strip()
+
+                # Find matching story file
+                story_file = self._find_story_file(stories_dir, story_number)
+
+                if story_file and story_file.exists():
+                    verified_count += 1
+                    logger.debug(f"[SM Agent] Verified story file: {story_file}")
+                else:
+                    logger.debug(f"[SM Agent] Story file not found: {story_number}")
+
+            all_verified = verified_count == len(story_ids)
+            if all_verified:
+                logger.info(f"[SM Agent] All {len(story_ids)} story files verified on disk")
+            else:
+                logger.warning(
+                    f"[SM Agent] Only {verified_count}/{len(story_ids)} story files verified"
+                )
+
+            return all_verified
+
+        except Exception as e:
+            logger.error(f"[SM Agent] Error verifying stories: {e}")
+            return False

@@ -948,16 +948,12 @@ class DevAgent:
                 name=f"QA-Notification-{int(time.time())}"
             )
 
-            # 可选：等待 QA 任务完成，或让它在后台运行
-            # 如果需要同步等待：
-            # result = await qa_task
-            # return result
-
-            # 如果可以异步执行：
             logger.info(f"[Dev Agent] QA agent notification started in task: {qa_task.get_name()}")
 
-            # 立即返回，让 QA 在后台执行
-            return True
+            # 等待 QA 任务完成，确保在 Dev 阶段返回前 QA 完成
+            result = await qa_task
+            logger.info(f"[Dev Agent] QA notification completed in task: {qa_task.get_name()}")
+            return result
 
         except Exception as e:
             logger.error(f"[Dev Agent] Error starting QA task: {e}")

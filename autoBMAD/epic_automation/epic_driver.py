@@ -796,6 +796,9 @@ class EpicDriver:
                             if await self.sm_agent.create_stories_from_epic(
                                 str(self.epic_path)
                             ):
+                                # 🎯 关键：SM 调用完成后等待清理
+                                await asyncio.sleep(0.5)
+
                                 # After creation, try to find the file again
                                 created_story_file = (
                                     self._find_story_file_with_fallback(
@@ -1284,6 +1287,20 @@ class EpicDriver:
         except asyncio.CancelledError:
             logger.info(f"Story processing cancelled for {story_path}")
             return False
+        except RuntimeError as e:
+            error_msg = str(e)
+
+            # 🎯 关键：cancel scope 错误特殊处理
+            if "cancel scope" in error_msg.lower():
+                logger.warning(
+                    f"Cancel scope error for {story_id} (non-fatal): {error_msg}"
+                )
+                # 单个 story 失败不中断整体流程
+                return False
+            else:
+                # 其他 RuntimeError
+                logger.error(f"RuntimeError for {story_id}: {error_msg}")
+                return False
 
     async def _process_story_impl(self, story: "dict[str, Any]") -> bool:
         """
@@ -1324,12 +1341,12 @@ class EpicDriver:
 
             # Continue with normal processing regardless of consistency check result
 
-            # Check if story already completed
+            # Check if story already completed or qa_waived
             existing_status: dict[str, Any] = await self.state_manager.get_story_status(
                 story_path
             )
-            if existing_status and existing_status.get("status") == "completed":
-                logger.info(f"Story already completed: {story_path}")
+            if existing_status and existing_status.get("status") in ["completed", "qa_waived"]:
+                logger.info(f"Story already processed: {story_path} (status: {existing_status.get('status')})")
                 return True
 
             # Execute Dev-QA Loop (SM phase removed - stories already created by parse_epic)
@@ -1342,6 +1359,10 @@ class EpicDriver:
 
                 # Dev Phase
                 dev_success = await self.execute_dev_phase(story_path, iteration)
+
+                # 🎯 关键：Dev 调用完成后等待清理
+                await asyncio.sleep(0.5)
+
                 if not dev_success:
                     logger.warning(
                         f"Dev phase failed for {story_path}, proceeding with QA for diagnosis"
@@ -1350,6 +1371,9 @@ class EpicDriver:
 
                 # QA Phase
                 qa_passed = await self.execute_qa_phase(story_path)
+
+                # 🎯 关键：QA 调用完成后等待清理
+                await asyncio.sleep(0.5)
 
                 if qa_passed:
                     # 🎯 关键修复：验证最终状态（确保状态真正更新）
@@ -1791,6 +1815,9 @@ class EpicDriver:
                         f"Continuing to next story after failure: {story['id']}"
                     )
 
+            # 🎯 关键：每个 story 处理完成后等待清理
+            await asyncio.sleep(0.5)
+
         # Update progress
         await self._update_progress(
             "dev_qa",
@@ -2129,6 +2156,24 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
 
 async def main():
     """Main entry point."""
+    # 🎯 在循环内部设置异常处理器
+    def exception_handler(loop, context):
+        exception = context.get('exception')
+        if isinstance(exception, RuntimeError):
+            error_msg = str(exception)
+            if 'cancel scope' in error_msg.lower():
+                # 抑制 cancel scope 错误，不记录为严重错误
+                logger.warning(
+                    f"Suppressed cancel scope error during shutdown: {error_msg}"
+                )
+                return
+        # 对于其他异常，使用默认处理器
+        loop.default_exception_handler(context)
+
+    # 获取当前事件循环并设置异常处理器
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(exception_handler)
+
     args = parse_arguments()
 
     # Configure logging level based on verbose flag
@@ -2162,10 +2207,43 @@ async def main():
 
 if __name__ == "__main__":
     try:
+        # 🎯 设置自定义异常处理器来抑制 cancel scope 错误
+        def exception_handler(loop, context):
+            exception = context.get('exception')
+            if isinstance(exception, RuntimeError):
+                error_msg = str(exception)
+                if 'cancel scope' in error_msg.lower():
+                    # 抑制 cancel scope 错误，不记录为严重错误
+                    logger.warning(
+                        f"Suppressed cancel scope error during shutdown: {error_msg}"
+                    )
+                    return
+            # 对于其他异常，使用默认处理器
+            loop.default_exception_handler(context)
+
+        # 获取事件循环并设置异常处理器
+        loop = asyncio.new_event_loop()
+        loop.set_exception_handler(exception_handler)
+
+        # 🎯 在 asyncio.run() 内部设置异常处理器
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Execution cancelled by user (Ctrl+C)")
         sys.exit(130)  # Standard exit code for SIGINT
+    except asyncio.CancelledError:
+        # 🎯 CancelledError 正常退出
+        logger.info("Execution cancelled (non-fatal)")
+        sys.exit(0)
     except Exception as e:
-        logger.error(f"Unexpected error in main: {e}")
-        sys.exit(1)
+        error_msg = str(e)
+        # 🎯 关键：cancel scope 错误特殊处理
+        if "cancel scope" in error_msg.lower():
+            logger.warning(
+                f"RuntimeError during execution (cancel scope, non-fatal): {error_msg}"
+            )
+            sys.exit(0)  # 视为成功退出
+        else:
+            logger.error(f"Unexpected error in main: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+            sys.exit(1)

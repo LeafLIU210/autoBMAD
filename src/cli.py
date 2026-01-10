@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from src.bubblesort import bubble_sort
 
@@ -28,8 +29,8 @@ def parse_array_input(array_str: str) -> list[int | float]:
                 result.append(float(elem))
             else:
                 result.append(int(elem))
-        except ValueError:
-            raise ValueError(f"Invalid number: {elem}")
+        except ValueError as err:
+            raise ValueError(f"Invalid number: {elem}") from err
     return result
 
 
@@ -38,12 +39,12 @@ def read_from_file(file_path: str) -> list[int | float]:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
     try:
-        content = path.read_text(encoding='utf-8-sig').strip()
+        content = path.read_text(encoding="utf-8-sig").strip()
         if not content:
             raise ValueError("File is empty")
         return parse_array_input(content)
-    except (OSError, UnicodeDecodeError) as e:
-        raise ValueError(f"Error reading file: {e}")
+    except (OSError, UnicodeDecodeError) as err:
+        raise ValueError(f"Error reading file: {err}") from err
 
 
 def get_sorting_steps(data: list[int | float]) -> list[list[int | float]]:
@@ -69,7 +70,7 @@ def format_output(
     show_stats: bool = False,
 ) -> str:
     if format_type == "json":
-        output = {"input": data, "sorted": sorted_data}
+        output: dict[str, Any] = {"input": data, "sorted": sorted_data}
         if show_stats:
             steps = get_sorting_steps(data)
             output["statistics"] = {
