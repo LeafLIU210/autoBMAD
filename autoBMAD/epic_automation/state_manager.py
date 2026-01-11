@@ -763,24 +763,8 @@ class StateManager:
 
             # 检查是否有更改
             if updated_content == content:
-                # 如果没有找到Status字段，在文件开头添加
-                if "### Status" not in content:
-                    # 在第一个标题前插入Status
-                    first_header_match = re.search(r"^#", content, re.MULTILINE)
-                    if first_header_match:
-                        insertion_point = first_header_match.start()
-                        status_block = f"### Status\n**{markdown_status}**\n\n"
-                        updated_content = (
-                            content[:insertion_point]
-                            + status_block
-                            + content[insertion_point:]
-                        )
-                    else:
-                        # 如果没有标题，在文件开头添加
-                        status_block = f"### Status\n**{markdown_status}**\n\n"
-                        updated_content = status_block + content
-                else:
-                    logger.warning(f"Status字段未找到且无法添加: {story_path}")
+                # 如果没有找到Status字段，仅记录警告，不插入新内容
+                logger.warning(f"Status字段未找到，跳过更新: {story_path}")
 
             # 写回文件
             with open(story_file, "w", encoding="utf-8") as f:

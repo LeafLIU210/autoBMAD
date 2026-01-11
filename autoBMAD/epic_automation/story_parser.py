@@ -109,6 +109,17 @@ CORE_TO_PROCESSING_MAPPING = {
     CORE_STATUS_FAILED: "failed",
 }
 
+# 处理状态值 → 核心状态值（用于 Markdown 显示和自动恢复）
+PROCESSING_TO_CORE_MAPPING = {
+    "pending": CORE_STATUS_DRAFT,
+    "in_progress": CORE_STATUS_IN_PROGRESS,
+    "review": CORE_STATUS_READY_FOR_REVIEW,
+    "completed": CORE_STATUS_DONE,
+    "failed": CORE_STATUS_FAILED,
+    "cancelled": CORE_STATUS_READY_FOR_DEVELOPMENT,  # ✅ 改为可继续开发
+    "error": CORE_STATUS_READY_FOR_DEVELOPMENT,      # ✅ 改为可继续开发
+}
+
 
 def core_status_to_processing(core_status: str) -> str:
     """
@@ -121,6 +132,22 @@ def core_status_to_processing(core_status: str) -> str:
         对应的处理状态值
     """
     return CORE_TO_PROCESSING_MAPPING.get(core_status, "unknown")
+
+
+def processing_status_to_core(processing_status: str) -> str:
+    """
+    处理状态值 → 核心状态值转换（反向映射）
+
+    用于将处理状态（如 "cancelled"、"error"）转换为核心状态，
+    以便在 Markdown 文件中显示和驱动 Dev-QA 循环。
+
+    Args:
+        processing_status: 处理状态值
+
+    Returns:
+        对应的核心状态值
+    """
+    return PROCESSING_TO_CORE_MAPPING.get(processing_status, CORE_STATUS_DRAFT)
 
 
 def is_core_status_valid(core_status: str) -> bool:
@@ -277,6 +304,31 @@ class SimpleStoryParser:
 
             # 执行查询
             success = await sdk.execute()
+            
+            # 🎯 关键修复：使用 SDKCancellationManager 确保清理完成
+            # 而不是简单的 sleep，避免 sleep 被取消
+            try:
+                from autoBMAD.epic_automation.monitoring import get_cancellation_manager
+                manager = get_cancellation_manager()
+                            
+                # 检查是否有活跃的 SDK 调用
+                if manager.active_sdk_calls:
+                    active_call_ids = list(manager.active_sdk_calls.keys())
+                    logger.debug(
+                        f"SimpleStatusParser: Waiting for {len(active_call_ids)} SDK call(s) to cleanup"
+                    )
+                                
+                    for call_id in active_call_ids:
+                        await manager.wait_for_cancellation_complete(call_id, timeout=3.0)
+                                
+                    logger.debug("SimpleStatusParser: SDK cleanup confirmed")
+                else:
+                    # 没有活跃调用，等待一小段时间
+                    await asyncio.sleep(0.3)
+            except Exception as cleanup_error:
+                logger.debug(f"SimpleStatusParser: Cleanup check failed: {cleanup_error}")
+                # 回退到简单等待
+                await asyncio.sleep(0.5)
 
             if success:
                 # 从message_tracker获取结果，添加安全检查
@@ -301,6 +353,25 @@ class SimpleStoryParser:
             logger.warning("SimpleStatusParser: AI parsing returned no result")
             return self._regex_fallback_parse_status(content)
 
+        except asyncio.CancelledError:
+            # 🎯 关键修复：区分真正取消 vs SDK成功后的清理取消
+            # 检查是否已经获取到结果
+            if hasattr(sdk, "message_tracker") and sdk.message_tracker.latest_message:
+                # SDK 已经成功返回结果，只是清理阶段被取消
+                latest_message = sdk.message_tracker.latest_message
+                extracted_status = self._extract_status_from_response(latest_message)
+                logger.info(
+                    f"SimpleStatusParser: SDK cancelled during cleanup, but result already received: "
+                    f"'{extracted_status}' (raw: '{latest_message[:50]}...')"
+                )
+                return extracted_status
+            else:
+                # 真正的取消，没有获取到结果 - 这才走 fallback
+                logger.warning(
+                    f"SimpleStatusParser: SDK call was cancelled before receiving result, "
+                    f"falling back to regex parsing for content '{content_preview}...'"
+                )
+                return self._regex_fallback_parse_status(content)
         except TimeoutError:
             logger.error(
                 f"SimpleStatusParser: AI parsing timed out after 30 seconds "

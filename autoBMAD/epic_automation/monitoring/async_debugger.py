@@ -561,12 +561,12 @@ if __name__ == "__main__":
 
         async def sample_task(name: str, delay: float):
             async with debugger.tracked_scope(f"task_{name}"):
-                await asyncio.sleep(delay)
+                await asyncio.sleep(0.5)
                 return f"Task {name} completed"
 
         async with debugger.tracked_task("main"):
-            task1 = await debugger.task_tracker.create_task(sample_task("A", 0.1))
-            task2 = await debugger.task_tracker.create_task(sample_task("B", 0.2))
+            task1 = await debugger.task_tracker.create_task(sample_task("A", 0.5))
+            task2 = await debugger.task_tracker.create_task(sample_task("B", 0.5))
 
             result1 = await task1
             result2 = await task2

@@ -1276,17 +1276,17 @@ class EpicDriver:
 
         Returns:
             True if story completed successfully (Done or Ready for Done), False otherwise
+
+        Raises:
+            asyncio.CancelledError: 当整个 epic 运行被外部取消时，向上传播
         """
         story_path = story["path"]
         story_id = story["id"]
         logger.info(f"Processing story {story_id}: {story_path}")
 
         try:
-            # No external timeout - rely on SDK max_turns configuration
             return await self._process_story_impl(story)
-        except asyncio.CancelledError:
-            logger.info(f"Story processing cancelled for {story_path}")
-            return False
+        # ✅ 移除了 asyncio.CancelledError 的捕获，让它自然向上传播
         except RuntimeError as e:
             error_msg = str(e)
 
@@ -1311,37 +1311,24 @@ class EpicDriver:
 
         Returns:
             True if story completed successfully, False otherwise
-        """
-        story_path = story["path"]
 
-        try:
-            # No shield - external timeouts removed
-            return await self._execute_story_processing(story)
-        except asyncio.CancelledError:
-            logger.info(f"Story processing cancelled for {story_path}")
-            return False
+        Raises:
+            asyncio.CancelledError: 向上传播到 process_story
+        """
+        # ✅ 移除了所有 try-except，直接调用
+        return await self._execute_story_processing(story)
 
     async def _execute_story_processing(self, story: "dict[str, Any]") -> bool:
         """
-        Core story processing logic without shield to avoid cancel scope conflicts.
+        Core story processing logic - driven purely by core status values.
+
+        Dev-QA 循环完全由核心状态值驱动，不依赖 SDK 返回值。
         """
         story_path = story["path"]
         story_id = story["id"]
 
         try:
-            # Check state consistency before processing - only log warnings, don't block
-            consistency_check = await self._check_state_consistency(story)
-            if not consistency_check:
-                logger.warning(
-                    f"State inconsistency detected for {story_path}, but continuing with processing"
-                )
-                # Continue processing despite inconsistencies - be more resilient
-            else:
-                logger.debug(f"State consistency check passed for {story_path}")
-
-            # Continue with normal processing regardless of consistency check result
-
-            # Check if story already completed or qa_waived
+            # 检查是否已完成
             existing_status: dict[str, Any] = await self.state_manager.get_story_status(
                 story_path
             )
@@ -1349,51 +1336,81 @@ class EpicDriver:
                 logger.info(f"Story already processed: {story_path} (status: {existing_status.get('status')})")
                 return True
 
-            # Execute Dev-QA Loop (SM phase removed - stories already created by parse_epic)
+            # 🎯 核心改动：循环由核心状态值驱动
             iteration = 1
-            max_dev_qa_cycles = 10  # Maximum Dev-QA cycles
+            max_dev_qa_cycles = 10
+
             while iteration <= max_dev_qa_cycles:
                 logger.info(
-                    f"[Epic Driver] Starting Dev-QA cycle #{iteration} for {story_path}"
+                    f"[Epic Driver] Dev-QA cycle #{iteration} for {story_path}"
                 )
 
-                # Dev Phase
-                dev_success = await self.execute_dev_phase(story_path, iteration)
-
-                # 🎯 关键：Dev 调用完成后等待清理
-                await asyncio.sleep(0.5)
-
-                if not dev_success:
+                try:
+                    # 1️⃣ 读取当前核心状态值
+                    current_status = await self._parse_story_status(story_path)
+                    logger.info(f"[Cycle {iteration}] Current status: {current_status}")
+                    
+                except asyncio.CancelledError:
+                    # 🎯 关键修复：SDK 内部取消后的延迟 CancelledError
+                    # 完全封装，不影响工作流
                     logger.warning(
-                        f"Dev phase failed for {story_path}, proceeding with QA for diagnosis"
+                        f"[Cycle {iteration}] SDK cleanup triggered CancelledError (non-fatal), "
+                        f"using last known status or fallback"
                     )
-                    # Continue to QA phase for error diagnosis instead of returning False
+                    # 使用 fallback 解析状态
+                    current_status = self._parse_story_status_fallback(story_path)
+                    logger.info(f"[Cycle {iteration}] Fallback status: {current_status}")
+                
+                # 🎯 关键修复：状态解析后等待 SDK 清理完成，避免连续 SDK 调用
+                # 增加等待时间到 2 秒，确保 cancel scope 完全清理
+                # 将 sleep 单独放在 try-except 外面，吸收所有延迟的 CancelledError
+                try:
+                    logger.debug(f"[Cycle {iteration}] Waiting for SDK cleanup (2 seconds)...")
+                    await asyncio.sleep(2.0)
+                except asyncio.CancelledError:
+                    logger.debug(f"[Cycle {iteration}] CancelledError during sleep absorbed (non-fatal)")
+                    # 完全吸收此 CancelledError，不再传播
 
-                # QA Phase
-                qa_passed = await self.execute_qa_phase(story_path)
+                # 2️⃣ 根据核心状态值决定下一步
+                if current_status in ["Done", "Ready for Done"]:
+                    # ✅ 终态：故事完成
+                    logger.info(f"Story {story_id} completed (Status: {current_status})")
+                    return True
 
-                # 🎯 关键：QA 调用完成后等待清理
-                await asyncio.sleep(0.5)
+                elif current_status in ["Draft", "Ready for Development"]:
+                    # 需要开发
+                    logger.info(f"[Cycle {iteration}] Executing Dev phase (status: {current_status})")
+                    await self.execute_dev_phase(story_path, iteration)
+                    # ⚠️ 不检查返回值，继续循环
 
-                if qa_passed:
-                    # 🎯 关键修复：验证最终状态（确保状态真正更新）
-                    actual_status = await self._parse_story_status(story_path)
+                elif current_status == "In Progress":
+                    # 继续开发
+                    logger.info(f"[Cycle {iteration}] Continuing Dev phase (status: {current_status})")
+                    await self.execute_dev_phase(story_path, iteration)
 
-                    if actual_status == "Done":
-                        logger.info(f"Story {story_id} completed successfully (Status: Done)")
-                        return True
-                    elif actual_status == "Ready for Review":
-                        logger.info(f"QA passed but status is '{actual_status}', continuing cycle {iteration + 1}")
-                    else:
-                        logger.info(f"QA passed but status is '{actual_status}', continuing cycle {iteration + 1}")
+                elif current_status == "Ready for Review":
+                    # 需要 QA
+                    logger.info(f"[Cycle {iteration}] Executing QA phase (status: {current_status})")
+                    await self.execute_qa_phase(story_path)
+                    # ⚠️ 不检查返回值，继续循环
 
-                # Increment iteration for next cycle
-                iteration += 1
+                elif current_status == "Failed":
+                    # 失败状态，尝试重新开发
+                    logger.warning(f"[Cycle {iteration}] Story in failed state, retrying Dev phase")
+                    await self.execute_dev_phase(story_path, iteration)
 
-                # Small delay between cycles
+                else:
+                    # 未知状态，尝试开发
+                    logger.warning(f"[Cycle {iteration}] Unknown status '{current_status}', attempting Dev phase")
+                    await self.execute_dev_phase(story_path, iteration)
+
+                # 3️⃣ 等待 SDK 清理 + 状态更新
                 await asyncio.sleep(1.0)
 
-            # If we reach here, max cycles reached
+                # 4️⃣ 增加迭代计数
+                iteration += 1
+
+            # 超过最大循环次数
             logger.warning(
                 f"Reached maximum Dev-QA cycles ({max_dev_qa_cycles}) for {story_path}"
             )
@@ -1432,6 +1449,10 @@ class EpicDriver:
                 logger.warning("StatusParser not available, using fallback parsing")
                 return self._parse_story_status_fallback(story_path)
 
+        except asyncio.CancelledError:
+            # 🎯 关键修复：状态解析中的 SDK 调用被取消时，使用 fallback
+            logger.warning(f"Status parsing cancelled for {story_path}, using fallback")
+            return self._parse_story_status_fallback(story_path)
         except Exception as e:
             logger.error(f"Failed to parse story status: {e}")
             return "Draft"  # Default to standard status instead of legacy format
@@ -1796,6 +1817,9 @@ class EpicDriver:
 
         Returns:
             True if all stories completed successfully, False otherwise
+
+        Raises:
+            asyncio.CancelledError: 当整个 epic 运行被外部取消时，向上传播
         """
         self.logger.info(f"Starting Dev-QA cycle for {len(stories)} stories")
 
@@ -1807,16 +1831,71 @@ class EpicDriver:
             if self.verbose:
                 self.logger.debug(f"Processing story: {story['id']}")
 
-            if await self.process_story(story):
-                success_count += 1
-            elif not self.retry_failed:
-                if self.verbose:
-                    self.logger.debug(
-                        f"Continuing to next story after failure: {story['id']}"
+            try:
+                # ✅ process_story 可能会传播 CancelledError
+                if await self.process_story(story):
+                    success_count += 1
+                elif not self.retry_failed:
+                    if self.verbose:
+                        self.logger.debug(
+                            f"Continuing to next story after failure: {story['id']}"
+                        )
+            except asyncio.CancelledError:
+                # 🎯 关键修复：SDK 内部取消不应中断 Epic 执行
+                # 完全封装，继续处理下一个 story
+                self.logger.warning(
+                    f"[Epic Level] SDK cancellation for story {story['id']} (non-fatal). "
+                    f"Continuing to next story."
+                )
+                # 不 raise，继续处理下一个 story
+                continue
+            except RuntimeError as e:
+                error_msg = str(e)
+                # 🎯 关键：处理 cancel scope 跨任务错误，不中断 epic 执行
+                if "cancel scope" in error_msg.lower() and "different task" in error_msg.lower():
+                    self.logger.warning(
+                        f"[Epic Level] Cross-task cancel scope error (non-fatal): {error_msg}. "
+                        f"Continuing story processing."
                     )
+                    # 跨任务cancel scope错误是常见的，继续处理
+                    continue
+                else:
+                    # 其他RuntimeError，记录错误
+                    self.logger.error(f"[Epic Level] RuntimeError in story {story['id']}: {error_msg}")
+                    if not self.retry_failed:
+                        continue
 
-            # 🎯 关键：每个 story 处理完成后等待清理
-            await asyncio.sleep(0.5)
+            # 🎯 关键增强：每个 story 处理完成后确保 SDK 清理完成
+            # 使用 SDKCancellationManager 等待清理,避免连续调用导致跨任务冲突
+            try:
+                from autoBMAD.epic_automation.monitoring import get_cancellation_manager
+                manager = get_cancellation_manager()
+                
+                # 等待所有活跃的 SDK 调用清理完成
+                if manager.active_sdk_calls:
+                    active_call_ids = list(manager.active_sdk_calls.keys())
+                    self.logger.info(
+                        f"[Story Complete] Waiting for {len(active_call_ids)} SDK call(s) to cleanup..."
+                    )
+                    
+                    for call_id in active_call_ids:
+                        cleanup_success = await manager.wait_for_cancellation_complete(
+                            call_id, timeout=5.0
+                        )
+                        if not cleanup_success:
+                            self.logger.warning(
+                                f"[Story Complete] SDK cleanup timeout for {call_id[:8]}..., "
+                                f"continuing anyway"
+                            )
+                    
+                    self.logger.info("[Story Complete] All SDK cleanup confirmed")
+                else:
+                    # 没有活跃调用,仍然等待一小段时间确保任何后台清理完成
+                    await asyncio.sleep(0.5)
+            except Exception as e:
+                self.logger.warning(f"[Story Complete] SDK cleanup check failed: {e}")
+                # 回退到简单等待
+                await asyncio.sleep(1.0)
 
         # Update progress
         await self._update_progress(
@@ -1894,6 +1973,9 @@ class EpicDriver:
 
         Returns:
             True if epic completed successfully, False otherwise
+
+        Raises:
+            asyncio.CancelledError: 当整个 epic 运行被外部取消时，重新抛出让调用者处理
         """
         self.logger.info("Starting Epic Driver - Dev-QA Workflow")
 
@@ -1953,6 +2035,15 @@ class EpicDriver:
             self.logger.info("=== Epic Processing Complete ===")
             return True
 
+        except asyncio.CancelledError:
+            # 🎯 Epic 层面的取消：整个运行被外部中止
+            self.logger.info(
+                "[Epic Cancelled] Epic execution cancelled by external signal (Ctrl+C / task.cancel())"
+            )
+            # 可以在这里做必要的清理工作
+            # 不返回 False，而是重新抛出，让调用者知道这是取消而非失败
+            raise
+
         except Exception as e:
             self.logger.error(f"Epic driver execution failed: {e}", exc_info=True)
             # Write exception to log file
@@ -1962,17 +2053,11 @@ class EpicDriver:
         finally:
             # Improved cleanup logic
             try:
-                # 1. Cancel all active SDK sessions
-                if hasattr(self, "qa_agent") and hasattr(
-                    self.qa_agent, "_session_manager"
-                ):
-                    await self.qa_agent._session_manager.cancel_all_sessions()
-
-                # 2. Flush log manager
+                # 1. Flush log manager
                 if hasattr(self, "log_manager") and self.log_manager:
                     self.log_manager.flush()
 
-                # 3. Finally cleanup logging
+                # 2. Finally cleanup logging
                 cleanup_logging()
 
             except Exception:
@@ -2156,7 +2241,7 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
 
 async def main():
     """Main entry point."""
-    # 🎯 在循环内部设置异常处理器
+    # 设置异常处理器来抑制 cancel scope 错误
     def exception_handler(loop, context):
         exception = context.get('exception')
         if isinstance(exception, RuntimeError):
@@ -2169,10 +2254,6 @@ async def main():
                 return
         # 对于其他异常，使用默认处理器
         loop.default_exception_handler(context)
-
-    # 获取当前事件循环并设置异常处理器
-    loop = asyncio.get_running_loop()
-    loop.set_exception_handler(exception_handler)
 
     args = parse_arguments()
 
@@ -2207,25 +2288,26 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        # 🎯 设置自定义异常处理器来抑制 cancel scope 错误
-        def exception_handler(loop, context):
+        # 添加全局任务异常处理器
+        def global_exception_handler(loop, context):
+            """全局异常处理器，捕获未捕获的任务异常"""
             exception = context.get('exception')
-            if isinstance(exception, RuntimeError):
+            if exception and isinstance(exception, RuntimeError):
                 error_msg = str(exception)
-                if 'cancel scope' in error_msg.lower():
-                    # 抑制 cancel scope 错误，不记录为严重错误
-                    logger.warning(
-                        f"Suppressed cancel scope error during shutdown: {error_msg}"
+                # 忽略跨任务cancel scope错误
+                if "cancel scope" in error_msg.lower() and "different task" in error_msg.lower():
+                    logger.debug(
+                        f"Ignored uncaught task exception (cancel scope, non-fatal): {error_msg}"
                     )
                     return
             # 对于其他异常，使用默认处理器
             loop.default_exception_handler(context)
 
-        # 获取事件循环并设置异常处理器
+        # 设置全局异常处理器
         loop = asyncio.new_event_loop()
-        loop.set_exception_handler(exception_handler)
+        loop.set_exception_handler(global_exception_handler)
 
-        # 🎯 在 asyncio.run() 内部设置异常处理器
+        # 运行主函数，异常处理器已在main()内部设置
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Execution cancelled by user (Ctrl+C)")

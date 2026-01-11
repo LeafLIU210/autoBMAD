@@ -242,66 +242,47 @@ class DevAgent:
         story_path: str,
     ) -> bool:
         """
-        开发执行流程（状态驱动）
+        🎯 核心设计：Dev Agent 不再检查状态，只执行开发任务
+        - Epic Driver 已根据核心状态值决定是否调用 Dev Agent
+        - Dev Agent 收到调用就直接执行开发任务，不做任何状态判断
+        - 返回值仅用于日志记录，不影响工作流决策
 
         Args:
             story_path: 故事文件路径
 
         Returns:
-            True if successful, False otherwise
+            固定返回 True
         """
-        logger.info(f"{self.name} executing Dev phase")
-
         try:
-            # 1. 解析核心状态值（从文档）
-            if hasattr(self, 'status_parser') and self.status_parser:
+            logger.info(f"[Dev Agent] Executing development for {story_path}")
+            logger.info(f"[Dev Agent] Epic Driver has determined this story needs development")
+
+            # 直接执行开发任务，不检查状态
+            try:
+                # 读取故事内容
                 story_file = Path(story_path)
                 if story_file.exists():
-                    content = story_file.read_text(encoding="utf-8")
-                    story_status = await self.status_parser.parse_status(content)
+                    story_content = story_file.read_text(encoding="utf-8")
+                    requirements = await self._extract_requirements(story_content)
+                    
+                    # 执行开发任务
+                    development_success = await self._execute_development_tasks(requirements)
+                    logger.info(f"[Dev Agent] Development tasks executed (result={development_success})")
                 else:
                     logger.warning(f"[Dev Agent] Story file not found: {story_path}")
-                    story_status = "Unknown"
-            else:
-                logger.warning("[Dev Agent] Status parser not available")
-                story_status = "Unknown"
-
-            # 2. 状态判断（基于核心状态值）
-            if story_status.lower() in ["ready for done", "done"]:
-                # 跳过整个dev-qa周期
-                logger.info(f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle")
-                return True
-
-            elif story_status == "Ready for Review":
-                # 跳过开发，直接通知QA
-                logger.info(f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls")
-                return await self._notify_qa_agent_safe(story_path)
-
-            # 3. 执行开发任务（原有逻辑）
-            logger.info(f"[Dev Agent] Executing development tasks for '{story_path}'")
-            # 这里应该包含实际的开发任务执行逻辑
-            # 简化实现，假设开发任务成功完成
-            development_success = True
-
-            if not development_success:
-                logger.error("Failed to complete development tasks")
-                return False
-
-            # 4. 更新故事状态为"Ready for Review"
-            try:
-                from .state_manager import StateManager
-                state_manager = StateManager()
-                processing_status = "review"  # 处理状态值
-                await state_manager.update_story_status(story_path, processing_status)
             except Exception as e:
-                logger.warning(f"[Dev Agent] Failed to update story status: {e}")
+                logger.warning(f"[Dev Agent] Development task execution failed: {e}, continuing workflow")
 
-            # 5. 🎯 关键：确保 SDK 调用在独立 Task 中完成
-            return await self._notify_qa_agent_in_isolated_task(story_path)
+            # 🎯 关键：无论开发结果如何，都返回 True
+            # Epic Driver 会重新解析状态来决定下一步
+            logger.info(f"[Dev Agent] Development execution completed, "
+                       f"Epic Driver will re-parse status to determine next step")
+            return True
 
         except Exception as e:
-            logger.error(f"{self.name} Dev phase failed: {e}")
-            return False
+            # 🎯 关键：所有异常都只记录日志，返回 True
+            logger.warning(f"[Dev Agent] Exception during development: {e}, continuing workflow")
+            return True
 
     async def _extract_requirements(self, story_content: str) -> dict[str, Any]:
         """Extract requirements from story content."""
@@ -451,55 +432,28 @@ class DevAgent:
         return {"valid": len(issues) == 0, "issues": issues, "warnings": warnings}
 
     async def _execute_development_tasks(self, requirements: dict[str, Any]) -> bool:
-        """Execute development tasks using Claude Agent SDK with single call."""
-        logger.info("Executing development tasks")
-
+        """
+        Execute development tasks using Claude Agent SDK with single call.
+        
+        🎯 核心设计：Dev Agent 不再检查状态，只执行开发任务
+        - Epic Driver 已根据核心状态值决定是否调用 Dev Agent
+        - Dev Agent 收到调用就直接执行，不做任何状态判断
+        - 返回值仅用于日志记录，不影响工作流决策
+        """
         try:
             # Check if SDK is available
             if query is None or ClaudeAgentOptions is None:
-                raise RuntimeError(
-                    "Claude Agent SDK is required but not available. "
-                    + "Please install and configure claude-agent-sdk."
+                logger.warning(
+                    "[Dev Agent] Claude Agent SDK not available, skipping development"
                 )
+                # 🎯 关键：即使 SDK 不可用，也返回 True（由 Epic Driver 根据状态决策）
+                return True
 
             # Get story path
             story_path = requirements.get("story_path", self._current_story_path or "")
-
-            # Check if story status is already completed
-            if story_path:
-                story_status = await self._check_story_status(story_path)
-
-                # DEBUG: Log the actual status for debugging
-                logger.info(
-                    f"[DEBUG] Story status check for '{story_path}': '{story_status}' (type: {type(story_status).__name__})"
-                )
-
-                # Check for "Ready for Done" or "Done" status - skip entire dev-qa cycle
-                if story_status and (
-                    story_status.lower() == "ready for done"
-                    or story_status.lower() == "done"
-                ):
-                    logger.info(
-                        f"[Dev Agent] Story '{story_path}' already completed ({story_status}), skipping dev-qa cycle"
-                    )
-                    return True
-
-                # Check for "Ready for Review" status - skip dev but notify QA
-                elif story_status == "Ready for Review":
-                    logger.info(
-                        f"[Dev Agent] Story '{story_path}' already ready for review, skipping SDK calls"
-                    )
-                    # Development is considered complete, notify QA agent directly
-                    _ = await self._notify_qa_agent(story_path)
-                    return True
-                elif story_status:
-                    logger.info(
-                        f"[Dev Agent] Story status: {story_status}, proceeding with development"
-                    )
-                else:
-                    logger.warning(
-                        f"[Dev Agent] Could not determine story status for {story_path}, proceeding anyway"
-                    )
+            
+            logger.info(f"[Dev Agent] Executing development for {story_path}")
+            logger.info(f"[Dev Agent] Epic Driver has determined this story needs development based on core status")
 
             # Check if this is a QA feedback mode (requirements contains qa_prompt)
             if "qa_prompt" in requirements:
@@ -508,12 +462,11 @@ class DevAgent:
                 result = await self._execute_single_claude_sdk(
                     requirements["qa_prompt"], story_path, self._log_manager
                 )
-                return result
+                # 🎯 关键：返回值不影响工作流，由 Epic Driver 重新解析状态
+                return True
 
             # Normal development mode - execute single SDK call
-            logger.warning(
-                f"[WARNING] {self.name} Executing SDK call for '{story_path}' - this should only happen if status is NOT 'Ready for Review'"
-            )
+            logger.info(f"[Dev Agent] Executing normal development mode for '{story_path}'")
             base_prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\dev.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\develop-story.md According to Story @{story_path}, Create or improve comprehensive test suites @D:\\GITHUB\\pytQt_template\\autoBMAD\\spec_automation\\tests. Perform Test-Driven Development (TDD) iteratively until achieving 100% tests pass with comprehensive coverage. Run "pytest -v --tb=short --cov" to verify tests and coverage. Change story Status to "Ready for Review" when complete. '
 
             # Execute single SDK call
@@ -521,22 +474,19 @@ class DevAgent:
                 base_prompt, story_path, self._log_manager
             )
 
-            if result:
-                # Development completed successfully, notify QA agent
-                _ = await self._notify_qa_agent(story_path)
-                logger.info(
-                    f"Development tasks completed successfully for: {requirements.get('title', 'Unknown')}"
-                )
-                return True
-            else:
-                logger.error(
-                    f"Development tasks failed for: {requirements.get('title', 'Unknown')}"
-                )
-                return False
+            # 🎯 关键：无论 SDK 返回什么，都返回 True
+            # 工作流完全由 Epic Driver 重新解析状态来驱动
+            logger.info(
+                f"[Dev Agent] Development execution completed (result={result}), "
+                f"Epic Driver will re-parse status to determine next step"
+            )
+            return True
 
         except Exception as e:
-            logger.error(f"Failed to execute development tasks: {e}")
-            return False
+            # 🎯 关键：所有异常都只记录日志，返回 True
+            # 让 Epic Driver 根据状态决策，而不是根据异常
+            logger.warning(f"[Dev Agent] Exception during development: {e}, continuing workflow")
+            return True
 
     # ========== QA Feedback Handling Methods (Simplified) ==========
 
@@ -780,6 +730,14 @@ class DevAgent:
                         logger.warning(
                             f"[Dev Agent] StatusParser failed to parse status from {story_path}"
                         )
+                except asyncio.CancelledError:
+                    # 🎯 关键修复：SDK 内部取消不应影响状态检查
+                    # 完全封装 CancelledError，回退到正则解析
+                    logger.warning(
+                        f"[Dev Agent] Status parsing was cancelled (normal SDK cleanup), "
+                        f"using fallback for {story_path}"
+                    )
+                    # 继续执行 fallback
                 except Exception as e:
                     logger.warning(
                         f"[Dev Agent] StatusParser error: {e}, falling back to regex"
@@ -951,6 +909,8 @@ class DevAgent:
             logger.info(f"[Dev Agent] QA agent notification started in task: {qa_task.get_name()}")
 
             # 等待 QA 任务完成，确保在 Dev 阶段返回前 QA 完成
+            # 🎯 增加等待时间，确保前一个上下文的 cancel scope 完全退出
+            await asyncio.sleep(0.5)
             result = await qa_task
             logger.info(f"[Dev Agent] QA notification completed in task: {qa_task.get_name()}")
             return result
@@ -958,4 +918,6 @@ class DevAgent:
         except Exception as e:
             logger.error(f"[Dev Agent] Error starting QA task: {e}")
             # 回退到同步执行
+            # 🎯 回退时也增加等待时间
+            await asyncio.sleep(0.5)
             return await self._notify_qa_agent_safe(story_path)

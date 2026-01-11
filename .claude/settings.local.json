@@ -77,7 +77,8 @@
       "Bash(..venvScriptspython.exe -m basedpyright autoBMADepic_automationepic_driver.py)",
       "Bash(cmd /c:*)",
       "Bash(basedpyright:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Read(//d/GITHUB/pytQt_template/**)"
     ],
     "deny": [
       "Bash(curl:*)",

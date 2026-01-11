@@ -526,11 +526,11 @@ if __name__ == "__main__":
 
         # 测试锁监控
         async with monitor.monitor_lock("test_lock"):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
 
         # 测试会话监控
         async with monitor.monitor_session("test_session", "sdk", "test_agent"):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
 
         monitor.print_summary()
         report = monitor.generate_report()

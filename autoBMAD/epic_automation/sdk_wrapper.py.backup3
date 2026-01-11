@@ -481,7 +481,6 @@ class SafeClaudeSDK:
         1. 检测并恢复 cancel scope 跨任务错误
         2. 在结构层面解决 enter/exit 不在同一 Task 的问题
         3. 提供重新执行机制，避免"取消操作重试"
-        4. 当已收到结果时，忽略 cancel scope 清理错误（视为成功）
         """
         if not SDK_AVAILABLE:
             logger.warning("Claude Agent SDK not available")
@@ -492,45 +491,14 @@ class SafeClaudeSDK:
 
         while retry_count <= max_retries:
             try:
-                result = await self._execute_with_recovery()
-                return result
+                return await self._execute_with_recovery()
             except RuntimeError as e:
                 error_msg = str(e)
-                if "cancel scope" in error_msg.lower() and "different task" in error_msg.lower():
-                    # 🎯 关键：检查是否已收到结果（通过管理器）
-                    try:
-                        from autoBMAD.epic_automation.monitoring import get_cancellation_manager
-                        manager = get_cancellation_manager()
-
-                        # 检查active_sdk_calls中是否有结果
-                        if manager.active_sdk_calls:
-                            latest_call_id = list(manager.active_sdk_calls.keys())[-1]
-                            latest_call = manager.active_sdk_calls[latest_call_id]
-                            if "result_received_at" in latest_call or "result" in latest_call:
-                                logger.info(
-                                    "[SafeClaudeSDK] Cancel scope error detected but result already received "
-                                    "in active call. Treating as success."
-                                )
-                                return True
-
-                        # 检查completed_calls
-                        if manager.completed_calls:
-                            latest_call = manager.completed_calls[-1]
-                            if latest_call.get("result_received", False):
-                                logger.info(
-                                    "[SafeClaudeSDK] Cancel scope error detected but result already received "
-                                    "in completed call. Treating as success."
-                                )
-                                return True
-
-                    except Exception as check_error:
-                        logger.debug(f"Error checking result status: {check_error}")
-
-                    # 没有收到结果，继续重试逻辑
+                if "cancel scope" in error_msg and "different task" in error_msg:
                     retry_count += 1
                     logger.warning(
-                        f"[SafeClaudeSDK] Cancel scope cross-task error detected "
-                        f"(attempt {retry_count}/{max_retries+1}). Rebuilding execution context..."
+                        f"[SafeClaudeSDK] Cancel scope cross-task error detected (attempt {retry_count}/{max_retries+1}). "
+                        f"Rebuilding execution context..."
                     )
 
                     if retry_count > max_retries:
@@ -597,12 +565,11 @@ class SafeClaudeSDK:
                 )
                 return True
 
-            # 🎯 关键修复：真正的取消不再 raise，返回 False
-            # 这样可以避免 CancelledError 向上传播导致工作流中断
-            logger.warning("SDK execution was cancelled (confirmed by manager), continuing workflow")
+            # 真正的取消
+            logger.warning("SDK execution was cancelled (confirmed by manager)")
             # 等待清理完成
             await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
-            return False  # ✅ 返回 False 而不是 raise，让工作流继续
+            raise
 
         except Exception as e:
             logger.error(f"Claude SDK execution failed: {e}")
@@ -630,16 +597,6 @@ class SafeClaudeSDK:
 
         logger.info("[SDK Start] Starting Claude SDK execution with tracking")
         logger.info(f"[SDK Config] Prompt length: {len(self.prompt)} characters")
-
-        # 🎯 关键修复：清理任何挂起的取消信号
-        # 确保新的 SDK 调用从干净的状态开始
-        try:
-            current_task = asyncio.current_task()
-            if current_task and current_task.cancelled():
-                logger.warning("[SDK Warning] Current task is in cancelled state, but attempting SDK call anyway")
-                # 不要直接抛出，让 SDK 尝试执行
-        except Exception as e:
-            logger.debug(f"Could not check task cancel state: {e}")
 
         # Create query generator
         try:
@@ -674,12 +631,10 @@ class SafeClaudeSDK:
         """
         Run generator with cancellation manager result tracking.
 
-        🎯 关键改进：立即标记结果接收，保存已收到的消息
+        🎯 关键改进：立即标记结果接收
         """
         message_count = 0
         start_time = asyncio.get_running_loop().time()
-        received_result = False  # 🎯 新增：跟踪是否已收到结果
-        last_result_message = None  # 🎯 新增：保存最后的ResultMessage
 
         try:
             await self.message_tracker.start_periodic_display()
@@ -694,10 +649,6 @@ class SafeClaudeSDK:
                     self.message_tracker.update_message(message_content, message_type)
 
                 if ResultMessage is not None and isinstance(message, ResultMessage):
-                    # 🎯 立即保存ResultMessage
-                    last_result_message = message
-                    received_result = True
-
                     if hasattr(message, "is_error") and message.is_error:
                         error_msg = getattr(message, "result", "Unknown error")
                         logger.error(f"[SDK Error] Claude SDK error: {error_msg}")
@@ -732,37 +683,15 @@ class SafeClaudeSDK:
             return True
 
         except asyncio.CancelledError:
-            # 🎯 关键修复：检查是否已收到 ResultMessage
-            if received_result and last_result_message:
-                logger.warning(
-                    "[SDK Warning] Cancelled after receiving result - treating as success"
-                )
-                try:
-                    await self.message_tracker.stop_periodic_display()
-                except Exception as e:
-                    logger.debug(f"Error stopping display task: {e}")
+            logger.warning("Claude SDK execution was cancelled")
 
-                # 处理已收到的 ResultMessage
-                if hasattr(last_result_message, "is_error") and last_result_message.is_error:
-                    error_msg = getattr(last_result_message, "result", "Unknown error")
-                    logger.error(f"[SDK Error] Claude SDK error: {error_msg}")
-                    return False
-                else:
-                    result = getattr(last_result_message, "result", None)
-                    result_str = str(result) if result else "No content"
-                    manager.mark_result_received(call_id, result_str)
-                    logger.info(f"[SDK Success] Result retrieved despite cancellation: {result_str[:100]}")
-                    return True
-            else:
-                logger.warning("Claude SDK execution was cancelled")
+            try:
+                await self.message_tracker.stop_periodic_display()
+            except Exception as e:
+                logger.debug(f"Error stopping display task: {e}")
 
-                try:
-                    await self.message_tracker.stop_periodic_display()
-                except Exception as e:
-                    logger.debug(f"Error stopping display task: {e}")
-
-                # 🎯 重新抛出，让外层检查取消类型
-                raise
+            # 🎯 重新抛出，让外层检查取消类型
+            raise
 
         except Exception as e:
             logger.error(f"Claude SDK execution error: {e}")

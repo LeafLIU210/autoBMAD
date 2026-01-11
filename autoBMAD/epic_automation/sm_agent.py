@@ -571,6 +571,7 @@ class SMAgent:
                 permission_mode="bypassPermissions",
                 cwd=str(Path.cwd()),
                 cli_path=r"D:\GITHUB\pytQt_template\venv\Lib\site-packages\claude_agent_sdk\_bundled\claude.exe",
+                max_turns=10,
             )
             sdk = SafeClaudeSDK(prompt, options, timeout=None)
             # Execute SDK call and ensure it returns a bool
