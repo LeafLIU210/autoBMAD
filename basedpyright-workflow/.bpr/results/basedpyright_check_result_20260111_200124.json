@@ -1,0 +1,44 @@
+{
+  "version": "1.37.0",
+  "time": "1768132886674",
+  "generalDiagnostics": [],
+  "summary": {
+    "filesAnalyzed": 25,
+    "errorCount": 0,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.768
+  },
+  "metadata": {
+    "check_time": "2026-01-11T20:01:26.713569",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 25,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "..\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\state_agent.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\base_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\devqa_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\quality_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\sm_controller.py",
+      "..\\autoBMAD\\epic_automation\\core\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\core\\cancellation_manager.py",
+      "..\\autoBMAD\\epic_automation\\core\\safe_claude_sdk.py",
+      "..\\autoBMAD\\epic_automation\\core\\sdk_executor.py",
+      "..\\autoBMAD\\epic_automation\\core\\sdk_result.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\monitoring\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\monitoring\\resource_monitor.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py"
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+
+Total errors: 12
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 21, Column: 60
+Rule: unknown
+Error: "type[Project_recorder.script_data_model_unified.ScriptEvent]" 类型不匹配声明的 "type[Project_recorder.ui.dialogs.event_edit_dialog_enhanced.ScriptEvent]" 类型
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 42, Column: 22
+Rule: unknown
+Error: 无法为 "EnhancedEventEditDialog*" 类的 "event" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 216, Column: 68
+Rule: reportAttributeAccessIssue
+Error: "QRegularExpression" 是未知的导入符号 (reportAttributeAccessIssue)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 218, Column: 42
+Rule: reportOptionalMemberAccess
+Error: `None` 没有 "setValidator" 属性 (reportOptionalMemberAccess)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 229, Column: 46
+Rule: unknown
+Error: 无法访问 "MethodType" 类的 "action_name" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 232, Column: 47
+Rule: unknown
+Error: 无法访问 "MethodType" 类的 "relative_time" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 234, Column: 53
+Rule: unknown
+Error: 无法访问 "MethodType" 类的 "timestamp" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 291, Column: 34
+Rule: unknown
+Error: 无法访问 "MethodType" 类的 "timestamp" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 321, Column: 20
+Rule: unknown
+Error: 无法为 "MethodType" 类的 "action_name" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 322, Column: 20
+Rule: unknown
+Error: 无法为 "MethodType" 类的 "relative_time" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 323, Column: 20
+Rule: unknown
+Error: 无法为 "MethodType" 类的 "remark" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py
+Line: 325, Column: 24
+Rule: unknown
+Error: 无法为 "MethodType" 类的 "duration" 属性赋值
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

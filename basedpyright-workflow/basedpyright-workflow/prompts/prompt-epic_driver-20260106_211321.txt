@@ -1,0 +1,32 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (21):  Line 717, Col 64: [reportPossiblyUnboundVariable] "story_path" 可能未绑定 (reportPossiblyUnboundVariable)
+  Line 743, Col 21: [unknown] "append" 的类型部分未知
+  Line 745, Col 21: [unknown] "append" 的类型部分未知
+  Line 749, Col 64: [unknown] 部分参数的类型未知
+  Line 749, Col 95: [unknown] 部分参数的类型未知
+  Line 792, Col 13: [unknown] "essential_elements" 的类型部分未知
+  Line 793, Col 44: [reportUnknownLambdaType] "c" 参数的类型未知 (reportUnknownLambdaType)
+  Line 793, Col 47: [reportUnknownLambdaType] 该 `lambda` 的返回类型 "Unknown | Literal[True]" 部分未知 (reportUnknownLambdaType)
+  Line 793, Col 59: [reportUnknownMemberType] "strip" 类型未知 (reportUnknownMemberType)
+  Line 793, Col 59: [reportUnknownMemberType] "startswith" 类型未知 (reportUnknownMemberType)
+  Line 794, Col 35: [reportUnknownLambdaType] "c" 参数的类型未知 (reportUnknownLambdaType)
+  Line 794, Col 50: [reportUnknownMemberType] "lower" 类型未知 (reportUnknownMemberType)
+  Line 795, Col 42: [reportUnknownLambdaType] "c" 参数的类型未知 (reportUnknownLambdaType)
+  Line 795, Col 49: [reportUnknownMemberType] "split" 类型未知 (reportUnknownMemberType)
+  Line 795, Col 49: [unknown] 参数类型未知
+  Line 799, Col 31: [unknown] "check_func" 的类型部分未知
+  Line 801, Col 21: [unknown] "append" 的类型部分未知
+  Line 807, Col 24: [unknown] 部分参数的类型未知
+  Line 827, Col 67: [reportPossiblyUnboundVariable] "story_path" 可能未绑定 (reportPossiblyUnboundVariable)
+  Line 856, Col 62: [reportPossiblyUnboundVariable] "story_path" 可能未绑定 (reportPossiblyUnboundVariable)
+  Line 882, Col 72: [reportPossiblyUnboundVariable] "story_path" 可能未绑定 (reportPossiblyUnboundVariable)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

@@ -1,0 +1,276 @@
+# BasedPyright 检查报告
+**生成时间**: 2025-12-17 17:15:12
+**检查时间**: 2025-12-17T17:15:12.520614
+**检查目录**: `Project_recorder`
+
+## 📊 执行摘要
+
+| 项目 | 数量 |
+|------|------|
+| 检查文件数 | 192 |
+| ❌ 错误 (Error) | 4 |
+| ⚠️ 警告 (Warning) | 3 |
+| ℹ️ 信息 (Information) | 0 |
+| ⏱️ 检查耗时 | 3.99 秒 |
+
+## 🔴 错误详情
+
+共发现 **4** 个错误
+
+### 按文件分组
+
+- `d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py`: 3 个错误
+- `d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\convert_to_absolute_imports.py`: 1 个错误
+
+### 按规则分组
+
+- `reportMissingImports`: 3 次
+- `reportArgumentType`: 1 次
+
+### 详细错误列表
+
+#### 1. d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\convert_to_absolute_imports.py:193
+
+- **规则**: `reportArgumentType`
+- **位置**: 第 193 行, 第 75 列
+- **错误信息**: 无法将 "None" 类型的表达式赋值给 "List[str]" 类型的参数
+  "None" 与 "List[str]" 不兼容
+
+#### 2. d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py:28
+
+- **规则**: `reportMissingImports`
+- **位置**: 第 28 行, 第 5 列
+- **错误信息**: 无法解析导入 "Project_recorder.ui.hotkey_models"
+
+#### 3. d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py:32
+
+- **规则**: `reportMissingImports`
+- **位置**: 第 32 行, 第 5 列
+- **错误信息**: 无法解析导入 "Project_recorder.ui.hotkey_config_manager"
+
+#### 4. d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py:33
+
+- **规则**: `reportMissingImports`
+- **位置**: 第 33 行, 第 5 列
+- **错误信息**: 无法解析导入 "Project_recorder.ui.conflict_detector"
+
+## ⚠️ 警告详情
+
+共发现 **3** 个警告
+
+1. `d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py:176` - "KeyCombination" 已在 `__all__` 中声明，但未在模块中定义 (`reportUnsupportedDunderAll`)
+2. `d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py:176` - "KeyEventData" 已在 `__all__` 中声明，但未在模块中定义 (`reportUnsupportedDunderAll`)
+3. `d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py:176` - "MouseEventData" 已在 `__all__` 中声明，但未在模块中定义 (`reportUnsupportedDunderAll`)
+
+## 📁 检查的文件列表
+
+1. `Project_recorder\__init__.py`
+2. `Project_recorder\about_dialog.py`
+3. `Project_recorder\analysis_dialog.py`
+4. `Project_recorder\build_with_pyinstaller.py`
+5. `Project_recorder\calculator-1.py`
+6. `Project_recorder\character_list_management_dialog.py`
+7. `Project_recorder\character_manager.py`
+8. `Project_recorder\character_selection_dialog.py`
+9. `Project_recorder\cleanup_legacy_services.py`
+10. `Project_recorder\color_config.py`
+11. `Project_recorder\config\validation_rules.py`
+12. `Project_recorder\config_manager.py`
+13. `Project_recorder\conflict_detector.py`
+14. `Project_recorder\convert_to_absolute_imports.py`
+15. `Project_recorder\core\application.py`
+16. `Project_recorder\core\application_container.py`
+17. `Project_recorder\core\application_factory.py`
+18. `Project_recorder\core\bootstrap.py`
+19. `Project_recorder\core\event_index_manager.py`
+20. `Project_recorder\core\service_discovery.py`
+21. `Project_recorder\core\ultra_compact_collection.py`
+22. `Project_recorder\core\unified_application.py`
+23. `Project_recorder\core\unified_application_factory.py`
+24. `Project_recorder\cross_platform_color_patch.py`
+25. `Project_recorder\dpi_manager.py`
+26. `Project_recorder\duplicate_detector.py`
+27. `Project_recorder\export_encrypted_script.py`
+28. `Project_recorder\final_migration.py`
+29. `Project_recorder\fix_hardcoded_imports.py`
+30. `Project_recorder\fix_imports_clean.py`
+31. `Project_recorder\fix_imports_comprehensive.py`
+32. `Project_recorder\font_manager.py`
+33. `Project_recorder\global_hotkey_manager.py`
+34. `Project_recorder\hotkey_config_manager.py`
+35. `Project_recorder\hotkey_integration.py`
+36. `Project_recorder\hotkey_models.py`
+37. `Project_recorder\hotkey_ui.py`
+38. `Project_recorder\import_adapter.py`
+39. `Project_recorder\material_design_components.py`
+40. `Project_recorder\performance_benchmark.py`
+41. `Project_recorder\performance_test_unified.py`
+42. `Project_recorder\pyinstaller_main.py`
+43. `Project_recorder\pyinstaller_runtime_hook.py`
+44. `Project_recorder\pyinstaller_spec_optimized.py`
+45. `Project_recorder\report_generator.py`
+46. `Project_recorder\responsive_layout_manager.py`
+47. `Project_recorder\restore_backups.py`
+48. `Project_recorder\script_analyzer.py`
+49. `Project_recorder\script_data_manager.py`
+50. `Project_recorder\script_data_manager_unified.py`
+51. `Project_recorder\script_data_model.py`
+52. `Project_recorder\script_data_model_services.py`
+53. `Project_recorder\script_data_model_unified.py`
+54. `Project_recorder\script_editor_core.py`
+55. `Project_recorder\script_event_utils.py`
+56. `Project_recorder\script_file_manager.py`
+57. `Project_recorder\script_file_manager_ui.py`
+58. `Project_recorder\script_integration_service.py`
+59. `Project_recorder\script_migration_service.py`
+60. `Project_recorder\script_migration_tool.py`
+61. `Project_recorder\script_path_dialog.py`
+62. `Project_recorder\script_performance_service.py`
+63. `Project_recorder\script_service.py`
+64. `Project_recorder\script_service_core.py`
+65. `Project_recorder\script_services_consolidated.py`
+66. `Project_recorder\script_ui_controller.py`
+67. `Project_recorder\script_validation_service.py`
+68. `Project_recorder\segment_editor.py`
+69. `Project_recorder\services\__init__.py`
+70. `Project_recorder\services\adapters\__init__.py`
+71. `Project_recorder\services\adapters\script_data_access_adapter.py`
+72. `Project_recorder\services\adapters\script_integration_adapter.py`
+73. `Project_recorder\services\adapters\script_performance_adapter.py`
+74. `Project_recorder\services\backup_security_service.py`
+75. `Project_recorder\services\character_service.py`
+76. `Project_recorder\services\config_service.py`
+77. `Project_recorder\services\hotkey_service.py`
+78. `Project_recorder\services\infrastructure\__init__.py`
+79. `Project_recorder\services\infrastructure\cache_manager.py`
+80. `Project_recorder\services\infrastructure\config_manager.py`
+81. `Project_recorder\services\infrastructure\logging_manager.py`
+82. `Project_recorder\services\infrastructure\logging_manager_unified.py`
+83. `Project_recorder\services\infrastructure\performance_monitor.py`
+84. `Project_recorder\services\input_base.py`
+85. `Project_recorder\services\input_events.py`
+86. `Project_recorder\services\input_permission_service.py`
+87. `Project_recorder\services\input_service.py`
+88. `Project_recorder\services\input_types.py`
+89. `Project_recorder\services\keyboard_listener_service.py`
+90. `Project_recorder\services\log_formatter_service.py`
+91. `Project_recorder\services\log_storage_service.py`
+92. `Project_recorder\services\logging_service.py`
+93. `Project_recorder\services\mouse_listener_service.py`
+94. `Project_recorder\services\path_service.py`
+95. `Project_recorder\services\performance_monitoring_service.py`
+96. `Project_recorder\services\script_data_service.py`
+97. `Project_recorder\services\script_library_service.py`
+98. `Project_recorder\services\script_migration_service.py`
+99. `Project_recorder\services\script_model_service.py`
+100. `Project_recorder\services\script_performance_service.py`
+101. `Project_recorder\services\segment_editor_service.py`
+102. `Project_recorder\services\unified_script_service.py`
+103. `Project_recorder\services\user_communication_service.py`
+104. `Project_recorder\services\validation_service.py`
+105. `Project_recorder\settings_dialog.py`
+106. `Project_recorder\sub_window_manager.py`
+107. `Project_recorder\system_tray_manager.py`
+108. `Project_recorder\test_encrypt.py`
+109. `Project_recorder\test_fixes.py`
+110. `Project_recorder\test_fixes_simple.py`
+111. `Project_recorder\test_fixes_v2.py`
+112. `Project_recorder\tests\test_character_hierarchy.py`
+113. `Project_recorder\ui\__init__.py`
+114. `Project_recorder\ui\compatibility_layer.py`
+115. `Project_recorder\ui\components\__init__.py`
+116. `Project_recorder\ui\components\cross_platform_color_patch.py`
+117. `Project_recorder\ui\components\dpi_manager.py`
+118. `Project_recorder\ui\components\font_manager.py`
+119. `Project_recorder\ui\components\material_design_components.py`
+120. `Project_recorder\ui\components\responsive_layout_manager.py`
+121. `Project_recorder\ui\controllers\__init__.py`
+122. `Project_recorder\ui\controllers\base_ui_controller.py`
+123. `Project_recorder\ui\controllers\library_ui_controller.py`
+124. `Project_recorder\ui\controllers\main_ui_controller.py`
+125. `Project_recorder\ui\controllers\script_ui_controller.py`
+126. `Project_recorder\ui\controllers\segment_editor_controller.py`
+127. `Project_recorder\ui\controllers\timeline_ui_controller.py`
+128. `Project_recorder\ui\dialogs\__init__.py`
+129. `Project_recorder\ui\dialogs\about_dialog.py`
+130. `Project_recorder\ui\dialogs\analysis_dialog.py`
+131. `Project_recorder\ui\dialogs\character_list_management_dialog.py`
+132. `Project_recorder\ui\dialogs\character_selection_dialog.py`
+133. `Project_recorder\ui\dialogs\event_edit_dialog.py`
+134. `Project_recorder\ui\dialogs\event_edit_dialog_enhanced.py`
+135. `Project_recorder\ui\dialogs\script_path_dialog.py`
+136. `Project_recorder\ui\dialogs\segment_edit_dialog.py`
+137. `Project_recorder\ui\dialogs\settings_dialog.py`
+138. `Project_recorder\ui\dialogs\usage_instruction_dialog.py`
+139. `Project_recorder\ui\legacy_adapter.py`
+140. `Project_recorder\ui\main_window.py`
+141. `Project_recorder\ui\main_window_styled.py`
+142. `Project_recorder\ui\styles\__init__.py`
+143. `Project_recorder\ui\styles\components\__init__.py`
+144. `Project_recorder\ui\styles\components\button_styles.py`
+145. `Project_recorder\ui\styles\components\card_styles.py`
+146. `Project_recorder\ui\styles\components\dialog_styles.py`
+147. `Project_recorder\ui\styles\components\input_style_cache.py`
+148. `Project_recorder\ui\styles\components\input_styles.py`
+149. `Project_recorder\ui\styles\components\label_styles.py`
+150. `Project_recorder\ui\styles\components\responsive_input_scaler.py`
+151. `Project_recorder\ui\styles\layouts\__init__.py`
+152. `Project_recorder\ui\styles\layouts\form_layouts.py`
+153. `Project_recorder\ui\styles\layouts\grid_layouts.py`
+154. `Project_recorder\ui\styles\layouts\main_window_layouts.py`
+155. `Project_recorder\ui\styles\layouts\responsive_layouts.py`
+156. `Project_recorder\ui\styles\main_window\__init__.py`
+157. `Project_recorder\ui\styles\main_window\control_panel_styles.py`
+158. `Project_recorder\ui\styles\main_window\main_window_styles.py`
+159. `Project_recorder\ui\styles\main_window\preview_panel_styles.py`
+160. `Project_recorder\ui\styles\main_window\recording_panel_styles.py`
+161. `Project_recorder\ui\styles\styles_manager.py`
+162. `Project_recorder\ui\styles\themes\__init__.py`
+163. `Project_recorder\ui\styles\themes\color_system.py`
+164. `Project_recorder\ui\styles\themes\material_theme.py`
+165. `Project_recorder\ui\styles\themes\theme_manager.py`
+166. `Project_recorder\ui\widgets\__init__.py`
+167. `Project_recorder\ui\widgets\base_event_table.py`
+168. `Project_recorder\ui\widgets\hotkey_ui.py`
+169. `Project_recorder\ui\widgets\script_event_table.py`
+170. `Project_recorder\ui\widgets\script_file_manager_ui.py`
+171. `Project_recorder\ui\widgets\script_preview_tree.py`
+172. `Project_recorder\ui\widgets\script_preview_tree_phase2.py`
+173. `Project_recorder\ui\widgets\segment_editor.py`
+174. `Project_recorder\ui\widgets\segment_event_table.py`
+175. `Project_recorder\ui\widgets\segment_properties_dialog.py`
+176. `Project_recorder\ui\widgets\tree_items.py`
+177. `Project_recorder\undo_redo_manager.py`
+178. `Project_recorder\usage_instruction_dialog.py`
+179. `Project_recorder\utils\__init__.py`
+180. `Project_recorder\utils\encryption_helper.py`
+181. `Project_recorder\utils\ui_helpers.py`
+182. `Project_recorder\validators\__init__.py`
+183. `Project_recorder\validators\base_validator.py`
+184. `Project_recorder\validators\consistency_validator.py`
+185. `Project_recorder\validators\event_validator.py`
+186. `Project_recorder\validators\metadata_validator.py`
+187. `Project_recorder\validators\segment_validator.py`
+188. `Project_recorder\validators\validation_types.py`
+189. `Project_recorder\wuwa_recorder.py`
+190. `Project_recorder\wuwa_recorder_core.py`
+191. `Project_recorder\wuwa_recorder_ui_merged.py`
+192. `Project_recorder\wuwa_script_editor_main.py`
+
+## 📄 原始检查输出
+
+```
+d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\convert_to_absolute_imports.py
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\convert_to_absolute_imports.py:193:76 - error: 无法将 "None" 类型的表达式赋值给 "List[str]" 类型的参数
+    "None" 与 "List[str]" 不兼容 (reportArgumentType)
+d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py:176:5 - warning: "KeyCombination" 已在 `__all__` 中声明，但未在模块中定义 (reportUnsupportedDunderAll)
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py:176:37 - warning: "KeyEventData" 已在 `__all__` 中声明，但未在模块中定义 (reportUnsupportedDunderAll)
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\services\__init__.py:176:53 - warning: "MouseEventData" 已在 `__all__` 中声明，但未在模块中定义 (reportUnsupportedDunderAll)
+d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py:28:6 - error: 无法解析导入 "Project_recorder.ui.hotkey_models" (reportMissingImports)
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py:32:6 - error: 无法解析导入 "Project_recorder.ui.hotkey_config_manager" (reportMissingImports)
+  d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\widgets\hotkey_ui.py:33:6 - error: 无法解析导入 "Project_recorder.ui.conflict_detector" (reportMissingImports)
+4 errors, 3 warnings, 0 notes
+```
+

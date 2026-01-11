@@ -1,0 +1,32 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\quality_agents.py
+
+BasedPyright type errors (21):  Line 9, Col 22: [reportUnusedImport] "abstractmethod" 导入项未使用 (reportUnusedImport)
+  Line 13, Col 21: [reportUnusedImport] "Path" 导入项未使用 (reportUnusedImport)
+  Line 26, Col 9: [unknown] "task_group" 参数的类型部分未知
+  Line 26, Col 40: [unknown] 无法访问 "type[BrokenWorkerInterpreter]" 类的 "TaskGroup" 属性
+  Line 92, Col 24: [unknown] "task_group" 参数的类型部分未知
+  Line 92, Col 55: [unknown] 无法访问 "type[BrokenWorkerInterpreter]" 类的 "TaskGroup" 属性
+  Line 125, Col 39: [unknown] 部分参数的类型未知
+  Line 126, Col 41: [unknown] 部分参数的类型未知
+  Line 127, Col 46: [unknown] 部分参数的类型未知
+  Line 127, Col 50: [unknown] 部分参数的类型未知
+  Line 129, Col 49: [unknown] 部分参数的类型未知
+  Line 154, Col 24: [unknown] "task_group" 参数的类型部分未知
+  Line 154, Col 55: [unknown] 无法访问 "type[BrokenWorkerInterpreter]" 类的 "TaskGroup" 属性
+  Line 184, Col 39: [unknown] 部分参数的类型未知
+  Line 185, Col 41: [unknown] 部分参数的类型未知
+  Line 186, Col 46: [unknown] 部分参数的类型未知
+  Line 186, Col 50: [unknown] 部分参数的类型未知
+  Line 188, Col 49: [unknown] 部分参数的类型未知
+  Line 212, Col 24: [unknown] "task_group" 参数的类型部分未知
+  Line 212, Col 55: [unknown] 无法访问 "type[BrokenWorkerInterpreter]" 类的 "TaskGroup" 属性
+  Line 241, Col 34: [reportUnusedImport] "JSONDecodeError" 导入项未使用 (reportUnusedImport)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

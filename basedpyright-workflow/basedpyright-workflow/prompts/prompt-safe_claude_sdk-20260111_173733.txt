@@ -1,0 +1,15 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\core\safe_claude_sdk.py
+
+BasedPyright type errors (4):  Line 23, Col 61: [reportUnusedImport] "ResultMessage" 导入项未使用 (reportUnusedImport)
+  Line 26, Col 5: [reportConstantRedefinition] 不能重新定义常量 "SDK_AVAILABLE"（全大写名称） (reportConstantRedefinition)
+  Line 104, Col 34: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 104, Col 40: [reportCallIssue] 需要传入 0 个位置参数 (reportCallIssue)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

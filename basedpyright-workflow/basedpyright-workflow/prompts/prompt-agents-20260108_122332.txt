@@ -1,0 +1,19 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents.py
+
+BasedPyright type errors (8):  Line 12, Col 53: [reportUnusedImport] "Union" 导入项未使用 (reportUnusedImport)
+  Line 108, Col 37: [reportInvalidTypeForm] 类型表达式中不允许使用变量 (reportInvalidTypeForm)
+  Line 111, Col 37: [unknown] 参数类型未知
+  Line 115, Col 45: [unknown] 参数类型未知
+  Line 358, Col 24: [unknown] 参数类型未知
+  Line 360, Col 26: [unknown] 参数类型未知
+  Line 409, Col 24: [unknown] 参数类型未知
+  Line 411, Col 26: [unknown] 参数类型未知
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

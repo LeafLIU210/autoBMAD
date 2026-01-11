@@ -1,0 +1,15 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py
+
+BasedPyright type errors (4):  Line 349, Col 18: [reportUnknownMemberType] "timeout" 类型未知 (reportUnknownMemberType)
+  Line 349, Col 26: [reportAttributeAccessIssue] "timeout" 不是 "asyncio" 模块的已知属性 (reportAttributeAccessIssue)
+  Line 490, Col 25: [reportOptionalCall] `None` 不支持调用 (reportOptionalCall)
+  Line 500, Col 52: [unknown] "object" 类型的实参无法赋值给函数 "wait_for" 中 "_FutureLike[_T@wait_for]" 类型的形参 "fut"
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

@@ -1,0 +1,9 @@
+﻿I see you've referenced a file path `C:\Users\Administrator\AppData\Local\Temp\claude_fix_prompt_1594897839.txt`, but I'm not sure what you'd like me to help you with.
+
+Could you please let me know what specific task you'd like me to perform? For example:
+- Do you need me to read that file?
+- Is there a bug you'd like me to fix?
+- Would you like me to add a new feature?
+- Do you need help with building or testing the application?
+
+I'm here to help with whatever you need for the Wuthering Waves Skill Script Player project.

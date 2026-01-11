@@ -5,19 +5,15 @@
 """
 
 import asyncio
-import gc
-import logging
-import psutil
-import sys
-import time
-import traceback
-from collections import defaultdict, deque
-from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
 import json
-import weakref
+import logging
+import traceback
+from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import psutil
 
 
 class ResourceEvent:
@@ -533,7 +529,7 @@ if __name__ == "__main__":
             await asyncio.sleep(0.5)
 
         monitor.print_summary()
-        report = monitor.generate_report()
+        monitor.generate_report()
         print(f"\n报告已保存到: {monitor.log_file.with_suffix('.report.json')}")
 
     asyncio.run(test_resource_monitor())

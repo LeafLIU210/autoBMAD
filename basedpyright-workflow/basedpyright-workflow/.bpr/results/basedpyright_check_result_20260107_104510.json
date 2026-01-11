@@ -1,0 +1,132 @@
+{
+  "version": "1.37.0",
+  "time": "1767753913048",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "变量 \"story_id\" 未使用",
+      "range": {
+        "start": {
+          "line": 310,
+          "character": 16
+        },
+        "end": {
+          "line": 310,
+          "character": 24
+        }
+      },
+      "rule": "reportUnusedVariable"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "返回类型 \"dict[Unknown, Any]\" 部分未知",
+      "range": {
+        "start": {
+          "line": 370,
+          "character": 27
+        },
+        "end": {
+          "line": 370,
+          "character": 73
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"k\" 类型未知",
+      "range": {
+        "start": {
+          "line": 370,
+          "character": 53
+        },
+        "end": {
+          "line": 370,
+          "character": 54
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"v\" 类型未知",
+      "range": {
+        "start": {
+          "line": 370,
+          "character": 56
+        },
+        "end": {
+          "line": 370,
+          "character": 57
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "\"item\" 类型未知",
+      "range": {
+        "start": {
+          "line": 372,
+          "character": 53
+        },
+        "end": {
+          "line": 372,
+          "character": 57
+        }
+      },
+      "rule": "reportUnknownVariableType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "在 \"dict\" 类上使用的下标将导致运行时异常，应将整个类型表达式写成字符串形式",
+      "range": {
+        "start": {
+          "line": 679,
+          "character": 35
+        },
+        "end": {
+          "line": 679,
+          "character": 39
+        }
+      },
+      "rule": "reportIndexIssue"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 16,
+    "errorCount": 6,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 1.008
+  },
+  "metadata": {
+    "check_time": "2026-01-07T10:45:13.103911",
+    "check_directory": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation",
+    "python_files_count": 16,
+    "python_files": [
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\__init__.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\code_quality_agent.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\dev_agent.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\init_db.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\log_manager.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\migrations\\migration_001_add_quality_gates.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_agent.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\qa_tools_integration.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_session_manager.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sm_agent.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_logging.py"
+    ]
+  }
+}

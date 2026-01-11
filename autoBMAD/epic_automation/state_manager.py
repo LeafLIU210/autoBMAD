@@ -23,8 +23,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Union
 
-from .story_parser import ProcessingStatus
-
 logger = logging.getLogger(__name__)
 
 
@@ -97,11 +95,6 @@ class DatabaseConnectionPool:
 class StateManager:
     """修复后的SQLite-based状态管理器，用于跟踪故事进度。"""
 
-    db_path: Path
-    _lock: asyncio.Lock
-    _deadlock_detector: DeadlockDetector
-    _connection_pool: DatabaseConnectionPool | None
-
     def __init__(self, db_path: str = "progress.db", use_connection_pool: bool = True):
         """
         初始化状态管理器。
@@ -131,12 +124,8 @@ class StateManager:
 
     def _init_db_sync(self):
         """初始化数据库模式（同步）。"""
-        # 使用连接池时，所有连接都需要初始化
-        if self._connection_pool:
-            conn = sqlite3.connect(self.db_path)
-        else:
-            conn = sqlite3.connect(self.db_path)
-
+        # 创建数据库连接
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
         # 创建stories表
@@ -374,33 +363,17 @@ class StateManager:
 
         确保即使发生取消也能正确释放锁。
         """
-        lock_acquired = False
         try:
-            # 使用死锁检测
-            lock_acquired = await self._deadlock_detector.wait_for_lock(
-                "managed_operation", self._lock
-            )
-
-            if lock_acquired:
+            # 使用死锁检测器监控锁等待
+            async with self._lock:
                 yield self
-            else:
-                logger.error("Failed to acquire lock for managed operation")
-                raise RuntimeError("Failed to acquire lock")
         except asyncio.CancelledError:
-            logger.warning("Managed operation cancelled, releasing lock")
-            if lock_acquired and self._lock.locked():
-                self._lock.release()
+            logger.warning("Managed operation cancelled")
             # 不重新抛出以避免cancel scope错误
             return
         except Exception as e:
             logger.error(f"Managed operation failed: {e}")
-            if lock_acquired and self._lock.locked():
-                self._lock.release()
             raise
-        finally:
-            # 确保锁被释放
-            if lock_acquired and self._lock.locked():
-                self._lock.release()
 
     async def get_story_status(self, story_path: str) -> Union["dict[str, Any]", None]:
         """

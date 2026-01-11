@@ -1,0 +1,19 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\controllers\devqa_controller.py
+
+BasedPyright type errors (8):  Line 7, Col 20: [reportUnusedImport] "Optional" 导入项未使用 (reportUnusedImport)
+  Line 15, Col 28: [reportUnusedImport] "ProcessingStatus" 导入项未使用 (reportUnusedImport)
+  Line 25, Col 9: [reportUnknownParameterType] "task_group" 参数的类型未知 (reportUnknownParameterType)
+  Line 25, Col 31: [unknown] 无法访问 "type[BrokenWorkerInterpreter]" 类的 "TaskGroup" 属性
+  Line 27, Col 9: [unknown] "log_manager" 参数的类型部分未知
+  Line 27, Col 9: [reportMissingParameterType] "log_manager" 参数缺少类型注解 (reportMissingParameterType)
+  Line 37, Col 26: [unknown] 参数类型未知
+  Line 39, Col 70: [unknown] 部分参数的类型未知
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

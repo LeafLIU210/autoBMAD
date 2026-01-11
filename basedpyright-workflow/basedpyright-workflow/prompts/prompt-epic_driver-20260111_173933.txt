@@ -1,0 +1,27 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (16):  Line 35, Col 5: [reportUnusedImport] "is_core_status_valid" 导入项未使用 (reportUnusedImport)
+  Line 1182, Col 17: [reportUnusedVariable] 变量 "story_content" 未使用 (reportUnusedVariable)
+  Line 1229, Col 17: [reportUnusedVariable] 变量 "story_content" 未使用 (reportUnusedVariable)
+  Line 1871, Col 65: [reportAttributeAccessIssue] "get_cancellation_manager" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 1876, Col 44: [unknown] 参数类型未知
+  Line 1878, Col 61: [unknown] 部分参数的类型未知
+  Line 2245, Col 9: [reportUnusedFunction] "exception_handler" 函数未使用 (reportUnusedFunction)
+  Line 2245, Col 27: [reportUnknownParameterType] "loop" 参数的类型未知 (reportUnknownParameterType)
+  Line 2245, Col 27: [reportMissingParameterType] "loop" 参数缺少类型注解 (reportMissingParameterType)
+  Line 2245, Col 33: [reportUnknownParameterType] "context" 参数的类型未知 (reportUnknownParameterType)
+  Line 2245, Col 33: [reportMissingParameterType] "context" 参数缺少类型注解 (reportMissingParameterType)
+  Line 2292, Col 38: [reportUnknownParameterType] "loop" 参数的类型未知 (reportUnknownParameterType)
+  Line 2292, Col 38: [reportMissingParameterType] "loop" 参数缺少类型注解 (reportMissingParameterType)
+  Line 2292, Col 44: [reportUnknownParameterType] "context" 参数的类型未知 (reportUnknownParameterType)
+  Line 2292, Col 44: [reportMissingParameterType] "context" 参数缺少类型注解 (reportMissingParameterType)
+  Line 2308, Col 36: [unknown] 部分参数的类型未知
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

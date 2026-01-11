@@ -27,12 +27,10 @@ from autoBMAD.epic_automation.log_manager import (
 from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
 # Import status system
-from autoBMAD.epic_automation.story_parser import (
-    _normalize_story_status,
+from autoBMAD.epic_automation.agents.state_agent import (
     CORE_STATUS_DONE,
     CORE_STATUS_READY_FOR_DONE,
     core_status_to_processing,
-    is_core_status_valid,
 )
 
 # Import ClaudeAgentOptions for proper SDK configuration
@@ -177,7 +175,7 @@ class QualityGateOrchestrator:
         try:
             # Import optional quality agent modules
             try:
-                from autoBMAD.epic_automation.quality_agents import RuffAgent
+                from autoBMAD.epic_automation.agents.quality_agents import RuffAgent
 
                 ruff_agent = RuffAgent()
             except ImportError:
@@ -189,13 +187,13 @@ class QualityGateOrchestrator:
                 }
 
             start_time = time.time()
-            ruff_result = await ruff_agent.retry_cycle(
-                source_dir=Path(source_dir), max_cycles=3
+            ruff_result = await ruff_agent.execute(
+                source_dir=str(source_dir)
             )
             end_time = time.time()
 
-            # Check if successful (has successful_cycles > 0)
-            success = ruff_result.get("successful_cycles", 0) > 0
+            # Check if successful (status == "completed" and errors == 0)
+            success = ruff_result.get("status") == "completed" and ruff_result.get("errors", 0) == 0
 
             if success:
                 self.logger.info(
@@ -208,7 +206,7 @@ class QualityGateOrchestrator:
                     "result": ruff_result,
                 }
             else:
-                error_msg = f"Ruff quality gate failed after {ruff_result.get('total_cycles', 0)} cycles"
+                error_msg = f"Ruff quality gate failed with {ruff_result.get('errors', 0)} errors"
                 self.logger.warning(f"✗ {error_msg}")
                 self._update_progress("phase_1_ruff", "failed", end=True)
                 errors_list = cast(list[str], self.results["errors"])
@@ -243,9 +241,9 @@ class QualityGateOrchestrator:
         try:
             # Import optional quality agent modules
             try:
-                from autoBMAD.epic_automation.quality_agents import BasedpyrightAgent
+                from autoBMAD.epic_automation.agents.quality_agents import BasedPyrightAgent
 
-                basedpyright_agent = BasedpyrightAgent()
+                basedpyright_agent = BasedPyrightAgent()
             except ImportError:
                 logger.error(
                     "BasedpyrightAgent not available - quality gate cannot execute"
@@ -257,13 +255,13 @@ class QualityGateOrchestrator:
                 }
 
             start_time = time.time()
-            basedpyright_result = await basedpyright_agent.retry_cycle(
-                source_dir=Path(source_dir), max_cycles=3
+            basedpyright_result = await basedpyright_agent.execute(
+                source_dir=str(source_dir)
             )
             end_time = time.time()
 
-            # Check if successful (has successful_cycles > 0)
-            success = basedpyright_result.get("successful_cycles", 0) > 0
+            # Check if successful (status == "completed" and errors == 0)
+            success = basedpyright_result.get("status") == "completed" and basedpyright_result.get("errors", 0) == 0
 
             if success:
                 self.logger.info(
@@ -276,7 +274,7 @@ class QualityGateOrchestrator:
                     "result": basedpyright_result,
                 }
             else:
-                error_msg = f"BasedPyright quality gate failed after {basedpyright_result.get('total_cycles', 0)} cycles"
+                error_msg = f"BasedPyright quality gate failed with {basedpyright_result.get('errors', 0)} errors"
                 self.logger.warning(f"✗ {error_msg}")
                 self._update_progress("phase_2_basedpyright", "failed", end=True)
                 errors_list = cast(list[str], self.results["errors"])
@@ -615,9 +613,9 @@ class EpicDriver:
 
         # Import agent classes
         try:
-            from autoBMAD.epic_automation.dev_agent import DevAgent  # type: ignore
-            from autoBMAD.epic_automation.qa_agent import QAAgent  # type: ignore
-            from autoBMAD.epic_automation.sm_agent import SMAgent  # type: ignore
+            from autoBMAD.epic_automation.agents.dev_agent import DevAgent  # type: ignore
+            from autoBMAD.epic_automation.agents.qa_agent import QAAgent  # type: ignore
+            from autoBMAD.epic_automation.agents.sm_agent import SMAgent  # type: ignore
             from autoBMAD.epic_automation.state_manager import (
                 StateManager,  # type: ignore
             )
@@ -629,7 +627,7 @@ class EpicDriver:
 
             # Initialize StatusParser with SDK wrapper if available (optional module)
             try:
-                from autoBMAD.epic_automation.story_parser import StatusParser
+                from autoBMAD.epic_automation.agents.state_agent import SimpleStoryParser as StatusParser
 
                 # Create proper options object for status parsing
                 options = None
@@ -1179,7 +1177,7 @@ class EpicDriver:
         try:
             # Read story content
             with open(story_path, encoding="utf-8") as f:
-                story_content = f.read()
+                _ = f.read()
 
             # Set log_manager to dev_agent for SDK logging
             self.dev_agent._log_manager = self.log_manager
@@ -1226,7 +1224,7 @@ class EpicDriver:
         try:
             # Read story content
             with open(story_path, encoding="utf-8") as f:
-                story_content = f.read()
+                _ = f.read()
 
             # Execute QA phase with tools integration
             qa_result: dict[str, Any] = await self.qa_agent.execute(
@@ -1442,8 +1440,8 @@ class EpicDriver:
             if hasattr(self, "status_parser") and self.status_parser:
                 # Note: parse_status is now async in SimpleStatusParser
                 status = await self.status_parser.parse_status(content)
-                # Normalize the status to ensure consistent format
-                return _normalize_story_status(status)
+                # Return the status directly (already normalized by StatusParser)
+                return status
             else:
                 # Fallback to original parsing if StatusParser not available
                 logger.warning("StatusParser not available, using fallback parsing")
@@ -1518,14 +1516,14 @@ class EpicDriver:
         try:
             # Note: _parse_story_status is now async
             status = await self._parse_story_status(story_path)
-            # Normalize status to ensure consistent comparison
-            normalized_status = _normalize_story_status(status)
+            # Use status directly (already normalized)
+            normalized_status = status.lower().strip()
 
             # Check for completion status using standard status values
             # Also accept "Ready for Development" as valid for this automation task
             if normalized_status in [
-                CORE_STATUS_READY_FOR_DONE,
-                CORE_STATUS_DONE,
+                CORE_STATUS_READY_FOR_DONE.lower(),
+                CORE_STATUS_DONE.lower(),
                 "ready_for_development",
             ]:
                 logger.info(
@@ -1868,32 +1866,12 @@ class EpicDriver:
             # 🎯 关键增强：每个 story 处理完成后确保 SDK 清理完成
             # 使用 SDKCancellationManager 等待清理,避免连续调用导致跨任务冲突
             try:
-                from autoBMAD.epic_automation.monitoring import get_cancellation_manager
-                manager = get_cancellation_manager()
-                
-                # 等待所有活跃的 SDK 调用清理完成
-                if manager.active_sdk_calls:
-                    active_call_ids = list(manager.active_sdk_calls.keys())
-                    self.logger.info(
-                        f"[Story Complete] Waiting for {len(active_call_ids)} SDK call(s) to cleanup..."
-                    )
-                    
-                    for call_id in active_call_ids:
-                        cleanup_success = await manager.wait_for_cancellation_complete(
-                            call_id, timeout=5.0
-                        )
-                        if not cleanup_success:
-                            self.logger.warning(
-                                f"[Story Complete] SDK cleanup timeout for {call_id[:8]}..., "
-                                f"continuing anyway"
-                            )
-                    
-                    self.logger.info("[Story Complete] All SDK cleanup confirmed")
-                else:
-                    # 没有活跃调用,仍然等待一小段时间确保任何后台清理完成
-                    await asyncio.sleep(0.5)
+                # 使用简单的等待策略确保后台清理完成
+                # monitoring 模块已废弃，改用基于时间的清理策略
+                await asyncio.sleep(0.5)
+                self.logger.debug("[Story Complete] SDK cleanup grace period finished")
             except Exception as e:
-                self.logger.warning(f"[Story Complete] SDK cleanup check failed: {e}")
+                self.logger.warning(f"[Story Complete] SDK cleanup wait failed: {e}")
                 # 回退到简单等待
                 await asyncio.sleep(1.0)
 
@@ -2241,20 +2219,6 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
 
 async def main():
     """Main entry point."""
-    # 设置异常处理器来抑制 cancel scope 错误
-    def exception_handler(loop, context):
-        exception = context.get('exception')
-        if isinstance(exception, RuntimeError):
-            error_msg = str(exception)
-            if 'cancel scope' in error_msg.lower():
-                # 抑制 cancel scope 错误，不记录为严重错误
-                logger.warning(
-                    f"Suppressed cancel scope error during shutdown: {error_msg}"
-                )
-                return
-        # 对于其他异常，使用默认处理器
-        loop.default_exception_handler(context)
-
     args = parse_arguments()
 
     # Configure logging level based on verbose flag
@@ -2289,7 +2253,7 @@ async def main():
 if __name__ == "__main__":
     try:
         # 添加全局任务异常处理器
-        def global_exception_handler(loop, context):
+        def global_exception_handler(loop: asyncio.AbstractEventLoop, context: dict[str, Any]) -> None:
             """全局异常处理器，捕获未捕获的任务异常"""
             exception = context.get('exception')
             if exception and isinstance(exception, RuntimeError):
@@ -2304,7 +2268,7 @@ if __name__ == "__main__":
             loop.default_exception_handler(context)
 
         # 设置全局异常处理器
-        loop = asyncio.new_event_loop()
+        loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         loop.set_exception_handler(global_exception_handler)
 
         # 运行主函数，异常处理器已在main()内部设置

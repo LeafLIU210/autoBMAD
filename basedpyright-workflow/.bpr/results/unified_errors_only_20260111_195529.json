@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260111_195526.txt",
+    "extraction_time": "2026-01-11T19:55:29.037889",
+    "total_files_with_errors": 1,
+    "total_errors": 4,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 4,
+      "errors_by_rule": {
+        "reportAttributeAccessIssue": 1,
+        "unknown": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 4
+      },
+      "errors": [
+        {
+          "line": 1876,
+          "column": 63,
+          "message": "\"get_cancellation_manager\" 不是 \"autoBMAD.epic_automation.monitoring\" 模块的已知属性 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 1885,
+          "column": 33,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 1887,
+          "column": 30,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 1889,
+          "column": 55,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}

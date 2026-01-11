@@ -1,0 +1,68 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+
+Total errors: 10
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 165, Column: 51
+Rule: unknown
+Error: "ScriptData" 类型的实参无法赋值给函数 "save_script" 中 "str" 类型的形参 "script_path"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 165, Column: 59
+Rule: unknown
+Error: "str" 类型的实参无法赋值给函数 "save_script" 中 "Dict[str, Any]" 类型的形参 "script_data"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 175, Column: 20
+Rule: unknown
+Error: "ScriptOperationResult" 类型不匹配返回类型 "bool"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 192, Column: 20
+Rule: unknown
+Error: "ScriptOperationResult" 类型不匹配返回类型 "ScriptData | None"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 213, Column: 20
+Rule: unknown
+Error: "Dict[str, Any]" 类型不匹配返回类型 "bool"
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 224, Column: 40
+Rule: unknown
+Error: 无法访问 "ScriptDataService" 类的 "get_script_metadata" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 241, Column: 39
+Rule: unknown
+Error: 无法访问 "ScriptDataService" 类的 "get_all_scripts" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 258, Column: 39
+Rule: unknown
+Error: 无法访问 "ScriptDataService" 类的 "search_scripts" 属性
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 483, Column: 16
+Rule: unknown
+Error: 无法为 "ScriptData" 类的 "characters" 属性赋值
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\script_services_consolidated.py
+Line: 509, Column: 16
+Rule: unknown
+Error: 无法为 "ScriptData" 类的 "characters" 属性赋值
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

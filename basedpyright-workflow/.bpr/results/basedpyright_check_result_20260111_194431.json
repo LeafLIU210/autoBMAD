@@ -1,0 +1,349 @@
+{
+  "version": "1.37.0",
+  "time": "1768131873855",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "severity": "error",
+      "message": "无法访问 \"BrokenWorkerInterpreter\" 类的 \"start\" 属性\n  属性 \"start\" 未知",
+      "range": {
+        "start": {
+          "line": 64,
+          "character": 37
+        },
+        "end": {
+          "line": 64,
+          "character": 42
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Any | Unknown]\"",
+      "range": {
+        "start": {
+          "line": 124,
+          "character": 38
+        },
+        "end": {
+          "line": 124,
+          "character": 89
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Any | Unknown]\"",
+      "range": {
+        "start": {
+          "line": 125,
+          "character": 40
+        },
+        "end": {
+          "line": 125,
+          "character": 93
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"set[Any | Unknown]\"",
+      "range": {
+        "start": {
+          "line": 126,
+          "character": 45
+        },
+        "end": {
+          "line": 126,
+          "character": 87
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"Generator[Any | Unknown, None, None]\"",
+      "range": {
+        "start": {
+          "line": 126,
+          "character": 49
+        },
+        "end": {
+          "line": 126,
+          "character": 86
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"Any | list[Unknown]\"",
+      "range": {
+        "start": {
+          "line": 128,
+          "character": 48
+        },
+        "end": {
+          "line": 128,
+          "character": 54
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown | Any]\"",
+      "range": {
+        "start": {
+          "line": 183,
+          "character": 38
+        },
+        "end": {
+          "line": 183,
+          "character": 89
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown | Any]\"",
+      "range": {
+        "start": {
+          "line": 184,
+          "character": 40
+        },
+        "end": {
+          "line": 184,
+          "character": 93
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"set[Unknown | Any]\"",
+      "range": {
+        "start": {
+          "line": 185,
+          "character": 45
+        },
+        "end": {
+          "line": 185,
+          "character": 83
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"Generator[Unknown | Any, None, None]\"",
+      "range": {
+        "start": {
+          "line": 185,
+          "character": 49
+        },
+        "end": {
+          "line": 185,
+          "character": 82
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"Unknown | Any\"",
+      "range": {
+        "start": {
+          "line": 187,
+          "character": 48
+        },
+        "end": {
+          "line": 187,
+          "character": 54
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\controllers\\base_controller.py",
+      "severity": "error",
+      "message": "无法访问 \"BrokenWorkerInterpreter\" 类的 \"start\" 属性\n  属性 \"start\" 未知",
+      "range": {
+        "start": {
+          "line": 58,
+          "character": 37
+        },
+        "end": {
+          "line": 58,
+          "character": 42
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\core\\safe_claude_sdk.py",
+      "severity": "error",
+      "message": "不能重新定义常量 \"SDK_AVAILABLE\"（全大写名称）",
+      "range": {
+        "start": {
+          "line": 24,
+          "character": 4
+        },
+        "end": {
+          "line": 24,
+          "character": 17
+        }
+      },
+      "rule": "reportConstantRedefinition"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\core\\safe_claude_sdk.py",
+      "severity": "error",
+      "message": "不能重新定义常量 \"SDK_AVAILABLE\"（全大写名称）",
+      "range": {
+        "start": {
+          "line": 26,
+          "character": 4
+        },
+        "end": {
+          "line": 26,
+          "character": 17
+        }
+      },
+      "rule": "reportConstantRedefinition"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "\"get_cancellation_manager\" 是未知的导入符号",
+      "range": {
+        "start": {
+          "line": 1871,
+          "character": 68
+        },
+        "end": {
+          "line": 1871,
+          "character": 92
+        }
+      },
+      "rule": "reportAttributeAccessIssue"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"hasattr\" 函数中的 \"obj\" 形参\n  参数类型为 \"Unknown | Any\"",
+      "range": {
+        "start": {
+          "line": 1880,
+          "character": 28
+        },
+        "end": {
+          "line": 1880,
+          "character": 35
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__new__\" 函数中的 \"o\" 形参\n  参数类型为 \"Unknown | Any\"",
+      "range": {
+        "start": {
+          "line": 1882,
+          "character": 29
+        },
+        "end": {
+          "line": 1882,
+          "character": 53
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"iterable\" 形参\n  参数类型为 \"Unknown | Any\"",
+      "range": {
+        "start": {
+          "line": 1884,
+          "character": 43
+        },
+        "end": {
+          "line": 1884,
+          "character": 74
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "部分参数的类型未知\n  实参对应于 \"len\" 函数中的 \"obj\" 形参\n  参数类型为 \"list[Unknown | Any]\"",
+      "range": {
+        "start": {
+          "line": 1886,
+          "character": 60
+        },
+        "end": {
+          "line": 1886,
+          "character": 75
+        }
+      },
+      "rule": "reportUnknownArgumentType"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 25,
+    "errorCount": 19,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.756
+  },
+  "metadata": {
+    "check_time": "2026-01-11T19:44:33.881491",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 25,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "..\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\state_agent.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\base_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\devqa_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\quality_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\sm_controller.py",
+      "..\\autoBMAD\\epic_automation\\core\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\core\\cancellation_manager.py",
+      "..\\autoBMAD\\epic_automation\\core\\safe_claude_sdk.py",
+      "..\\autoBMAD\\epic_automation\\core\\sdk_executor.py",
+      "..\\autoBMAD\\epic_automation\\core\\sdk_result.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\monitoring\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\monitoring\\resource_monitor.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py"
+    ]
+  }
+}

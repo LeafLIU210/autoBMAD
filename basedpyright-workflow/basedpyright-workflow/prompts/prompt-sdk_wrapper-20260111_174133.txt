@@ -1,0 +1,18 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py
+
+BasedPyright type errors (7):  Line 21, Col 21: [reportUnusedImport] "Path" 导入项未使用 (reportUnusedImport)
+  Line 502, Col 73: [reportAttributeAccessIssue] "get_cancellation_manager" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 507, Col 51: [unknown] 参数类型未知
+  Line 566, Col 61: [reportAttributeAccessIssue] "get_cancellation_manager" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 794, Col 61: [reportAttributeAccessIssue] "get_cancellation_manager" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 799, Col 32: [unknown] 参数类型未知
+  Line 815, Col 44: [unknown] 部分参数的类型未知
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

@@ -1,0 +1,772 @@
+{
+  "metadata": {
+    "source_file": "basedpyright-workflow\\results\\basedpyright_check_result_20251210_101924.txt",
+    "extraction_time": "2025-12-10T10:19:43.693018",
+    "total_files_with_errors": 19,
+    "total_errors": 97
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\core\\application.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 72,
+          "column": 62,
+          "message": "\"None\" 类型的实参无法赋值给函数 \"resolve\" 中 \"type[T@resolve]\" 类型的形参 \"service_type\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\import_adapter.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportAttributeAccessIssue": 1
+      },
+      "errors": [
+        {
+          "line": 35,
+          "column": 25,
+          "message": "\"_MEIPASS\" 不是 \"sys\" 模块的已知属性 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_data_manager_unified.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors": [
+        {
+          "line": 474,
+          "column": 18,
+          "message": "无法访问 \"UnifiedScriptDataManager*\" 类的 \"mode_changed\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 474,
+          "column": 41,
+          "message": "无法访问 \"UnifiedScriptDataManager*\" 类的 \"get_mode\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_data_model.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 213,
+          "column": 32,
+          "message": "无法访问 \"ScriptData\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_data_model_unified.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 711,
+          "column": 16,
+          "message": "\"None\" 类型不匹配返回类型 \"bool\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_editor_core.py",
+      "error_count": 8,
+      "errors_by_rule": {
+        "reportMissingImports": 1,
+        "unknown": 6,
+        "reportUndefinedVariable": 1
+      },
+      "errors": [
+        {
+          "line": 34,
+          "column": 10,
+          "message": "无法解析导入 \".script_event_utils\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 266,
+          "column": 25,
+          "message": "无法访问 \"ScriptEditorCore*\" 类的 \"edit_history\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 281,
+          "column": 40,
+          "message": "\"EditHistory\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 283,
+          "column": 21,
+          "message": "无法访问 \"ScriptEditorCore*\" 类的 \"edit_history\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 287,
+          "column": 14,
+          "message": "无法访问 \"ScriptEditorCore*\" 类的 \"edit_history\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 296,
+          "column": 44,
+          "message": "无法访问 \"ScriptEditorCore*\" 类的 \"edit_history\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 298,
+          "column": 36,
+          "message": "无法访问 \"ScriptEditorCore*\" 类的 \"last_operation\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 298,
+          "column": 65,
+          "message": "无法访问 \"ScriptEditorCore*\" 类的 \"last_operation\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_integration_service.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportMissingImports": 1,
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 23,
+          "column": 6,
+          "message": "无法解析导入 \"Project_recorder.script_event_utils\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 490,
+          "column": 41,
+          "message": "无法访问 \"ScriptData\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_performance_service.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 252,
+          "column": 32,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_services_consolidated.py",
+      "error_count": 7,
+      "errors_by_rule": {
+        "unknown": 7
+      },
+      "errors": [
+        {
+          "line": 164,
+          "column": 28,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 185,
+          "column": 27,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 206,
+          "column": 28,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 223,
+          "column": 29,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 240,
+          "column": 28,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 257,
+          "column": 28,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 424,
+          "column": 18,
+          "message": "无法访问 \"ConsolidatedScriptServices*\" 类的 \"repository\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_ui_controller.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportCallIssue": 1,
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 253,
+          "column": 72,
+          "message": "需要传入 5 个位置参数 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 602,
+          "column": 65,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\script_validation_service.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors": [
+        {
+          "line": 157,
+          "column": 22,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 158,
+          "column": 58,
+          "message": "无法访问 \"ScriptEvent\" 类的 \"event_type\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\segment_editor.py",
+      "error_count": 35,
+      "errors_by_rule": {
+        "reportUndefinedVariable": 19,
+        "unknown": 16
+      },
+      "errors": [
+        {
+          "line": 30,
+          "column": 24,
+          "message": "\"QTableWidget\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 54,
+          "column": 35,
+          "message": "\"QTableWidget\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 55,
+          "column": 31,
+          "message": "\"QTableWidget\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 61,
+          "column": 40,
+          "message": "\"QHeaderView\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 62,
+          "column": 40,
+          "message": "\"QHeaderView\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 63,
+          "column": 40,
+          "message": "\"QHeaderView\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 64,
+          "column": 40,
+          "message": "\"QHeaderView\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 65,
+          "column": 40,
+          "message": "\"QHeaderView\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 140,
+          "column": 34,
+          "message": "\"QTableWidgetItem\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 143,
+          "column": 25,
+          "message": "\"QTableWidgetItem\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 148,
+          "column": 34,
+          "message": "\"QTableWidgetItem\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 151,
+          "column": 34,
+          "message": "\"QTableWidgetItem\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 155,
+          "column": 34,
+          "message": "\"QTableWidgetItem\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 217,
+          "column": 26,
+          "message": "\"cast\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 242,
+          "column": 34,
+          "message": "\"cast\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 283,
+          "column": 26,
+          "message": "\"cast\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 297,
+          "column": 29,
+          "message": "\"UndoRedoManager\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 370,
+          "column": 29,
+          "message": "\"QTableWidget\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 405,
+          "column": 54,
+          "message": "无法访问 \"ScriptEditor*\" 类的 \"on_event_selected\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 412,
+          "column": 59,
+          "message": "无法访问 \"ScriptEditor*\" 类的 \"on_operation_executed\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 413,
+          "column": 56,
+          "message": "无法访问 \"ScriptEditor*\" 类的 \"update_history_display\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 416,
+          "column": 51,
+          "message": "无法访问 \"ScriptEditor*\" 类的 \"auto_save\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 424,
+          "column": 14,
+          "message": "无法访问 \"ScriptEditor*\" 类的 \"update_info_display\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 548,
+          "column": 18,
+          "message": "\"ScriptValidator\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 565,
+          "column": 14,
+          "message": "无法访问 \"ScriptEditor*\" 类的 \"update_info_display\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 593,
+          "column": 58,
+          "message": "无法访问 \"type[ScriptSegmentType]\" 类的 \"ENDING\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 802,
+          "column": 57,
+          "message": "无法访问 \"ScriptData\" 类的 \"is_segmented\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 824,
+          "column": 60,
+          "message": "无法访问 \"type[ScriptSegmentType]\" 类的 \"ENDING\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1003,
+          "column": 41,
+          "message": "无法访问 \"ScriptData\" 类的 \"is_segmented\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1023,
+          "column": 57,
+          "message": "无法访问 \"ScriptData\" 类的 \"is_segmented\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1167,
+          "column": 53,
+          "message": "无法访问 \"ScriptData\" 类的 \"is_segmented\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1194,
+          "column": 34,
+          "message": "无法为 \"ScriptData\" 类的 \"is_segmented\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1206,
+          "column": 57,
+          "message": "无法访问 \"ScriptData\" 类的 \"is_segmented\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1227,
+          "column": 34,
+          "message": "无法为 \"ScriptData\" 类的 \"is_segmented\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1239,
+          "column": 57,
+          "message": "无法访问 \"ScriptData\" 类的 \"is_segmented\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\services\\script_migration_service.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUndefinedVariable": 1
+      },
+      "errors": [
+        {
+          "line": 547,
+          "column": 12,
+          "message": "\"is_segmented\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\services\\script_model_service.py",
+      "error_count": 12,
+      "errors_by_rule": {
+        "unknown": 11,
+        "reportCallIssue": 1
+      },
+      "errors": [
+        {
+          "line": 235,
+          "column": 17,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 246,
+          "column": 17,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 259,
+          "column": 17,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 282,
+          "column": 26,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 285,
+          "column": 17,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 338,
+          "column": 13,
+          "message": "\"mode\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        },
+        {
+          "line": 338,
+          "column": 23,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 342,
+          "column": 17,
+          "message": "无法访问 \"ScriptDataModel*\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 498,
+          "column": 18,
+          "message": "无法访问 \"ScriptDataModel\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 536,
+          "column": 18,
+          "message": "无法访问 \"ScriptDataModel\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 549,
+          "column": 27,
+          "message": "无法访问 \"ScriptDataModel\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 630,
+          "column": 27,
+          "message": "无法访问 \"ScriptDataModel\" 类的 \"mode\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\ui\\main_window.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 341,
+          "column": 37,
+          "message": "无法访问 \"MainUIController\" 类的 \"is_developer_mode_enabled\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\ui\\widgets\\segment_editor.py",
+      "error_count": 11,
+      "errors_by_rule": {
+        "reportAttributeAccessIssue": 4,
+        "reportMissingImports": 4,
+        "unknown": 2,
+        "reportUndefinedVariable": 1
+      },
+      "errors": [
+        {
+          "line": 41,
+          "column": 72,
+          "message": "\"EditOperation\" 是未知的导入符号 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 43,
+          "column": 14,
+          "message": "无法解析导入 \"Project_recorder.undo_redo_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 48,
+          "column": 76,
+          "message": "\"EditOperation\" 是未知的导入符号 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 50,
+          "column": 18,
+          "message": "无法解析导入 \"undo_redo_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 67,
+          "column": 76,
+          "message": "\"EditOperation\" 是未知的导入符号 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 69,
+          "column": 18,
+          "message": "无法解析导入 \"Project_recorder.undo_redo_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 73,
+          "column": 76,
+          "message": "\"EditOperation\" 是未知的导入符号 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 75,
+          "column": 18,
+          "message": "无法解析导入 \"undo_redo_manager\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 103,
+          "column": 58,
+          "message": "无法访问 \"type[ScriptSegmentType]\" 类的 \"ENDING\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 172,
+          "column": 25,
+          "message": "\"ScriptEventTable\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 344,
+          "column": 60,
+          "message": "无法访问 \"type[ScriptSegmentType]\" 类的 \"ENDING\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\wuwa_recorder_core.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors": [
+        {
+          "line": 473,
+          "column": 33,
+          "message": "\"float\" 与 \"float | None\" 类型不支持 \"-\" 运算符",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\wuwa_recorder_ui_merged.py",
+      "error_count": 6,
+      "errors_by_rule": {
+        "unknown": 6
+      },
+      "errors": [
+        {
+          "line": 164,
+          "column": 38,
+          "message": "无法为 \"WuwaRecorderUI*\" 类的 \"script_events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 168,
+          "column": 38,
+          "message": "无法为 \"WuwaRecorderUI*\" 类的 \"script_events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1004,
+          "column": 38,
+          "message": "无法为 \"WuwaRecorderUI*\" 类的 \"script_events\" 属性赋值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1093,
+          "column": 22,
+          "message": "无法访问 \"WuwaRecorderUI*\" 类的 \"set_as_start_events\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1114,
+          "column": 45,
+          "message": "无法访问 \"ScriptDataModel\" 类的 \"create_segments_from_selection\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 1147,
+          "column": 45,
+          "message": "无法访问 \"ScriptDataModel\" 类的 \"create_segments_from_selection\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\Python\\wuwa_actionseq_recorder\\Project_recorder\\wuwa_script_editor_main.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportMissingImports": 2
+      },
+      "errors": [
+        {
+          "line": 32,
+          "column": 6,
+          "message": "无法解析导入 \"Project_recorder.script_editor\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        },
+        {
+          "line": 34,
+          "column": 6,
+          "message": "无法解析导入 \"Project_recorder.script_library\" (reportMissingImports)",
+          "rule": "reportMissingImports"
+        }
+      ]
+    }
+  ]
+}

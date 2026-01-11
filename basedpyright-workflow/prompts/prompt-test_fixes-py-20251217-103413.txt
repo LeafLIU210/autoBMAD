@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\test_fixes.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\test_fixes.py
+Line: 117, Column: 12
+Rule: unknown
+Error: 无法为 "WuwaRecorderUI" 类的 "logger" 属性赋值
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

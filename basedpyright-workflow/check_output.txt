@@ -1,0 +1,75 @@
+错误: 路径不是目录: ..\autoBMAD\epic_automation\sdk_wrapper.py
+
+================================================================================
+执行完整工作流：check → report → fix
+================================================================================
+
+
+[1/3] 运行类型检查...
+
+================================================================================
+Step 1: 运行 BasedPyright 类型检查
+================================================================================
+
+源目录: ..\autoBMAD\epic_automation\sdk_wrapper.py
+输出目录: .bpr\results
+
+
+检查完成，发现错误，继续执行后续步骤...
+
+[2/3] 生成分析报告...
+
+================================================================================
+Step 2: 生成分析报告
+================================================================================
+
+未指定输入文件，在 .bpr\results 中查找最新的结果...
+  找到 TXT: basedpyright_check_result_20260106_222903.txt
+  找到 JSON: basedpyright_check_result_20260106_222903.json
+
+[OK] Loaded text file: .bpr\results\basedpyright_check_result_20260106_222903.txt
+[OK] Loaded JSON file: .bpr\results\basedpyright_check_result_20260106_222903.json
+[OK] Markdown report generated: .bpr\reports\basedpyright_report_20260106_223150.md
+
+[OK] 报告生成完成
+  报告文件: .bpr\reports\basedpyright_report_20260106_223150.md
+
+[3/3] 提取错误数据...
+
+================================================================================
+Step 3: 提取错误数据
+================================================================================
+
+未指定输入文件，在 .bpr\results 中查找最新的 TXT 结果...
+  找到: basedpyright_check_result_20260106_222903.txt
+
+[OK] Loaded basedpyright text file: .bpr\results\basedpyright_check_result_20260106_222903.txt
+[OK] Parsed 4 errors from text
+[OK] JSON file saved: .bpr\results\basedpyright_errors_only_20260106_223150.json
+
+错误统计:
+  有错误的文件数: 1
+  错误总数: 4
+
+错误最多的文件 (Top 5):
+  1. d:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py: 4 个错误
+
+================================================================================
+错误提取完成！下一步操作：
+================================================================================
+
+运行以下命令开始自动修复：
+
+    powershell .\basedpyright-workflow\fix_project_errors.ps1 \
+        -ErrorsFile ".bpr\results\basedpyright_errors_only_20260106_223150.json"
+
+================================================================================
+
+================================================================================
+[OK] 完整工作流完成！
+--------------------------------------------------------------------------------
+下一步：运行 PowerShell 脚本开始自动修复
+
+    powershell .\basedpyright-workflow\fix_project_errors.ps1
+
+================================================================================

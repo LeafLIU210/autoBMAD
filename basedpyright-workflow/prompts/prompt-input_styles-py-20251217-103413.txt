@@ -1,0 +1,20 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\components\input_styles.py
+
+Total errors: 2
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\components\input_styles.py
+Line: 242, Column: 36
+Rule: reportUndefinedVariable
+Error: "ColorSystem" 未定义 (reportUndefinedVariable)
+
+---
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\ui\styles\components\input_styles.py
+Line: 276, Column: 36
+Rule: reportUndefinedVariable
+Error: "ColorSystem" 未定义 (reportUndefinedVariable)
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

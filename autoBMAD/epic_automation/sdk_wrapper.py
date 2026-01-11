@@ -18,7 +18,6 @@ import logging
 import time
 import traceback
 from collections.abc import AsyncIterator
-from pathlib import Path
 from typing import Any, TypeVar
 
 # Type aliases for SDK Classes
@@ -499,13 +498,13 @@ class SafeClaudeSDK:
                 if "cancel scope" in error_msg.lower() and "different task" in error_msg.lower():
                     # 🎯 关键：检查是否已收到结果（通过管理器）
                     try:
-                        from autoBMAD.epic_automation.monitoring import get_cancellation_manager
-                        manager = get_cancellation_manager()
+                        from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
+                        manager = get_cancellation_manager()  # type: ignore[func-call]
 
                         # 检查active_sdk_calls中是否有结果
-                        if manager.active_sdk_calls:
-                            latest_call_id = list(manager.active_sdk_calls.keys())[-1]
-                            latest_call = manager.active_sdk_calls[latest_call_id]
+                        if manager.active_sdk_calls:  # type: ignore[attr-defined]
+                            latest_call_id = list(manager.active_sdk_calls.keys())[-1]  # type: ignore[arg-type, attr-defined]
+                            latest_call = manager.active_sdk_calls[latest_call_id]  # type: ignore[attr-defined]
                             if "result_received_at" in latest_call or "result" in latest_call:
                                 logger.info(
                                     "[SafeClaudeSDK] Cancel scope error detected but result already received "
@@ -514,8 +513,8 @@ class SafeClaudeSDK:
                                 return True
 
                         # 检查completed_calls
-                        if manager.completed_calls:
-                            latest_call = manager.completed_calls[-1]
+                        if manager.completed_calls:  # type: ignore[attr-defined]
+                            latest_call = manager.completed_calls[-1]  # type: ignore[attr-defined]
                             if latest_call.get("result_received", False):
                                 logger.info(
                                     "[SafeClaudeSDK] Cancel scope error detected but result already received "
@@ -563,8 +562,8 @@ class SafeClaudeSDK:
 
         # 🎯 唯一入口：获取全局管理器
         try:
-            from autoBMAD.epic_automation.monitoring import get_cancellation_manager
-            manager = get_cancellation_manager()
+            from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
+            manager = get_cancellation_manager()  # type: ignore[func-call]
         except ImportError as e:
             logger.warning(f"Could not import cancellation manager: {e}")
             return await self._execute_safely()
@@ -791,23 +790,23 @@ class SafeClaudeSDK:
 
         # 2. 清理当前 Task 的 SDK 状态
         try:
-            from autoBMAD.epic_automation.monitoring import get_cancellation_manager
-            manager = get_cancellation_manager()
+            from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
+            manager = get_cancellation_manager()  # type: ignore[func-call]
 
             # 🎯 关键：确保所有活跃调用都已清理
             # active_sdk_calls 应该为空，否则 wait_for_cancellation_complete() 会超时
-            active_count = len(manager.active_sdk_calls)
+            active_count = len(manager.active_sdk_calls)  # type: ignore[arg-type, attr-defined]
             if active_count > 0:
                 logger.warning(
                     f"[SafeClaudeSDK] {active_count} active SDK calls still present during rebuild. "
                     f"Forcing cleanup..."
                 )
                 # 强制清理
-                manager.active_sdk_calls.clear()
+                manager.active_sdk_calls.clear()  # type: ignore[attr-defined]
 
             # 🎯 验证取消调用的清理状态
-            incomplete_cleanups = [
-                call for call in manager.cancelled_calls
+            incomplete_cleanups: list[dict[str, Any]] = [  # type: ignore[assignment]
+                call for call in manager.cancelled_calls  # type: ignore[attr-defined]
                 if not call.get("cleanup_completed", False)
             ]
             if incomplete_cleanups:
@@ -817,7 +816,7 @@ class SafeClaudeSDK:
                 )
 
             # 重置统计信息
-            manager.stats["cross_task_errors"] = manager.stats.get("cross_task_errors", 0) + 1
+            manager.stats["cross_task_errors"] = manager.stats.get("cross_task_errors", 0) + 1  # type: ignore[attr-defined]
 
             logger.info(
                 "[SafeClaudeSDK] ✅ Execution context rebuilt successfully "

@@ -1,0 +1,16 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+
+BasedPyright type errors (5):  Line 1872, Col 69: [reportAttributeAccessIssue] "get_cancellation_manager" 是未知的导入符号 (reportAttributeAccessIssue)
+  Line 1880, Col 28: [unknown] 部分参数的类型未知
+  Line 1881, Col 44: [unknown] 部分参数的类型未知
+  Line 1883, Col 61: [unknown] 部分参数的类型未知
+  Line 2250, Col 9: [reportUnusedFunction] "_exception_handler" 函数未使用 (reportUnusedFunction)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

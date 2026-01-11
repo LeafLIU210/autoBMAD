@@ -1,0 +1,40 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\quality_agents.py
+
+BasedPyright type errors (29):  Line 82, Col 21: [reportUnusedVariable] 变量 "stderr" 未使用 (reportUnusedVariable)
+  Line 151, Col 51: [reportUnnecessaryIsInstance] "type[ResultMessage]" 一定是 "type" 的实例，无需再调用 `isinstance` (reportUnnecessaryIsInstance)
+  Line 215, Col 41: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 225, Col 13: [unknown] "int | list[Unknown]" 与 "int" 类型不支持 "+=" 运算符
+  Line 230, Col 17: [unknown] "int | list[Unknown]" 与 "Literal[1]" 类型不支持 "+=" 运算符
+  Line 232, Col 41: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 260, Col 17: [unknown] "int | list[Unknown]" 与 "Literal[1]" 类型不支持 "+=" 运算符
+  Line 261, Col 17: [unknown] "int | list[Unknown]" 与 "int" 类型不支持 "+=" 运算符
+  Line 264, Col 37: [unknown] 无法访问 "int" 类的 "append" 属性
+  Line 404, Col 21: [reportUnusedVariable] 变量 "stderr" 未使用 (reportUnusedVariable)
+  Line 430, Col 46: [unknown] 部分参数的类型未知
+  Line 641, Col 13: [unknown] "Dict[str, Any]" 类型的实参无法赋值给函数 "__setitem__" 中 "bool | list[Unknown] | None" 类型的形参 "value"
+  Line 647, Col 44: [unknown] 无法访问 "bool" 类的 "append" 属性
+  Line 647, Col 44: [reportOptionalMemberAccess] `None` 没有 "append" 属性 (reportOptionalMemberAccess)
+  Line 651, Col 13: [unknown] "dict[str, bool | str]" 类型的实参无法赋值给函数 "__setitem__" 中 "bool | list[Unknown] | None" 类型的形参 "value"
+  Line 653, Col 40: [unknown] 无法访问 "bool" 类的 "append" 属性
+  Line 653, Col 40: [reportOptionalMemberAccess] `None` 没有 "append" 属性 (reportOptionalMemberAccess)
+  Line 663, Col 17: [unknown] "Dict[str, Any]" 类型的实参无法赋值给函数 "__setitem__" 中 "bool | list[Unknown] | None" 类型的形参 "value"
+  Line 669, Col 48: [unknown] 无法访问 "bool" 类的 "append" 属性
+  Line 669, Col 48: [reportOptionalMemberAccess] `None` 没有 "append" 属性 (reportOptionalMemberAccess)
+  Line 673, Col 17: [unknown] "dict[str, bool | str]" 类型的实参无法赋值给函数 "__setitem__" 中 "bool | list[Unknown] | None" 类型的形参 "value"
+  Line 675, Col 44: [unknown] 无法访问 "bool" 类的 "append" 属性
+  Line 675, Col 44: [reportOptionalMemberAccess] `None` 没有 "append" 属性 (reportOptionalMemberAccess)
+  Line 685, Col 17: [unknown] "Dict[str, Any]" 类型的实参无法赋值给函数 "__setitem__" 中 "bool | list[Unknown] | None" 类型的形参 "value"
+  Line 690, Col 48: [unknown] 无法访问 "bool" 类的 "append" 属性
+  Line 690, Col 48: [reportOptionalMemberAccess] `None` 没有 "append" 属性 (reportOptionalMemberAccess)
+  Line 694, Col 17: [unknown] "dict[str, bool | str]" 类型的实参无法赋值给函数 "__setitem__" 中 "bool | list[Unknown] | None" 类型的形参 "value"
+  Line 696, Col 44: [unknown] 无法访问 "bool" 类的 "append" 属性
+  Line 696, Col 44: [reportOptionalMemberAccess] `None` 没有 "append" 属性 (reportOptionalMemberAccess)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

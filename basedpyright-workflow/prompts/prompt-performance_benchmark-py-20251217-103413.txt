@@ -1,0 +1,14 @@
+﻿Fix all basedpyright errors in file: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\performance_benchmark.py
+
+Total errors: 1
+
+Error details:
+File: d:\GITHUB\wuwa_actionseq_recorder\Project_recorder\performance_benchmark.py
+Line: 39, Column: 38
+Rule: unknown
+Error: "None" 类型不匹配声明的 "Dict[str, int]" 类型
+
+---
+
+
+Please fix all these errors while maintaining code functionality.

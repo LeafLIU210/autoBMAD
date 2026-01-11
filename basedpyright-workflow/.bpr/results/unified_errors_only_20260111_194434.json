@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260111_194431.txt",
+    "extraction_time": "2026-01-11T19:44:34.070240",
+    "total_files_with_errors": 5,
+    "total_errors": 19,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 65,
+          "column": 38,
+          "message": "无法访问 \"BrokenWorkerInterpreter\" 类的 \"start\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "error_count": 10,
+      "errors_by_rule": {
+        "unknown": 10
+      },
+      "errors_by_tool": {
+        "basedpyright": 10
+      },
+      "errors": [
+        {
+          "line": 125,
+          "column": 39,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 126,
+          "column": 41,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 127,
+          "column": 46,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 127,
+          "column": 50,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 129,
+          "column": 49,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 184,
+          "column": 39,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 185,
+          "column": 41,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 186,
+          "column": 46,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 186,
+          "column": 50,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 188,
+          "column": 49,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\controllers\\base_controller.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 59,
+          "column": 38,
+          "message": "无法访问 \"BrokenWorkerInterpreter\" 类的 \"start\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\core\\safe_claude_sdk.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportConstantRedefinition": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 25,
+          "column": 5,
+          "message": "不能重新定义常量 \"SDK_AVAILABLE\"（全大写名称） (reportConstantRedefinition)",
+          "rule": "reportConstantRedefinition"
+        },
+        {
+          "line": 27,
+          "column": 5,
+          "message": "不能重新定义常量 \"SDK_AVAILABLE\"（全大写名称） (reportConstantRedefinition)",
+          "rule": "reportConstantRedefinition"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 5,
+      "errors_by_rule": {
+        "reportAttributeAccessIssue": 1,
+        "unknown": 4
+      },
+      "errors_by_tool": {
+        "basedpyright": 5
+      },
+      "errors": [
+        {
+          "line": 1872,
+          "column": 69,
+          "message": "\"get_cancellation_manager\" 是未知的导入符号 (reportAttributeAccessIssue)",
+          "rule": "reportAttributeAccessIssue"
+        },
+        {
+          "line": 1881,
+          "column": 29,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 1883,
+          "column": 30,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 1885,
+          "column": 44,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 1887,
+          "column": 61,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    }
+  ]
+}
