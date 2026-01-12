@@ -9,6 +9,8 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional, cast
 
+from anyio.abc import TaskGroup
+
 from .base_agent import BaseAgent
 
 # Import LogManager for runtime use
@@ -22,7 +24,7 @@ class DevAgent(BaseAgent):
 
     def __init__(
         self,
-        task_group: Optional[Any] = None,
+        task_group: Optional[TaskGroup] = None,
         use_claude: bool = True,
         log_manager: Optional[LogManager] = None,
     ):
@@ -34,12 +36,11 @@ class DevAgent(BaseAgent):
             use_claude: If True, use Claude Code CLI for real implementation
             log_manager: Optional LogManager instance for logging
         """
-        super().__init__("DevAgent", task_group)
+        super().__init__("DevAgent", task_group, log_manager)
         self.use_claude = use_claude
         self._claude_available = (
             self._check_claude_available() if use_claude else False
         )
-        self._log_manager = log_manager
         self._current_story_path = None
 
         # 集成SDKExecutor
@@ -54,7 +55,7 @@ class DevAgent(BaseAgent):
         try:
             self.status_parser = None
             try:
-                from ..story_parser import SimpleStoryParser
+                from .state_agent import SimpleStoryParser
                 from ..sdk_wrapper import SafeClaudeSDK
 
                 if SafeClaudeSDK:
@@ -101,10 +102,11 @@ class DevAgent(BaseAgent):
             # 即使没有TaskGroup也继续执行
             return await self._execute_development(story_path)
 
-        async def _dev_coro() -> bool:
+        # 使用_execute_within_taskgroup来执行
+        async def _execute():
             return await self._execute_development(story_path)
 
-        return await self._execute_within_taskgroup(_dev_coro)
+        return await self._execute_within_taskgroup(_execute)
 
     async def _execute_development(self, story_path: str) -> bool:
         """执行开发任务的核心逻辑"""
@@ -152,7 +154,7 @@ class DevAgent(BaseAgent):
                 self._log_execution("Handling QA feedback with single SDK call")
                 prompt = f"@.bmad-core/agents/dev.md {requirements['qa_prompt']}"
                 if self.sdk_executor:
-                    await self._execute_sdk_call(self.sdk_executor, prompt, story_path=story_path)
+                    await self._execute_sdk_call(self.sdk_executor, prompt)
                 return True
 
             # 正常开发模式
@@ -170,7 +172,7 @@ class DevAgent(BaseAgent):
             )
 
             if self.sdk_executor:
-                await self._execute_sdk_call(self.sdk_executor, base_prompt, story_path=story_path)
+                await self._execute_sdk_call(self.sdk_executor, base_prompt)
 
             self._log_execution(
                 f"Development execution completed, "

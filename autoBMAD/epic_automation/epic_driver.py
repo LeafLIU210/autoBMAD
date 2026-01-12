@@ -73,7 +73,8 @@ def _convert_core_to_processing_status(core_status: str, phase: str) -> str:  # 
 
     # 根据阶段调整状态值
     if phase == "sm":
-        if base_processing_status == "pending":
+        # SM阶段：只要不是completed，都标记为completed
+        if base_processing_status != "completed":
             return "completed"  # SM 完成
     elif phase == "dev":
         if base_processing_status == "pending":
@@ -619,11 +620,20 @@ class EpicDriver:
             from autoBMAD.epic_automation.state_manager import (
                 StateManager,  # type: ignore
             )
+            from autoBMAD.epic_automation.controllers.sm_controller import SMController  # type: ignore
+            from autoBMAD.epic_automation.controllers.devqa_controller import DevQaController  # type: ignore
+            from autoBMAD.epic_automation.controllers.quality_controller import QualityController  # type: ignore
 
+            # Create agents (for potential direct access)
             self.sm_agent = SMAgent()
             self.dev_agent = DevAgent(use_claude=use_claude)
             self.qa_agent = QAAgent()
             self.state_manager = StateManager()
+
+            # Create controllers (main interface)
+            self.sm_controller = None  # Will be created per story in async context
+            self.devqa_controller = None  # Will be created per story in async context
+            self.quality_controller = None  # Will be created when needed
 
             # Initialize StatusParser with SDK wrapper if available (optional module)
             try:
@@ -1123,26 +1133,37 @@ class EpicDriver:
         logger.info(f"Executing SM phase for {story_path}")
 
         try:
-            # Read story content
-            with open(story_path, encoding="utf-8") as f:
-                story_content = f.read()
+            # Create SMController in async context
+            import anyio
+            async with anyio.create_task_group() as tg:
+                # Read story content
+                with open(story_path, encoding="utf-8") as f:
+                    story_content = f.read()
 
-            # Execute SM phase with story_path parameter
-            result: bool = await self.sm_agent.execute(story_content, story_path)
+                # Create SMController with task group
+                from autoBMAD.epic_automation.controllers.sm_controller import SMController
+                sm_controller = SMController(tg, project_root=Path.cwd())
+                self.sm_controller = sm_controller
 
-            # Update state
-            state_update_success = await self.state_manager.update_story_status(
-                story_path=story_path, status="sm_completed", phase="sm"
-            )
-
-            if not state_update_success:
-                logger.warning(
-                    f"State update failed for {story_path} but business logic completed, "
-                    f"continuing with sm_completed status"
+                # Execute SM phase
+                result: bool = await sm_controller.execute(
+                    epic_content=story_content,
+                    story_id=Path(story_path).stem
                 )
 
-            logger.info(f"SM phase completed for {story_path}")
-            return result
+                # Update state
+                state_update_success = await self.state_manager.update_story_status(
+                    story_path=story_path, status="sm_completed", phase="sm"
+                )
+
+                if not state_update_success:
+                    logger.warning(
+                        f"State update failed for {story_path} but business logic completed, "
+                        f"continuing with sm_completed status"
+                    )
+
+                logger.info(f"SM phase completed for {story_path}")
+                return result
 
         except Exception as e:
             logger.error(f"SM phase failed for {story_path}: {e}")
@@ -1153,7 +1174,7 @@ class EpicDriver:
 
     async def execute_dev_phase(self, story_path: str, iteration: int = 1) -> bool:
         """
-        Execute Dev (Development) phase for a story.
+        Execute Dev (Development) phase for a story using DevQaController.
 
         Args:
             story_path: Path to the story markdown file
@@ -1175,32 +1196,40 @@ class EpicDriver:
             return False
 
         try:
-            # Read story content
-            with open(story_path, encoding="utf-8") as f:
-                _ = f.read()
+            # Create DevQaController in async context
+            import anyio
+            async with anyio.create_task_group() as tg:
+                # Set log_manager for agents
+                # (handled within DevQaController)
 
-            # Set log_manager to dev_agent for SDK logging
-            self.dev_agent._log_manager = self.log_manager
+                # Create DevQaController with task group
+                from autoBMAD.epic_automation.controllers.devqa_controller import DevQaController
+                devqa_controller = DevQaController(
+                    tg,
+                    use_claude=self.use_claude,
+                    log_manager=self.log_manager
+                )
+                self.devqa_controller = devqa_controller
 
-            # Execute Dev phase with story_path parameter
-            result: bool = await self.dev_agent.execute(story_path)
+                # Execute Dev-QA pipeline using the controller
+                result: bool = await devqa_controller.execute(story_path)
 
-            # Update state
-            state_update_success = await self.state_manager.update_story_status(
-                story_path=story_path,
-                status="completed",  # 从 "dev_completed" 更新为 "completed"
-                phase="dev",
-                iteration=iteration,
-            )
-
-            if not state_update_success:
-                logger.warning(
-                    f"State update failed for {story_path} but business logic completed, "
-                    f"continuing with dev_completed status"
+                # Update state
+                state_update_success = await self.state_manager.update_story_status(
+                    story_path=story_path,
+                    status="completed",  # 从 "dev_completed" 更新为 "completed"
+                    phase="dev",
+                    iteration=iteration,
                 )
 
-            logger.info(f"Dev phase completed for {story_path}")
-            return result
+                if not state_update_success:
+                    logger.warning(
+                        f"State update failed for {story_path} but business logic completed, "
+                        f"continuing with dev_completed status"
+                    )
+
+                logger.info(f"Dev phase completed for {story_path}")
+                return result
 
         except Exception as e:
             logger.error(f"Dev phase failed for {story_path}: {e}")
@@ -1213,54 +1242,20 @@ class EpicDriver:
         """
         Execute QA (Quality Assurance) phase for a story.
 
+        Note: This method is now deprecated. QA is handled by DevQaController
+        in the execute_dev_phase method.
+
         Args:
             story_path: Path to the story markdown file
 
         Returns:
             True if QA passes, False otherwise
         """
-        logger.info(f"Executing QA phase for {story_path}")
-
-        try:
-            # Read story content
-            with open(story_path, encoding="utf-8") as f:
-                _ = f.read()
-
-            # Execute QA phase with tools integration
-            qa_result: dict[str, Any] = await self.qa_agent.execute(
-                story_path=story_path,
-            )
-
-            # QA phase completed - no intermediate qa_completed state set
-            # QA agent re-evaluates story document status via SDK
-
-            if qa_result.get("passed", False):
-                logger.info(f"QA phase passed for {story_path}")
-                completion_state_update_success = (
-                    await self.state_manager.update_story_status(
-                        story_path=story_path, status="completed"
-                    )
-                )
-
-                if not completion_state_update_success:
-                    logger.warning(
-                        f"Completion state update failed for {story_path} but QA passed successfully"
-                    )
-                return True
-            else:
-                logger.info(f"QA phase failed for {story_path}, setting in_progress")
-                await self.state_manager.update_story_status(
-                    story_path=story_path, status="in_progress"
-                )
-
-                return True
-
-        except Exception as e:
-            logger.error(f"QA phase failed for {story_path}: {e}")
-            await self.state_manager.update_story_status(
-                story_path=story_path, status="error", error=str(e)
-            )
-            return False
+        logger.warning(
+            f"execute_qa_phase is deprecated. QA is now handled by DevQaController. "
+            f"Use execute_dev_phase which manages the complete Dev-QA cycle."
+        )
+        return True  # No-op - QA is handled in DevQaController
 
     async def process_story(self, story: "dict[str, Any]") -> bool:
         """

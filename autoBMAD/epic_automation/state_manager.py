@@ -695,8 +695,10 @@ class StateManager:
             with open(story_file, encoding="utf-8") as f:
                 content = f.read()
 
-            # 更新Status字段的正则表达式 - 支持多种格式
+            # 更新Status字段的正则表达式 - 支持多种格式（按优先级排序）
             status_patterns = [
+                # 格式4: **<key>: Draft** -> **<key>: Done** (最具体，先匹配)
+                r"\*\*([^*]+)\*\*:\s*Draft",
                 # 格式1: ### Status\n**Status**: <value>
                 r"(^### Status\s*\n\s*\*\*Status\*\*:\s*\*\*).*?(\*\*?)",
                 # 格式2: ### Status\n**<value>**
@@ -711,7 +713,7 @@ class StateManager:
                 match = re.search(pattern, content, re.MULTILINE | re.IGNORECASE)
                 if match:
                     # 使用正则表达式的替换功能
-                    if r"Status\*\*:" in pattern:
+                    if r"Status\*\*:" in pattern and len(match.groups()) == 2:
                         # 格式1: **Status**: <value> - 替换整个值部分
                         updated_content = re.sub(
                             pattern,
@@ -719,7 +721,23 @@ class StateManager:
                             content,
                             flags=re.MULTILINE,
                         )
-                    else:
+                    elif "Draft" in pattern and len(match.groups()) == 1:
+                        # 格式4: **<key>: Draft** -> **<key>: Done**
+                        updated_content = re.sub(
+                            pattern,
+                            r"**\1**: " + markdown_status,
+                            content,
+                            flags=re.MULTILINE,
+                        )
+                    elif len(match.groups()) == 2 and "Status\*\*:" not in pattern:
+                        # 格式4 (alternative): **<key>: Draft** -> **<key>: Done**
+                        updated_content = re.sub(
+                            pattern,
+                            r"**\1**: " + markdown_status,
+                            content,
+                            flags=re.MULTILINE,
+                        )
+                    elif len(match.groups()) == 3:
                         # 格式2/3: **<value>** - 替换中间的值部分
                         updated_content = re.sub(
                             pattern,

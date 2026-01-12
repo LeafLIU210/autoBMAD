@@ -3,9 +3,7 @@ active: true
 iteration: 1
 max_iterations: 10
 completion_promise: "DONE"
-started_at: "2026-01-11T12:05:36Z"
+started_at: "2026-01-12T05:44:33Z"
 ---
 
-采用 @autoBMAD\epic_automation 工作流针对src进行开发，执行相关Bash命令'
-cd /d/GITHUB/pytQt_template/ && source venv/Scripts/activate && python -m autoBMAD.epic_automation.epic_driver docs/epics/epic-1-core-algorithm-foundation.md --verbose --source-dir src --test-dir tests 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_test.log
-'，并审查src文件夹是否有依照epic文档和stories文档进行开发，以及检查工作流是否中断。如果src实际并未执行开发或者工作流中断，应当修改工作流代码。代码修改要求：1. **只允许修改位于 autoBMAD\epic_automation 的代码**； 2. 每次代码修改后，用basedpyright（不是basedpyright-workflow）检查代码是否有错误error，如有则修复错误；3. **严禁直接修改故事文档和src文件夹**；4. **严禁修改py文件中的prompt**；5. **严禁修改涉及claude_agent_sdk的任何相关参数和代码**。当所有最终要求完成：1. @docs\stories 的所有故事文档Status 为 'Done' 或 'Ready for Done' (**严禁直接或间接修改故事文档**); 2.src文件夹依照epic文档和stories文档开发完成。输出 <promise>DONE</promise>
+根据 @docs-copy\refactor\implementation\05-phase4-integration.md @docs-copy\refactor，检查 @tests 对 @autoBMAD\epic_automation 以epic_driver.py为入口的工作流 的集成测试的覆盖率，创建90%以上的覆盖率的测试，并完成集成测试。同时，根据测试结果，制订方案，并解决测试错误。当集成测试覆盖率超过90%，并且集成测试全部通过时<promise>DONE</promise>

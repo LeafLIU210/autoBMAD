@@ -5,6 +5,7 @@ Quality Agents - 重构后的质量检查 Agents
 from __future__ import annotations
 import json
 import logging
+from anyio.abc import TaskGroup
 import anyio
 from abc import ABC
 from typing import Any, Dict, Optional
@@ -22,7 +23,7 @@ class BaseQualityAgent(BaseAgent, ABC):
     def __init__(
         self,
         name: str,
-        task_group: Optional[anyio.TaskGroup] = None,
+        task_group: Optional[TaskGroup] = None,
     ):
         """
         初始化质量检查 Agent
@@ -88,7 +89,7 @@ class BaseQualityAgent(BaseAgent, ABC):
 class RuffAgent(BaseQualityAgent):
     """Ruff 代码风格检查 Agent"""
 
-    def __init__(self, task_group: Optional[anyio.TaskGroup] = None):
+    def __init__(self, task_group: Optional[TaskGroup] = None):
         super().__init__("Ruff", task_group)
 
     async def execute(
@@ -155,7 +156,7 @@ class RuffAgent(BaseQualityAgent):
 class BasedPyrightAgent(BaseQualityAgent):
     """BasedPyright 类型检查 Agent"""
 
-    def __init__(self, task_group: Optional[anyio.TaskGroup] = None):
+    def __init__(self, task_group: Optional[TaskGroup] = None):
         super().__init__("BasedPyright", task_group)
 
     async def execute(self, source_dir: str, **kwargs: Any) -> Dict[str, Any]:
@@ -217,7 +218,7 @@ class BasedPyrightAgent(BaseQualityAgent):
 class PytestAgent(BaseQualityAgent):
     """Pytest 测试执行 Agent"""
 
-    def __init__(self, task_group: Optional[anyio.TaskGroup] = None):
+    def __init__(self, task_group: Optional[TaskGroup] = None):
         super().__init__("Pytest", task_group)
 
     async def execute(

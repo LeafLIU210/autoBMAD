@@ -71,7 +71,7 @@ class SDKResult:
     # 错误信息（仅用于日志和调试）
     error_type: SDKErrorType = SDKErrorType.SUCCESS
     errors: list[str] = field(default_factory=list)
-    last_exception: Exception | None = None
+    last_exception: BaseException | None = None
 
     def is_success(self) -> bool:
         """判断业务是否成功

@@ -4,7 +4,7 @@ State Agent - 状态解析和管理 Agent
 """
 from __future__ import annotations
 import logging
-import anyio
+from anyio.abc import TaskGroup
 import re
 from pathlib import Path
 from typing import Optional, Any
@@ -197,25 +197,57 @@ class SimpleStoryParser:
         Returns:
             标准状态字符串
         """
-        # 状态关键词匹配模式
+        # 改进的正则表达式，支持多种格式
         status_patterns = {
-            CORE_STATUS_DRAFT: r'(?i)status\s*:\s*draft|\bdraft\b',
-            CORE_STATUS_READY_FOR_DEVELOPMENT: r'(?i)status\s*:\s*ready\s+for\s+development|\bready\s+for\s+development\b',
-            CORE_STATUS_IN_PROGRESS: r'(?i)status\s*:\s*(in\s+progress|active)|\bin\s+progress\b|\bactive\b',
-            CORE_STATUS_READY_FOR_REVIEW: r'(?i)status\s*:\s*ready\s+for\s+review|\bready\s+for\s+review\b',
-            CORE_STATUS_READY_FOR_DONE: r'(?i)status\s*:\s*ready\s+for\s+done|\bready\s+for\s+done\b',
-            CORE_STATUS_DONE: r'(?i)status\s*:\s*done|\bdone\b|\bcompleted\b',
-            CORE_STATUS_FAILED: r'(?i)status\s*:\s*failed|\bfailed\b|\berror\b',
+            CORE_STATUS_DRAFT: [
+                r'(?i)status\s*:\s*draft\b',
+                r'(?i)\*\*status\*\*\s*:\s*draft\b',
+                r'\bdraft\b',
+            ],
+            CORE_STATUS_READY_FOR_DEVELOPMENT: [
+                r'(?i)status\s*:\s*ready\s+for\s+development\b',
+                r'(?i)\*\*status\*\*\s*:\s*ready\s+for\s+development\b',
+                r'\bready\s+for\s+development\b',
+            ],
+            CORE_STATUS_IN_PROGRESS: [
+                r'(?i)status\s*:\s*(in\s+progress|active)\b',
+                r'(?i)\*\*status\*\*\s*:\s*(in\s+progress|active)\b',
+                r'\bin\s+progress\b',
+                r'\bactive\b',
+            ],
+            CORE_STATUS_READY_FOR_REVIEW: [
+                r'(?i)status\s*:\s*ready\s+for\s+review\b',
+                r'(?i)\*\*status\*\*\s*:\s*ready\s+for\s+review\b',
+                r'\bready\s+for\s+review\b',
+            ],
+            CORE_STATUS_READY_FOR_DONE: [
+                r'(?i)status\s*:\s*ready\s+for\s+done\b',
+                r'(?i)\*\*status\*\*\s*:\s*ready\s+for\s+done\b',
+                r'\bready\s+for\s+done\b',
+            ],
+            CORE_STATUS_DONE: [
+                r'(?i)status\s*:\s*done\b',
+                r'(?i)\*\*status\*\*\s*:\s*done\b',
+                r'\bdone\b',
+                r'\bcompleted\b',
+            ],
+            CORE_STATUS_FAILED: [
+                r'(?i)status\s*:\s*failed\b',
+                r'(?i)\*\*status\*\*\s*:\s*failed\b',
+                r'\bfailed\b',
+                r'\berror\b',
+            ],
         }
 
-        # 尝试每个状态模式
-        for status, pattern in status_patterns.items():
-            if re.search(pattern, content):
-                logger.debug(f"Status matched with regex: {status}")
-                return status
+        # 尝试多个模式
+        for status, patterns in status_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, content):
+                    logger.debug(f"Status matched with regex: {status} (pattern: {pattern})")
+                    return status
 
-        # 没有匹配到任何状态
-        logger.warning("No status pattern matched, returning default")
+        # 没有匹配时返回默认值
+        logger.debug("No status pattern matched, returning default: Draft")
         return CORE_STATUS_DRAFT
 
     async def _parse_status_with_ai(self, content: str) -> str:
@@ -236,7 +268,7 @@ class SimpleStoryParser:
 class StateAgent(BaseAgent):
     """状态解析和管理 Agent"""
 
-    def __init__(self, task_group: Optional[anyio.TaskGroup] = None):
+    def __init__(self, task_group: Optional[TaskGroup] = None):
         """
         初始化状态 Agent
 

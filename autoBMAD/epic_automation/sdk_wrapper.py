@@ -574,11 +574,8 @@ class SafeClaudeSDK:
             # 🎯 所有 SDK 执行都必须通过管理器追踪
             async with manager.track_sdk_execution(
                 call_id=call_id,
-                operation_name="sdk_execute",
-                context={
-                    "prompt_length": len(self.prompt),
-                    "has_options": self.options is not None
-                }
+                agent_name="SafeClaudeSDK",
+                operation_name="sdk_execute"
             ):
                 result = await self._execute_safely_with_manager(manager, call_id)
                 return result

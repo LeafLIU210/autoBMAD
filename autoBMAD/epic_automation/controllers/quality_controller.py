@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from anyio.abc import TaskGroup
 import anyio
 
 from .base_controller import BaseController
@@ -25,7 +26,7 @@ class QualityController(BaseController):
 
     def __init__(
         self,
-        task_group: anyio.TaskGroup,
+        task_group: TaskGroup,
         project_root: Optional[Path] = None
     ):
         """
@@ -42,7 +43,11 @@ class QualityController(BaseController):
         self.pytest_agent = PytestAgent()
         self._log_execution("QualityController initialized")
 
-    async def execute(self, *args: Any, **kwargs: Any) -> bool:
+    async def execute(
+        self,
+        source_dir: Optional[str] = None,
+        test_dir: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         执行质量门控
 
@@ -51,11 +56,8 @@ class QualityController(BaseController):
             test_dir: 测试目录
 
         Returns:
-            bool: 质量门控是否通过
+            Dict[str, Any]: 质量检查结果
         """
-        # 从 kwargs 中提取参数
-        source_dir = kwargs.get("source_dir")
-        test_dir = kwargs.get("test_dir")
 
         self._log_execution("Starting quality gate process")
 
@@ -82,49 +84,51 @@ class QualityController(BaseController):
 
             # Step 1: Ruff 代码风格检查
             self._log_execution("Running Ruff checks")
-            ruff_result = await self._execute_within_taskgroup(  # type: ignore[arg-type]
-                self.ruff_agent.execute(  # type: ignore[arg-type]
-                    source_dir=effective_source_dir,  # type: ignore[arg-type]
-                    project_root=effective_project_root  # type: ignore[arg-type]
+
+            async def call_ruff():
+                return await self.ruff_agent.execute(
+                    source_dir=effective_source_dir,
+                    project_root=effective_project_root
                 )
-            )
+            ruff_result = await self._execute_within_taskgroup(call_ruff)
             results["checks"]["ruff"] = ruff_result
 
             # Step 2: BasedPyright 类型检查
             self._log_execution("Running BasedPyright checks")
-            pyright_result = await self._execute_within_taskgroup(  # type: ignore[arg-type]
-                self.pyright_agent.execute(  # type: ignore[arg-type]
-                    source_dir=effective_source_dir  # type: ignore[arg-type]
+
+            async def call_pyright():
+                return await self.pyright_agent.execute(
+                    source_dir=effective_source_dir
                 )
-            )
+            pyright_result = await self._execute_within_taskgroup(call_pyright)
             results["checks"]["pyright"] = pyright_result
 
             # Step 3: Pytest 测试执行
             self._log_execution("Running Pytest")
             if effective_test_dir is not None:
-                pytest_result = await self._execute_within_taskgroup(  # type: ignore[arg-type]
-                    self.pytest_agent.execute(  # type: ignore[arg-type]
-                        source_dir=effective_source_dir,  # type: ignore[arg-type]
-                        test_dir=effective_test_dir  # type: ignore[arg-type]
+                async def call_pytest():
+                    return await self.pytest_agent.execute(
+                        source_dir=effective_source_dir,
+                        test_dir=effective_test_dir
                     )
-                )
+                pytest_result = await self._execute_within_taskgroup(call_pytest)
                 results["checks"]["pytest"] = pytest_result
             else:
                 # 如果没有测试目录，跳过测试
                 results["checks"]["pytest"] = {"status": "skipped", "message": "No test directory provided"}
 
             # Step 4: 汇总结果
-            results["overall_status"] = self._evaluate_overall_status(results["checks"])  # type: ignore[arg-type]
+            results["overall_status"] = self._evaluate_overall_status(results["checks"])
 
             self._log_execution(f"Quality gate completed: {results['overall_status']}")
-            # 返回是否通过质量门控
-            return results["overall_status"] in ["pass", "pass_with_warnings"]
+            # 返回完整的结果字典
+            return results
 
         except Exception as e:
             self._log_execution(f"Quality gate failed: {e}", "error")
             results["overall_status"] = "error"
             results["error"] = str(e)
-            return False
+            return results
 
     def _evaluate_overall_status(self, checks: Dict[str, Any]) -> str:
         """

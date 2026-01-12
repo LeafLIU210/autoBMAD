@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from anyio.abc import TaskGroup
 import anyio
 
 from .base_controller import StateDrivenController
@@ -21,7 +22,7 @@ class DevQaController(StateDrivenController):
 
     def __init__(
         self,
-        task_group: anyio.TaskGroup,
+        task_group: TaskGroup,
         use_claude: bool = True,
         log_manager: Any = None
     ):
@@ -34,11 +35,11 @@ class DevQaController(StateDrivenController):
             log_manager: 日志管理器
         """
         super().__init__(task_group)
-        self.state_agent = StateAgent()
-        self.dev_agent = DevAgent(use_claude=use_claude, log_manager=log_manager)
-        self.qa_agent = QAAgent()  # QAAgent不接受参数
+        self.state_agent = StateAgent(task_group=task_group)
+        self.dev_agent = DevAgent(task_group=task_group, use_claude=use_claude, log_manager=log_manager)
+        self.qa_agent = QAAgent(task_group=task_group, use_claude=use_claude, log_manager=log_manager)
         self.max_rounds = 3
-        self._story_path = None
+        self._story_path: str | None = None
         self._log_execution("DevQaController initialized")
 
     async def execute(self, story_path: str) -> bool:
@@ -83,7 +84,13 @@ class DevQaController(StateDrivenController):
         Returns:
             bool: 执行是否成功
         """
-        return await self.execute(story_path)
+        # 保存原始max_rounds
+        original_rounds = self.max_rounds
+        self.max_rounds = max_rounds
+        try:
+            return await self.execute(story_path)
+        finally:
+            self.max_rounds = original_rounds
 
     async def _make_decision(self, current_state: str) -> str:
         """
@@ -111,34 +118,51 @@ class DevQaController(StateDrivenController):
 
             # 状态决策逻辑
             if current_status in ["Done", "Ready for Done"]:
-                self._log_execution("Story already completed")
+                self._log_execution(f"Story already in terminal state: {current_status}")
                 return current_status
 
-            elif current_status in ["Draft", "Ready for Development", "Failed"]:
+            elif current_status == "Failed":
+                # 允许重新开发失败的故事
+                self._log_execution("Story failed, retrying development")
+                story_path = self._story_path
+
+                async def call_dev_agent():
+                    return await self.dev_agent.execute(story_path)
+
+                await self._execute_within_taskgroup(call_dev_agent)
+                return "AfterDev"
+
+            elif current_status in ["Draft", "Ready for Development"]:
                 # 需要开发
                 self._log_execution("Development required")
                 story_path = self._story_path
-                await self._execute_within_taskgroup(
-                    lambda: self.dev_agent.execute(story_path)
-                )
+
+                async def call_dev_agent():
+                    return await self.dev_agent.execute(story_path)
+
+                await self._execute_within_taskgroup(call_dev_agent)
                 return "AfterDev"
 
             elif current_status == "In Progress":
                 # 继续开发或进入 QA
                 self._log_execution("Development in progress")
                 story_path = self._story_path
-                await self._execute_within_taskgroup(
-                    lambda: self.dev_agent.execute(story_path)
-                )
+
+                async def call_dev_agent():
+                    return await self.dev_agent.execute(story_path)
+
+                await self._execute_within_taskgroup(call_dev_agent)
                 return "AfterDev"
 
             elif current_status == "Ready for Review":
                 # 需要 QA
                 self._log_execution("QA required")
                 story_path = self._story_path
-                await self._execute_within_taskgroup(
-                    lambda: self.qa_agent.execute(story_path)
-                )
+
+                async def call_qa_agent():
+                    return await self.qa_agent.execute(story_path)
+
+                await self._execute_within_taskgroup(call_qa_agent)
                 return "AfterQA"
 
             else:
@@ -151,4 +175,5 @@ class DevQaController(StateDrivenController):
 
     def _is_termination_state(self, state: str) -> bool:
         """判断是否为 Dev-QA 的终止状态"""
-        return state in ["Done", "Ready for Done", "Failed", "Error"]
+        # Failed 状态允许重新开发，不视为终止状态
+        return state in ["Done", "Ready for Done", "Error"]

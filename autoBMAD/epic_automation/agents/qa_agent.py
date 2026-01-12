@@ -10,6 +10,8 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
+from anyio.abc import TaskGroup
+
 from .base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -20,16 +22,22 @@ class QAAgent(BaseAgent):
     Quality Assurance agent for handling QA review tasks.
     """
 
-    name: str = "QA Agent"
-
-    def __init__(self, task_group: Optional[Any] = None):
+    def __init__(
+        self,
+        task_group: Optional[TaskGroup] = None,
+        use_claude: bool = True,
+        log_manager: Optional[Any] = None,
+    ):
         """
         初始化QA代理
 
         Args:
             task_group: TaskGroup实例
+            use_claude: 是否使用 Claude 进行真实 QA 审查
+            log_manager: 日志管理器
         """
-        super().__init__("QAAgent", task_group)
+        super().__init__("QAAgent", task_group, log_manager)
+        self.use_claude = use_claude
 
         # 集成SDKExecutor
         self.sdk_executor = None
@@ -43,7 +51,7 @@ class QAAgent(BaseAgent):
         try:
             self.status_parser = None
             try:
-                from ..story_parser import SimpleStoryParser
+                from .state_agent import SimpleStoryParser
                 from ..sdk_wrapper import SafeClaudeSDK
 
                 if SafeClaudeSDK:
@@ -94,9 +102,11 @@ class QAAgent(BaseAgent):
             # 即使没有TaskGroup也继续执行
             return await self._execute_qa_review(story_path)
 
-        return await self._execute_within_taskgroup(
-            lambda: self._execute_qa_review(story_path)
-        )
+        # 使用_execute_within_taskgroup来执行
+        async def _execute():
+            return await self._execute_qa_review(story_path)
+
+        return await self._execute_within_taskgroup(_execute)
 
     async def _execute_qa_review(self, story_path: str) -> dict[str, Any]:
         """执行QA审查的核心逻辑"""

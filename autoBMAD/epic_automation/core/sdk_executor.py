@@ -147,9 +147,7 @@ class SDKExecutor:
         timeout: float | None
     ) -> SDKResult:
         """
-        在TaskGroup中执行SDK调用（骨架实现）
-
-        注意：这是骨架实现，完整实现将在Day 2完成。
+        在TaskGroup中执行SDK调用
 
         Args:
             task_group: TaskGroup实例
@@ -161,11 +159,120 @@ class SDKExecutor:
 
         Returns:
             SDKResult: 执行结果
-
-        Raises:
-            NotImplementedError: 当前为骨架实现，将在Day 2完整实现
         """
-        # TODO: 在Day 2实现完整逻辑
-        raise NotImplementedError(
-            "完整实现将在Day 2完成。当前为骨架实现。"
-        )
+        import anyio
+        import time
+
+        # 注册调用
+        self.cancel_manager.register_call(call_id, agent_name)
+
+        messages = []
+        target_message = None
+        errors = []
+        start_time = time.time()
+
+        try:
+            # 检查sdk_func是否是async generator或协程
+            import inspect
+            if inspect.isasyncgenfunction(sdk_func):
+                # 原始的async generator逻辑
+                sdk_generator = sdk_func()
+
+                # 收集流式消息
+                async for message in sdk_generator:
+                    messages.append(message)
+                    logger.debug(f"[{agent_name}] Received message: {type(message)}")
+
+                    # 检测目标
+                    try:
+                        if target_predicate(message):
+                            target_message = message
+                            self.cancel_manager.mark_target_result_found(call_id)
+                            logger.info(f"[{agent_name}] Target found, requesting cancel")
+
+                            # 请求取消
+                            self.cancel_manager.request_cancel(call_id)
+
+                            # 注意：不break，继续收集消息直到生成器结束
+
+                    except Exception as e:
+                        errors.append(f"Target predicate error: {e}")
+                        logger.error(f"[{agent_name}] Target predicate error: {e}")
+
+                # 生成器正常结束，标记清理完成
+                self.cancel_manager.mark_cleanup_completed(call_id)
+            else:
+                # 新的协程逻辑（返回bool或其他值）
+                sdk_result = await sdk_func()
+
+                # 如果SDK返回bool，创建一个ynthetic消息
+                if isinstance(sdk_result, bool):
+                    message = {
+                        "type": "result" if sdk_result else "error",
+                        "content": f"SDK execution result: {sdk_result}",
+                        "result": sdk_result
+                    }
+                    messages.append(message)
+
+                    # 检测目标
+                    try:
+                        if target_predicate(message):
+                            target_message = message
+                            self.cancel_manager.mark_target_result_found(call_id)
+                            logger.info(f"[{agent_name}] Target found, requesting cancel")
+
+                            # 请求取消
+                            self.cancel_manager.request_cancel(call_id)
+
+                    except Exception as e:
+                        errors.append(f"Target predicate error: {e}")
+                        logger.error(f"[{agent_name}] Target predicate error: {e}")
+
+                # 生成器正常结束，标记清理完成
+                self.cancel_manager.mark_cleanup_completed(call_id)
+
+            # 等待确认可以安全进行
+            safe = await self.cancel_manager.confirm_safe_to_proceed(call_id)
+
+            duration = time.time() - start_time
+
+            # 如果没有找到目标，添加默认错误信息
+            if not target_message:
+                errors.append("No target result found")
+
+            return SDKResult(
+                has_target_result=target_message is not None,
+                cleanup_completed=safe,
+                duration_seconds=duration,
+                session_id=f"{agent_name}-{call_id[:8]}",
+                agent_name=agent_name,
+                messages=messages,
+                target_message=target_message,
+                error_type=SDKErrorType.SUCCESS if target_message else SDKErrorType.UNKNOWN,
+                errors=errors
+            )
+
+        except anyio.get_cancelled_exc_class() as e:
+            # 取消异常
+            duration = time.time() - start_time
+            errors.append(f"Cancelled: {e}")
+
+            return SDKResult(
+                has_target_result=False,
+                cleanup_completed=False,
+                duration_seconds=duration,
+                session_id=f"{agent_name}-{call_id[:8]}",
+                agent_name=agent_name,
+                messages=messages,
+                error_type=SDKErrorType.CANCELLED,
+                errors=errors,
+                last_exception=e
+            )
+
+        except Exception as e:
+            # 其他异常 - 让异常传播到execute方法进行TaskGroup级别的处理
+            raise
+
+        finally:
+            # 清理
+            self.cancel_manager.unregister_call(call_id)

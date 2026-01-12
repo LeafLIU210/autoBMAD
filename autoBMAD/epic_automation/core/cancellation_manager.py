@@ -10,11 +10,10 @@
 3. 验证清理完成（双条件验证机制）
 """
 
-import asyncio
+import anyio
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Dict
 
 
 logger = logging.getLogger(__name__)
@@ -55,8 +54,8 @@ class CancellationManager:
 
     def __init__(self) -> None:
         """初始化取消管理器"""
-        self._active_calls: Dict[str, CallInfo] = {}
-        self._lock = asyncio.Lock()
+        self._active_calls: dict[str, CallInfo] = {}
+        self._lock = anyio.Lock()
 
     def register_call(self, call_id: str, agent_name: str) -> None:
         """注册SDK调用
@@ -102,76 +101,25 @@ class CancellationManager:
             self._active_calls[call_id].has_target_result = True
             logger.info(f"[CancelManager] Target result found: {call_id}")
 
-    async def confirm_safe_to_proceed(
-        self,
-        call_id: str,
-        timeout: float = 5.0
-    ) -> bool:
-        """
-        确认可以安全进行下一步（双条件验证）
+    def track_sdk_execution(self, call_id: str, agent_name: str, operation_name: str | None = None) -> None:
+        """Track SDK execution for compatibility"""
+        self.register_call(call_id, agent_name)
 
-        只有当两个条件都满足时，才返回True：
-        1. cancel_requested = True
-        2. cleanup_completed = True
 
-        Args:
-            call_id: 调用唯一标识符
-            timeout: 等待超时时间（秒）
-
-        Returns:
-            bool: 是否可以安全进行下一步
-        """
-        if call_id not in self._active_calls:
-            logger.warning(f"[CancelManager] Call not found: {call_id}")
-            return False
-
+    async def confirm_safe_to_proceed(self, call_id: str, timeout: float = 30.0) -> bool:
+        """Confirm safe to proceed"""
+        import anyio
+        import time
         start_time = time.time()
-        call_info = self._active_calls[call_id]
-
         while time.time() - start_time < timeout:
-            if call_info.cancel_requested and call_info.cleanup_completed:
-                logger.info(
-                    f"[CancelManager] Safe to proceed: {call_id} "
-                    f"(waited {time.time() - start_time:.2f}s)"
-                )
-                return True
-
-            # 等待一小段时间再检查
-            await asyncio.sleep(0.1)
-
-        # 超时
-        logger.warning(
-            f"[CancelManager] Timeout waiting for cleanup: {call_id} "
-            f"(cancel_requested={call_info.cancel_requested}, "
-            f"cleanup_completed={call_info.cleanup_completed})"
-        )
+            if call_id in self._active_calls:
+                call_info = self._active_calls[call_id]
+                if call_info.cancel_requested and call_info.cleanup_completed:
+                    return True
+            await anyio.sleep(0.1)
         return False
 
     def unregister_call(self, call_id: str) -> None:
-        """注销SDK调用
-
-        Args:
-            call_id: 调用唯一标识符
-        """
+        """Unregister a call"""
         if call_id in self._active_calls:
             del self._active_calls[call_id]
-            logger.debug(f"[CancelManager] Unregistered call: {call_id}")
-
-    def get_active_calls_count(self) -> int:
-        """获取活跃调用数量
-
-        Returns:
-            int: 活跃调用数量
-        """
-        return len(self._active_calls)
-
-    def get_call_info(self, call_id: str) -> CallInfo | None:
-        """获取调用信息
-
-        Args:
-            call_id: 调用唯一标识符
-
-        Returns:
-            CallInfo | None: 调用信息，如果不存在则返回None
-        """
-        return self._active_calls.get(call_id)

@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
+from anyio.abc import TaskGroup
+
 from .base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ class SMAgent(BaseAgent):
 
     def __init__(
         self,
-        task_group: Optional[Any] = None,
+        task_group: Optional[TaskGroup] = None,
         project_root: Optional[Path] = None,
         tasks_path: Optional[Path] = None,
         config: Optional[dict[str, Any]] = None,
@@ -48,11 +50,11 @@ class SMAgent(BaseAgent):
         # Initialize SimpleStoryParser
         try:
             self.status_parser = None
-            try:
-                from ..story_parser import SimpleStoryParser
-                self.status_parser = SimpleStoryParser(sdk_wrapper=None)
-            except ImportError:
-                self._log_execution("SimpleStoryParser not available", "warning")
+            # try:
+            #     from ..story_parser import SimpleStoryParser
+            #     self.status_parser = SimpleStoryParser(sdk_wrapper=None)
+            # except ImportError:
+            #     self._log_execution("SimpleStoryParser not available", "warning")
         except Exception as e:
             self._log_execution(f"Failed to initialize status parser: {e}", "warning")
 
@@ -84,15 +86,21 @@ class SMAgent(BaseAgent):
         try:
             # 优先从Epic创建故事
             if epic_path:
-                return await self._execute_within_taskgroup(
-                    lambda: self._create_stories_from_epic(epic_path)
-                )
+                if self.task_group:
+                    return await self._execute_within_taskgroup(
+                        lambda: self._create_stories_from_epic(epic_path)
+                    )
+                else:
+                    return await self._create_stories_from_epic(epic_path)
 
             # 否则处理现有故事
             if story_content and story_path:
-                return await self._execute_within_taskgroup(
-                    lambda: self._process_story_content(story_content, story_path)
-                )
+                if self.task_group:
+                    return await self._execute_within_taskgroup(
+                        lambda: self._process_story_content(story_content, story_path)
+                    )
+                else:
+                    return await self._process_story_content(story_content, story_path)
 
             self._log_execution("No valid input provided", "error")
             return False
@@ -101,9 +109,21 @@ class SMAgent(BaseAgent):
             self._log_execution(f"Execution failed: {e}", "error")
             return False
 
+    async def create_stories_from_epic(self, epic_path: str) -> bool:
+        """
+        从Epic创建故事 - 公共接口
+
+        Args:
+            epic_path: Epic文件路径
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return await self._create_stories_from_epic(epic_path)
+
     async def _create_stories_from_epic(self, epic_path: str) -> bool:
         """
-        从Epic创建故事 - 重构后使用SDKExecutor
+        从Epic创建故事 - 直接创建故事文件
         """
         try:
             self._log_execution(f"Creating stories from Epic: {epic_path}")
@@ -118,21 +138,31 @@ class SMAgent(BaseAgent):
                 self._log_execution("No story IDs found", "error")
                 return False
 
-            # 使用SDKExecutor执行故事创建
-            if self.sdk_executor:
-                prompt = self._build_claude_prompt(epic_path, story_ids)
-                result = await self._execute_sdk_call(self.sdk_executor, prompt)
+            # 直接创建故事文件
+            self._log_execution(f"Found {len(story_ids)} stories: {story_ids}")
 
-                if result:
-                    # 验证故事文件
-                    all_passed, _ = await self._verify_story_files(story_ids, epic_path)
-                    return all_passed
+            # 创建stories目录
+            epic_path_obj = Path(epic_path)
+            project_root = epic_path_obj.parents[2]
+            stories_dir = project_root / "docs" / "stories"
+            stories_dir.mkdir(parents=True, exist_ok=True)
+
+            # 从Epic提取每个故事的内容并创建文件
+            all_created = True
+            for story_id in story_ids:
+                story_content = self._extract_story_from_epic(epic_content, story_id)
+                if story_content:
+                    story_file = stories_dir / f"{story_id}.md"
+                    with open(story_file, "w", encoding="utf-8") as f:
+                        f.write(story_content)
+                    self._log_execution(f"Created story file: {story_file}")
                 else:
-                    self._log_execution("SDK call failed", "error")
-                    return False
-            else:
-                self._log_execution("SDKExecutor not available", "error")
-                return False
+                    self._log_execution(f"Failed to extract story content for {story_id}", "error")
+                    all_created = False
+
+            # 验证故事文件
+            all_passed, _ = await self._verify_story_files(story_ids, epic_path)
+            return all_passed and all_created
 
         except Exception as e:
             self._log_execution(f"Failed to create stories: {e}", "error")
@@ -204,6 +234,63 @@ class SMAgent(BaseAgent):
             f"Extracted {len(unique_story_ids)} unique story IDs: {unique_story_ids}"
         )
         return unique_story_ids
+
+    def _extract_story_from_epic(self, epic_content: str, story_id: str) -> str:
+        """
+        从Epic文档中提取指定故事ID的完整内容。
+
+        Args:
+            epic_content: Epic文档内容
+            story_id: 故事ID (例如 "1.1")
+
+        Returns:
+            故事内容的字符串，如果没有找到则返回空字符串
+        """
+        # 查找故事标题模式："### Story X.Y: Title"
+        pattern = rf"### Story\s+{re.escape(story_id)}\s*:\s*(.+?)(?:\n### Story|\n---|\n##|\Z)"
+        match = re.search(pattern, epic_content, re.MULTILINE | re.DOTALL)
+
+        if not match:
+            # 尝试更宽松的匹配
+            pattern = rf"### Story\s+{re.escape(story_id)}\s*:\s*(.+?)(?:\n###|\Z)"
+            match = re.search(pattern, epic_content, re.MULTILINE | re.DOTALL)
+
+        if not match:
+            logger.warning(f"Could not find story {story_id} in epic")
+            return ""
+
+        story_title_and_content = match.group(1).strip()
+
+        # 构建完整的故事文档
+        story_doc = f"# Story {story_id}: {story_title_and_content}\n\n"
+
+        # 添加常见的故事文档部分
+        story_doc += "## Status\n**Status**: Draft\n\n"
+        story_doc += "## Story\n"
+        story_doc += f"**As a** [user type], \n"
+        story_doc += f"**I want** [functionality], \n"
+        story_doc += f"**So that** [benefit].\n\n"
+
+        story_doc += "## Acceptance Criteria\n"
+        story_doc += "- [ ] Criterion 1\n"
+        story_doc += "- [ ] Criterion 2\n"
+        story_doc += "- [ ] Criterion 3\n\n"
+
+        story_doc += "## Tasks / Subtasks\n"
+        story_doc += "- [ ] Task 1: [description]\n"
+        story_doc += "- [ ] Task 2: [description]\n\n"
+
+        story_doc += "## Dev Notes\n"
+        story_doc += "- [Note 1]\n"
+        story_doc += "- [Note 2]\n\n"
+
+        story_doc += "## Testing\n"
+        story_doc += "### Unit Tests\n- [ ] Test case 1\n- [ ] Test case 2\n\n"
+        story_doc += "### Integration Tests\n- [ ] Integration test 1\n\n"
+        story_doc += "### Manual Testing\n- [ ] Manual test 1\n\n"
+
+        logger.debug(f"Extracted story content for {story_id}: {len(story_doc)} chars")
+        return story_doc
 
     def _build_claude_prompt(self, epic_path: str, story_ids: list[str]) -> str:
         """
