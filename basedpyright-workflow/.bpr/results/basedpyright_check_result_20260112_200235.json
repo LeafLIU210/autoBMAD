@@ -1,0 +1,157 @@
+{
+  "version": "1.37.0",
+  "time": "1768219357220",
+  "generalDiagnostics": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "severity": "error",
+      "message": "\"os\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 7,
+          "character": 7
+        },
+        "end": {
+          "line": 7,
+          "character": 9
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "severity": "error",
+      "message": "\"time\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 9,
+          "character": 7
+        },
+        "end": {
+          "line": 9,
+          "character": 11
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "severity": "error",
+      "message": "\"PathlibPath\" 导入项未使用",
+      "range": {
+        "start": {
+          "line": 741,
+          "character": 40
+        },
+        "end": {
+          "line": 741,
+          "character": 51
+        }
+      },
+      "rule": "reportUnusedImport"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "根据标注的返回类型，该函数必须在所有代码路径上返回 \"bool\" 类型的值\n  \"None\" 与 \"bool\" 不兼容",
+      "range": {
+        "start": {
+          "line": 1123,
+          "character": 57
+        },
+        "end": {
+          "line": 1123,
+          "character": 61
+        }
+      },
+      "rule": "reportReturnType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "severity": "error",
+      "message": "根据标注的返回类型，该函数必须在所有代码路径上返回 \"bool\" 类型的值\n  \"None\" 与 \"bool\" 不兼容",
+      "range": {
+        "start": {
+          "line": 1174,
+          "character": 78
+        },
+        "end": {
+          "line": 1174,
+          "character": 82
+        }
+      },
+      "rule": "reportReturnType"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 731,
+          "character": 61
+        },
+        "end": {
+          "line": 731,
+          "character": 63
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "severity": "error",
+      "message": "字符串字面量中有不受支持的转义序列",
+      "range": {
+        "start": {
+          "line": 731,
+          "character": 63
+        },
+        "end": {
+          "line": 731,
+          "character": 65
+        }
+      },
+      "rule": "reportInvalidStringEscapeSequence"
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 25,
+    "errorCount": 7,
+    "warningCount": 0,
+    "informationCount": 0,
+    "timeInSec": 0.822
+  },
+  "metadata": {
+    "check_time": "2026-01-12T20:02:37.266962",
+    "check_directory": "..\\autoBMAD\\epic_automation",
+    "python_files_count": 25,
+    "python_files": [
+      "..\\autoBMAD\\epic_automation\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\dev_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\qa_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "..\\autoBMAD\\epic_automation\\agents\\sdk_helper.py",
+      "..\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "..\\autoBMAD\\epic_automation\\agents\\state_agent.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\base_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\devqa_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\quality_controller.py",
+      "..\\autoBMAD\\epic_automation\\controllers\\sm_controller.py",
+      "..\\autoBMAD\\epic_automation\\core\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\core\\cancellation_manager.py",
+      "..\\autoBMAD\\epic_automation\\core\\sdk_executor.py",
+      "..\\autoBMAD\\epic_automation\\core\\sdk_result.py",
+      "..\\autoBMAD\\epic_automation\\epic_driver.py",
+      "..\\autoBMAD\\epic_automation\\init_db.py",
+      "..\\autoBMAD\\epic_automation\\log_manager.py",
+      "..\\autoBMAD\\epic_automation\\monitoring\\__init__.py",
+      "..\\autoBMAD\\epic_automation\\monitoring\\resource_monitor.py",
+      "..\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "..\\autoBMAD\\epic_automation\\state_manager.py"
+    ]
+  }
+}

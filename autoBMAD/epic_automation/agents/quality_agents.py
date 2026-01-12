@@ -3,14 +3,15 @@ Quality Agents - 重构后的质量检查 Agents
 增强后支持TaskGroup管理
 """
 from __future__ import annotations
+
+import asyncio
 import json
 import logging
-from anyio.abc import TaskGroup
-import anyio
-from abc import ABC
-from typing import Any, Dict, Optional
-import asyncio
 import subprocess
+from abc import ABC
+from typing import Any
+
+from anyio.abc import TaskGroup
 
 from .base_agent import BaseAgent
 
@@ -23,7 +24,7 @@ class BaseQualityAgent(BaseAgent, ABC):
     def __init__(
         self,
         name: str,
-        task_group: Optional[TaskGroup] = None,
+        task_group: TaskGroup | None = None,
     ):
         """
         初始化质量检查 Agent
@@ -35,7 +36,7 @@ class BaseQualityAgent(BaseAgent, ABC):
         super().__init__(name, task_group)
         self._log_execution(f"{name} initialized")
 
-    async def _run_subprocess(self, command: str, timeout: int = 300) -> Dict[str, Any]:
+    async def _run_subprocess(self, command: str, timeout: int = 300) -> dict[str, Any]:
         """
         运行子进程命令
 
@@ -70,7 +71,7 @@ class BaseQualityAgent(BaseAgent, ABC):
                 "stderr": process.stderr,
                 "success": process.returncode == 0
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.error(f"Command timed out after {timeout} seconds: {command}")
             return {
                 "status": "failed",
@@ -89,15 +90,15 @@ class BaseQualityAgent(BaseAgent, ABC):
 class RuffAgent(BaseQualityAgent):
     """Ruff 代码风格检查 Agent"""
 
-    def __init__(self, task_group: Optional[TaskGroup] = None):
+    def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("Ruff", task_group)
 
     async def execute(
         self,
         source_dir: str,
-        project_root: Optional[str] = None,
+        project_root: str | None = None,
         **kwargs: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         执行 Ruff 检查
 
@@ -114,7 +115,7 @@ class RuffAgent(BaseQualityAgent):
             # 构建 Ruff 命令
             command = f"ruff check {source_dir} --output-format=json"
 
-            result: Dict[str, Any] = await self._run_subprocess(command)
+            result: dict[str, Any] = await self._run_subprocess(command)
 
             if result["status"] == "completed":
                 # 解析 JSON 输出
@@ -123,7 +124,7 @@ class RuffAgent(BaseQualityAgent):
                     issues_list: list[Any] = json.loads(result["stdout"]) if result["stdout"] else []
                     error_count = len([i for i in issues_list if i.get("severity") == "error"])
                     warning_count = len([i for i in issues_list if i.get("severity") == "warning"])
-                    filenames = set(i.get("filename", "") for i in issues_list)
+                    filenames = {i.get("filename", "") for i in issues_list}
                     files_count = len(filenames)
                     return {
                         "status": "completed",
@@ -156,10 +157,10 @@ class RuffAgent(BaseQualityAgent):
 class BasedPyrightAgent(BaseQualityAgent):
     """BasedPyright 类型检查 Agent"""
 
-    def __init__(self, task_group: Optional[TaskGroup] = None):
+    def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("BasedPyright", task_group)
 
-    async def execute(self, source_dir: str, **kwargs: Any) -> Dict[str, Any]:
+    async def execute(self, source_dir: str, **kwargs: Any) -> dict[str, Any]:
         """
         执行 BasedPyright 检查
 
@@ -175,7 +176,7 @@ class BasedPyrightAgent(BaseQualityAgent):
             # 构建 BasedPyright 命令
             command = f"basedpyright {source_dir} --outputformat=json"
 
-            result: Dict[str, Any] = await self._run_subprocess(command)
+            result: dict[str, Any] = await self._run_subprocess(command)
 
             if result["status"] == "completed":
                 # 解析 JSON 输出
@@ -185,7 +186,7 @@ class BasedPyrightAgent(BaseQualityAgent):
                     issues_list: list[Any] = output_dict.get("generalDiagnostics", [])
                     error_count = len([i for i in issues_list if i.get("severity") == "error"])
                     warning_count = len([i for i in issues_list if i.get("severity") == "warning"])
-                    files_set = set(i.get("file", "") for i in issues_list)
+                    files_set = {i.get("file", "") for i in issues_list}
                     files_count = len(files_set)
 
                     return {
@@ -218,14 +219,14 @@ class BasedPyrightAgent(BaseQualityAgent):
 class PytestAgent(BaseQualityAgent):
     """Pytest 测试执行 Agent"""
 
-    def __init__(self, task_group: Optional[TaskGroup] = None):
+    def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("Pytest", task_group)
 
     async def execute(
         self,
         source_dir: str,
         test_dir: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         执行 Pytest 测试
 

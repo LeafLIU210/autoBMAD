@@ -35,7 +35,6 @@ so that the code is organized, installable, and follows Python best practices.
 3. README.md with installation instructions and basic usage
 4. Basic directory structure for source code, tests, and documentation
 5. Git repository initialization with appropriate .gitignore file
-6. Basic CI/CD configuration file (GitHub Actions or similar)
 
 **Estimated Effort:** 2 days
 **Dependencies:** None

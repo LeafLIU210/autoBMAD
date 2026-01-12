@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 from anyio.abc import TaskGroup
-import anyio
 
 from .base_controller import StateDrivenController
 from ..agents.state_agent import StateAgent
@@ -94,10 +93,13 @@ class DevQaController(StateDrivenController):
 
     async def _make_decision(self, current_state: str) -> str:
         """
-        基于当前状态做出 Dev-QA 决策
+        基于 StateAgent 解析的核心状态值做出 Dev-QA 决策
+        
+        循环模式：State → Dev/QA → State
+        每次循环开始和结束都通过 StateAgent 获取最新核心状态
 
         Args:
-            current_state: 当前状态
+            current_state: 上一次的状态（仅用于日志）
 
         Returns:
             str: 下一个状态
@@ -107,63 +109,80 @@ class DevQaController(StateDrivenController):
                 self._log_execution("Story path not set", "error")
                 return "Error"
 
-            # 重新读取当前状态
-            current_status = await self.state_agent.parse_status(self._story_path)
+            # 🎯 关键：每次决策前，先通过 StateAgent 获取核心状态值
+            self._log_execution("[State-Dev-QA Cycle] Querying StateAgent for current status")
+            
+            async def query_state():
+                return await self.state_agent.execute(self._story_path)
+            
+            current_status = await self._execute_within_taskgroup(query_state)
 
             if not current_status:
-                self._log_execution("Failed to parse current status", "error")
-                return "Failed"
+                self._log_execution("StateAgent failed to parse status", "error")
+                return "Error"
 
-            self._log_execution(f"Current status: {current_status}")
+            self._log_execution(f"[State Result] Core status: {current_status}")
 
-            # 状态决策逻辑
+            # 🎯 状态决策逻辑：基于核心状态值，不依赖数据库
             if current_status in ["Done", "Ready for Done"]:
-                self._log_execution(f"Story already in terminal state: {current_status}")
+                self._log_execution(f"Story reached terminal state: {current_status}")
                 return current_status
 
             elif current_status == "Failed":
                 # 允许重新开发失败的故事
-                self._log_execution("Story failed, retrying development")
+                self._log_execution("[Decision] Failed → Dev phase")
                 story_path = self._story_path
 
                 async def call_dev_agent():
                     return await self.dev_agent.execute(story_path)
 
                 await self._execute_within_taskgroup(call_dev_agent)
-                return "AfterDev"
+                
+                # 🎯 Dev 完成后，再次查询状态
+                self._log_execution("[Post-Dev] Querying StateAgent for updated status")
+                return await self._make_decision("AfterDev")
 
             elif current_status in ["Draft", "Ready for Development"]:
                 # 需要开发
-                self._log_execution("Development required")
+                self._log_execution(f"[Decision] {current_status} → Dev phase")
                 story_path = self._story_path
 
                 async def call_dev_agent():
                     return await self.dev_agent.execute(story_path)
 
                 await self._execute_within_taskgroup(call_dev_agent)
-                return "AfterDev"
+                
+                # 🎯 Dev 完成后，再次查询状态
+                self._log_execution("[Post-Dev] Querying StateAgent for updated status")
+                return await self._make_decision("AfterDev")
 
             elif current_status == "In Progress":
-                # 继续开发或进入 QA
-                self._log_execution("Development in progress")
+                # 继续开发
+                self._log_execution("[Decision] In Progress → Continue Dev phase")
                 story_path = self._story_path
 
                 async def call_dev_agent():
                     return await self.dev_agent.execute(story_path)
 
                 await self._execute_within_taskgroup(call_dev_agent)
-                return "AfterDev"
+                
+                # 🎯 Dev 完成后，再次查询状态
+                self._log_execution("[Post-Dev] Querying StateAgent for updated status")
+                return await self._make_decision("AfterDev")
 
             elif current_status == "Ready for Review":
                 # 需要 QA
-                self._log_execution("QA required")
+                self._log_execution("[Decision] Ready for Review → QA phase")
                 story_path = self._story_path
 
                 async def call_qa_agent():
                     return await self.qa_agent.execute(story_path)
 
                 await self._execute_within_taskgroup(call_qa_agent)
-                return "AfterQA"
+                
+                # 🎯 QA 完成后，再次查询状态
+                self._log_execution("[Post-QA] Querying StateAgent for updated status")
+                return await self._make_decision("AfterQA")
 
             else:
                 self._log_execution(f"Unknown status: {current_status}", "warning")

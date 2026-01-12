@@ -725,7 +725,7 @@ class StateManager:
                         # 格式4: **<key>: Draft** -> **<key>: Done**
                         updated_content = re.sub(
                             pattern,
-                            r"**\1**: " + markdown_status,
+                            f"**\\1**: {markdown_status}",
                             content,
                             flags=re.MULTILINE,
                         )
@@ -733,7 +733,7 @@ class StateManager:
                         # 格式4 (alternative): **<key>: Draft** -> **<key>: Done**
                         updated_content = re.sub(
                             pattern,
-                            r"**\1**: " + markdown_status,
+                            f"**\\1**: {markdown_status}",
                             content,
                             flags=re.MULTILINE,
                         )

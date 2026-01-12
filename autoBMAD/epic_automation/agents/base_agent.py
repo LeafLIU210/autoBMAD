@@ -102,62 +102,34 @@ class BaseAgent(ABC):
         **kwargs: Any
     ) -> Any:
         """
-        使用SDKExecutor执行SDK调用
+        使用execute_sdk_call执行SDK调用（简化版）
 
         Args:
-            sdk_executor: SDKExecutor实例
+            sdk_executor: 保留参数（不再使用）
             prompt: SDK提示词
             **kwargs: 其他参数
 
         Returns:
             SDK调用结果
         """
-        self._log_execution(f"Executing SDK call via SDKExecutor")
+        self._log_execution(f"Executing SDK call via execute_sdk_call")
 
         try:
-            # 动态导入 SafeClaudeSDK (从 sdk_wrapper)
-            from ..sdk_wrapper import SafeClaudeSDK
-            from ..core.sdk_result import SDKResult
+            # 使用sdk_helper的execute_sdk_call统一接口
+            from .sdk_helper import execute_sdk_call
 
-            # 创建 SDK 查询函数
-            async def sdk_query():
-                try:
-                    sdk = SafeClaudeSDK(prompt=prompt, options=None, log_manager=self._log_manager)
-                    # SafeClaudeSDK.execute() returns bool
-                    result = await sdk.execute()
-                    return result
-                except Exception as e:
-                    self._log_execution(f"SDK query error: {e}", "error")
-                    raise
-
-            # 目标检测函数 - 查找完成消息
-            def target_detector(message):
-                # 检测 Claude SDK 的完成信号
-                if isinstance(message, dict):
-                    # 检查是否是最终结果
-                    if message.get("type") == "done" or message.get("type") == "result":
-                        return True
-                    # 检查消息内容中的完成关键词
-                    content = str(message.get("content", "") or message.get("text", ""))
-                    if any(keyword in content.lower() for keyword in [
-                        "complete", "finished", "done", "success", "ready for review"
-                    ]):
-                        return True
-                return False
-
-            # 使用 SDKExecutor 执行
-            result = await sdk_executor.execute(
-                sdk_func=sdk_query,
-                target_predicate=target_detector,
+            result = await execute_sdk_call(
+                prompt=prompt,
                 agent_name=self.name,
-                **kwargs
+                timeout=kwargs.get('timeout', 1800.0),
+                permission_mode=kwargs.get('permission_mode', 'bypassPermissions')
             )
 
             self._log_execution(f"SDK call completed - Success: {result.is_success()}")
             return result
 
         except ImportError as e:
-            self._log_execution(f"Failed to import SafeClaudeSDK: {e}", "error")
+            self._log_execution(f"Failed to import SDK helper: {e}", "error")
             # 返回一个失败的 SDKResult
             from ..core.sdk_result import SDKResult, SDKErrorType
             return SDKResult(

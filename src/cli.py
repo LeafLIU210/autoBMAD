@@ -1,238 +1,314 @@
-"""Command-Line Interface for Bubble Sort Algorithm."""
+"""Command Line Interface for bubble sort application."""
 
 import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import List, Union, Optional
 
 from src.bubblesort import bubble_sort
 
 
-def parse_array_input(array_str: str) -> list[int | float]:
-    if not array_str or not array_str.strip():
+def parse_array_input(input_str: str) -> List[Union[int, float]]:
+    """Parse a string input into a list of numbers.
+
+    Args:
+        input_str: String representation of an array (e.g., "1, 2, 3" or "[1, 2, 3]")
+
+    Returns:
+        List of parsed numbers
+
+    Raises:
+        ValueError: If input is empty or contains invalid numbers
+    """
+    if not input_str or not input_str.strip():
         raise ValueError("Empty input")
-    array_str = array_str.strip()
-    if array_str.startswith("[") and array_str.endswith("]"):
-        array_str = array_str[1:-1]
-    if "," in array_str:
-        elements = array_str.split(",")
-    else:
-        elements = array_str.split()
+
+    # Remove brackets if present
+    input_str = input_str.strip()
+    if input_str.startswith('[') and input_str.endswith(']'):
+        input_str = input_str[1:-1]
+
+    # Split by comma or whitespace
+    parts = input_str.replace(',', ' ').split()
+
+    # Filter out empty parts
+    parts = [p.strip() for p in parts if p.strip()]
+
+    if not parts:
+        raise ValueError("Empty input")
+
     result = []
-    for elem in elements:
-        elem = elem.strip()
-        if not elem:
-            continue
+    for part in parts:
         try:
-            if "." in elem or "e" in elem.lower():
-                result.append(float(elem))
+            num = float(part)
+            # Check if it's an integer
+            if num.is_integer():
+                result.append(int(num))
             else:
-                result.append(int(elem))
-        except ValueError as err:
-            raise ValueError(f"Invalid number: {elem}") from err
+                result.append(num)
+        except ValueError:
+            raise ValueError(f"Invalid number: {part}")
+
     return result
 
 
-def read_from_file(file_path: str) -> list[int | float]:
-    path = Path(file_path)
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
+def read_from_file(file_path: str) -> List[Union[int, float]]:
+    """Read array data from a file.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        List of numbers from the file
+
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        ValueError: If file is empty or contains invalid data
+    """
     try:
-        content = path.read_text(encoding="utf-8-sig").strip()
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+
         if not content:
             raise ValueError("File is empty")
+
         return parse_array_input(content)
-    except (OSError, UnicodeDecodeError) as err:
-        raise ValueError(f"Error reading file: {err}") from err
+    except (OSError, UnicodeDecodeError) as e:
+        raise ValueError(f"Error reading file: {e}")
 
 
-def get_sorting_steps(data: list[int | float]) -> list[list[int | float]]:
+def get_sorting_steps(data: List[Union[int, float]]) -> List[List[Union[int, float]]]:
+    """Get all steps of the bubble sort algorithm.
+
+    Args:
+        data: List of numbers to sort
+
+    Returns:
+        List of lists showing each step of sorting
+    """
+    # Create a working copy
     steps = [data.copy()]
-    result = data.copy()
-    n = len(result)
-    for i in range(n - 1):
+    working = data.copy()
+    n = len(working)
+
+    if n <= 1:
+        return steps
+
+    swapped = True
+    for i in range(n):
         swapped = False
         for j in range(0, n - i - 1):
-            if result[j] > result[j + 1]:
-                result[j], result[j + 1] = result[j + 1], result[j]
+            if working[j] > working[j + 1]:
+                working[j], working[j + 1] = working[j + 1], working[j]
                 swapped = True
-                steps.append(result.copy())
+                steps.append(working.copy())
+
         if not swapped:
             break
+
     return steps
 
 
 def format_output(
-    data: list[int | float],
-    sorted_data: list[int | float],
+    original_data: List[Union[int, float]],
+    sorted_data: List[Union[int, float]],
     format_type: str = "default",
-    show_stats: bool = False,
+    show_stats: bool = False
 ) -> str:
+    """Format the sorting output.
+
+    Args:
+        original_data: Original unsorted data
+        sorted_data: Sorted data
+        format_type: Output format ("default", "json", "steps", "detailed")
+        show_stats: Whether to include statistics
+
+    Returns:
+        Formatted output string
+    """
     if format_type == "json":
-        output: dict[str, Any] = {"input": data, "sorted": sorted_data}
+        output = {"input": original_data, "sorted": sorted_data}
         if show_stats:
-            steps = get_sorting_steps(data)
             output["statistics"] = {
-                "comparisons": len(steps) * len(data) if len(steps) > 1 else 0,
-                "swaps": len(steps) - 1 if len(steps) > 1 else 0,
-                "steps": len(steps),
+                "comparisons": len(original_data) ** 2,  # Approximation
+                "swaps": sum(1 for i in range(len(original_data))
+                            for j in range(len(original_data) - 1)
+                            if original_data[i] > original_data[j]),
+                "steps": len(get_sorting_steps(original_data))
             }
         return json.dumps(output, indent=2)
+
     elif format_type == "steps":
-        steps = get_sorting_steps(data)
+        steps = get_sorting_steps(original_data)
         output_lines = ["Sorting Steps:"]
         for i, step in enumerate(steps):
             output_lines.append(f"Step {i}: {step}")
         return "\n".join(output_lines)
+
     elif format_type == "detailed":
-        output_lines = [f"Input: {data}", f"Sorted: {sorted_data}"]
+        lines = [f"Input: {original_data}", f"Sorted: {sorted_data}"]
         if show_stats:
-            steps = get_sorting_steps(data)
-            output_lines.append(
-                f"Comparisons: {len(steps) * len(data) if len(steps) > 1 else 0}"
-            )
-            output_lines.append(f"Swaps: {len(steps) - 1 if len(steps) > 1 else 0}")
-        return "\n".join(output_lines)
-    else:
+            lines.append(f"Comparisons: {len(original_data) ** 2}")
+            lines.append(f"Swaps: {sum(1 for i in range(len(original_data)) for j in range(len(original_data) - 1) if original_data[i] > original_data[j])}")
+            lines.append(f"Steps: {len(get_sorting_steps(original_data))}")
+        return "\n".join(lines)
+
+    else:  # default
         return str(sorted_data)
 
 
-def get_input_data(args: argparse.Namespace) -> list[int | float]:
-    # Check for array input first
+def get_input_data(args: argparse.Namespace) -> List[Union[int, float]]:
+    """Get input data from various sources.
+
+    Args:
+        args: Command line arguments namespace
+
+    Returns:
+        List of numbers
+
+    Raises:
+        ValueError: If no input provided
+    """
     if args.array is not None:
         return parse_array_input(args.array)
-    # Then check for file input
-    elif args.file:
+    elif args.file is not None:
         return read_from_file(args.file)
-    # Then check stdin (but not in interactive mode)
-    elif hasattr(args, "interactive") and args.interactive:
-        raise ValueError("No input provided")
-    elif not sys.stdin.isatty():
-        content = sys.stdin.read().strip()
-        if not content:
-            raise ValueError("No input received from stdin")
-        return parse_array_input(content)
-    # No input provided
+    elif hasattr(args, 'interactive') and args.interactive:
+        # Interactive mode - will prompt user
+        return []
     else:
-        raise ValueError("No input provided")
+        # Check stdin
+        if sys.stdin.isatty():
+            raise ValueError("No input provided")
+        else:
+            content = sys.stdin.read().strip()
+            if not content:
+                raise ValueError("No input received from stdin")
+            return parse_array_input(content)
 
 
-def validate_data(data: list[int | float]) -> None:
+def validate_data(data: List[Union[int, float]]) -> None:
+    """Validate input data.
+
+    Args:
+        data: List to validate
+
+    Raises:
+        ValueError: If data is invalid
+    """
     if not data:
         raise ValueError("No data to sort")
-    for elem in data:
-        if not isinstance(elem, (int, float)):
-            raise ValueError(f"Non-numeric value found: {elem}")
+
     if len(data) > 10000:
         raise ValueError("List too long (max 10000 elements)")
 
+    for item in data:
+        if not isinstance(item, (int, float)):
+            raise ValueError(f"Non-numeric value found: {item}")
 
-def interactive_mode():
-    print("Bubble Sort Interactive Mode")
-    print("Enter numbers separated by spaces or commas (or quit to exit)")
-    print("-" * 50)
+
+def interactive_mode() -> None:
+    """Run interactive mode for sorting."""
+    print("Interactive Mode - Enter numbers to sort (or 'quit' to exit)")
+    print("Example: 1, 2, 3 or [1, 2, 3]")
+
     while True:
         try:
-            user_input = input("\nEnter array: ").strip()
-            if user_input.lower() in ("quit", "exit", "q"):
+            user_input = input("\nEnter numbers: ").strip()
+
+            if user_input.lower() in ['quit', 'exit', 'q']:
                 print("Goodbye!")
                 break
+
             if not user_input:
                 continue
-            data = parse_array_input(user_input)
-            validate_data(data)
-            sorted_data = bubble_sort(data)
-            print(f"Sorted: {sorted_data}")
-        except (ValueError, EOFError, KeyboardInterrupt) as e:
-            if isinstance(e, (EOFError, KeyboardInterrupt)):
-                print("\nGoodbye!")
-                break
-            print(f"Error: {e}")
+
+            try:
+                data = parse_array_input(user_input)
+                validate_data(data)
+                sorted_data = bubble_sort(data)
+                print(f"Sorted: {sorted_data}")
+            except ValueError as e:
+                print(f"Error: {e}")
+        except (KeyboardInterrupt, EOFError):
+            print("\nGoodbye!")
+            break
 
 
-def batch_mode():
-    print("Bubble Sort Batch Mode")
-    print("Enter file paths (one per line, or quit to exit)")
-    print("-" * 50)
+def batch_mode() -> None:
+    """Run batch mode for sorting from files."""
+    print("Batch Mode - Enter file paths (or 'quit' to exit)")
+    print("Supported formats: .txt files with comma-separated or space-separated numbers")
+
     while True:
         try:
-            file_path = input("File path: ").strip()
-            if file_path.lower() in ("quit", "exit", "q"):
+            file_path = input("\nEnter file path: ").strip()
+
+            if file_path.lower() in ['quit', 'exit', 'q']:
                 print("Goodbye!")
                 break
+
             if not file_path:
                 continue
-            data = read_from_file(file_path)
-            validate_data(data)
-            sorted_data = bubble_sort(data)
-            print(f"File: {file_path}")
-            print(f"Input: {data}")
-            print(f"Sorted: {sorted_data}")
-            print()
-        except (ValueError, FileNotFoundError, EOFError, KeyboardInterrupt) as e:
-            if isinstance(e, (EOFError, KeyboardInterrupt)):
-                print("\nGoodbye!")
-                break
-            print(f"Error: {e}")
+
+            try:
+                data = read_from_file(file_path)
+                validate_data(data)
+                sorted_data = bubble_sort(data)
+                print(f"Sorted: {sorted_data}")
+            except (ValueError, FileNotFoundError) as e:
+                print(f"Error: {e}")
+        except (KeyboardInterrupt, EOFError):
+            print("\nGoodbye!")
+            break
 
 
-def main():
+def main() -> None:
+    """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
-        description="Bubble Sort Algorithm CLI",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""Examples:
-  %(prog)s [1, 3, 2, 5, 4]
-  %(prog)s 1,3,2,5,4
-  %(prog)s --file input.txt
-  cat input.txt | %(prog)s
-  %(prog)s --format detailed [5, 3, 8, 1]
-  %(prog)s --format steps [3, 1, 2]
-  %(prog)s --format json [5, 3, 8, 1]""",
+        description="Bubble Sort CLI - Sort lists of numbers",
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
+    # Input options
     input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument(
-        "array", nargs="?", help='Array to sort (e.g., "[1, 3, 2]" or "1, 3, 2")'
-    )
-    input_group.add_argument("-f", "--file", help="Read array from file")
-    input_group.add_argument(
-        "--interactive", action="store_true", help="Run in interactive mode"
-    )
-    input_group.add_argument(
-        "--batch",
-        action="store_true",
-        help="Run in batch mode (process multiple files)",
-    )
+    input_group.add_argument('array', nargs='?', help='Array to sort (e.g., "1, 2, 3")')
+    input_group.add_argument('-f', '--file', help='Read from file')
+    input_group.add_argument('--interactive', action='store_true', help='Run in interactive mode')
+    input_group.add_argument('--batch', action='store_true', help='Run in batch mode (process files)')
 
-    parser.add_argument(
-        "--format",
-        choices=["default", "detailed", "steps", "json"],
-        default="default",
-        help="Output format (default: default)",
-    )
-    parser.add_argument(
-        "--stats", action="store_true", help="Include statistics in output"
-    )
+    # Output options
+    parser.add_argument('--format', choices=['default', 'json', 'steps', 'detailed'],
+                       default='default', help='Output format')
+    parser.add_argument('--stats', action='store_true', help='Show statistics')
 
     args = parser.parse_args()
 
-    if args.interactive:
-        interactive_mode()
-        return
-    if args.batch:
-        batch_mode()
-        return
-
     try:
+        if args.interactive:
+            interactive_mode()
+            return
+
+        if args.batch:
+            batch_mode()
+            return
+
+        # Get and validate data
         data = get_input_data(args)
         validate_data(data)
+
+        # Sort data
         sorted_data = bubble_sort(data)
-        output = format_output(
-            data, sorted_data, format_type=args.format, show_stats=args.stats
-        )
+
+        # Format and output
+        output = format_output(data, sorted_data, args.format, args.stats)
         print(output)
-    except (ValueError, FileNotFoundError) as e:
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
     except KeyboardInterrupt:

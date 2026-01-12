@@ -1,0 +1,16 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\controllers\quality_controller.py
+
+BasedPyright type errors (5):  Line 12, Col 8: [reportUnusedImport] "anyio" 导入项未使用 (reportUnusedImport)
+  Line 46, Col 15: [unknown] 此 "execute" 方法以不兼容的方式覆写了 "BaseController" 类中的同名方法
+  Line 90, Col 32: [unknown] "str | None" 类型的实参无法赋值给函数 "execute" 中 "str" 类型的形参 "source_dir"
+  Line 101, Col 32: [unknown] "str | None" 类型的实参无法赋值给函数 "execute" 中 "str" 类型的形参 "source_dir"
+  Line 111, Col 36: [unknown] "str | None" 类型的实参无法赋值给函数 "execute" 中 "str" 类型的形参 "source_dir"
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.

@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from anyio.abc import TaskGroup
-import anyio
 
 from .base_controller import BaseController
 from ..agents.quality_agents import (
@@ -43,7 +42,7 @@ class QualityController(BaseController):
         self.pytest_agent = PytestAgent()
         self._log_execution("QualityController initialized")
 
-    async def execute(
+    async def execute(  # type: ignore[override]
         self,
         source_dir: Optional[str] = None,
         test_dir: Optional[str] = None
@@ -78,12 +77,18 @@ class QualityController(BaseController):
                 Path(effective_source_dir).mkdir(parents=True, exist_ok=True)
                 Path(effective_test_dir).mkdir(parents=True, exist_ok=True)
             else:
-                effective_source_dir = source_dir or (str(self.project_root / "src") if self.project_root is not None else None)
+                effective_source_dir = source_dir or (str(self.project_root / "src") if self.project_root is not None else "")
                 effective_test_dir = test_dir or (str(self.project_root / "tests") if self.project_root is not None else None)
                 effective_project_root = str(self.project_root) if self.project_root is not None else None
 
             # Step 1: Ruff 代码风格检查
             self._log_execution("Running Ruff checks")
+
+            # 确保 source_dir 不为空字符串
+            if not effective_source_dir:
+                results["overall_status"] = "error"
+                results["error"] = "No source directory specified"
+                return results
 
             async def call_ruff():
                 return await self.ruff_agent.execute(

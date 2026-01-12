@@ -527,9 +527,6 @@ A: Yes, by modifying task guidance files in `.bmad-core/tasks/`.
 **Q: Is this safe for production?**
 A: This is a template for development automation. Review and test before production use.
 
-**Q: Can I integrate with CI/CD?**
-A: Yes, you can run it in CI/CD pipelines with proper Claude SDK configuration.
-
 **Q: How do I update to a new version?**
 A: Copy the new template over the old one, keeping your task guidance files.
 

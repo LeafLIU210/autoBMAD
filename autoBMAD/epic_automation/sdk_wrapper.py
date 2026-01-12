@@ -501,24 +501,14 @@ class SafeClaudeSDK:
                         from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
                         manager = get_cancellation_manager()  # type: ignore[func-call]
 
-                        # 检查active_sdk_calls中是否有结果
-                        if manager.active_sdk_calls:  # type: ignore[attr-defined]
-                            latest_call_id = list(manager.active_sdk_calls.keys())[-1]  # type: ignore[arg-type, attr-defined]
-                            latest_call = manager.active_sdk_calls[latest_call_id]  # type: ignore[attr-defined]
-                            if "result_received_at" in latest_call or "result" in latest_call:
+                        # 检查_active_calls中是否有结果
+                        if manager._active_calls:  # type: ignore[attr-defined]
+                            latest_call_id = list(manager._active_calls.keys())[-1]  # type: ignore[arg-type, attr-defined]
+                            latest_call = manager._active_calls[latest_call_id]  # type: ignore[attr-defined]
+                            if latest_call.has_target_result:
                                 logger.info(
                                     "[SafeClaudeSDK] Cancel scope error detected but result already received "
                                     "in active call. Treating as success."
-                                )
-                                return True
-
-                        # 检查completed_calls
-                        if manager.completed_calls:  # type: ignore[attr-defined]
-                            latest_call = manager.completed_calls[-1]  # type: ignore[attr-defined]
-                            if latest_call.get("result_received", False):
-                                logger.info(
-                                    "[SafeClaudeSDK] Cancel scope error detected but result already received "
-                                    "in completed call. Treating as success."
                                 )
                                 return True
 
@@ -582,11 +572,12 @@ class SafeClaudeSDK:
 
         except asyncio.CancelledError:
             # 🎯 统一处理：完全委托给管理器决策
-            cancel_type = manager.check_cancellation_type(call_id)
+            call_info = manager.get_call_info(call_id)
+            cancel_type = "after_success" if (call_info and call_info.has_target_result) else "immediate"
 
             if cancel_type == "after_success":
                 # 管理器确认工作已完成，等待清理完成
-                await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
+                await manager.confirm_safe_to_proceed(call_id, timeout=5.0)
                 logger.info(
                     "[SafeClaudeSDK] Cancellation suppressed - "
                     "SDK completed successfully (confirmed by manager)"
@@ -597,7 +588,7 @@ class SafeClaudeSDK:
             # 这样可以避免 CancelledError 向上传播导致工作流中断
             logger.warning("SDK execution was cancelled (confirmed by manager), continuing workflow")
             # 等待清理完成
-            await manager.wait_for_cancellation_complete(call_id, timeout=5.0)
+            await manager.confirm_safe_to_proceed(call_id, timeout=5.0)
             return False  # ✅ 返回 False 而不是 raise，让工作流继续
 
         except Exception as e:
@@ -703,7 +694,7 @@ class SafeClaudeSDK:
                         result_str = str(result) if result else "No content"
 
                         # 🎯 关键：立即标记结果接收
-                        manager.mark_result_received(call_id, result_str)
+                        manager.mark_target_result_found(call_id)
 
                         logger.info(f"[SDK Success] Claude SDK result: {result_str[:100]}")
                         return True
@@ -746,7 +737,7 @@ class SafeClaudeSDK:
                 else:
                     result = getattr(last_result_message, "result", None)
                     result_str = str(result) if result else "No content"
-                    manager.mark_result_received(call_id, result_str)
+                    manager.mark_target_result_found(call_id)
                     logger.info(f"[SDK Success] Result retrieved despite cancellation: {result_str[:100]}")
                     return True
             else:
@@ -791,29 +782,26 @@ class SafeClaudeSDK:
             manager = get_cancellation_manager()  # type: ignore[func-call]
 
             # 🎯 关键：确保所有活跃调用都已清理
-            # active_sdk_calls 应该为空，否则 wait_for_cancellation_complete() 会超时
-            active_count = len(manager.active_sdk_calls)  # type: ignore[arg-type, attr-defined]
+            # _active_calls 应该为空，否则 confirm_safe_to_proceed() 会超时
+            active_count = len(manager._active_calls)  # type: ignore[attr-defined]
             if active_count > 0:
                 logger.warning(
                     f"[SafeClaudeSDK] {active_count} active SDK calls still present during rebuild. "
                     f"Forcing cleanup..."
                 )
                 # 强制清理
-                manager.active_sdk_calls.clear()  # type: ignore[attr-defined]
+                manager._active_calls.clear()  # type: ignore[attr-defined]
 
             # 🎯 验证取消调用的清理状态
-            incomplete_cleanups: list[dict[str, Any]] = [  # type: ignore[assignment]
-                call for call in manager.cancelled_calls  # type: ignore[attr-defined]
-                if not call.get("cleanup_completed", False)
+            incomplete_cleanups = [
+                call for call in manager._active_calls.values()  # type: ignore[attr-defined]
+                if call.cancel_requested and not call.cleanup_completed
             ]
             if incomplete_cleanups:
                 logger.warning(
                     f"[SafeClaudeSDK] {len(incomplete_cleanups)} cancelled calls have incomplete cleanup. "
                     f"This may cause confirm_safe_to_proceed() to fail."
                 )
-
-            # 重置统计信息
-            manager.stats["cross_task_errors"] = manager.stats.get("cross_task_errors", 0) + 1  # type: ignore[attr-defined]
 
             logger.info(
                 "[SafeClaudeSDK] ✅ Execution context rebuilt successfully "

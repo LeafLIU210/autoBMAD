@@ -69,7 +69,7 @@ CORE_TO_PROCESSING_MAPPING = {
     CORE_STATUS_READY_FOR_DEVELOPMENT: "pending",
     CORE_STATUS_IN_PROGRESS: "in_progress",
     CORE_STATUS_READY_FOR_REVIEW: "review",
-    CORE_STATUS_READY_FOR_DONE: "review",
+    CORE_STATUS_READY_FOR_DONE: "completed",
     CORE_STATUS_DONE: "completed",
     CORE_STATUS_FAILED: "failed",
 }

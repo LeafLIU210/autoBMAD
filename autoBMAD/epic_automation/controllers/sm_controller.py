@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 from anyio.abc import TaskGroup
-import anyio
 
 from .base_controller import StateDrivenController
 from ..agents.sm_agent import SMAgent

@@ -15,7 +15,7 @@ import anyio
 import time
 import uuid
 import logging
-from typing import Callable, Any, TYPE_CHECKING
+from typing import Callable, Any, TYPE_CHECKING, Union, Awaitable
 from collections.abc import AsyncIterator
 
 from .sdk_result import SDKResult, SDKErrorType
@@ -47,7 +47,7 @@ class SDKExecutor:
 
     async def execute(
         self,
-        sdk_func: Callable[[], AsyncIterator[Any]],
+        sdk_func: Union[Callable[[], AsyncIterator[Any]], Callable[[], Awaitable[Any]]],
         target_predicate: Callable[[Any], bool],
         *,
         timeout: float | None = None,
@@ -140,7 +140,7 @@ class SDKExecutor:
     async def _execute_in_taskgroup(
         self,
         task_group: 'TaskGroup',
-        sdk_func: Callable[[], AsyncIterator[Any]],
+        sdk_func: Union[Callable[[], AsyncIterator[Any]], Callable[[], Awaitable[Any]]],
         target_predicate: Callable[[Any], bool],
         call_id: str,
         agent_name: str,
@@ -172,7 +172,7 @@ class SDKExecutor:
         start_time = time.time()
 
         try:
-            # 检查sdk_func是否是async generator或协程
+            # 检查sdk_func的类型来决定处理方式
             import inspect
             if inspect.isasyncgenfunction(sdk_func):
                 # 原始的async generator逻辑
@@ -201,9 +201,9 @@ class SDKExecutor:
 
                 # 生成器正常结束，标记清理完成
                 self.cancel_manager.mark_cleanup_completed(call_id)
-            else:
-                # 新的协程逻辑（返回bool或其他值）
-                sdk_result = await sdk_func()
+            elif inspect.iscoroutinefunction(sdk_func):
+                # 协程函数 - await并获取结果
+                sdk_result: Any = await sdk_func()
 
                 # 如果SDK返回bool，创建一个ynthetic消息
                 if isinstance(sdk_result, bool):
@@ -228,8 +228,11 @@ class SDKExecutor:
                         errors.append(f"Target predicate error: {e}")
                         logger.error(f"[{agent_name}] Target predicate error: {e}")
 
-                # 生成器正常结束，标记清理完成
+                # 协程正常结束，标记清理完成
                 self.cancel_manager.mark_cleanup_completed(call_id)
+            else:
+                # 其他类型，尝试直接调用
+                raise TypeError(f"Unsupported sdk_func type: {type(sdk_func)}")
 
             # 等待确认可以安全进行
             safe = await self.cancel_manager.confirm_safe_to_proceed(call_id)
@@ -240,16 +243,21 @@ class SDKExecutor:
             if not target_message:
                 errors.append("No target result found")
 
+            # 确保变量有正确类型
+            typed_messages: list[Any] = messages
+            typed_target_message: Any = target_message
+            typed_errors: list[str] = errors
+
             return SDKResult(
-                has_target_result=target_message is not None,
+                has_target_result=typed_target_message is not None,
                 cleanup_completed=safe,
                 duration_seconds=duration,
                 session_id=f"{agent_name}-{call_id[:8]}",
                 agent_name=agent_name,
-                messages=messages,
-                target_message=target_message,
-                error_type=SDKErrorType.SUCCESS if target_message else SDKErrorType.UNKNOWN,
-                errors=errors
+                messages=typed_messages,
+                target_message=typed_target_message,
+                error_type=SDKErrorType.SUCCESS if typed_target_message else SDKErrorType.UNKNOWN,
+                errors=typed_errors
             )
 
         except anyio.get_cancelled_exc_class() as e:
@@ -257,15 +265,19 @@ class SDKExecutor:
             duration = time.time() - start_time
             errors.append(f"Cancelled: {e}")
 
+            # 确保变量有正确类型 (重新赋值避免遮蔽)
+            cancel_messages: list[Any] = messages
+            cancel_errors: list[str] = errors
+
             return SDKResult(
                 has_target_result=False,
                 cleanup_completed=False,
                 duration_seconds=duration,
                 session_id=f"{agent_name}-{call_id[:8]}",
                 agent_name=agent_name,
-                messages=messages,
+                messages=cancel_messages,
                 error_type=SDKErrorType.CANCELLED,
-                errors=errors,
+                errors=cancel_errors,
                 last_exception=e
             )
 

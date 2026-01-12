@@ -1,76 +1,159 @@
-"""Shared test fixtures for bubble sort tests."""
+"""Shared pytest fixtures for spec automation tests."""
 
+import asyncio
+import tempfile
+from pathlib import Path
+from typing import Any, AsyncIterator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import anyio
 
 
 @pytest.fixture
-def empty_list() -> list:
-    """Return an empty list."""
-    return []
+def event_loop():
+    """Create an event loop for async tests."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture
-def single_element_list() -> list[int]:
-    """Return a single element list."""
-    return [42]
+def temp_dir():
+    """Create a temporary directory for tests."""
+    import tempfile
+    import shutil
+
+    temp_path = tempfile.mkdtemp()
+    yield Path(temp_path)
+    shutil.rmtree(temp_path, ignore_errors=True)
 
 
 @pytest.fixture
-def already_sorted_list() -> list[int]:
-    """Return an already sorted list."""
-    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+def mock_task_group():
+    """Create a mock TaskGroup for testing."""
+    task_group = MagicMock()
+    task_group.start = AsyncMock()
+    return task_group
 
 
 @pytest.fixture
-def reverse_sorted_list() -> list[int]:
-    """Return a reverse sorted list."""
-    return [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+def mock_sdk_result():
+    """Create a mock SDKResult for testing."""
+    from autoBMAD.epic_automation.core.sdk_result import SDKResult, SDKErrorType
+
+    return SDKResult(
+        has_target_result=True,
+        cleanup_completed=True,
+        duration_seconds=1.0,
+        session_id="test-session",
+        agent_name="TestAgent",
+        messages=[],
+        error_type=SDKErrorType.SUCCESS,
+        errors=[],
+    )
 
 
 @pytest.fixture
-def random_order_list() -> list[int]:
-    """Return a random order list."""
-    return [5, 3, 8, 4, 2, 7, 1, 6, 9, 10]
+def mock_cancellation_manager():
+    """Create a mock CancellationManager for testing."""
+    from autoBMAD.epic_automation.core.cancellation_manager import CancellationManager
+
+    return CancellationManager()
 
 
 @pytest.fixture
-def negative_numbers_list() -> list[int]:
-    """Return a list with negative numbers."""
-    return [5, -3, 0, -10, 2, 7, -5]
+def mock_sdk_executor():
+    """Create a mock SDKExecutor for testing."""
+    from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
+
+    executor = MagicMock(spec=SDKExecutor)
+    executor.cancel_manager = MagicMock()
+    executor.cancel_manager.get_active_calls_count.return_value = 0
+    return executor
 
 
 @pytest.fixture
-def floats_list() -> list[float]:
-    """Return a list with float numbers."""
-    return [3.5, 1.2, 2.8, 0.5, 4.1, 2.3]
+def sample_story_content():
+    """Sample story markdown content for testing."""
+    return """# Story 1.1: Test Story
+
+## Status
+Status: Draft
+
+## Acceptance Criteria
+- [ ] Criteria 1
+- [ ] Criteria 2
+
+## Dev Agent Record
+Tasks:
+- [ ] Task 1
+- [ ] Task 2
+"""
 
 
 @pytest.fixture
-def mixed_int_float_list() -> list:
-    """Return a list with mixed int and float."""
-    return [5, 1.5, 3, 2.7, 4, 0.5]
+async def mock_state_manager(temp_dir):
+    """Create a StateManager with temporary database."""
+    from autoBMAD.epic_automation.state_manager import StateManager
+
+    db_path = temp_dir / "test.db"
+    manager = StateManager(db_path=str(db_path), use_connection_pool=False)
+    yield manager
 
 
 @pytest.fixture
-def duplicate_elements_list() -> list[int]:
-    """Return a list with duplicate elements."""
-    return [3, 1, 2, 3, 1, 5, 2, 1]
+def mock_agent():
+    """Create a mock agent for testing."""
+    class MockAgent:
+        def __init__(self, name="MockAgent"):
+            self.name = name
+            self.executed = False
+            self.execution_args = None
+            self.execution_kwargs = None
+
+        async def execute(self, *args, **kwargs):
+            self.executed = True
+            self.execution_args = args
+            self.execution_kwargs = kwargs
+            return {"status": "success", "agent": self.name}
+
+    return MockAgent
 
 
 @pytest.fixture
-def all_same_elements_list() -> list[int]:
-    """Return a list with all same elements."""
-    return [5, 5, 5, 5, 5]
+async def async_generator_fixture():
+    """Create an async generator for testing."""
+    async def async_generator():
+        for i in range(3):
+            yield {"value": i, "type": "data"}
+
+    return async_generator()
 
 
 @pytest.fixture
-def large_numbers_list() -> list[int]:
-    """Return a list with large numbers."""
-    return [1000, 5000, 100, 500, 10000, 50]
+def mock_sdk_helper():
+    """Create a mock SDK helper for testing."""
+    with patch("autoBMAD.epic_automation.agents.sdk_helper.execute_sdk_call") as mock:
+        yield mock
 
 
 @pytest.fixture
-def partially_sorted_list() -> list[int]:
-    """Return a partially sorted list."""
-    return [1, 2, 5, 3, 4, 6, 7, 8]
+def mock_log_manager():
+    """Create a mock log manager for testing."""
+    log_manager = MagicMock()
+    log_manager.log = MagicMock()
+    return log_manager
+
+
+@pytest.fixture
+def concrete_agent_class():
+    """Return the ConcreteAgent class for testing."""
+    from autoBMAD.spec_automation.tests.test_base_agent import ConcreteAgent
+    return ConcreteAgent
+
+
+@pytest.fixture(params=["asyncio", "anyio"])
+def anyio_backend(request):
+    """Parametrized fixture for anyio backends."""
+    return request.param

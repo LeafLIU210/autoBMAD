@@ -1,0 +1,324 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260112_192415.txt",
+    "extraction_time": "2026-01-12T19:24:19.692654",
+    "total_files_with_errors": 11,
+    "total_errors": 29,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnknownParameterType": 1,
+        "reportMissingParameterType": 1,
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 134,
+          "column": 33,
+          "message": "\"message\" 参数的类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 134,
+          "column": 33,
+          "message": "\"message\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 141,
+          "column": 35,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 9,
+          "column": 8,
+          "message": "\"anyio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\sdk_helper.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportConstantRedefinition": 1,
+        "unknown": 1,
+        "reportOptionalCall": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 35,
+          "column": 5,
+          "message": "不能重新定义常量 \"SDK_AVAILABLE\"（全大写名称） (reportConstantRedefinition)",
+          "rule": "reportConstantRedefinition"
+        },
+        {
+          "line": 122,
+          "column": 25,
+          "message": "\"str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"PermissionMode | None\" 类型的形参 \"permission_mode\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 132,
+          "column": 15,
+          "message": "`None` 不支持调用 (reportOptionalCall)",
+          "rule": "reportOptionalCall"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnusedImport": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 8,
+          "column": 8,
+          "message": "\"os\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 10,
+          "column": 8,
+          "message": "\"time\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 745,
+          "column": 41,
+          "message": "\"PathlibPath\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\controllers\\devqa_controller.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 10,
+          "column": 8,
+          "message": "\"anyio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\controllers\\quality_controller.py",
+      "error_count": 5,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "unknown": 4
+      },
+      "errors_by_tool": {
+        "basedpyright": 5
+      },
+      "errors": [
+        {
+          "line": 12,
+          "column": 8,
+          "message": "\"anyio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 46,
+          "column": 15,
+          "message": "此 \"execute\" 方法以不兼容的方式覆写了 \"BaseController\" 类中的同名方法",
+          "rule": "unknown"
+        },
+        {
+          "line": 90,
+          "column": 32,
+          "message": "\"str | None\" 类型的实参无法赋值给函数 \"execute\" 中 \"str\" 类型的形参 \"source_dir\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 101,
+          "column": 32,
+          "message": "\"str | None\" 类型的实参无法赋值给函数 \"execute\" 中 \"str\" 类型的形参 \"source_dir\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 111,
+          "column": 36,
+          "message": "\"str | None\" 类型的实参无法赋值给函数 \"execute\" 中 \"str\" 类型的形参 \"source_dir\"",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\controllers\\sm_controller.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 11,
+          "column": 8,
+          "message": "\"anyio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\core\\sdk_executor.py",
+      "error_count": 5,
+      "errors_by_rule": {
+        "unknown": 5
+      },
+      "errors_by_tool": {
+        "basedpyright": 5
+      },
+      "errors": [
+        {
+          "line": 206,
+          "column": 36,
+          "message": "\"AsyncIterator[Any]\" 不支持 `await`",
+          "rule": "unknown"
+        },
+        {
+          "line": 249,
+          "column": 26,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 252,
+          "column": 24,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 266,
+          "column": 26,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 268,
+          "column": 24,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 1124,
+          "column": 58,
+          "message": "根据标注的返回类型，该函数必须在所有代码路径上返回 \"bool\" 类型的值",
+          "rule": "unknown"
+        },
+        {
+          "line": 1175,
+          "column": 79,
+          "message": "根据标注的返回类型，该函数必须在所有代码路径上返回 \"bool\" 类型的值",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\sdk_wrapper.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "unknown": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 585,
+          "column": 35,
+          "message": "无法访问 \"CancellationManager\" 类的 \"check_cancellation_type\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 589,
+          "column": 31,
+          "message": "无法访问 \"CancellationManager\" 类的 \"wait_for_cancellation_complete\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 600,
+          "column": 27,
+          "message": "无法访问 \"CancellationManager\" 类的 \"wait_for_cancellation_complete\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "reportInvalidStringEscapeSequence": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 732,
+          "column": 62,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        },
+        {
+          "line": 732,
+          "column": 64,
+          "message": "字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)",
+          "rule": "reportInvalidStringEscapeSequence"
+        }
+      ]
+    }
+  ]
+}

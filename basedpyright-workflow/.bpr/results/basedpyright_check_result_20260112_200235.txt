@@ -1,0 +1,53 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-12 20:02:36
+检查目录: ..\autoBMAD\epic_automation
+Python文件数量: 25
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. ..\autoBMAD\epic_automation\__init__.py
+  2. ..\autoBMAD\epic_automation\agents\__init__.py
+  3. ..\autoBMAD\epic_automation\agents\base_agent.py
+  4. ..\autoBMAD\epic_automation\agents\dev_agent.py
+  5. ..\autoBMAD\epic_automation\agents\qa_agent.py
+  6. ..\autoBMAD\epic_automation\agents\quality_agents.py
+  7. ..\autoBMAD\epic_automation\agents\sdk_helper.py
+  8. ..\autoBMAD\epic_automation\agents\sm_agent.py
+  9. ..\autoBMAD\epic_automation\agents\state_agent.py
+ 10. ..\autoBMAD\epic_automation\controllers\__init__.py
+ 11. ..\autoBMAD\epic_automation\controllers\base_controller.py
+ 12. ..\autoBMAD\epic_automation\controllers\devqa_controller.py
+ 13. ..\autoBMAD\epic_automation\controllers\quality_controller.py
+ 14. ..\autoBMAD\epic_automation\controllers\sm_controller.py
+ 15. ..\autoBMAD\epic_automation\core\__init__.py
+ 16. ..\autoBMAD\epic_automation\core\cancellation_manager.py
+ 17. ..\autoBMAD\epic_automation\core\sdk_executor.py
+ 18. ..\autoBMAD\epic_automation\core\sdk_result.py
+ 19. ..\autoBMAD\epic_automation\epic_driver.py
+ 20. ..\autoBMAD\epic_automation\init_db.py
+ 21. ..\autoBMAD\epic_automation\log_manager.py
+ 22. ..\autoBMAD\epic_automation\monitoring\__init__.py
+ 23. ..\autoBMAD\epic_automation\monitoring\resource_monitor.py
+ 24. ..\autoBMAD\epic_automation\sdk_wrapper.py
+ 25. ..\autoBMAD\epic_automation\state_manager.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py:8:8 - error: "os" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py:10:8 - error: "time" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py:742:41 - error: "PathlibPath" 导入项未使用 (reportUnusedImport)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:1124:58 - error: 根据标注的返回类型，该函数必须在所有代码路径上返回 "bool" 类型的值
+    "None" 与 "bool" 不兼容 (reportReturnType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:1175:79 - error: 根据标注的返回类型，该函数必须在所有代码路径上返回 "bool" 类型的值
+    "None" 与 "bool" 不兼容 (reportReturnType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:732:62 - error: 字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:732:64 - error: 字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)
+7 errors, 0 warnings, 0 notes
+

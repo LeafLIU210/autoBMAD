@@ -1167,9 +1167,13 @@ class EpicDriver:
 
         except Exception as e:
             logger.error(f"SM phase failed for {story_path}: {e}")
-            await self.state_manager.update_story_status(
-                story_path=story_path, status="error", error=str(e)
-            )
+            try:
+                await self.state_manager.update_story_status(
+                    story_path=story_path, status="error", error=str(e)
+                )
+            except Exception:
+                # Suppress exceptions during error handling to ensure we return False
+                pass
             return False
 
     async def execute_dev_phase(self, story_path: str, iteration: int = 1) -> bool:
@@ -1190,9 +1194,13 @@ class EpicDriver:
             logger.error(
                 f"Max iterations ({self.max_iterations}) reached for {story_path}"
             )
-            await self.state_manager.update_story_status(
-                story_path=story_path, status="failed", error="Max iterations exceeded"
-            )
+            try:
+                await self.state_manager.update_story_status(
+                    story_path=story_path, status="failed", error="Max iterations exceeded"
+                )
+            except Exception:
+                # Suppress exceptions during error handling
+                pass
             return False
 
         try:
@@ -1214,28 +1222,23 @@ class EpicDriver:
                 # Execute Dev-QA pipeline using the controller
                 result: bool = await devqa_controller.execute(story_path)
 
-                # Update state
-                state_update_success = await self.state_manager.update_story_status(
-                    story_path=story_path,
-                    status="completed",  # 从 "dev_completed" 更新为 "completed"
-                    phase="dev",
-                    iteration=iteration,
-                )
-
-                if not state_update_success:
-                    logger.warning(
-                        f"State update failed for {story_path} but business logic completed, "
-                        f"continuing with dev_completed status"
-                    )
+                # 🎯 改进：不再在 execute_dev_phase 中写入 completed。
+                # 状态由 DevAgent/QAAgent 在执行后更新故事文档，
+                # StateAgent 解析文档状态作为循环决策依据。
+                # 数据库 update_story_status 仅用于记录/报告，不影响循环决策。
 
                 logger.info(f"Dev phase completed for {story_path}")
                 return result
 
         except Exception as e:
             logger.error(f"Dev phase failed for {story_path}: {e}")
-            await self.state_manager.update_story_status(
-                story_path=story_path, status="error", error=str(e)
-            )
+            try:
+                await self.state_manager.update_story_status(
+                    story_path=story_path, status="error", error=str(e)
+                )
+            except Exception:
+                # Suppress exceptions during error handling to ensure we return False
+                pass
             return False
 
     async def execute_qa_phase(self, story_path: str) -> bool:
@@ -1321,13 +1324,13 @@ class EpicDriver:
         story_id = story["id"]
 
         try:
-            # 检查是否已完成
-            existing_status: dict[str, Any] = await self.state_manager.get_story_status(
-                story_path
-            )
-            if existing_status and existing_status.get("status") in ["completed", "qa_waived"]:
-                logger.info(f"Story already processed: {story_path} (status: {existing_status.get('status')})")
-                return True
+            # 🎯 关键修复：移除数据库状态检查，完全依赖故事文档核心状态
+            # 旧逻辑（已废弃）：
+            # existing_status = await self.state_manager.get_story_status(story_path)
+            # if existing_status and existing_status.get("status") in ["completed", "qa_waived"]:
+            #     return True
+            # 
+            # 新逻辑：所有决策由核心状态值驱动，数据库仅用于持久化记录
 
             # 🎯 核心改动：循环由核心状态值驱动
             iteration = 1
