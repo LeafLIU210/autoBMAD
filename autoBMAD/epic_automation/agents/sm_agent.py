@@ -45,7 +45,7 @@ class SMAgent(BaseAgent):
         try:
             from ..core.sdk_executor import SDKExecutor
             self.sdk_executor = SDKExecutor()
-        except ImportError:
+        except (ImportError, TypeError):
             self._log_execution("SDKExecutor not available", "warning")
 
         # Initialize SimpleStoryParser
@@ -849,3 +849,55 @@ Please complete the story file now."""
         except Exception as e:
             self._log_execution(f"Failed to verify story file: {e}", "error")
             return False
+
+    def _update_story_status_in_content(self, story_content: str, new_status: str) -> str:
+        """
+        Update the status in story content.
+
+        Args:
+            story_content: The story content to update
+            new_status: The new status value
+
+        Returns:
+            Updated story content with new status
+        """
+        lines = story_content.split('\n')
+        for i, line in enumerate(lines):
+            if line.strip().startswith('Status:'):
+                lines[i] = f"Status: {new_status}"
+                break
+
+        return '\n'.join(lines)
+
+    def _extract_story_sections(self, story_content: str) -> dict[str, str]:
+        """
+        Extract sections from story content.
+
+        Args:
+            story_content: The story content to parse
+
+        Returns:
+            Dictionary of section names to content
+        """
+        sections = {}
+        current_section = None
+        current_content = []
+
+        for line in story_content.split('\n'):
+            if line.strip().startswith('## '):
+                # Save previous section
+                if current_section:
+                    sections[current_section] = '\n'.join(current_content).strip()
+
+                # Start new section
+                current_section = line.strip()[3:].strip()
+                current_content = []
+            else:
+                if current_section:
+                    current_content.append(line)
+
+        # Save last section
+        if current_section:
+            sections[current_section] = '\n'.join(current_content).strip()
+
+        return sections

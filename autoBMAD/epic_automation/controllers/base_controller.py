@@ -9,6 +9,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from typing import Any
+from unittest.mock import MagicMock, AsyncMock
 
 from anyio.abc import TaskGroup
 import anyio
@@ -59,39 +60,24 @@ class BaseController(ABC):
             raise RuntimeError(f"{self.__class__.__name__}: TaskGroup not set")
 
         # 检查是否是Mock对象（用于测试）
-        from unittest.mock import MagicMock, AsyncMock
         if isinstance(self.task_group, (MagicMock, AsyncMock)):
             # 对于Mock对象，直接执行协程，不使用TaskGroup
             return await coro()
 
-        async def wrapper(*, task_status: Any = anyio.TASK_STATUS_IGNORED) -> Any:  # type: ignore[misc,arg-type]
-            try:
-                # 通知TaskGroup任务已启动
-                if hasattr(task_status, 'started'):
-                    task_status.started()
+        async def wrapper(task_status: anyio.TaskStatus) -> Any:
+            # 执行协程
+            result = await coro()
 
-                # 执行协程
-                result = await coro()
+            # 添加同步点，确保操作完成
+            # 这防止了CancelScope跨任务访问问题
+            await anyio.sleep(0)
 
-                # 添加同步点，确保操作完成
-                # 这防止了CancelScope跨任务访问问题
-                await asyncio.sleep(0)
+            # 标记任务完成
+            task_status.started()  # type: ignore[reportAttributeAccessIssue]
 
-                return result
+            return result
 
-            except anyio.get_cancelled_exc_class() as e:
-                # 记录取消事件
-                self._log_execution("Task cancelled", "warning")
-                # 重新抛出异常，让上层处理
-                raise
-
-            except Exception as e:
-                # 记录未预期的错误
-                self._log_execution(f"Task execution error: {e}", "error")
-                # 重新抛出异常，保持错误传播
-                raise
-
-        return await self.task_group.start(wrapper)  # type: ignore[arg-type]
+        return await self.task_group.start(wrapper)
 
     def _log_execution(self, message: str, level: str = "info"):
         """记录执行日志"""

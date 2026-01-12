@@ -27,21 +27,24 @@ class LogManager:
     - Automatic log rotation by run count
     """
 
-    def __init__(self, base_dir: str = "autoBMAD/epic_automation"):
+    def __init__(self, base_dir: str = "autoBMAD/epic_automation", create_log_file: bool = False):
         """
         Initialize LogManager.
 
         Args:
             base_dir: Base directory for logs (default: autoBMAD/epic_automation)
+            create_log_file: Whether to create timestamped log files (default: False)
         """
         self.base_dir = Path(base_dir)
         self.logs_dir = self.base_dir / "logs"
         self.current_log_file: Path | None = None
         self.log_file_handle: TextIO | None = None
         self.start_time: datetime | None = None
+        self.create_log_file = create_log_file
 
-        # Ensure logs directory exists
-        self._ensure_logs_dir()
+        # Ensure logs directory exists only if we're creating log files
+        if self.create_log_file:
+            self._ensure_logs_dir()
 
     def _ensure_logs_dir(self):
         """Ensure logs directory exists, create if not."""
@@ -50,13 +53,18 @@ class LogManager:
         except Exception as e:
             _original_stdout.write(f"Warning: Failed to create logs directory: {e}\n")
 
-    def create_timestamped_log(self) -> Path:
+    def create_timestamped_log(self) -> Path | None:
         """
         Create a new timestamped log file.
 
         Returns:
-            Path to the created log file
+            Path to the created log file, or None if log file creation is disabled
         """
+        # If log file creation is disabled, return None
+        if not self.create_log_file:
+            _original_stdout.write("[LOG] Log file creation disabled - running in console-only mode\n")
+            return None
+
         self.start_time = datetime.now()
         timestamp = self.start_time.strftime("%Y%m%d_%H%M%S")
         log_filename = f"epic_{timestamp}.log"
@@ -94,6 +102,10 @@ class LogManager:
             message: Log message
             level: Log level (INFO, DEBUG, WARNING, ERROR, etc.)
         """
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if not self.log_file_handle or not self.start_time:
             return
 
@@ -121,6 +133,10 @@ class LogManager:
             message: SDK message content
             msg_type: Message type (THINKING, TOOL_USE, TOOL_RESULT, USER, SYSTEM, etc.)
         """
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if not self.log_file_handle or not self.start_time:
             return
 
@@ -152,6 +168,10 @@ class LogManager:
             exception: Exception object
             context: Additional context information
         """
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if not self.log_file_handle or not self.start_time:
             return
 
@@ -185,6 +205,10 @@ Traceback:
 
     def close_log(self):
         """Close current log file and write footer."""
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if not self.log_file_handle or not self.start_time:
             return
 
@@ -229,6 +253,10 @@ Traceback:
         Args:
             message: Cancellation message
         """
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if not self.log_file_handle:
             return
 
@@ -248,6 +276,10 @@ Traceback:
             story_path: Path to the story
             new_status: New status after resync
         """
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if not self.log_file_handle:
             return
 
@@ -290,6 +322,10 @@ Traceback:
         written to the log file. Useful for cleanup operations and ensuring
         log data persistence before program exit.
         """
+        # If log file creation is disabled, do nothing
+        if not self.create_log_file:
+            return
+
         if self.log_file_handle:
             try:
                 self.log_file_handle.flush()
@@ -410,6 +446,10 @@ def setup_dual_write(log_manager: LogManager):
     Args:
         log_manager: LogManager instance
     """
+    # Only setup dual-write if log file creation is enabled
+    if not log_manager.create_log_file:
+        return
+
     # Redirect stdout
     sys.stdout = DualWriteStream(sys.stdout, log_manager, "STDOUT")
 

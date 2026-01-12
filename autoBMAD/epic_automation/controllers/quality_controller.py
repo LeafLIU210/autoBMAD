@@ -42,7 +42,7 @@ class QualityController(BaseController):
         self.pytest_agent = PytestAgent()
         self._log_execution("QualityController initialized")
 
-    async def execute(  # type: ignore[override]
+    async def execute(  # type: ignore[override, reportIncompatibleMethodOverride]
         self,
         source_dir: Optional[str] = None,
         test_dir: Optional[str] = None

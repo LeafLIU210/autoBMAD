@@ -17,7 +17,7 @@
 """
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from ..core.sdk_executor import SDKExecutor
 from ..core.sdk_result import SDKResult, SDKErrorType
@@ -36,6 +36,13 @@ except ImportError:
 
 # 使用导入的常量
 SDK_AVAILABLE = _sdk_available
+
+
+class SDKOptions(TypedDict):
+    """SDK配置选项类型"""
+    permission_mode: str
+    cwd: str
+    cli_path: str | None
 
 
 class SDKNotAvailableError(Exception):
@@ -120,7 +127,7 @@ async def execute_sdk_call(
 
     # 创建SDK选项
     options = ClaudeAgentOptions(
-        permission_mode=permission_mode,  # type: ignore[arg-type]
+        permission_mode=permission_mode,  # type: ignore[arg-type, reportArgumentType]
         cwd=cwd or str(Path.cwd())
     )
 
@@ -191,10 +198,66 @@ def create_sdk_generator(
         try:
             from claude_agent_sdk import ClaudeAgentOptions  # type: ignore[import-untyped]
             options = ClaudeAgentOptions(
-                permission_mode="bypassPermissions",
+                permission_mode="bypassPermissions",  # type: ignore[arg-type, reportArgumentType]
                 cwd=str(Path.cwd())
             )
         except ImportError:
             raise SDKNotAvailableError("Could not import ClaudeAgentOptions")
 
     return query(prompt=prompt, options=options)
+
+
+def get_claude_cli_path() -> str | None:
+    """
+    获取当前虚拟环境中的Claude CLI可执行文件路径
+
+    Returns:
+        str | None: CLI路径，如果未找到则返回None
+    """
+    try:
+        import claude_agent_sdk
+        import os
+
+        sdk_path = os.path.dirname(claude_agent_sdk.__file__)
+        possible_paths = [
+            os.path.join(sdk_path, "_bundled", "claude.exe"),  # Windows
+            os.path.join(sdk_path, "_bundled", "claude"),      # Linux/macOS
+            "claude"  # 如果在PATH中
+        ]
+
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+
+        return None  # 让SDK自动检测
+    except Exception:
+        return None
+
+
+def get_sdk_options(**overrides: Any) -> dict[str, Any]:
+    """
+    获取统一的SDK配置选项
+
+    Args:
+        **overrides: 覆盖默认配置，如 permission_mode, timeout 等
+
+    Returns:
+        dict[str, Any]: SDK配置字典，包含所有必要参数
+    """
+    # 获取CLI路径
+    cli_path = get_claude_cli_path()
+
+    # 默认配置
+    default_options: dict[str, Any] = {
+        'permission_mode': 'bypassPermissions',
+        'cwd': str(Path.cwd()),
+    }
+
+    # 添加CLI路径（如果找到）
+    if cli_path:
+        default_options['cli_path'] = cli_path
+
+    # 合并覆盖参数
+    default_options.update(overrides)
+
+    return default_options

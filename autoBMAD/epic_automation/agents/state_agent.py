@@ -293,7 +293,9 @@ class StateAgent(BaseAgent):
             if isinstance(story_path, Path):
                 content = story_path.read_text(encoding='utf-8')
             else:
-                content = str(story_path)
+                # story_path是字符串路径，需读取文件内容
+                with open(story_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
 
             status = await self.status_parser.parse_status(content)
             if status:

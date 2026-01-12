@@ -18,12 +18,43 @@ import logging
 import re
 import shutil
 import sqlite3
+import warnings
 from contextlib import asynccontextmanager
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Callable, TypeVar, Union, cast
 
 logger = logging.getLogger(__name__)
+
+# Type variable for decorator
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def deprecated(reason: str) -> Callable[[F], F]:
+    """标记方法为废弃"""
+    def decorator(func: F) -> F:
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                warnings.warn(
+                    f"{func.__name__} is deprecated: {reason}",
+                    DeprecationWarning,
+                    stacklevel=2
+                )
+                return await func(*args, **kwargs)
+            return cast(F, async_wrapper)
+        else:
+            @wraps(func)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                warnings.warn(
+                    f"{func.__name__} is deprecated: {reason}",
+                    DeprecationWarning,
+                    stacklevel=2
+                )
+                return func(*args, **kwargs)
+            return cast(F, wrapper)
+    return decorator
 
 
 class DeadlockDetector:
@@ -597,9 +628,10 @@ class StateManager:
             logger.error(f"Failed to get health status: {e}")
             return {"error": str(e)}
 
+    @deprecated("StateManager should not modify story documents directly. Use StatusUpdateAgent instead.")
     async def sync_story_statuses_to_markdown(self) -> "dict[str, Any]":
         """
-        将数据库中的故事状态同步到markdown文件。
+        [DEPRECATED] 将数据库中的故事状态同步到markdown文件。
 
         Returns:
             同步结果字典，包含成功和失败的故事数量
@@ -647,9 +679,10 @@ class StateManager:
             errors_list.append(error_msg)
             return results
 
+    @deprecated("StateManager should not modify story documents directly. Use StatusUpdateAgent instead.")
     async def _update_markdown_status(self, story_path: str, db_status: str) -> None:
         """
-        更新markdown文件中的Status字段。
+        [DEPRECATED] 更新markdown文件中的Status字段。
         将数据库状态映射为适当的markdown状态。
 
         Args:
@@ -723,17 +756,19 @@ class StateManager:
                         )
                     elif "Draft" in pattern and len(match.groups()) == 1:
                         # 格式4: **<key>: Draft** -> **<key>: Done**
+                        replacement = r"**\1**: " + markdown_status
                         updated_content = re.sub(
                             pattern,
-                            f"**\\1**: {markdown_status}",
+                            replacement,
                             content,
                             flags=re.MULTILINE,
                         )
-                    elif len(match.groups()) == 2 and "Status\*\*:" not in pattern:
+                    elif len(match.groups()) == 2 and r"Status\*\*:" not in pattern:
                         # 格式4 (alternative): **<key>: Draft** -> **<key>: Done**
+                        replacement = r"**\1**: " + markdown_status
                         updated_content = re.sub(
                             pattern,
-                            f"**\\1**: {markdown_status}",
+                            replacement,
                             content,
                             flags=re.MULTILINE,
                         )
@@ -769,9 +804,10 @@ class StateManager:
             logger.error(f"更新markdown状态失败 {story_path}: {str(e)}")
             raise
 
+    @deprecated("StateManager should not modify story documents directly. Use StatusUpdateAgent instead.")
     def _find_actual_story_file(self, db_story_path: str) -> Path | None:
         """
-        根据数据库中的故事路径，查找实际存在的故事文件。
+        [DEPRECATED] 根据数据库中的故事路径，查找实际存在的故事文件。
 
         Args:
             db_story_path: 数据库中存储的故事路径

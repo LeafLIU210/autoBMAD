@@ -115,6 +115,18 @@ class QualityGateOrchestrator:
         self.skip_tests = skip_tests
         self.logger = logging.getLogger(f"{__name__}.quality_gates")
 
+        # Initialize quality agents
+        try:
+            from .agents.quality_agents import RuffAgent, BasedPyrightAgent, PytestAgent
+            self.ruff_agent = RuffAgent()
+            self.basedpyright_agent = BasedPyrightAgent()
+            self.pytest_agent = PytestAgent()
+        except ImportError:
+            # Quality agents not available - will be handled in execute methods
+            self.ruff_agent = None
+            self.basedpyright_agent = None
+            self.pytest_agent = None
+
         # Initialize results with proper type structure
         self.results: dict[str, Any] = {
             "success": True,
@@ -567,6 +579,7 @@ class EpicDriver:
         test_dir: str = "tests",
         skip_quality: bool = False,
         skip_tests: bool = False,
+        create_log_file: bool = False,
     ):
         """
         Initialize epic driver.
@@ -583,6 +596,7 @@ class EpicDriver:
             test_dir: Test directory for QA checks (default: "tests")
             skip_quality: Skip quality gates (ruff and basedpyright)
             skip_tests: Skip pytest execution
+            create_log_file: Whether to create timestamped log files (default: False)
         """
         self.epic_path = Path(epic_path).resolve()
         self.epic_id = str(self.epic_path)  # Use epic path as epic_id
@@ -596,6 +610,7 @@ class EpicDriver:
         self.use_claude = use_claude
         self.skip_quality = skip_quality
         self.skip_tests = skip_tests
+        self.create_log_file = create_log_file
 
         # Auto-resolve source_dir and test_dir to absolute paths
         source_path = Path(source_dir)
@@ -608,7 +623,7 @@ class EpicDriver:
         )
 
         # Initialize log manager
-        self.log_manager = LogManager()
+        self.log_manager = LogManager(create_log_file=create_log_file)
         init_logging(self.log_manager)
         setup_dual_write(self.log_manager)
 
@@ -617,6 +632,7 @@ class EpicDriver:
             from autoBMAD.epic_automation.agents.dev_agent import DevAgent  # type: ignore
             from autoBMAD.epic_automation.agents.qa_agent import QAAgent  # type: ignore
             from autoBMAD.epic_automation.agents.sm_agent import SMAgent  # type: ignore
+            from autoBMAD.epic_automation.agents.status_update_agent import StatusUpdateAgent  # type: ignore
             from autoBMAD.epic_automation.state_manager import (
                 StateManager,  # type: ignore
             )
@@ -629,6 +645,7 @@ class EpicDriver:
             self.dev_agent = DevAgent(use_claude=use_claude)
             self.qa_agent = QAAgent()
             self.state_manager = StateManager()
+            self.status_update_agent = StatusUpdateAgent()
 
             # Create controllers (main interface)
             self.sm_controller = None  # Will be created per story in async context
@@ -851,9 +868,6 @@ class EpicDriver:
                     f"Cannot match stories: stories directory does not exist: {stories_dir}"
                 )
                 logger.info("Tried searching in:")
-                logger.info(
-                    f"  - {self.epic_path.parent.parent / 'docs-copy' / 'stories'}"
-                )
                 logger.info(f"  - {self.epic_path.parent / 'docs' / 'stories'}")
                 logger.info(f"  - {self.epic_path.parent / 'stories'}")
                 logger.info(
@@ -1132,6 +1146,8 @@ class EpicDriver:
         """
         logger.info(f"Executing SM phase for {story_path}")
 
+        result: bool = False  # Initialize result variable
+
         try:
             # Create SMController in async context
             import anyio
@@ -1146,7 +1162,7 @@ class EpicDriver:
                 self.sm_controller = sm_controller
 
                 # Execute SM phase
-                result: bool = await sm_controller.execute(
+                result = await sm_controller.execute(
                     epic_content=story_content,
                     story_id=Path(story_path).stem
                 )
@@ -1163,7 +1179,6 @@ class EpicDriver:
                     )
 
                 logger.info(f"SM phase completed for {story_path}")
-                return result
 
         except Exception as e:
             logger.error(f"SM phase failed for {story_path}: {e}")
@@ -1175,6 +1190,8 @@ class EpicDriver:
                 # Suppress exceptions during error handling to ensure we return False
                 pass
             return False
+
+        return result
 
     async def execute_dev_phase(self, story_path: str, iteration: int = 1) -> bool:
         """
@@ -1203,6 +1220,8 @@ class EpicDriver:
                 pass
             return False
 
+        result: bool = False  # Initialize result variable
+
         try:
             # Create DevQaController in async context
             import anyio
@@ -1220,7 +1239,7 @@ class EpicDriver:
                 self.devqa_controller = devqa_controller
 
                 # Execute Dev-QA pipeline using the controller
-                result: bool = await devqa_controller.execute(story_path)
+                result = await devqa_controller.execute(story_path)
 
                 # 🎯 改进：不再在 execute_dev_phase 中写入 completed。
                 # 状态由 DevAgent/QAAgent 在执行后更新故事文档，
@@ -1228,7 +1247,6 @@ class EpicDriver:
                 # 数据库 update_story_status 仅用于记录/报告，不影响循环决策。
 
                 logger.info(f"Dev phase completed for {story_path}")
-                return result
 
         except Exception as e:
             logger.error(f"Dev phase failed for {story_path}: {e}")
@@ -1240,6 +1258,8 @@ class EpicDriver:
                 # Suppress exceptions during error handling to ensure we return False
                 pass
             return False
+
+        return result
 
     async def execute_qa_phase(self, story_path: str) -> bool:
         """
@@ -1998,7 +2018,9 @@ class EpicDriver:
 
             # Sync story statuses from database to markdown files
             self.logger.info("=== Syncing Story Statuses ===")
-            sync_results = await self.state_manager.sync_story_statuses_to_markdown()
+            sync_results = await self.status_update_agent.sync_from_database(
+                state_manager=self.state_manager
+            )
             if sync_results.get("error_count", 0) > 0:
                 self.logger.warning(
                     f"同步过程中有 {sync_results['error_count']} 个错误"
@@ -2135,6 +2157,9 @@ Quality Gates Examples:
   # Increase retry attempts for quality gates
   python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --max-iterations 5
 
+  # Enable log file creation
+  python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --log-file
+
 Standard Examples:
   python epic_driver.py docs/epics/my-epic.md --max-iterations 5
   python epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
@@ -2206,6 +2231,12 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
         "--skip-tests", action="store_true", help="Skip pytest execution"
     )
 
+    _ = parser.add_argument(
+        "--log-file",
+        action="store_true",
+        help="Enable timestamped log file creation (disabled by default)"
+    )
+
     args = parser.parse_args()
 
     # Validate max_iterations
@@ -2241,6 +2272,7 @@ async def main():
         test_dir=args.test_dir,  # type: ignore[arg-type]
         skip_quality=args.skip_quality,  # type: ignore[arg-type]
         skip_tests=args.skip_tests,  # type: ignore[arg-type]
+        create_log_file=args.log_file,  # type: ignore[arg-type]
     )
 
     success = await driver.run()

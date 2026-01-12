@@ -5,7 +5,6 @@ Base Agent - 所有 Agent 的基类
 from __future__ import annotations
 import logging
 from anyio.abc import TaskGroup
-import anyio
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Callable, Awaitable
 
@@ -71,29 +70,18 @@ class BaseAgent(ABC):
             # 对于Mock对象，直接执行协程，不使用TaskGroup
             return await coro()
 
-        # 使用事件来获取协程的返回值
-        result_event = anyio.Event()
-        result_container = []
-        exception_container = []
+        async def wrapper() -> Any:  # 不使用 task_status
+            # 执行协程
+            result = await coro()
 
-        async def wrapper(*, task_status: Any = anyio.TASK_STATUS_IGNORED) -> None:  # type: ignore[misc,arg-type]
-            if hasattr(task_status, 'started'):
-                task_status.started()  # 通知TaskGroup任务已启动
-            try:
-                result = await coro()
-                result_container.append(result)
-            except Exception as e:
-                exception_container.append(e)
-            finally:
-                result_event.set()
+            # 添加同步点，确保操作完成
+            # 这防止了CancelScope跨任务访问问题
+            import asyncio
+            await asyncio.sleep(0)
 
-        await self.task_group.start(wrapper)  # type: ignore[arg-type]
-        await result_event.wait()
+            return result
 
-        if exception_container:
-            raise exception_container[0]
-
-        return result_container[0] if result_container else None
+        return await self.task_group.start(wrapper)  # type: ignore[arg-type]
 
     async def _execute_sdk_call(
         self,
@@ -157,3 +145,44 @@ class BaseAgent(ABC):
             self._log_execution("Warning: No TaskGroup set", "warning")
             return False
         return True
+
+    def get_sdk_config(self, **overrides: Any) -> dict[str, Any]:
+        """
+        获取统一SDK配置（从sdk_helper导入）
+
+        Args:
+            **overrides: 覆盖默认配置
+
+        Returns:
+            dict[str, Any]: SDK配置字典
+        """
+        from .sdk_helper import get_sdk_options
+        return get_sdk_options(**overrides)
+
+    async def _execute_sdk_call_with_config(
+        self,
+        prompt: str,
+        **sdk_config: Any
+    ) -> Any:
+        """
+        使用统一SDK配置的调用方法
+
+        Args:
+            prompt: SDK提示词
+            **sdk_config: SDK配置参数
+
+        Returns:
+            SDK调用结果
+        """
+        # 使用统一的SDK配置
+        config = self.get_sdk_config(**sdk_config)
+
+        # 转换为SDK调用参数
+        sdk_kwargs = {
+            'prompt': prompt,
+            'agent_name': self.name,
+            **{k: v for k, v in config.items() if k != 'permission_mode'}
+        }
+
+        # 执行SDK调用
+        return await self._execute_sdk_call(None, **sdk_kwargs)

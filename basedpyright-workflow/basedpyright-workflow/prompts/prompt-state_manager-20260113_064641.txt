@@ -1,0 +1,30 @@
+﻿Please fix the Python code in the following file: d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py
+
+BasedPyright type errors (19):  Line 31, Col 5: [reportUnknownParameterType] 返回类型 "(func: Unknown) -> (_Wrapped[..., Unknown, ..., CoroutineType[Any, Any, Unknown]] | _Wrapped[..., Unknown, ..., Unknown])" 部分未知 (reportUnknownParameterType)
+  Line 33, Col 9: [reportUnknownParameterType] 返回类型 "_Wrapped[..., Unknown, ..., CoroutineType[Any, Any, Unknown]] | _Wrapped[..., Unknown, ..., Unknown]" 部分未知 (reportUnknownParameterType)
+  Line 33, Col 19: [reportUnknownParameterType] "func" 参数的类型未知 (reportUnknownParameterType)
+  Line 33, Col 19: [reportMissingParameterType] "func" 参数缺少类型注解 (reportMissingParameterType)
+  Line 34, Col 40: [unknown] 参数类型未知
+  Line 35, Col 20: [unknown] 参数类型未知
+  Line 36, Col 23: [reportUnknownParameterType] 返回类型未知 (reportUnknownParameterType)
+  Line 36, Col 38: [reportUnknownParameterType] "args" 参数的类型未知 (reportUnknownParameterType)
+  Line 36, Col 38: [reportMissingParameterType] "args" 参数缺少类型注解 (reportMissingParameterType)
+  Line 36, Col 46: [reportUnknownParameterType] "kwargs" 参数的类型未知 (reportUnknownParameterType)
+  Line 36, Col 46: [reportMissingParameterType] "kwargs" 参数缺少类型注解 (reportMissingParameterType)
+  Line 45, Col 20: [unknown] 参数类型未知
+  Line 46, Col 17: [reportUnknownParameterType] 返回类型未知 (reportUnknownParameterType)
+  Line 46, Col 26: [reportUnknownParameterType] "args" 参数的类型未知 (reportUnknownParameterType)
+  Line 46, Col 26: [reportMissingParameterType] "args" 参数缺少类型注解 (reportMissingParameterType)
+  Line 46, Col 34: [reportUnknownParameterType] "kwargs" 参数的类型未知 (reportUnknownParameterType)
+  Line 46, Col 34: [reportMissingParameterType] "kwargs" 参数缺少类型注解 (reportMissingParameterType)
+  Line 762, Col 62: [reportInvalidStringEscapeSequence] 字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)
+  Line 762, Col 64: [reportInvalidStringEscapeSequence] 字符串字面量中有不受支持的转义序列 (reportInvalidStringEscapeSequence)
+
+Requirements:
+1. Fix all the errors listed above
+2. Maintain code functionality and readability
+3. Follow Python best practices
+4. Preserve existing code style where possible
+5. Add comments explaining complex fixes if necessary
+
+Please provide the complete fixed file content.
