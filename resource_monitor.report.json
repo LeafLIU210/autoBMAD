@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-01-12T22:53:21.991481",
-  "locks": "<MagicMock name='LockMonitor().get_statistics()' id='1622149813488'>",
-  "sessions": "<MagicMock name='SessionMonitor().get_statistics()' id='1622149768080'>",
-  "tasks": "<MagicMock name='TaskMonitor().get_statistics()' id='1622149779280'>",
-  "system": "<MagicMock name='SystemMonitor().get_system_stats()' id='1622149734880'>",
+  "timestamp": "2026-01-13T13:55:20.671053",
+  "locks": "<MagicMock name='LockMonitor().get_statistics()' id='2725463646304'>",
+  "sessions": "<MagicMock name='SessionMonitor().get_statistics()' id='2725463690320'>",
+  "tasks": "<MagicMock name='TaskMonitor().get_statistics()' id='2725463339520'>",
+  "system": "<MagicMock name='SystemMonitor().get_system_stats()' id='2725463910128'>",
   "active_resources": {
-    "locks": "<MagicMock name='LockMonitor().get_active_locks()' id='1622150179984'>",
-    "sessions": "<MagicMock name='SessionMonitor().get_active_sessions()' id='1622150172448'>",
-    "tasks": "<MagicMock name='TaskMonitor().get_active_tasks()' id='1622150239088'>"
+    "locks": "<MagicMock name='LockMonitor().get_active_locks()' id='2725464001376'>",
+    "sessions": "<MagicMock name='SessionMonitor().get_active_sessions()' id='2725464009200'>",
+    "tasks": "<MagicMock name='TaskMonitor().get_active_tasks()' id='2725465033808'>"
   }
 }

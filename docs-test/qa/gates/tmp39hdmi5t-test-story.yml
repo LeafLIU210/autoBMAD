@@ -1,0 +1,31 @@
+# QA Gate Decision
+# Generated: 2026-01-13
+
+story: Test Story
+source_file: C:\Users\Administrator\AppData\Local\Temp\tmp39hdmi5t.md
+decision: FAIL
+
+document_completeness:
+  score: 30%
+  required: 100%
+  items:
+    story_title: true
+    status_field: true
+    acceptance_criteria: false
+    tasks_subtasks: false
+
+tool_validation:
+  status: WAIVED
+  reason: No code implementation to validate
+
+rationale: |
+  The story document is incomplete. Missing required elements:
+  - Acceptance criteria (required for testability)
+  - Tasks/Subtasks (required for tracking implementation)
+
+  Document completeness must reach 100% before QA can pass.
+
+recommendations:
+  - Add acceptance criteria with Given-When-Then format
+  - Define tasks and subtasks for implementation tracking
+  - Resubmit for review when document is complete

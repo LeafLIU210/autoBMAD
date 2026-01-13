@@ -5,7 +5,6 @@ Quality Agents - 重构后的质量检查 Agents
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import subprocess
 from abc import ABC
@@ -217,7 +216,7 @@ class BasedPyrightAgent(BaseQualityAgent):
 
 
 class PytestAgent(BaseQualityAgent):
-    """Pytest 测试执行 Agent"""
+    """Pytest 测试执行 Agent - 支持目录遍历批次执行"""
 
     def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("Pytest", task_group)
@@ -228,7 +227,7 @@ class PytestAgent(BaseQualityAgent):
         test_dir: str
     ) -> dict[str, Any]:
         """
-        执行 Pytest 测试
+        执行 Pytest 测试（目录遍历批次执行）
 
         Args:
             source_dir: 源代码目录
@@ -237,61 +236,23 @@ class PytestAgent(BaseQualityAgent):
         Returns:
             Dict[str, Any]: 测试结果
         """
-        self.logger.info("Running Pytest")
+        self.logger.info("Running Pytest with directory-based batching")
 
         try:
-            # 构建 Pytest 命令
-            command = f"pytest {test_dir} -v --tb=short --cov={source_dir} --cov-report=json"
+            from pathlib import Path
 
-            result = await self._run_subprocess(command, timeout=600)
+            from .pytest_batch_executor import PytestBatchExecutor
 
-            if result["status"] == "completed":
-                # 解析测试结果
-                import re
+            # 创建批次执行器
+            executor = PytestBatchExecutor(
+                test_dir=Path(test_dir),
+                source_dir=Path(source_dir)
+            )
 
-                # 尝试从 JSON 输出中获取覆盖率信息
-                try:
-                    # 查找 JSON 覆盖率输出
-                    coverage_match = re.search(r'\{.*\}', result["stdout"], re.DOTALL)
-                    if coverage_match:
-                        coverage_data = json.loads(coverage_match.group())
-                        coverage_percent = coverage_data.get("totals", {}).get("percent_covered", 0)
-                    else:
-                        coverage_percent = 0
-                except json.JSONDecodeError:
-                    coverage_percent = 0
+            # 执行所有批次
+            result = await executor.execute_batches()
 
-                # 解析测试统计
-                output_lines = result["stdout"].split('\n')
-                tests_passed = 0
-                tests_failed = 0
-                tests_errors = 0
-
-                for line in output_lines:
-                    if "passed" in line:
-                        match = re.search(r'(\d+) passed', line)
-                        if match:
-                            tests_passed = int(match.group(1))
-                    elif "failed" in line:
-                        match = re.search(r'(\d+) failed', line)
-                        if match:
-                            tests_failed = int(match.group(1))
-                    elif "error" in line:
-                        match = re.search(r'(\d+) error', line)
-                        if match:
-                            tests_errors = int(match.group(1))
-
-                return {
-                    "status": "completed",
-                    "tests_passed": tests_passed,
-                    "tests_failed": tests_failed,
-                    "tests_errors": tests_errors,
-                    "coverage": coverage_percent,
-                    "total_tests": tests_passed + tests_failed + tests_errors,
-                    "message": f"{tests_passed} tests passed, {tests_failed} failed, {tests_errors} errors"
-                }
-            else:
-                return result
+            return result
 
         except Exception as e:
             self.logger.error(f"Pytest execution failed: {e}")

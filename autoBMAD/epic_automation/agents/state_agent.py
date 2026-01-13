@@ -169,6 +169,10 @@ class SimpleStoryParser:
         content_preview = content[:100].replace('\n', ' ')
         logger.info(f"Starting status parsing for: '{content_preview}...'")
 
+        # 新增：记录文档行数
+        total_lines = len(content.split('\n'))
+        logger.debug(f"Document has {total_lines} lines total, will parse first 20 lines")
+
         # 如果没有提供SDK包装器，使用正则表达式回退
         if not self.sdk_wrapper:
             return self._parse_status_with_regex(content)
@@ -184,12 +188,12 @@ class SimpleStoryParser:
 
     def _parse_status_with_regex(self, content: str) -> str:
         """
-        使用正则表达式解析状态 - 增强版本
+        使用正则表达式解析状态 - 重构版本
 
-        增强点:
-        1. 更强的正则表达式匹配
-        2. 更好的日志记录
-        3. 支持多种状态格式
+        核心改进:
+        1. 只解析文档前 20 行（Status 区块必定在此范围内）
+        2. 宽松匹配状态关键词，支持括号、emoji 等装饰内容
+        3. 优先级调整：Done 类状态优先于 Review/Development
 
         Args:
             content: 故事文档内容
@@ -197,57 +201,59 @@ class SimpleStoryParser:
         Returns:
             标准状态字符串
         """
-        # 改进的正则表达式，支持多种格式
+        # 提取前 20 行作为解析范围
+        lines = content.split('\n')[:20]
+        status_section = '\n'.join(lines)
+
+        logger.debug(f"Parsing status from first {len(lines)} lines (max 20)")
+
+        # 定义状态模式（优先级从高到低）
+        # 注意：Done 类状态优先，避免被历史 Review 状态覆盖
         status_patterns = {
-            CORE_STATUS_DRAFT: [
-                r'(?i)status\s*:\s*draft\b',
-                r'(?i)\*\*status\*\*\s*:\s*draft\b',
-                r'\bdraft\b',
-            ],
-            CORE_STATUS_READY_FOR_DEVELOPMENT: [
-                r'(?i)status\s*:\s*ready\s+for\s+development\b',
-                r'(?i)\*\*status\*\*\s*:\s*ready\s+for\s+development\b',
-                r'\bready\s+for\s+development\b',
-            ],
-            CORE_STATUS_IN_PROGRESS: [
-                r'(?i)status\s*:\s*(in\s+progress|active)\b',
-                r'(?i)\*\*status\*\*\s*:\s*(in\s+progress|active)\b',
-                r'\bin\s+progress\b',
-                r'\bactive\b',
-            ],
-            CORE_STATUS_READY_FOR_REVIEW: [
-                r'(?i)status\s*:\s*ready\s+for\s+review\b',
-                r'(?i)\*\*status\*\*\s*:\s*ready\s+for\s+review\b',
-                r'\bready\s+for\s+review\b',
-            ],
+            # 终态优先（Done 系列）
             CORE_STATUS_READY_FOR_DONE: [
-                r'(?i)status\s*:\s*ready\s+for\s+done\b',
-                r'(?i)\*\*status\*\*\s*:\s*ready\s+for\s+done\b',
-                r'\bready\s+for\s+done\b',
+                r'(?i)ready\s+for\s+done',
             ],
             CORE_STATUS_DONE: [
-                r'(?i)status\s*:\s*done\b',
-                r'(?i)\*\*status\*\*\s*:\s*done\b',
-                r'\bdone\b',
-                r'\bcompleted\b',
+                r'(?i)\bcomplete(?:d)?\b',
+                r'(?i)\bdone\b',
+            ],
+
+            # 中间态
+            CORE_STATUS_READY_FOR_REVIEW: [
+                r'(?i)ready\s+for\s+review',
+            ],
+            CORE_STATUS_IN_PROGRESS: [
+                r'(?i)in\s+progress',
+                r'(?i)\bactive\b',
+            ],
+            CORE_STATUS_READY_FOR_DEVELOPMENT: [
+                r'(?i)ready\s+for\s+development',
+            ],
+
+            # 初始态和异常态
+            CORE_STATUS_DRAFT: [
+                r'(?i)\bdraft\b',
             ],
             CORE_STATUS_FAILED: [
-                r'(?i)status\s*:\s*failed\b',
-                r'(?i)\*\*status\*\*\s*:\s*failed\b',
-                r'\bfailed\b',
-                r'\berror\b',
+                r'(?i)\bfailed\b',
+                r'(?i)\berror\b',
             ],
         }
 
-        # 尝试多个模式
+        # 按优先级顺序匹配
         for status, patterns in status_patterns.items():
             for pattern in patterns:
-                if re.search(pattern, content):
-                    logger.debug(f"Status matched with regex: {status} (pattern: {pattern})")
+                match = re.search(pattern, status_section)
+                if match:
+                    logger.debug(
+                        f"Status matched: {status} "
+                        f"(pattern: {pattern}, search range: lines 1-20)"
+                    )
                     return status
 
-        # 没有匹配时返回默认值
-        logger.debug("No status pattern matched, returning default: Draft")
+        # 无匹配时返回默认值
+        logger.debug("No status pattern matched in first 20 lines, returning: Draft")
         return CORE_STATUS_DRAFT
 
     async def _parse_status_with_ai(self, content: str) -> str:
@@ -284,18 +290,28 @@ class StateAgent(BaseAgent):
         解析故事文件的状态
 
         Args:
-            story_path: 故事文件路径
+            story_path: 故事文件路径或故事内容
 
         Returns:
             Optional[str]: 解析出的核心状态值，失败返回 None
         """
         try:
-            if isinstance(story_path, Path):
+            # 检查 story_path 是否是文件路径还是内容
+            # 如果包含换行符，则认为是内容；否则认为是文件路径
+            if '\n' in story_path or story_path.strip().startswith('#'):
+                # 传入的是故事内容
+                content = story_path
+            elif isinstance(story_path, Path):
+                # 传入的是 Path 对象
                 content = story_path.read_text(encoding='utf-8')
             else:
-                # story_path是字符串路径，需读取文件内容
-                with open(story_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
+                # 传入的是字符串路径，尝试读取文件
+                try:
+                    with open(story_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                except (FileNotFoundError, OSError):
+                    # 如果不是文件路径，尝试作为内容处理
+                    content = story_path
 
             status = await self.status_parser.parse_status(content)
             if status:

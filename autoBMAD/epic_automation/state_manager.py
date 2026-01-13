@@ -23,12 +23,16 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, Union, cast, List, Dict
+
+from .agents.config import StoryStatus, QAResult
 
 logger = logging.getLogger(__name__)
 
 # Type variable for decorator
 F = TypeVar("F", bound=Callable[..., Any])
+
+__all__ = ['StateManager', 'StoryStatus', 'QAResult']
 
 
 def deprecated(reason: str) -> Callable[[F], F]:
@@ -61,9 +65,9 @@ class DeadlockDetector:
     """死锁检测器"""
 
     def __init__(self):
-        self.lock_waiters: dict[str, asyncio.Task[None]] = {}
-        self.lock_timeout = 30.0  # 30秒超时
-        self.deadlock_detected = False
+        self.lock_waiters: Dict[str, asyncio.Task[None]] = {}
+        self.lock_timeout: float = 30.0  # 30秒超时
+        self.deadlock_detected: bool = False
 
     async def wait_for_lock(self, lock_name: str, lock: asyncio.Lock) -> bool:
         """等待锁，带死锁检测"""
@@ -89,11 +93,11 @@ class DatabaseConnectionPool:
     """数据库连接池"""
 
     def __init__(self, max_connections: int = 5):
-        self.max_connections = max_connections
+        self.max_connections: int = max_connections
         self.connections: asyncio.Queue[sqlite3.Connection] = asyncio.Queue(
             maxsize=max_connections
         )
-        self.connection_params = {}
+        self.connection_params: Dict[str, Any] = {}
 
     async def initialize(self, db_path: Path):
         """初始化连接池"""
@@ -134,10 +138,10 @@ class StateManager:
             db_path: SQLite数据库文件路径
             use_connection_pool: 是否使用连接池
         """
-        self.db_path = Path(db_path)
-        self._lock = asyncio.Lock()
-        self._deadlock_detector = DeadlockDetector()
-        self._connection_pool = (
+        self.db_path: Path = Path(db_path)
+        self._lock: asyncio.Lock = asyncio.Lock()
+        self._deadlock_detector: DeadlockDetector = DeadlockDetector()
+        self._connection_pool: DatabaseConnectionPool | None = (
             DatabaseConnectionPool() if use_connection_pool else None
         )
 
@@ -145,12 +149,37 @@ class StateManager:
 
         # 延迟初始化连接池，避免在同步上下文中创建任务
         # 连接池将在第一次使用时初始化
-        self._connection_pool_initialized = False
+        self._connection_pool_initialized: bool = False
 
     async def _ensure_connection_pool_initialized(self):
         """确保连接池在使用前被初始化"""
         if self._connection_pool and not self._connection_pool_initialized:
             await self._connection_pool.initialize(self.db_path)
+            # 对于内存数据库，确保表结构存在
+            if str(self.db_path) == ":memory:":
+                # 获取一个连接来初始化表结构
+                conn = await self._connection_pool.get_connection()
+                try:
+                    cursor = conn.cursor()
+                    # 为内存数据库创建表
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS stories (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            epic_path TEXT NOT NULL,
+                            story_path TEXT NOT NULL UNIQUE,
+                            status TEXT NOT NULL,
+                            iteration INTEGER DEFAULT 0,
+                            qa_result TEXT,
+                            error_message TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            phase TEXT,
+                            version INTEGER DEFAULT 1
+                        )
+                    """)
+                    conn.commit()
+                finally:
+                    await self._connection_pool.return_connection(conn)
             self._connection_pool_initialized = True
 
     def _init_db_sync(self):
@@ -216,6 +245,25 @@ class StateManager:
         else:
             conn = sqlite3.connect(self.db_path)
             try:
+                # 确保表结构存在（对于内存数据库或新的文件数据库）
+                if str(self.db_path) == ":memory:":
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS stories (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            epic_path TEXT NOT NULL,
+                            story_path TEXT NOT NULL UNIQUE,
+                            status TEXT NOT NULL,
+                            iteration INTEGER DEFAULT 0,
+                            qa_result TEXT,
+                            error_message TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            phase TEXT,
+                            version INTEGER DEFAULT 1
+                        )
+                    """)
+                    conn.commit()
                 yield conn
             finally:
                 conn.close()
@@ -515,6 +563,62 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return []
 
+    async def get_stories_by_status(self, status: str) -> "list[dict[str, Any]]":
+        """
+        Get stories filtered by status.
+
+        Args:
+            status: Status to filter by
+
+        Returns:
+            List of stories with the specified status
+        """
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    cursor.execute("""
+                        SELECT epic_path, story_path, status, iteration, qa_result,
+                               error_message, created_at, updated_at, phase, version
+                        FROM stories
+                        WHERE status = ?
+                        ORDER BY created_at
+                    """, (status,))
+
+                    rows = cursor.fetchall()
+                    stories = []
+
+                    for row in rows:
+                        story = {
+                            "epic_path": row[0],
+                            "story_path": row[1],
+                            "status": row[2],
+                            "iteration": row[3],
+                            "created_at": row[6],
+                            "updated_at": row[7],
+                            "phase": row[8],
+                            "version": row[9],
+                        }
+
+                        if row[4]:  # qa_result
+                            try:
+                                story["qa_result"] = json.loads(row[4])
+                            except json.JSONDecodeError:
+                                story["qa_result"] = row[4]
+
+                        if row[5]:  # error_message
+                            story["error"] = row[5]
+
+                        stories.append(story)
+
+                    return stories
+
+        except Exception as e:
+            logger.error(f"Failed to get stories by status: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return []
+
     async def get_stats(self) -> "dict[str, int]":
         """
         获取故事状态统计。
@@ -570,6 +674,36 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return None
 
+    async def delete_story(self, story_path: str) -> bool:
+        """
+        Delete a story from the database.
+
+        Args:
+            story_path: Path to the story file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # Delete the story
+                    cursor.execute(
+                        "DELETE FROM stories WHERE story_path = ?",
+                        (story_path,)
+                    )
+
+                    conn.commit()
+
+                    return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete story {story_path}: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return False
+
     async def cleanup_old_records(self, days: int = 30) -> int:
         """
         清理旧记录。
@@ -606,6 +740,255 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return 0
 
+    async def cleanup_epic_stories(self, epic_id: str, story_ids: List[str]) -> int:
+        """
+        清理当前 Epic 相关 Story 的历史记录
+
+        Args:
+            epic_id: Epic 标识
+            story_ids: Story ID 列表
+
+        Returns:
+            删除的记录数
+        """
+        if not story_ids:
+            logger.info("[Cleanup] No stories to cleanup")
+            return 0
+
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # 构建参数化查询 - 使用LIKE匹配story_path中的故事ID
+                    query = f"""
+                        DELETE FROM stories
+                        WHERE epic_path LIKE ?
+                          AND ({' OR '.join([f'story_path LIKE ?' for _ in story_ids])})
+                    """
+                    # epic_id 作为匹配模式
+                    epic_pattern = f"%{epic_id}%" if not epic_id.startswith('%') and not epic_id.endswith('%') else epic_id
+                    # story_id 匹配模式 - 匹配任何包含该ID的路径
+                    story_patterns = [f"%{sid}%" for sid in story_ids]
+                    params = [epic_pattern] + story_patterns
+
+                    cursor.execute(query, params)
+                    deleted_count = cursor.rowcount
+                    conn.commit()
+
+                    logger.info(
+                        f"[Cleanup] Removed {deleted_count} old records for "
+                        f"Epic '{epic_id}' Stories {story_ids}"
+                    )
+
+                    return deleted_count
+        except Exception as e:
+            logger.error(f"[Cleanup] Failed to cleanup epic stories: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return 0
+
+    async def cleanup_temp_stories(self) -> int:
+        """
+        清理临时目录下的 Story 记录
+
+        Returns:
+            删除的记录数
+        """
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    query = """
+                        DELETE FROM stories
+                        WHERE story_path LIKE '%\\Temp\\%'
+                           OR story_path LIKE '%\\AppData\\Local\\Temp\\%'
+                           OR story_path LIKE '/tmp/%'
+                           OR story_path LIKE '%TEMP%'
+                           OR story_path LIKE '%Temp%'
+                    """
+
+                    cursor.execute(query)
+                    deleted_count = cursor.rowcount
+                    conn.commit()
+
+                    logger.info(f"[Cleanup] Removed {deleted_count} temp story records")
+
+                    return deleted_count
+        except Exception as e:
+            logger.error(f"[Cleanup] Failed to cleanup temp stories: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return 0
+
+    async def cleanup_test_stories(self) -> int:
+        """
+        清理带测试标记的 Story 记录
+
+        Returns:
+            删除的记录数
+        """
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    query = """
+                        DELETE FROM stories
+                        WHERE story_path LIKE '%test%'
+                           OR story_path LIKE '%Test%'
+                           OR story_path LIKE '%TEST%'
+                           OR story_path LIKE 'test_%'
+                           OR story_path LIKE 'Test_%'
+                    """
+
+                    cursor.execute(query)
+                    deleted_count = cursor.rowcount
+                    conn.commit()
+
+                    logger.info(f"[Cleanup] Removed {deleted_count} test story records")
+
+                    return deleted_count
+        except Exception as e:
+            logger.error(f"[Cleanup] Failed to cleanup test stories: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return 0
+
+    def _execute_delete(self, query: str, params: List[Any]) -> int:
+        """
+        执行删除操作（内部方法）
+
+        Args:
+            query: SQL删除查询
+            params: 查询参数
+
+        Returns:
+            删除的记录数
+        """
+        # Note: This method is kept for compatibility but logic is inlined above
+        # Keeping for potential future use
+        raise NotImplementedError("Use async versions directly")
+
+    async def initialize_for_epic(self, epic_id: str, story_ids: List[str]) -> Dict[str, int]:
+        """
+        为当前 Epic 运行初始化数据库
+
+        执行清理：
+        1. 当前 Epic Story 的旧记录
+        2. TEMP 路径记录
+        3. 测试标记记录
+
+        Args:
+            epic_id: 当前 Epic 标识
+            story_ids: 当前 Epic 的 Story 列表
+
+        Returns:
+            清理统计：{
+                'epic_stories': 删除数,
+                'temp_stories': 删除数,
+                'test_stories': 删除数,
+                'total': 总删除数
+            }
+        """
+        logger.info(f"[Init] Starting database initialization for Epic '{epic_id}'")
+
+        stats: Dict[str, int] = {}
+
+        # 清理 1：当前 Epic Story 旧记录
+        stats['epic_stories'] = await self.cleanup_epic_stories(epic_id, story_ids)
+
+        # 清理 2：TEMP 路径
+        stats['temp_stories'] = await self.cleanup_temp_stories()
+
+        # 清理 3：测试标记
+        stats['test_stories'] = await self.cleanup_test_stories()
+
+        # 汇总
+        stats['total'] = sum(stats.values())
+
+        logger.info(
+            f"[Init] Database cleanup completed: "
+            f"{stats['total']} records removed "
+            f"(Epic: {stats['epic_stories']}, "
+            f"Temp: {stats['temp_stories']}, "
+            f"Test: {stats['test_stories']})"
+        )
+
+        return stats
+
+    async def get_stories_by_ids(self, epic_path: str, story_ids: List[str]) -> "list[dict[str, Any]]":
+        """
+        根据 Epic 路径和 Story ID 列表查询处理状态。
+
+        这是为了支持 StatusUpdateAgent 的范围限制功能，避免同步全库记录。
+
+        Args:
+            epic_path: Epic 文件路径
+            story_ids: Story ID 列表
+
+        Returns:
+            符合条件的 Story 记录列表（含最新处理状态）
+
+        Raises:
+            ValueError: 如果 story_ids 为空列表
+        """
+        if not story_ids:
+            logger.warning("get_stories_by_ids called with empty story_ids list")
+            return []
+
+        try:
+            async with self._lock:
+                async with self._get_db_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # 构建参数化查询
+                    placeholders = ','.join(['?'] * len(story_ids))
+                    query = f"""
+                        SELECT epic_path, story_path, status, iteration, qa_result,
+                               error_message, created_at, updated_at, phase, version
+                        FROM stories
+                        WHERE epic_path = ? AND story_path IN ({placeholders})
+                        ORDER BY updated_at DESC
+                    """
+                    params = [epic_path] + story_ids
+
+                    cursor.execute(query, params)
+                    rows = cursor.fetchall()
+
+                    stories = []
+                    for row in rows:
+                        story = {
+                            "epic_path": row[0],
+                            "story_path": row[1],
+                            "status": row[2],
+                            "iteration": row[3],
+                            "created_at": row[6],
+                            "updated_at": row[7],
+                            "phase": row[8],
+                            "version": row[9],
+                        }
+
+                        if row[4]:  # qa_result
+                            try:
+                                story["qa_result"] = json.loads(row[4])
+                            except json.JSONDecodeError:
+                                story["qa_result"] = row[4]
+
+                        if row[5]:  # error_message
+                            story["error"] = row[5]
+
+                        stories.append(story)
+
+                    logger.debug(
+                        f"get_stories_by_ids: Found {len(stories)} stories for epic {epic_path} "
+                        f"with IDs: {str(story_ids)}"
+                    )
+                    return stories
+
+        except Exception as e:
+            logger.error(f"Failed to get stories by IDs: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return []
+
     def get_health_status(self) -> "dict[str, Any]":
         """
         获取数据库健康状态。
@@ -628,6 +1011,64 @@ class StateManager:
             logger.error(f"Failed to get health status: {e}")
             return {"error": str(e)}
 
+    async def update_story_processing_status(
+        self,
+        story_id: str,
+        processing_status: str,
+        timestamp: datetime,
+        epic_id: str | None = None,
+        metadata: Dict[str, Any] | None = None
+    ) -> bool:
+        """
+        更新Story的处理状态（方案2实现）
+
+        这是专门为Dev-QA流程设计的状态写入方法，简化了接口并增强了日志记录。
+        与update_story_status不同，这个方法专门处理处理状态值（processing_status）的写入。
+
+        Args:
+            story_id: Story标识（故事文件路径或ID）
+            processing_status: 处理状态值 ('in_progress' | 'review' | 'completed')
+            timestamp: 更新时间
+            epic_id: Epic标识（可选）
+            metadata: 额外元数据（如错误信息、重试次数等）
+
+        Returns:
+            是否更新成功
+        """
+        # 参数校验
+        valid_statuses = {'in_progress', 'review', 'completed'}
+        if processing_status not in valid_statuses:
+            logger.error(f"Invalid processing_status: {processing_status}")
+            raise ValueError(f"Invalid processing_status: {processing_status}. Must be one of {valid_statuses}")
+
+        try:
+            # 使用现有的update_story_status方法，但传入简化的参数
+            # 这里我们使用phase字段来存储processing_status，保持数据库结构不变
+            success, _ = await self.update_story_status(
+                story_path=story_id,
+                status=processing_status,  # 使用status字段存储processing_status
+                phase=processing_status,  # 冗余存储到phase字段
+                epic_path=epic_id,
+            )
+
+            if success:
+                logger.info(
+                    f"[StateTransition] Story {story_id}: "
+                    f"processing_status updated to '{processing_status}' "
+                    f"(timestamp: {timestamp.isoformat()})"
+                )
+                if metadata:
+                    logger.debug(f"[StateTransition] Metadata: {metadata}")
+            else:
+                logger.error(f"[StateTransition] Failed to update processing_status for {story_id}")
+
+            return success
+
+        except Exception as e:
+            logger.error(f"[StateTransition] Error updating processing_status for {story_id}: {e}")
+            logger.debug(f"Error details: {e}", exc_info=True)
+            return False
+
     @deprecated("StateManager should not modify story documents directly. Use StatusUpdateAgent instead.")
     async def sync_story_statuses_to_markdown(self) -> "dict[str, Any]":
         """
@@ -637,7 +1078,7 @@ class StateManager:
             同步结果字典，包含成功和失败的故事数量
         """
         logger.info("开始同步故事状态到markdown文件")
-        results: dict[str, Any] = {
+        results: Dict[str, Any] = {
             "success_count": 0,
             "error_count": 0,
             "errors": [],  # type: ignore[assignment]

@@ -347,9 +347,8 @@ class QualityGateOrchestrator:
             # Run pytest directly instead of using TestAutomationAgent (which was removed)
             start_time = time.time()
 
-            # Use subprocess to run pytest
+            # Use shutil to check pytest availability
             import shutil
-            import subprocess
             from pathlib import Path
 
             # Check if test directory exists and has tests
@@ -394,62 +393,98 @@ class QualityGateOrchestrator:
                     "duration": 0.0,
                 }
 
-            # Run pytest
-            result = subprocess.run(
-                ["pytest", test_dir, "-v", "--tb=short"],
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 minute timeout
+            # Run pytest using PytestAgent (with batch execution)
+            try:
+                from autoBMAD.epic_automation.agents.quality_agents import PytestAgent
+            except ImportError:
+                logger.error("PytestAgent not available - pytest quality gate cannot execute")
+                return {
+                    "success": False,
+                    "error": "PytestAgent module not available",
+                    "duration": 0.0,
+                }
+
+            pytest_agent = PytestAgent()
+            pytest_result = await pytest_agent.execute(
+                source_dir=self.source_dir,
+                test_dir=test_dir
             )
 
             end_time = time.time()
 
-            # Check return code - exit code 5 means no tests collected which we treat as success
-            if result.returncode == 5:
-                error_msg = "Pytest returned exit code 5 (no tests collected) - treating as success"
-                self.logger.warning(f"✓ {error_msg}")
-                self._update_progress("phase_3_pytest", "completed", end=True)
+            # Check if tests passed
+            success = pytest_result.get("status") == "completed" or pytest_result.get("status") == "skipped"
+
+            if pytest_result.get("status") == "skipped":
+                self.logger.info(f"✓ Pytest skipped: {pytest_result.get('message')}")
+                self._update_progress("phase_3_pytest", "skipped", end=True)
                 return {
                     "success": True,
-                    "skipped": False,
-                    "message": error_msg,
+                    "skipped": True,
+                    "message": pytest_result.get("message"),
                     "duration": end_time - start_time,
                 }
 
-            # Check if tests passed
-            success = result.returncode == 0
+            # Check for batch execution results
+            if "total_batches" in pytest_result:
+                # New batch execution format
+                passed_batches = pytest_result.get("passed_batches", 0)
+                total_batches = pytest_result.get("total_batches", 0)
+                failed_batches = pytest_result.get("failed_batches", [])
+                batch_message = pytest_result.get("message", "")
 
-            pytest_result = {
-                "status": "completed" if success else "failed",
-                "returncode": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-            }
-
-            if success:
-                self.logger.info(
-                    f"✓ Pytest quality gate PASSED in {self._calculate_duration(start_time, end_time)}s"
-                )
-                self._update_progress("phase_3_pytest", "completed", end=True)
-                return {
-                    "success": True,
-                    "duration": self._calculate_duration(start_time, end_time),
-                    "result": pytest_result,
-                }
+                if success:
+                    self.logger.info(
+                        f"✓ Pytest quality gate PASSED: {batch_message} "
+                        f"in {self._calculate_duration(start_time, end_time)}s"
+                    )
+                    self._update_progress("phase_3_pytest", "completed", end=True)
+                    return {
+                        "success": True,
+                        "duration": self._calculate_duration(start_time, end_time),
+                        "result": pytest_result,
+                        "batches": {
+                            "total": total_batches,
+                            "passed": passed_batches,
+                            "failed": len(failed_batches) if failed_batches else 0,
+                        },
+                    }
+                else:
+                    error_msg = f"Pytest quality gate failed: {batch_message}"
+                    self.logger.warning(f"✗ {error_msg}")
+                    self._update_progress("phase_3_pytest", "failed", end=True)
+                    errors_list = cast(list[str], self.results["errors"])
+                    errors_list.append(error_msg)
+                    return {
+                        "success": False,
+                        "error": error_msg,
+                        "duration": self._calculate_duration(start_time, end_time),
+                        "result": pytest_result,
+                    }
             else:
-                error_msg = (
-                    f"Pytest quality gate failed with returncode: {result.returncode}"
-                )
-                self.logger.warning(f"✗ {error_msg}")
-                self._update_progress("phase_3_pytest", "failed", end=True)
-                errors_list = cast(list[str], self.results["errors"])
-                errors_list.append(error_msg)
-                return {
-                    "success": False,
-                    "error": error_msg,
-                    "duration": self._calculate_duration(start_time, end_time),
-                    "result": pytest_result,
-                }
+                # Legacy single-run format (for backward compatibility)
+                if success:
+                    self.logger.info(
+                        f"✓ Pytest quality gate PASSED in {self._calculate_duration(start_time, end_time)}s"
+                    )
+                    self._update_progress("phase_3_pytest", "completed", end=True)
+                    return {
+                        "success": True,
+                        "duration": self._calculate_duration(start_time, end_time),
+                        "result": pytest_result,
+                    }
+                else:
+                    error_msg = f"Pytest quality gate failed: {pytest_result.get('error', 'Unknown error')}"
+                    self.logger.warning(f"✗ {error_msg}")
+                    self._update_progress("phase_3_pytest", "failed", end=True)
+                    errors_list = cast(list[str], self.results["errors"])
+                    errors_list.append(error_msg)
+                    return {
+                        "success": False,
+                        "error": error_msg,
+                        "duration": self._calculate_duration(start_time, end_time),
+                        "result": pytest_result,
+                    }
         except Exception as e:
             error_msg = f"Pytest execution error: {str(e)}"
             self.logger.error(error_msg)
@@ -912,8 +947,8 @@ class EpicDriver:
         """
         story_ids: list[str] = []
 
-        # Pattern 1: "### Story X.Y: Title"
-        pattern1 = r"### Story\s+(\d+(?:\.\d+)?)\s*:\s*(.+?)(?:\n|\$)"
+        # Pattern 1: "## Story X.Y: Title" or "### Story X.Y: Title"
+        pattern1 = r"#{2,3}\s*Story\s+(\d+(?:\.\d+)?)\s*:\s*(.+?)(?:\n|\$)"
         matches1 = re.findall(pattern1, content, re.MULTILINE)
         for story_num, title in matches1:
             story_id = f"{story_num}: {title}"
@@ -1023,7 +1058,7 @@ class EpicDriver:
         Extract epic prefix from epic filename.
 
         Args:
-            epic_filename: Name of the epic file (e.g., "epic-004-spec_automation-foundation.md")
+            epic_filename: Name of the epic file (e.g., "epic-001-core-algorithm-foundation.md")
 
         Returns:
             Epic prefix (e.g., "004")
@@ -1626,20 +1661,8 @@ class EpicDriver:
         try:
             expected_files = story.get("expected_files", [])
             if not expected_files:
-                # Determine expected files based on story path and context
-                story_path = story.get("path", "")
-                if "spec_automation" in story_path:
-                    # For spec_automation module, check for modular structure
-                    expected_files = [
-                        "config",
-                        "services",
-                        "security",
-                        "tests",
-                        "utils",
-                    ]
-                else:
-                    # Default to traditional structure
-                    expected_files = ["src", "tests", "docs"]
+                # 统一使用默认项目结构
+                expected_files = ["src", "tests", "docs"]
 
             missing_files: list[str] = []
             existing_files: list[str] = []
@@ -1963,6 +1986,24 @@ class EpicDriver:
             "timestamp": time.time(),
         }
 
+    def _log_cleanup_summary(self, epic_id: str, story_ids: list[str], stats: dict[str, int]) -> None:
+        """记录清理摘要"""
+
+        self.logger.info("=== Database Initialization ===")
+        self.logger.info("Cleanup Rules:")
+        self.logger.info(f"  1. Current Epic stories: {epic_id} {story_ids}")
+        self.logger.info(f"  2. TEMP path stories: %\\Temp\\%, %\\AppData\\Local\\Temp\\%")
+        self.logger.info(f"  3. Test-marked stories: *test*, test_*")
+        self.logger.info("")
+        self.logger.info("Cleanup Results:")
+        self.logger.info(f"  - Epic stories removed: {stats['epic_stories']}")
+        self.logger.info(f"  - Temp stories removed: {stats['temp_stories']}")
+        self.logger.info(f"  - Test stories removed: {stats['test_stories']}")
+        self.logger.info(f"  - Total removed: {stats['total']}")
+        self.logger.info("")
+        self.logger.info("Database ready for Epic execution.")
+        self.logger.info("=" * 31)
+
     async def run(self) -> bool:
         """
         Execute complete epic processing workflow.
@@ -2002,6 +2043,22 @@ class EpicDriver:
                 self.logger.error("Phase gate validation failed")
                 return False
 
+            # 【新增】数据库初始化清理
+            # Extract story IDs for initialization
+            story_ids = [story["id"].split(":")[0].strip() for story in stories]
+
+            # Get epic identifier from epic_path
+            epic_id = self.epic_id
+
+            # Initialize database with cleanup
+            cleanup_stats = await self.state_manager.initialize_for_epic(
+                epic_id=epic_id,
+                story_ids=story_ids
+            )
+
+            # Log cleanup summary
+            self._log_cleanup_summary(epic_id, story_ids, cleanup_stats)
+
             # Phase 1: Dev-QA Cycle
             self.logger.info("=== Phase 1: Dev-QA Cycle ===")
             await self._update_progress("dev_qa", "in_progress", {})
@@ -2018,8 +2075,14 @@ class EpicDriver:
 
             # Sync story statuses from database to markdown files
             self.logger.info("=== Syncing Story Statuses ===")
+
+            # Extract story IDs for scoped sync (performance optimization)
+            story_ids = [story["id"].split(":")[0].strip() for story in stories]
+
             sync_results = await self.status_update_agent.sync_from_database(
-                state_manager=self.state_manager
+                state_manager=self.state_manager,
+                epic_id=self.epic_id,
+                story_ids=story_ids
             )
             if sync_results.get("error_count", 0) > 0:
                 self.logger.warning(

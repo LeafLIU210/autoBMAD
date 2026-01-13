@@ -4,10 +4,10 @@ This module provides a pure implementation of the bubble sort algorithm
 with comprehensive error handling and support for various numeric types.
 """
 
-from typing import Iterable, List, Union
+from collections.abc import Iterable
 
 
-def bubble_sort(data: Iterable[Union[int, float]]) -> List[Union[int, float]]:
+def bubble_sort(data: Iterable[int | float]) -> list[int | float]:
     """Sort a list of numbers using the bubble sort algorithm.
 
     This function implements the bubble sort algorithm with optimization for
@@ -36,8 +36,8 @@ def bubble_sort(data: Iterable[Union[int, float]]) -> List[Union[int, float]]:
     # Convert to list and validate
     try:
         result = list(data)
-    except TypeError:
-        raise TypeError("Input must be iterable")
+    except TypeError as err:
+        raise TypeError("Input must be iterable") from err
 
     # Bubble sort implementation with optimization
     n = len(result)

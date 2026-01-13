@@ -2,12 +2,16 @@
 
 通过SDK调用更新故事文档状态，替代StateManager直接修改文档的方式。
 
-遵循单一职责原则：StateManager只管理数据库状态，文档修改通过SDK完成。
+遵循方案3：单一真源原则
+- 只从数据库 processing_status 字段读取状态
+- 通过映射表转换为核心状态
+- 不使用其他数据源（历史记录、Markdown当前状态等）
 """
 
 import logging
+from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict, List, Tuple
+from typing import Any, TypedDict, List, Tuple, Dict
 
 from anyio.abc import TaskGroup
 from .base_agent import BaseAgent
@@ -28,28 +32,30 @@ class StatusUpdateAgent(BaseAgent):
 
     职责：
     - 当需要更新故事状态时，通过SDK执行
-    - 封装状态映射逻辑（数据库状态 → 文档状态）
+    - 封装状态映射逻辑（数据库processing_status → 核心状态 → Markdown状态）
     - 确保文档修改的统一性和可追溯性
+
+    遵循方案3：单一真源原则
+    - 只从数据库 processing_status 字段读取状态
+    - 通过映射表转换为核心状态
+    - 不使用其他数据源（历史记录、Markdown当前状态等）
     """
 
-    # 数据库处理状态 → 文档核心状态映射
-    DATABASE_TO_MARKDOWN_MAPPING = {
-        # 故事状态
-        "pending": "Draft",
-        "in_progress": "In Progress",
-        "review": "Ready for Review",
-        "completed": "Done",
-        "failed": "Failed",
-        "cancelled": "Draft",
+    # 状态映射表：处理状态（processing_status） → 核心状态
+    PROCESSING_TO_CORE_STATUS = {
+        'in_progress': 'Ready for Development',
+        'review': 'Ready for Review',
+        'completed': 'Ready for Done',
+        'cancelled': 'Ready for Development',  # 容错：支持重新开始
+        'error': 'Ready for Development',      # 容错：支持重试
+    }
 
-        # QA状态
-        "qa_pass": "Done",
-        "qa_concerns": "Ready for Review",
-        "qa_fail": "Failed",
-        "qa_waived": "Done",
-
-        # 特殊状态
-        "error": "Failed",
+    # 反向映射（用于验证和调试）
+    CORE_TO_PROCESSING_STATUS = {
+        'Ready for Development': 'in_progress',
+        'Ready for Review': 'review',
+        'Ready for Done': 'completed',
+        'Done': 'completed',  # 别名支持
     }
 
     def __init__(self, task_group: TaskGroup | None = None, name: str = "StatusUpdateAgent"):
@@ -59,7 +65,46 @@ class StatusUpdateAgent(BaseAgent):
             task_group: 异步任务组，用于并发执行
             name: Agent名称
         """
-        super().__init__(name=name, task_group=task_group)
+        super().__init__(config_or_name=name, task_group=task_group)
+
+    def _map_to_core_status(self, processing_status: str) -> str:
+        """
+        将处理状态映射为核心状态（方案3核心方法）
+
+        Args:
+            processing_status: 数据库中的处理状态值
+
+        Returns:
+            对应的核心状态文本
+
+        Raises:
+            ValueError: 处理状态值非法
+        """
+        if processing_status not in self.PROCESSING_TO_CORE_STATUS:
+            logger.warning(
+                f"Unknown processing_status '{processing_status}', "
+                f"defaulting to 'Ready for Development'"
+            )
+            return 'Ready for Development'  # 默认值（容错）
+
+        return self.PROCESSING_TO_CORE_STATUS[processing_status]
+
+    def _generate_status_markdown(self, core_status: str) -> str:
+        """
+        根据核心状态生成 Markdown Status 段落
+
+        Args:
+            core_status: 核心状态（如 'Ready for Review'）
+
+        Returns:
+            完整的 Status 段落文本
+        """
+        return f"""## Status
+
+**Status**: {core_status}
+
+**Last Updated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
 
     async def update_story_status_via_sdk(
         self,
@@ -71,7 +116,7 @@ class StatusUpdateAgent(BaseAgent):
 
         Args:
             story_path: 故事文件路径
-            target_status: 目标状态（核心状态值，如 "Done", "In Progress"）
+            target_status: 目标状态（核心状态值，如 "Ready for Done"）
 
         Returns:
             True if successful, False otherwise
@@ -85,20 +130,19 @@ class StatusUpdateAgent(BaseAgent):
                 return False
 
             # 构建SDK调用提示词
+            status_text = self._generate_status_markdown(target_status)
             prompt = f"""@{story_path}
 
-Update the Status field in this story document to: **{target_status}**
+Update the Status section in this story document to:
+
+{status_text}
 
 Requirements:
 - Locate the Status section (format: ## Status or ### Status)
-- Replace the current status value with: **{target_status}**
+- Replace the entire Status section with the content above
 - Do NOT modify any other content
 - Preserve the document formatting
 - Do not add or remove any other fields
-
-Example format:
-## Status
-**Status**: {target_status}
 """
 
             # 使用统一的SDK调用接口
@@ -212,50 +256,138 @@ Example format:
             results["errors"].append(error_msg)
             logger.error(error_msg, exc_info=True)
 
+    def validate_processing_statuses(
+        self,
+        epic_id: str,
+        story_ids: List[str],
+        records: List[Dict[str, Any]]
+    ) -> Tuple[int, List[Dict[str, Any]]]:
+        """
+        验证数据库中的处理状态值是否合法（方案3方法）
+
+        Args:
+            epic_id: Epic标识
+            story_ids: Story ID列表
+            records: 数据库记录列表
+
+        Returns:
+            (valid_count, invalid_records)
+        """
+        valid_statuses = set(self.PROCESSING_TO_CORE_STATUS.keys())
+        invalid_records = []
+
+        for record in records:
+            status = record.get('status')  # processing_status存储在status字段中
+            if status not in valid_statuses:
+                invalid_records.append({
+                    'story_id': record.get('story_path'),
+                    'processing_status': status,
+                    'file_path': record.get('story_path')
+                })
+
+        if invalid_records:
+            logger.warning(
+                f"Found {len(invalid_records)} stories with invalid processing_status"
+            )
+            for rec in invalid_records:
+                logger.warning(f"  - {rec['story_id']}: {rec['processing_status']}")
+
+        return len(records) - len(invalid_records), invalid_records
+
     async def sync_from_database(
         self,
         state_manager: Any,
-        filter_statuses: List[str] | None = None
+        filter_statuses: List[str] | None = None,
+        epic_id: str | None = None,
+        story_ids: List[str] | None = None
     ) -> BatchUpdateResults:
         """
-        从数据库同步状态到文档
+        从数据库同步状态到文档（方案3实现）
+
+        核心流程：
+        1. 从数据库查询最新处理状态（processing_status）
+        2. 通过映射表转换为核心状态
+        3. 生成 Markdown Status 文本
+        4. 调用 SDK 更新 Story 文档
 
         Args:
             state_manager: StateManager实例，用于获取数据库状态
             filter_statuses: 可选，要同步的状态列表，如果为None则同步所有状态
+            epic_id: 可选，Epic标识，用于限制同步范围
+            story_ids: 可选，Story ID 列表，用于限制同步范围
 
         Returns:
             同步结果统计字典
+
+        Note:
+            如果提供了 epic_id 和 story_ids，则只同步指定 Epic 的指定 Story，
+            这显著提高了性能，避免同步全库记录。
         """
         try:
-            # 获取所有故事记录
-            stories = await state_manager.get_all_stories()
-
-            # 构建状态映射列表
-            status_mappings: List[Tuple[str, str]] = []
-            for story in stories:
-                story_path = story.get("story_path")
-                db_status = story.get("status")
-
-                if not story_path or not db_status:
-                    continue
-
-                # 如果指定了过滤列表，只处理匹配的状态
-                if filter_statuses and db_status not in filter_statuses:
-                    continue
-
-                # 获取对应的markdown状态
-                markdown_status = self.DATABASE_TO_MARKDOWN_MAPPING.get(
-                    db_status, "Draft"
+            # Step 1: 查询数据库（方案1 保证范围限制）
+            if epic_id and story_ids:
+                # 范围限制同步 - 只同步指定的 Story
+                logger.info(
+                    f"Using scoped sync for epic '{epic_id}' with {len(story_ids)} stories: {story_ids}"
                 )
+                stories = await state_manager.get_stories_by_ids(epic_id, story_ids)
+            else:
+                # 传统方式：全库同步（仅用于向后兼容）
+                logger.warning(
+                    "Using full database sync (no scope limit). "
+                    "This may be slow for large databases. "
+                    "Consider passing epic_id and story_ids for better performance."
+                )
+                stories = await state_manager.get_all_stories()
 
-                status_mappings.append((story_path, markdown_status))
+            # Step 1.5: 验证数据合法性（可选）
+            if epic_id and story_ids:
+                valid_count, invalid = self.validate_processing_statuses(
+                    epic_id, story_ids, stories
+                )
+                if invalid:
+                    logger.warning(f"Proceeding with {valid_count} valid stories")
+
+            # Step 2-4: 逐个处理
+            status_mappings: List[Tuple[str, str]] = []
+            for record in stories:
+                try:
+                    story_path = record.get("story_path")
+                    processing_status = record.get("status")  # processing_status存储在status字段中
+
+                    if not story_path or not processing_status:
+                        continue
+
+                    # 如果指定了过滤列表，只处理匹配的状态
+                    if filter_statuses and processing_status not in filter_statuses:
+                        continue
+
+                    # Step 2: 映射处理状态 → 核心状态
+                    core_status = self._map_to_core_status(processing_status)
+
+                    # Step 3: 生成 Markdown 文本（通过 SDK 提示词）
+                    # Note: 实际文本生成在 update_story_status_via_sdk 中完成
+
+                    # 记录映射日志
+                    logger.info(
+                        f"[StatusUpdate] {record.get('story_path')}: "
+                        f"{processing_status} → {core_status}"
+                    )
+
+                    status_mappings.append((story_path, core_status))
+
+                except Exception as e:
+                    logger.error(
+                        f"[StatusUpdate] Failed to process {record.get('story_path')}: {e}"
+                    )
+                    # 单条失败不中断整个同步流程
+                    continue
 
             logger.info(
                 f"Found {len(status_mappings)} stories to sync from database"
             )
 
-            # 批量更新
+            # Step 4: 批量更新
             if status_mappings:
                 return await self.batch_update_statuses(status_mappings)
             else:

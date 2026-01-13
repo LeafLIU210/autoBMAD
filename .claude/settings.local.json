@@ -84,7 +84,8 @@
       "Skill(ralph-wiggum:help:*)",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"from autoBMAD.epic_automation.agents.qa_agent import QAAgent; from autoBMAD.epic_automation.agents.dev_agent import DevAgent; from autoBMAD.epic_automation.agents.sm_agent import SMAgent; from autoBMAD.epic_automation.controllers.devqa_controller import DevQaController; from autoBMAD.epic_automation.controllers.quality_controller import QualityController; print\\(''All imports successful!''\\)\")",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -m pytest tests/ -v --tb=short)",
-      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m pytest tests/unit/ -v --tb=short)"
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m pytest tests/unit/ -v --tb=short)",
+      "Bash(.venv\\\\Scripts\\\\python -m pytest:*)"
     ],
     "deny": [
       "Bash(curl:*)",

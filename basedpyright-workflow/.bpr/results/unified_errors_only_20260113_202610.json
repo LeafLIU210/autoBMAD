@@ -1,0 +1,487 @@
+{
+  "metadata": {
+    "source_file": ".bpr\\results\\basedpyright_check_result_20260113_202607.txt",
+    "extraction_time": "2026-01-13T20:26:10.899428",
+    "total_files_with_errors": 13,
+    "total_errors": 51,
+    "tools": [
+      "basedpyright"
+    ]
+  },
+  "errors_by_file": [
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\__init__.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 7,
+          "column": 21,
+          "message": "\"quality_agents\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\base_agent.py",
+      "error_count": 21,
+      "errors_by_rule": {
+        "reportUnusedImport": 3,
+        "reportOptionalMemberAccess": 6,
+        "unknown": 6,
+        "reportUnknownParameterType": 3,
+        "reportMissingParameterType": 3
+      },
+      "errors_by_tool": {
+        "basedpyright": 21
+      },
+      "errors": [
+        {
+          "line": 7,
+          "column": 8,
+          "message": "\"os\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 12,
+          "column": 22,
+          "message": "\"abstractmethod\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 20,
+          "column": 12,
+          "message": "\"anthropic\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 113,
+          "column": 35,
+          "message": "`None` 没有 \"model\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 114,
+          "column": 40,
+          "message": "`None` 没有 \"max_tokens\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 115,
+          "column": 41,
+          "message": "`None` 没有 \"temperature\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 122,
+          "column": 49,
+          "message": "无法访问 \"ThinkingBlock\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 122,
+          "column": 49,
+          "message": "无法访问 \"RedactedThinkingBlock\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 122,
+          "column": 49,
+          "message": "无法访问 \"ToolUseBlock\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 122,
+          "column": 49,
+          "message": "无法访问 \"ServerToolUseBlock\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 122,
+          "column": 49,
+          "message": "无法访问 \"WebSearchToolResultBlock\" 类的 \"text\" 属性",
+          "rule": "unknown"
+        },
+        {
+          "line": 124,
+          "column": 38,
+          "message": "`None` 没有 \"model\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 130,
+          "column": 38,
+          "message": "`None` 没有 \"model\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 153,
+          "column": 24,
+          "message": "\"exc_type\" 参数的类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 153,
+          "column": 24,
+          "message": "\"exc_type\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 153,
+          "column": 34,
+          "message": "\"exc_val\" 参数的类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 153,
+          "column": 34,
+          "message": "\"exc_val\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 153,
+          "column": 43,
+          "message": "\"exc_tb\" 参数的类型未知 (reportUnknownParameterType)",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "line": 153,
+          "column": 43,
+          "message": "\"exc_tb\" 参数缺少类型注解 (reportMissingParameterType)",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "line": 156,
+          "column": 25,
+          "message": "`None` 没有 \"close\" 属性 (reportOptionalMemberAccess)",
+          "rule": "reportOptionalMemberAccess"
+        },
+        {
+          "line": 215,
+          "column": 25,
+          "message": "无法访问 \"BrokenWorkerInterpreter\" 类的 \"started\" 属性",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\config.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 1,
+        "reportMissingTypeArgument": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 99,
+          "column": 9,
+          "message": "\"suggestions\" 参数的类型部分未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 99,
+          "column": 31,
+          "message": "\"list\" 泛型类应有类型参数 (reportMissingTypeArgument)",
+          "rule": "reportMissingTypeArgument"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\pytest_batch_executor.py",
+      "error_count": 9,
+      "errors_by_rule": {
+        "unknown": 6,
+        "reportUnknownLambdaType": 2,
+        "reportPossiblyUnboundVariable": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 9
+      },
+      "errors": [
+        {
+          "line": 108,
+          "column": 25,
+          "message": "\"int | bool | str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"int\" 类型的形参 \"timeout\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 109,
+          "column": 26,
+          "message": "\"int | bool | str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"bool\" 类型的形参 \"parallel\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 111,
+          "column": 26,
+          "message": "\"int | bool | str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"bool\" 类型的形参 \"blocking\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 112,
+          "column": 26,
+          "message": "\"int | bool | str\" 类型的实参无法赋值给函数 \"__init__\" 中 \"int\" 类型的形参 \"priority\"",
+          "rule": "unknown"
+        },
+        {
+          "line": 120,
+          "column": 33,
+          "message": "\"b\" 参数的类型未知 (reportUnknownLambdaType)",
+          "rule": "reportUnknownLambdaType"
+        },
+        {
+          "line": 120,
+          "column": 36,
+          "message": "该 `lambda` 的返回类型未知 (reportUnknownLambdaType)",
+          "rule": "reportUnknownLambdaType"
+        },
+        {
+          "line": 122,
+          "column": 61,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 187,
+          "column": 29,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 264,
+          "column": 16,
+          "message": "\"asyncio\" 可能未绑定 (reportPossiblyUnboundVariable)",
+          "rule": "reportPossiblyUnboundVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\quality_agents.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 8,
+          "column": 8,
+          "message": "\"json\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\sm_agent.py",
+      "error_count": 2,
+      "errors_by_rule": {
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 2
+      },
+      "errors": [
+        {
+          "line": 890,
+          "column": 59,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 901,
+          "column": 51,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\status_update_agent.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 14,
+          "column": 49,
+          "message": "\"Optional\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 290,
+          "column": 30,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 295,
+          "column": 35,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\agents\\status_update_agent_old.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportCallIssue": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 62,
+          "column": 26,
+          "message": "\"name\" 参数不存在 (reportCallIssue)",
+          "rule": "reportCallIssue"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\controllers\\base_controller.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 7,
+          "column": 8,
+          "message": "\"asyncio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\doc_parser.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "unknown": 2
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 7,
+          "column": 37,
+          "message": "\"Optional\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 56,
+          "column": 59,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 63,
+          "column": 51,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\epic_driver.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnusedImport": 1,
+        "reportUndefinedVariable": 1,
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 352,
+          "column": 20,
+          "message": "\"subprocess\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "line": 398,
+          "column": 28,
+          "message": "\"PytestAgent\" 未定义 (reportUndefinedVariable)",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "line": 440,
+          "column": 43,
+          "message": "参数类型未知",
+          "rule": "unknown"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\state_manager.py",
+      "error_count": 3,
+      "errors_by_rule": {
+        "reportUnusedVariable": 2,
+        "unknown": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 3
+      },
+      "errors": [
+        {
+          "line": 764,
+          "column": 21,
+          "message": "变量 \"placeholders\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "line": 983,
+          "column": 58,
+          "message": "部分参数的类型未知",
+          "rule": "unknown"
+        },
+        {
+          "line": 1048,
+          "column": 22,
+          "message": "变量 \"version\" 未使用 (reportUnusedVariable)",
+          "rule": "reportUnusedVariable"
+        }
+      ]
+    },
+    {
+      "file": "d:\\GITHUB\\pytQt_template\\autoBMAD\\epic_automation\\test_automation_agent.py",
+      "error_count": 1,
+      "errors_by_rule": {
+        "reportUnusedImport": 1
+      },
+      "errors_by_tool": {
+        "basedpyright": 1
+      },
+      "errors": [
+        {
+          "line": 8,
+          "column": 8,
+          "message": "\"asyncio\" 导入项未使用 (reportUnusedImport)",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    }
+  ]
+}

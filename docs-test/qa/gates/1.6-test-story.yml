@@ -1,0 +1,31 @@
+# Quality Gate: 1.6 - Test Story
+schema: 1
+story: "1.6"
+story_title: "Test Story"
+gate: "FAIL"
+status_reason: "Story document incomplete - missing acceptance criteria, tasks, testing, and dev notes sections. Document completeness ~20%, required 100%."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-13T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "DOC-001"
+    severity: high
+    finding: "Missing acceptance criteria section"
+    suggested_action: "Add acceptance criteria with testable conditions"
+  - id: "DOC-002"
+    severity: high
+    finding: "Missing tasks/subtasks section"
+    suggested_action: "Define implementation tasks for the story"
+  - id: "DOC-003"
+    severity: medium
+    finding: "Missing testing section"
+    suggested_action: "Add test plan and coverage requirements"
+
+risk_summary:
+  totals: { critical: 0, high: 2, medium: 1, low: 0 }
+  recommendations:
+    must_fix:
+      - "Complete all required story sections before re-review"
+    monitor: []

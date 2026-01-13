@@ -1,0 +1,50 @@
+schema: 1
+story: 'tmpvst52mcs'
+story_title: 'Test Story'
+gate: FAIL
+status_reason: 'Critical document incompleteness. Story lacks acceptance criteria, tasks, proper story content, and meaningful description. Document completeness score: ~30% (missing AC, tasks, detailed content). Must add comprehensive story details before QA can proceed.'
+reviewer: 'Quinn (Test Architect & Quality Advisor)'
+updated: '2025-01-13T12:50:00Z'
+top_issues:
+  - severity: critical
+    issue: 'Missing acceptance criteria'
+    location: 'Story document'
+    impact: 'Cannot validate requirements completion'
+  - severity: critical
+    issue: 'Missing tasks/subtasks'
+    location: 'Story document'
+    impact: 'No implementation roadmap defined'
+  - severity: critical
+    issue: 'No story description or content'
+    location: 'Story document'
+    impact: 'Unclear what is being built or why'
+  - severity: major
+    issue: 'Generic story title'
+    location: 'Story document'
+    impact: 'Unclear requirements and scope'
+waiver: { active: false }
+quality_score: 15
+evidence:
+  tests_reviewed: 0
+  tests_passed: 0
+  code_coverage: 0
+  risks_identified: 3
+trace:
+  ac_covered: []
+  ac_gaps: [1, 2, 3, 4, 5]
+nfr_validation:
+  security: { status: 'NOT REVIEWED', notes: 'Cannot assess without proper story definition' }
+  performance: { status: 'NOT REVIEWED', notes: 'Cannot assess without proper story definition' }
+  reliability: { status: 'NOT REVIEWED', notes: 'Cannot assess without proper story definition' }
+  maintainability: { status: 'NOT REVIEWED', notes: 'Cannot assess without proper story definition' }
+recommendations:
+  immediate:
+    - action: 'Add comprehensive story description with clear objectives'
+      priority: high
+    - action: 'Define all acceptance criteria (minimum 3-5 detailed ACs)'
+      priority: critical
+    - action: 'Create task breakdown with specific implementation steps'
+      priority: critical
+  future:
+    - action: 'Consider adding user story format (As a [user], I want [goal] so that [benefit])'
+      priority: medium

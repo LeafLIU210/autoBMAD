@@ -4,6 +4,19 @@ from .agents.base_agent import BaseAgent
 from .agents.dev_agent import DevAgent
 from .epic_driver import EpicDriver
 from .agents.qa_agent import QAAgent
+from .agents.quality_agents import (
+    BaseQualityAgent,
+    RuffAgent,
+    BasedPyrightAgent,
+    PytestAgent,
+)
+from .agents.config import (
+    AgentConfig,
+    DevConfig,
+    SMConfig,
+    QAConfig,
+    QAResult,
+)
 # from .qa_tools_integration import (
 #     BasedPyrightWorkflowRunner,
 #     FixtestWorkflowRunner,
@@ -46,11 +59,21 @@ __all__ = [
     "EpicDriver",
     "DevAgent",
     "QAAgent",
+    "BaseQualityAgent",
+    "RuffAgent",
+    "BasedPyrightAgent",
+    "PytestAgent",
     # "QAError",
     # "BasedPyrightWorkflowRunner",
     # "FixtestWorkflowRunner",
     # "QAAutomationWorkflow",
     "BaseAgent",
+    # Config classes
+    "AgentConfig",
+    "DevConfig",
+    "SMConfig",
+    "QAConfig",
+    "QAResult",
     # SDK Session Manager
     # "SDKSessionManager",
     # "SDKExecutionResult",

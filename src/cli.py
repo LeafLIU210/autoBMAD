@@ -3,13 +3,11 @@
 import argparse
 import json
 import sys
-from pathlib import Path
-from typing import List, Union, Optional
 
 from src.bubblesort import bubble_sort
 
 
-def parse_array_input(input_str: str) -> List[Union[int, float]]:
+def parse_array_input(input_str: str) -> list[int | float]:
     """Parse a string input into a list of numbers.
 
     Args:
@@ -47,13 +45,13 @@ def parse_array_input(input_str: str) -> List[Union[int, float]]:
                 result.append(int(num))
             else:
                 result.append(num)
-        except ValueError:
-            raise ValueError(f"Invalid number: {part}")
+        except ValueError as err:
+            raise ValueError(f"Invalid number: {part}") from err
 
     return result
 
 
-def read_from_file(file_path: str) -> List[Union[int, float]]:
+def read_from_file(file_path: str) -> list[int | float]:
     """Read array data from a file.
 
     Args:
@@ -67,18 +65,18 @@ def read_from_file(file_path: str) -> List[Union[int, float]]:
         ValueError: If file is empty or contains invalid data
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             content = f.read().strip()
 
         if not content:
             raise ValueError("File is empty")
 
         return parse_array_input(content)
-    except (OSError, UnicodeDecodeError) as e:
-        raise ValueError(f"Error reading file: {e}")
+    except (OSError, UnicodeDecodeError) as err:
+        raise ValueError(f"Error reading file: {err}") from err
 
 
-def get_sorting_steps(data: List[Union[int, float]]) -> List[List[Union[int, float]]]:
+def get_sorting_steps(data: list[int | float]) -> list[list[int | float]]:
     """Get all steps of the bubble sort algorithm.
 
     Args:
@@ -111,8 +109,8 @@ def get_sorting_steps(data: List[Union[int, float]]) -> List[List[Union[int, flo
 
 
 def format_output(
-    original_data: List[Union[int, float]],
-    sorted_data: List[Union[int, float]],
+    original_data: list[int | float],
+    sorted_data: list[int | float],
     format_type: str = "default",
     show_stats: bool = False
 ) -> str:
@@ -158,7 +156,7 @@ def format_output(
         return str(sorted_data)
 
 
-def get_input_data(args: argparse.Namespace) -> List[Union[int, float]]:
+def get_input_data(args: argparse.Namespace) -> list[int | float]:
     """Get input data from various sources.
 
     Args:
@@ -188,7 +186,7 @@ def get_input_data(args: argparse.Namespace) -> List[Union[int, float]]:
             return parse_array_input(content)
 
 
-def validate_data(data: List[Union[int, float]]) -> None:
+def validate_data(data: list[int | float]) -> None:
     """Validate input data.
 
     Args:

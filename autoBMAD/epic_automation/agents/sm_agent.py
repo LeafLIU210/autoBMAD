@@ -320,7 +320,7 @@ class SMAgent(BaseAgent):
         # Get relative path from current directory
         epic_rel_path = str(Path(epic_path))
 
-        prompt = f'@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md @D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\create-next-story.md According to epic @{epic_rel_path}. Build all the stories listed in: {story_list}. Change all the story document Status from "Draft" to "Ready for Development".'
+        prompt = f'@.bmad-core\\agents\\sm.md @.bmad-core\\tasks\\create-next-story.md According to epic @{epic_rel_path}. Build all the stories listed in: {story_list}. Change all the story document Status from "Draft" to "Ready for Development".'
 
         logger.debug(f"Built prompt: {prompt}")
         return prompt
@@ -682,8 +682,8 @@ class SMAgent(BaseAgent):
             epic_abs_path = Path(epic_path).resolve()
             story_abs_path = story_file.resolve()
 
-            prompt = f"""@D:\\GITHUB\\pytQt_template\\.bmad-core\\agents\\sm.md
-@D:\\GITHUB\\pytQt_template\\.bmad-core\\tasks\\create-next-story.md
+            prompt = f"""@.bmad-core\\agents\\sm.md
+@.bmad-core\\tasks\\create-next-story.md
 
 Based on the Epic document @{epic_abs_path}, fill the story file @{story_abs_path} with complete content.
 
@@ -880,24 +880,24 @@ Please complete the story file now."""
             Dictionary of section names to content
         """
         sections = {}
-        current_section = None
-        current_content = []
+        current_section: Optional[str] = None
+        current_content: list[str] = []
 
         for line in story_content.split('\n'):
             if line.strip().startswith('## '):
                 # Save previous section
-                if current_section:
+                if current_section is not None:
                     sections[current_section] = '\n'.join(current_content).strip()
 
                 # Start new section
                 current_section = line.strip()[3:].strip()
                 current_content = []
             else:
-                if current_section:
+                if current_section is not None:
                     current_content.append(line)
 
         # Save last section
-        if current_section:
+        if current_section is not None:
             sections[current_section] = '\n'.join(current_content).strip()
 
         return sections

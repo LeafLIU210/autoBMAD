@@ -4,7 +4,6 @@ Base Controller - 所有控制器的基类
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
@@ -72,8 +71,8 @@ class BaseController(ABC):
             # 这防止了CancelScope跨任务访问问题
             await anyio.sleep(0)
 
-            # 标记任务完成
-            task_status.started()  # type: ignore[reportAttributeAccessIssue]
+            # 标记任务完成（传递结果）
+            task_status.started(result)  # type: ignore[reportAttributeAccessIssue]
 
             return result
 

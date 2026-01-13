@@ -1,0 +1,39 @@
+schema: 1
+story: "1.1"
+story_title: "Story 1.1"
+gate: "FAIL"
+status_reason: "Document incomplete - missing story description, epic identifier, acceptance criteria, and testing section"
+reviewer: "Quinn (Test Architect)"
+updated: "2025-01-13T09:30:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "DOC-001"
+    severity: high
+    finding: "Missing story description/overview"
+    suggested_action: "Add comprehensive story description explaining the feature purpose and value"
+  - id: "DOC-002"
+    severity: high
+    finding: "No epic identifier specified"
+    suggested_action: "Add epic tag to clearly identify which epic this story belongs to"
+  - id: "DOC-003"
+    severity: high
+    finding: "No acceptance criteria defined"
+    suggested_action: "Define clear acceptance criteria using Given-When-Then format to validate implementation"
+  - id: "DOC-004"
+    severity: medium
+    finding: "Missing testing section with test evidence"
+    suggested_action: "Add testing section documenting test results, coverage reports, and validation evidence"
+  - id: "DOC-005"
+    severity: medium
+    finding: "No dev notes or implementation context"
+    suggested_action: "Add dev notes section with implementation details and architectural decisions"
+
+risk_summary:
+  totals: { critical: 0, high: 3, medium: 2, low: 0 }
+  recommendations:
+    must_fix:
+      - "Complete story documentation with description, epic, and acceptance criteria"
+      - "Add testing section with evidence of validation"
+    monitor: []

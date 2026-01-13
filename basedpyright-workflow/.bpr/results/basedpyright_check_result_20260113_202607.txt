@@ -1,0 +1,152 @@
+================================================================================
+BasedPyright 检查结果
+================================================================================
+检查时间: 2026-01-13 20:26:09
+检查目录: ..\autoBMAD\epic_automation
+Python文件数量: 38
+================================================================================
+
+检查的文件列表:
+--------------------------------------------------------------------------------
+  1. ..\autoBMAD\epic_automation\__init__.py
+  2. ..\autoBMAD\epic_automation\agents\__init__.py
+  3. ..\autoBMAD\epic_automation\agents\base_agent.py
+  4. ..\autoBMAD\epic_automation\agents\config.py
+  5. ..\autoBMAD\epic_automation\agents\dev_agent.py
+  6. ..\autoBMAD\epic_automation\agents\pytest_batch_executor.py
+  7. ..\autoBMAD\epic_automation\agents\qa_agent.py
+  8. ..\autoBMAD\epic_automation\agents\quality_agents.py
+  9. ..\autoBMAD\epic_automation\agents\sdk_helper.py
+ 10. ..\autoBMAD\epic_automation\agents\sm_agent.py
+ 11. ..\autoBMAD\epic_automation\agents\state_agent.py
+ 12. ..\autoBMAD\epic_automation\agents\status_update_agent.py
+ 13. ..\autoBMAD\epic_automation\agents\status_update_agent_old.py
+ 14. ..\autoBMAD\epic_automation\base_agent.py
+ 15. ..\autoBMAD\epic_automation\controllers\__init__.py
+ 16. ..\autoBMAD\epic_automation\controllers\base_controller.py
+ 17. ..\autoBMAD\epic_automation\controllers\devqa_controller.py
+ 18. ..\autoBMAD\epic_automation\controllers\quality_controller.py
+ 19. ..\autoBMAD\epic_automation\controllers\sm_controller.py
+ 20. ..\autoBMAD\epic_automation\core\__init__.py
+ 21. ..\autoBMAD\epic_automation\core\cancellation_manager.py
+ 22. ..\autoBMAD\epic_automation\core\sdk_executor.py
+ 23. ..\autoBMAD\epic_automation\core\sdk_result.py
+ 24. ..\autoBMAD\epic_automation\dev_agent.py
+ 25. ..\autoBMAD\epic_automation\doc_parser.py
+ 26. ..\autoBMAD\epic_automation\epic_driver.py
+ 27. ..\autoBMAD\epic_automation\init_db.py
+ 28. ..\autoBMAD\epic_automation\log_manager.py
+ 29. ..\autoBMAD\epic_automation\monitoring\__init__.py
+ 30. ..\autoBMAD\epic_automation\monitoring\resource_monitor.py
+ 31. ..\autoBMAD\epic_automation\qa_agent.py
+ 32. ..\autoBMAD\epic_automation\quality_agents.py
+ 33. ..\autoBMAD\epic_automation\sdk_wrapper.py
+ 34. ..\autoBMAD\epic_automation\sm_agent.py
+ 35. ..\autoBMAD\epic_automation\spec_state_manager.py
+ 36. ..\autoBMAD\epic_automation\state_agent.py
+ 37. ..\autoBMAD\epic_automation\state_manager.py
+ 38. ..\autoBMAD\epic_automation\test_automation_agent.py
+--------------------------------------------------------------------------------
+
+检查输出结果:
+================================================================================
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\__init__.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\__init__.py:7:21 - error: "quality_agents" 导入项未使用 (reportUnusedImport)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:7:8 - error: "os" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:12:22 - error: "abstractmethod" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:20:12 - error: "anthropic" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:113:35 - error: `None` 没有 "model" 属性 (reportOptionalMemberAccess)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:114:40 - error: `None` 没有 "max_tokens" 属性 (reportOptionalMemberAccess)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:115:41 - error: `None` 没有 "temperature" 属性 (reportOptionalMemberAccess)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:122:49 - error: 无法访问 "ThinkingBlock" 类的 "text" 属性
+    属性 "text" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:122:49 - error: 无法访问 "RedactedThinkingBlock" 类的 "text" 属性
+    属性 "text" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:122:49 - error: 无法访问 "ToolUseBlock" 类的 "text" 属性
+    属性 "text" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:122:49 - error: 无法访问 "ServerToolUseBlock" 类的 "text" 属性
+    属性 "text" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:122:49 - error: 无法访问 "WebSearchToolResultBlock" 类的 "text" 属性
+    属性 "text" 未知 (reportAttributeAccessIssue)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:124:38 - error: `None` 没有 "model" 属性 (reportOptionalMemberAccess)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:130:38 - error: `None` 没有 "model" 属性 (reportOptionalMemberAccess)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:153:24 - error: "exc_type" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:153:24 - error: "exc_type" 参数缺少类型注解 (reportMissingParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:153:34 - error: "exc_val" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:153:34 - error: "exc_val" 参数缺少类型注解 (reportMissingParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:153:43 - error: "exc_tb" 参数的类型未知 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:153:43 - error: "exc_tb" 参数缺少类型注解 (reportMissingParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:156:25 - error: `None` 没有 "close" 属性 (reportOptionalMemberAccess)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\base_agent.py:215:25 - error: 无法访问 "BrokenWorkerInterpreter" 类的 "started" 属性
+    属性 "started" 未知 (reportAttributeAccessIssue)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\config.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\config.py:99:9 - error: "suggestions" 参数的类型部分未知
+    参数为 "list[Unknown] | None" 类型 (reportUnknownParameterType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\config.py:99:31 - error: "list" 泛型类应有类型参数 (reportMissingTypeArgument)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:108:25 - error: "int | bool | str" 类型的实参无法赋值给函数 "__init__" 中 "int" 类型的形参 "timeout"
+    "int | bool | str" 类型与 "int" 类型不兼容
+      "str" 与 "int" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:109:26 - error: "int | bool | str" 类型的实参无法赋值给函数 "__init__" 中 "bool" 类型的形参 "parallel"
+    "int | bool | str" 类型与 "bool" 类型不兼容
+      "int" 与 "bool" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:111:26 - error: "int | bool | str" 类型的实参无法赋值给函数 "__init__" 中 "bool" 类型的形参 "blocking"
+    "int | bool | str" 类型与 "bool" 类型不兼容
+      "int" 与 "bool" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:112:26 - error: "int | bool | str" 类型的实参无法赋值给函数 "__init__" 中 "int" 类型的形参 "priority"
+    "int | bool | str" 类型与 "int" 类型不兼容
+      "str" 与 "int" 不兼容 (reportArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:120:33 - error: "b" 参数的类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:120:36 - error: 该 `lambda` 的返回类型未知 (reportUnknownLambdaType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:122:61 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:187:29 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\pytest_batch_executor.py:264:16 - error: "asyncio" 可能未绑定 (reportPossiblyUnboundVariable)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\quality_agents.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\quality_agents.py:8:8 - error: "json" 导入项未使用 (reportUnusedImport)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py:890:59 - error: 部分参数的类型未知
+    实参对应于 "join" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\sm_agent.py:901:51 - error: 部分参数的类型未知
+    实参对应于 "join" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\status_update_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\status_update_agent.py:14:49 - error: "Optional" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\status_update_agent.py:290:30 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\status_update_agent.py:295:35 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\status_update_agent_old.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\agents\status_update_agent_old.py:62:26 - error: "name" 参数不存在 (reportCallIssue)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\controllers\base_controller.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\controllers\base_controller.py:7:8 - error: "asyncio" 导入项未使用 (reportUnusedImport)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\doc_parser.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\doc_parser.py:7:37 - error: "Optional" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\doc_parser.py:56:59 - error: 部分参数的类型未知
+    实参对应于 "join" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\doc_parser.py:63:51 - error: 部分参数的类型未知
+    实参对应于 "join" 函数中的 "iterable" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:352:20 - error: "subprocess" 导入项未使用 (reportUnusedImport)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:398:28 - error: "PytestAgent" 未定义 (reportUndefinedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py:440:43 - error: 参数类型未知
+    实参对应于 "len" 函数中的 "obj" 形参 (reportUnknownArgumentType)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:764:21 - error: 变量 "placeholders" 未使用 (reportUnusedVariable)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:983:58 - error: 部分参数的类型未知
+    实参对应于 "len" 函数中的 "obj" 形参
+    参数类型为 "list[Unknown]" (reportUnknownArgumentType)
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\state_manager.py:1048:22 - error: 变量 "version" 未使用 (reportUnusedVariable)
+d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py
+  d:\GITHUB\pytQt_template\autoBMAD\epic_automation\test_automation_agent.py:8:8 - error: "asyncio" 导入项未使用 (reportUnusedImport)
+51 errors, 0 warnings, 0 notes
+

@@ -4,9 +4,22 @@ Base Agent - 所有 Agent 的基类
 """
 from __future__ import annotations
 import logging
+import anyio
+import uuid
+from pathlib import Path
 from anyio.abc import TaskGroup
-from abc import ABC, abstractmethod
-from typing import Any, Optional, Callable, Awaitable
+from abc import ABC
+from typing import Any, Optional, Callable, Awaitable, Type
+
+from .config import AgentConfig
+
+# Import anthropic at module level for mocking
+try:
+    import anthropic
+    from anthropic import Anthropic
+except ImportError:
+    anthropic = None
+    Anthropic = None
 
 logger = logging.getLogger(__name__)
 
@@ -14,30 +27,155 @@ logger = logging.getLogger(__name__)
 class BaseAgent(ABC):
     """Agent 基类，定义通用接口和行为"""
 
-    def __init__(self, name: str, task_group: Optional[TaskGroup] = None, log_manager: Optional[Any] = None):
+    def __init__(
+        self,
+        config_or_name: Optional[AgentConfig | str] = None,
+        task_group: Optional[TaskGroup] = None,
+        log_manager: Optional[Any] = None,
+    ):
         """
         初始化 Agent
 
         Args:
-            name: Agent 名称
+            config_or_name: AgentConfig实例或字符串名称 (向后兼容)
             task_group: 可选的TaskGroup实例
             log_manager: 可选的日志管理器实例
         """
-        self.name = name
+        # 支持旧的API (AgentConfig) 和新的API (name字符串)
+        if isinstance(config_or_name, AgentConfig):
+            self.config = config_or_name
+            self.name = config_or_name.task_name
+            self._init_client()
+            self._load_task_guidance()
+        elif isinstance(config_or_name, str):
+            self.name = config_or_name
+            self.config = None
+            self.client = None
+        else:
+            self.name = "BaseAgent"
+            self.config = None
+            self.client = None
+
         self.logger = logging.getLogger(f"{self.__class__.__module__}")
         self.task_group = task_group
         self._execution_context = {}
         self._log_manager = log_manager
+        self.session_id = str(uuid.uuid4()) if not hasattr(self, 'session_id') else self.session_id
 
-    @abstractmethod
+    def _init_client(self):
+        """初始化 Anthropic 客户端 (向后兼容)"""
+        if self.config and self.config.api_key and Anthropic:
+            try:
+                # Use the imported Anthropic (which can be mocked in tests)
+                self.client = Anthropic(api_key=self.config.api_key)
+            except Exception:
+                self.client = None
+        else:
+            self.client = None
+
+    def _load_task_guidance(self):
+        """加载任务指导文件 (向后兼容)"""
+        if not self.config:
+            self.task_guidance = ""
+            return
+
+        task_name = self.config.task_name
+        # 尝试从 .bmad-core/tasks/{task_name}.md 加载
+        task_file = Path(f".bmad-core/tasks/{task_name}.md")
+
+        if task_file.exists():
+            try:
+                self.task_guidance = task_file.read_text()
+            except Exception:
+                self.task_guidance = ""
+        else:
+            self.task_guidance = ""
+
+    async def process_request(self, input_text: str) -> dict[str, Any]:
+        """
+        处理请求 (向后兼容)
+
+        Args:
+            input_text: 输入文本
+
+        Returns:
+            包含响应的字典
+
+        Raises:
+            RuntimeError: 客户端未初始化
+        """
+        if not self.client:
+            raise RuntimeError("Claude SDK client not initialized")
+
+        # 使用 anthropic API
+        try:
+            response = self.client.messages.create(
+                model=self.config.model if self.config else "claude-3-5-sonnet-20241022",
+                max_tokens=self.config.max_tokens if self.config else 1024,
+                temperature=self.config.temperature if self.config else 0.7,
+                messages=[
+                    {"role": "user", "content": input_text}
+                ]
+            )
+
+            # 使用 type: ignore 忽略 anthropic 响应类型检查
+            return {
+                "response": response.content[0].text,  # type: ignore[union-attr]
+                "session_id": self.session_id,
+                "model": self.config.model if self.config else "unknown",
+            }
+        except Exception as e:
+            return {
+                "response": f"Error: {str(e)}",
+                "session_id": self.session_id,
+                "model": self.config.model if self.config else "unknown",
+                "error": str(e),
+            }
+
+    def get_session_info(self) -> dict[str, Any]:
+        """
+        获取会话信息 (向后兼容)
+
+        Returns:
+            包含会话信息的字典
+        """
+        return {
+            "task_name": self.config.task_name if self.config else self.name,
+            "session_id": self.session_id,
+            "model": self.config.model if self.config else "unknown",
+            "guidance_loaded": bool(self.task_guidance),
+            "client_initialized": self.client is not None,
+        }
+
+    def __enter__(self):
+        """上下文管理器入口"""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> bool:
+        """上下文管理器出口"""
+        if self.client is not None and hasattr(self.client, 'close'):
+            self.client.close()
+        self.client = None
+        return False
+
+    def __repr__(self) -> str:
+        """字符串表示"""
+        return f"BaseAgent(name='{self.name}', session_id='{self.session_id}')"
+
     async def execute(self, *args: Any, **kwargs: Any) -> Any:
         """
-        执行 Agent 主逻辑
+        执行 Agent 主逻辑 (默认实现)
 
         Returns:
             Any: 执行结果
         """
-        pass
+        # 默认实现，子类可以覆盖
+        return {"status": "not_implemented", "args": args, "kwargs": kwargs}
 
     def _log_execution(self, message: str, level: str = "info"):
         """记录执行日志"""
@@ -70,7 +208,7 @@ class BaseAgent(ABC):
             # 对于Mock对象，直接执行协程，不使用TaskGroup
             return await coro()
 
-        async def wrapper() -> Any:  # 不使用 task_status
+        async def wrapper(task_status: anyio.TaskStatus) -> Any:
             # 执行协程
             result = await coro()
 
@@ -78,6 +216,9 @@ class BaseAgent(ABC):
             # 这防止了CancelScope跨任务访问问题
             import asyncio
             await asyncio.sleep(0)
+
+            # 通知TaskGroup任务已就绪（传递结果）
+            task_status.started(result)  # type: ignore[union-attr]
 
             return result
 

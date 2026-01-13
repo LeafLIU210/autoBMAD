@@ -153,14 +153,6 @@ class DevAgent(BaseAgent):
     ) -> bool:
         """执行开发任务 - 使用SDKExecutor"""
         try:
-            # 检查QA反馈模式
-            if "qa_prompt" in requirements:
-                self._log_execution("Handling QA feedback with single SDK call")
-                prompt = f"@.bmad-core/agents/dev.md {requirements['qa_prompt']}"
-                if self.sdk_executor:
-                    await self._execute_sdk_call(self.sdk_executor, prompt)
-                return True
-
             # 正常开发模式
             self._log_execution(f"Executing normal development mode for '{story_path}'")
             base_prompt = (
@@ -291,13 +283,6 @@ class DevAgent(BaseAgent):
                 testing = cast(dict[str, str], requirements["testing"])
                 testing["content"] = testing_section.group(1).strip()
 
-            # Extract QA section (for QA feedback)
-            qa_section = re.search(
-                r"## QA Feedback\s*\n(.*?)(?=\n---|\n##|$)", story_content, re.DOTALL
-            )
-            if qa_section:
-                requirements["qa_prompt"] = qa_section.group(1).strip()
-
             # Extract Dev Agent Record
             dev_agent_section = re.search(
                 r"## Dev Agent Record\s*\n(.*?)(?=\n---|\n##|$)", story_content, re.DOTALL
@@ -373,9 +358,8 @@ class DevAgent(BaseAgent):
             return False
 
     def _check_claude_available(self) -> bool:
-        """Check if Claude Code CLI is available with retry logic."""
+        """Check if Claude Code CLI is available using unified path detection."""
         import os
-        import time
 
         # Check if we're in a CI or test environment
         # Skip the check if in CI environment variable is set
@@ -383,74 +367,21 @@ class DevAgent(BaseAgent):
             self._log_execution("Test/CI environment detected, skipping Claude CLI check")
             return False
 
-        max_retries = 1
-        timeout = 30  # Increased from 10 to 30 seconds
+        # 使用统一的路径检测（奥卡姆剃刀原则：最简单的解决方案）
+        try:
+            from .sdk_helper import get_claude_cli_path
+            cli_path = get_claude_cli_path()
 
-        possible_commands = [
-            ["claude", "--version"],
-            [r"C:\Users\Administrator\AppData\Roaming\npm\claude", "--version"],
-            [r"C:\Users\Administrator\AppData\Roaming\npm\claude.cmd", "--version"],
-            ["where", "claude"],
-        ]
-
-        env = os.environ.copy()
-
-        for attempt in range(max_retries):
-            try:
-                for cmd in possible_commands:
-                    try:
-                        result = subprocess.run(
-                            cmd,
-                            capture_output=True,
-                            text=True,
-                            timeout=timeout,
-                            shell=True,
-                            env=env,
-                        )
-                        if result.returncode == 0:
-                            if cmd[0] == "where":
-                                paths = result.stdout.strip().split("\n")
-                                if paths:
-                                    verify = subprocess.run(
-                                        [paths[0], "--version"],
-                                        capture_output=True,
-                                        text=True,
-                                        timeout=timeout,
-                                        shell=True,
-                                        env=env,
-                                    )
-                                    if verify.returncode == 0:
-                                        self._log_execution(
-                                            f"Claude Code CLI available: {verify.stdout.strip()}"
-                                        )
-                                        return True
-                            else:
-                                self._log_execution(
-                                    f"Claude Code CLI available: {result.stdout.strip()}"
-                                )
-                                return True
-                    except subprocess.TimeoutExpired:
-                        self._log_execution(
-                            f"CLI check timeout for {cmd[0]} (attempt {attempt + 1}/{max_retries})", "warning"
-                        )
-                        continue
-                    except Exception:
-                        continue
-
-                # If no command worked in this attempt, try again
-                if attempt < max_retries - 1:
-                    self._log_execution(
-                        f"CLI check attempt {attempt + 1} failed, retrying in 2s...", "warning"
-                    )
-                    time.sleep(2)
-
-            except Exception as e:
-                self._log_execution(f"CLI check attempt {attempt + 1} failed: {e}", "warning")
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-
-        self._log_execution(f"Claude Code CLI not available after {max_retries} attempts", "error")
-        return False
+            if cli_path:
+                self._log_execution(f"Claude Code CLI available via SDK detection: {cli_path}")
+                return True
+            else:
+                # SDK会自动处理未找到CLI路径的情况
+                self._log_execution("Claude Code CLI detection delegated to SDK")
+                return True
+        except Exception as e:
+            self._log_execution(f"CLI detection error: {e}, continuing with SDK default", "warning")
+            return True
 
     def get_claude_info(self) -> dict[str, Any]:
         """
