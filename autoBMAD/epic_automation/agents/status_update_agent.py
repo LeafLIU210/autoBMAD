@@ -274,7 +274,7 @@ Requirements:
             (valid_count, invalid_records)
         """
         valid_statuses = set(self.PROCESSING_TO_CORE_STATUS.keys())
-        invalid_records = []
+        invalid_records: List[Dict[str, Any]] = []
 
         for record in records:
             status = record.get('status')  # processing_status存储在status字段中

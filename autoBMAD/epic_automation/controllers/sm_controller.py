@@ -9,9 +9,9 @@ from typing import Any, Optional
 
 from anyio.abc import TaskGroup
 
-from .base_controller import StateDrivenController
-from ..agents.sm_agent import SMAgent
-from ..agents.state_agent import StateAgent
+from autoBMAD.epic_automation.controllers.base_controller import StateDrivenController
+from autoBMAD.epic_automation.agents.sm_agent import SMAgent
+from autoBMAD.epic_automation.agents.state_agent import StateAgent
 
 logger = logging.getLogger(__name__)
 

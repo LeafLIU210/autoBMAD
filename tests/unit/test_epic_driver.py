@@ -96,7 +96,7 @@ class TestQualityGateOrchestrator:
             skip_quality=True,
             skip_tests=True
         )
-        result = await orchestrator.execute_quality_gates(epic_id="test-epic")
+        result = await orchestrator.execute_quality_gates()
         assert isinstance(result, dict)
         assert "success" in result
 
@@ -106,49 +106,19 @@ class TestEpicDriver:
 
     @pytest.fixture
     def temp_epic_file(self):
-        """创建临时 Epic 文件和对应的故事文件"""
-        # Use a persistent temp directory that lives for the test
-        import shutil
-        tmp_dir = Path(tempfile.mkdtemp())
-        tmp_path = tmp_dir
+        """创建临时 Epic 文件"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            f.write("""# Epic 1: 测试 Epic
 
-        # Create stories directory
-        stories_dir = tmp_path / "stories"
-        stories_dir.mkdir()
-
-        # Create epic file
-        epic_file = tmp_path / "test_epic.md"
-        epic_file.write_text("""# Epic 1: Test Epic
-
-### Story 1.1: Test Story 1
+## Story 1.1: 测试故事 1
 **Status**: Draft
-**Description**: This is test story 1
+**Description**: 这是一个测试故事
 
-### Story 1.2: Test Story 2
+## Story 1.2: 测试故事 2
 **Status**: Draft
-**Description**: This is test story 2
-""", encoding='utf-8')
-
-        # Create corresponding story files
-        story1_file = stories_dir / "1.1-test-story-1.md"
-        story1_file.write_text("""# Story 1.1: Test Story 1
-
-**Status**: Draft
-**Description**: This is test story 1
-""", encoding='utf-8')
-
-        story2_file = stories_dir / "1.2-test-story-2.md"
-        story2_file.write_text("""# Story 1.2: Test Story 2
-
-**Status**: Draft
-**Description**: This is test story 2
-""", encoding='utf-8')
-
-        # Return epic file path
-        yield str(epic_file)
-
-        # Cleanup after test
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+**Description**: 这是另一个测试故事
+""")
+            return f.name
 
     @pytest.mark.anyio
     async def test_init_basic(self, temp_epic_file):
@@ -226,73 +196,47 @@ class TestEpicDriver:
 
         assert isinstance(stories, list)
         assert len(stories) == 2
-        assert stories[0]["id"] == "1.1: Test Story 1"
-        assert stories[0]["name"] == "1.1-test-story-1.md"
-        assert stories[0]["status"] == "ready_for_development"
-        assert stories[1]["id"] == "1.2: Test Story 2"
-        assert stories[1]["name"] == "1.2-test-story-2.md"
+        assert stories[0]["id"] == "1.1"
+        assert stories[0]["title"] == "测试故事 1"
+        assert stories[0]["status"] == "Draft"
+        assert stories[1]["id"] == "1.2"
+        assert stories[1]["title"] == "测试故事 2"
 
     @pytest.mark.anyio
     async def test_parse_epic_with_different_statuses(self):
         """测试解析不同状态的 Epic"""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            f.write("""# Epic 1: 测试 Epic
 
-            # Create stories directory
-            stories_dir = tmp_path / "stories"
-            stories_dir.mkdir()
-
-            # Create epic file
-            epic_file = tmp_path / "test_epic.md"
-            epic_file.write_text("""# Epic 1: 测试 Epic
-
-### Story 1.1: Story 1
+## Story 1.1: 故事 1
 **Status**: Draft
 **Description**: Draft 状态故事
 
-### Story 1.2: Story 2
+## Story 1.2: 故事 2
 **Status**: In Progress
 **Description**: In Progress 状态故事
 
-### Story 1.3: Story 3
+## Story 1.3: 故事 3
 **Status**: Done
 **Description**: Done 状态故事
-""", encoding='utf-8')
+""")
+            f.flush()
 
-            # Create corresponding story files
-            for i in range(1, 4):
-                story_file = stories_dir / f"1.{i}-story-{i}.md"
-                status = "draft" if i == 1 else "in_progress" if i == 2 else "done"
-                story_file.write_text(f"""# Story 1.{i}: Story {i}
-
-**Status**: {status}
-**Description**: Story {i} description
-""", encoding='utf-8')
-
-            driver = EpicDriver(str(epic_file), use_claude=False)
+            driver = EpicDriver(f.name, use_claude=False)
             stories = await driver.parse_epic()
 
             assert len(stories) == 3
-            # Just verify that stories were found with different IDs
-            assert stories[0]["id"] == "1.1: Story 1"
-            assert stories[1]["id"] == "1.2: Story 2"
-            assert stories[2]["id"] == "1.3: Story 3"
+            assert stories[0]["status"] == "Draft"
+            assert stories[1]["status"] == "In Progress"
+            assert stories[2]["status"] == "Done"
 
     @pytest.mark.anyio
     async def test_parse_epic_with_complex_formatting(self):
         """测试解析复杂格式的 Epic"""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+            f.write("""# Epic 1: 复杂 Epic
 
-            # Create stories directory
-            stories_dir = tmp_path / "stories"
-            stories_dir.mkdir()
-
-            # Create epic file
-            epic_file = tmp_path / "test_epic.md"
-            epic_file.write_text("""# Epic 1: 复杂 Epic
-
-### Story 1.1: Story 1
+## Story 1.1: 故事 1
 **Status**: Draft
 **Description**: 这是一个带有**粗体**和*斜体*的故事
 
@@ -300,57 +244,39 @@ class TestEpicDriver:
 - [ ] 任务 1
 - [ ] 任务 2
 
-### Story 1.2: Story 2
+## Story 1.2: 故事 2
 **Status**: Ready for Development
 **Description**: 另一个故事
-""", encoding='utf-8')
+""")
+            f.flush()
 
-            # Create corresponding story files
-            story1_file = stories_dir / "1.1-story-1.md"
-            story1_file.write_text("""# Story 1.1: Story 1
-
-**Status**: Draft
-**Description**: 这是一个带有**粗体**和*斜体*的故事
-""", encoding='utf-8')
-
-            story2_file = stories_dir / "1.2-story-2.md"
-            story2_file.write_text("""# Story 1.2: Story 2
-
-**Status**: Ready for Development
-**Description**: 另一个故事
-""", encoding='utf-8')
-
-            driver = EpicDriver(str(epic_file), use_claude=False)
+            driver = EpicDriver(f.name, use_claude=False)
             stories = await driver.parse_epic()
 
             assert len(stories) == 2
-            # The description is in the story file content, not returned in the dict
-            # So we can't test for **粗体** and *斜体* in the returned data
-            assert stories[0]["id"] == "1.1: Story 1"
-            assert stories[1]["id"] == "1.2: Story 2"
+            assert "**粗体**" in stories[0]["description"]
+            assert "*斜体*" in stories[0]["description"]
 
     @pytest.mark.anyio
     async def test_extract_story_ids(self):
         """测试故事 ID 提取"""
-        content = """# Epic 1
-
-### Story 1.1: 故事 1
-
-### Story 1.2: 故事 2
-
-### Story 2.1: 故事 3
-"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-            f.write(content)
+            f.write("""# Epic 1
+
+## Story 1.1: 故事 1
+
+## Story 1.2: 故事 2
+
+## Story 2.1: 故事 3
+""")
             f.flush()
 
             driver = EpicDriver(f.name, use_claude=False)
-            story_ids = driver._extract_story_ids_from_epic(content)
+            story_ids = driver._extract_story_ids_from_epic()
 
-            # Method returns "X.Y: Title" format
-            assert "1.1: 故事 1" in story_ids
-            assert "1.2: 故事 2" in story_ids
-            assert "2.1: 故事 3" in story_ids
+            assert "1.1" in story_ids
+            assert "1.2" in story_ids
+            assert "2.1" in story_ids
 
     @pytest.mark.anyio
     async def test_find_story_file_with_fallback(self):

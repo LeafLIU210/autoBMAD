@@ -24,11 +24,11 @@ def parse_array_input(input_str: str) -> list[int | float]:
 
     # Remove brackets if present
     input_str = input_str.strip()
-    if input_str.startswith('[') and input_str.endswith(']'):
+    if input_str.startswith("[") and input_str.endswith("]"):
         input_str = input_str[1:-1]
 
     # Split by comma or whitespace
-    parts = input_str.replace(',', ' ').split()
+    parts = input_str.replace(",", " ").split()
 
     # Filter out empty parts
     parts = [p.strip() for p in parts if p.strip()]
@@ -65,7 +65,7 @@ def read_from_file(file_path: str) -> list[int | float]:
         ValueError: If file is empty or contains invalid data
     """
     try:
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read().strip()
 
         if not content:
@@ -112,7 +112,7 @@ def format_output(
     original_data: list[int | float],
     sorted_data: list[int | float],
     format_type: str = "default",
-    show_stats: bool = False
+    show_stats: bool = False,
 ) -> str:
     """Format the sorting output.
 
@@ -130,10 +130,13 @@ def format_output(
         if show_stats:
             output["statistics"] = {
                 "comparisons": len(original_data) ** 2,  # Approximation
-                "swaps": sum(1 for i in range(len(original_data))
-                            for j in range(len(original_data) - 1)
-                            if original_data[i] > original_data[j]),
-                "steps": len(get_sorting_steps(original_data))
+                "swaps": sum(
+                    1
+                    for i in range(len(original_data))
+                    for j in range(len(original_data) - 1)
+                    if original_data[i] > original_data[j]
+                ),
+                "steps": len(get_sorting_steps(original_data)),
             }
         return json.dumps(output, indent=2)
 
@@ -148,7 +151,9 @@ def format_output(
         lines = [f"Input: {original_data}", f"Sorted: {sorted_data}"]
         if show_stats:
             lines.append(f"Comparisons: {len(original_data) ** 2}")
-            lines.append(f"Swaps: {sum(1 for i in range(len(original_data)) for j in range(len(original_data) - 1) if original_data[i] > original_data[j])}")
+            lines.append(
+                f"Swaps: {sum(1 for i in range(len(original_data)) for j in range(len(original_data) - 1) if original_data[i] > original_data[j])}"
+            )
             lines.append(f"Steps: {len(get_sorting_steps(original_data))}")
         return "\n".join(lines)
 
@@ -172,7 +177,7 @@ def get_input_data(args: argparse.Namespace) -> list[int | float]:
         return parse_array_input(args.array)
     elif args.file is not None:
         return read_from_file(args.file)
-    elif hasattr(args, 'interactive') and args.interactive:
+    elif hasattr(args, "interactive") and args.interactive:
         # Interactive mode - will prompt user
         return []
     else:
@@ -215,7 +220,7 @@ def interactive_mode() -> None:
         try:
             user_input = input("\nEnter numbers: ").strip()
 
-            if user_input.lower() in ['quit', 'exit', 'q']:
+            if user_input.lower() in ["quit", "exit", "q"]:
                 print("Goodbye!")
                 break
 
@@ -237,13 +242,15 @@ def interactive_mode() -> None:
 def batch_mode() -> None:
     """Run batch mode for sorting from files."""
     print("Batch Mode - Enter file paths (or 'quit' to exit)")
-    print("Supported formats: .txt files with comma-separated or space-separated numbers")
+    print(
+        "Supported formats: .txt files with comma-separated or space-separated numbers"
+    )
 
     while True:
         try:
             file_path = input("\nEnter file path: ").strip()
 
-            if file_path.lower() in ['quit', 'exit', 'q']:
+            if file_path.lower() in ["quit", "exit", "q"]:
                 print("Goodbye!")
                 break
 
@@ -266,20 +273,28 @@ def main() -> None:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="Bubble Sort CLI - Sort lists of numbers",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     # Input options
     input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument('array', nargs='?', help='Array to sort (e.g., "1, 2, 3")')
-    input_group.add_argument('-f', '--file', help='Read from file')
-    input_group.add_argument('--interactive', action='store_true', help='Run in interactive mode')
-    input_group.add_argument('--batch', action='store_true', help='Run in batch mode (process files)')
+    input_group.add_argument("array", nargs="?", help='Array to sort (e.g., "1, 2, 3")')
+    input_group.add_argument("-f", "--file", help="Read from file")
+    input_group.add_argument(
+        "--interactive", action="store_true", help="Run in interactive mode"
+    )
+    input_group.add_argument(
+        "--batch", action="store_true", help="Run in batch mode (process files)"
+    )
 
     # Output options
-    parser.add_argument('--format', choices=['default', 'json', 'steps', 'detailed'],
-                       default='default', help='Output format')
-    parser.add_argument('--stats', action='store_true', help='Show statistics')
+    parser.add_argument(
+        "--format",
+        choices=["default", "json", "steps", "detailed"],
+        default="default",
+        help="Output format",
+    )
+    parser.add_argument("--stats", action="store_true", help="Show statistics")
 
     args = parser.parse_args()
 

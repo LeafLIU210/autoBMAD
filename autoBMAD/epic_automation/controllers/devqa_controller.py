@@ -9,11 +9,11 @@ from typing import Any
 
 from anyio.abc import TaskGroup
 
-from .base_controller import StateDrivenController
-from ..agents.state_agent import StateAgent
-from ..agents.dev_agent import DevAgent
-from ..agents.qa_agent import QAAgent
-from ..state_manager import StateManager
+from autoBMAD.epic_automation.controllers.base_controller import StateDrivenController
+from autoBMAD.epic_automation.agents.state_agent import StateAgent
+from autoBMAD.epic_automation.agents.dev_agent import DevAgent
+from autoBMAD.epic_automation.agents.qa_agent import QAAgent
+from autoBMAD.epic_automation.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 

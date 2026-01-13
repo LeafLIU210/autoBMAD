@@ -10,11 +10,11 @@ from typing import Any, Dict, Optional
 
 from anyio.abc import TaskGroup
 
-from .base_controller import BaseController
-from ..agents.quality_agents import (
+from autoBMAD.epic_automation.controllers.base_controller import BaseController
+from autoBMAD.epic_automation.agents.quality_agents import (
     RuffAgent,
     BasedPyrightAgent,
-    PytestAgent
+    PytestAgent,
 )
 
 logger = logging.getLogger(__name__)

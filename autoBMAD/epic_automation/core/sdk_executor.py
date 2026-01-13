@@ -18,8 +18,8 @@ import logging
 from typing import Callable, Any, TYPE_CHECKING, Union, Awaitable
 from collections.abc import AsyncIterator
 
-from .sdk_result import SDKResult, SDKErrorType
-from .cancellation_manager import CancellationManager
+from autoBMAD.epic_automation.core.sdk_result import SDKResult, SDKErrorType
+from autoBMAD.epic_automation.core.cancellation_manager import CancellationManager
 
 if TYPE_CHECKING:
     from anyio.abc import TaskGroup

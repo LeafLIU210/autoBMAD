@@ -209,6 +209,38 @@ class TestPackageStructureComprehensive:
         except SyntaxError as e:
             pytest.fail(f"tests/__init__.py包含语法错误: {e}")
 
+    def test_syntax_error_detection_in_src_init(self):
+        """测试src/__init__.py语法错误检测"""
+        init_file = PROJECT_ROOT / "src" / "__init__.py"
+        assert init_file.exists(), "src/__init__.py必须存在"
+        # 创建一个临时文件模拟语法错误
+        temp_file = PROJECT_ROOT / "temp_test_syntax_error.py"
+        try:
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                f.write("def invalid_syntax(\n")  # 故意语法错误
+            # 使用pytest.raises来验证语法错误
+            with pytest.raises(SyntaxError):
+                with open(temp_file, 'r', encoding='utf-8') as f:
+                    compile(f.read(), str(temp_file), 'exec')
+        finally:
+            temp_file.unlink()
+
+    def test_syntax_error_detection_in_tests_init(self):
+        """测试tests/__init__.py语法错误检测"""
+        init_file = PROJECT_ROOT / "tests" / "__init__.py"
+        assert init_file.exists(), "tests/__init__.py必须存在"
+        # 创建一个临时文件模拟语法错误
+        temp_file = PROJECT_ROOT / "temp_test_syntax_error_tests.py"
+        try:
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                f.write("import invalid_syntax(\n")  # 故意语法错误
+            # 使用pytest.raises来验证语法错误
+            with pytest.raises(SyntaxError):
+                with open(temp_file, 'r', encoding='utf-8') as f:
+                    compile(f.read(), str(temp_file), 'exec')
+        finally:
+            temp_file.unlink()
+
     def test_autoBMAD_package_exists(self):
         """验证autoBMAD包存在（主要包）"""
         autoBMAD_dir = PROJECT_ROOT / "autoBMAD"

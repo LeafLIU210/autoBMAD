@@ -11,7 +11,7 @@ from typing import Any, Optional
 
 from anyio.abc import TaskGroup
 
-from .base_agent import BaseAgent
+from autoBMAD.epic_automation.agents.base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class SMAgent(BaseAgent):
         # 集成SDKExecutor
         self.sdk_executor = None
         try:
-            from ..core.sdk_executor import SDKExecutor
+            from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
             self.sdk_executor = SDKExecutor()
         except (ImportError, TypeError):
             self._log_execution("SDKExecutor not available", "warning")
@@ -159,7 +159,7 @@ class SMAgent(BaseAgent):
             # 🎯 新增：获取SDKCancellationManager
             manager = None
             try:
-                from ..monitoring import get_cancellation_manager
+                from autoBMAD.epic_automation.monitoring import get_cancellation_manager
                 manager = get_cancellation_manager()
             except ImportError:
                 self._log_execution("SDKCancellationManager not available", "warning")

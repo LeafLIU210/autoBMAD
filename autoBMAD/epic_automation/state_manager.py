@@ -25,7 +25,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, TypeVar, Union, cast, List, Dict
 
-from .agents.config import StoryStatus, QAResult
+from autoBMAD.epic_automation.agents.config import StoryStatus, QAResult
 
 logger = logging.getLogger(__name__)
 

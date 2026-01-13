@@ -12,18 +12,18 @@ except Exception:
     anthropic = None
     Anthropic = None
 
-from .base_agent import BaseAgent
-from .sm_agent import SMAgent
-from .state_agent import StateAgent
-from .dev_agent import DevAgent
-from .qa_agent import QAAgent
-from .quality_agents import (
+from autoBMAD.epic_automation.agents.base_agent import BaseAgent
+from autoBMAD.epic_automation.agents.sm_agent import SMAgent
+from autoBMAD.epic_automation.agents.state_agent import StateAgent
+from autoBMAD.epic_automation.agents.dev_agent import DevAgent
+from autoBMAD.epic_automation.agents.qa_agent import QAAgent
+from autoBMAD.epic_automation.agents.quality_agents import (
     BaseQualityAgent,
     RuffAgent,
     BasedPyrightAgent,
     PytestAgent
 )
-from .config import (
+from autoBMAD.epic_automation.agents.config import (
     AgentConfig,
     DevConfig,
     SMConfig,

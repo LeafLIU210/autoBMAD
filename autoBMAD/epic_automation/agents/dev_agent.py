@@ -12,7 +12,7 @@ from typing import Any, Optional, cast
 
 from anyio.abc import TaskGroup
 
-from .base_agent import BaseAgent
+from autoBMAD.epic_automation.agents.base_agent import BaseAgent
 
 # Import LogManager for runtime use
 from autoBMAD.epic_automation.log_manager import LogManager
@@ -47,7 +47,7 @@ class DevAgent(BaseAgent):
         # 集成SDKExecutor
         self.sdk_executor = None
         try:
-            from ..core.sdk_executor import SDKExecutor
+            from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
             self.sdk_executor = SDKExecutor()
         except (ImportError, TypeError):
             self._log_execution("SDKExecutor not available", "warning")
@@ -59,8 +59,8 @@ class DevAgent(BaseAgent):
             # Check for pytest cache or PYTEST_CURRENT_TEST
             if not (Path(".pytest_cache").exists() or os.environ.get("PYTEST_CURRENT_TEST")):
                 try:
-                    from .state_agent import SimpleStoryParser
-                    from ..sdk_wrapper import SafeClaudeSDK
+                    from autoBMAD.epic_automation.agents.state_agent import SimpleStoryParser
+                    from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
                     if SafeClaudeSDK:
                         from claude_agent_sdk import ClaudeAgentOptions

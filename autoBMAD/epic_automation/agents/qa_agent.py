@@ -10,7 +10,7 @@ from typing import Any, Optional
 
 from anyio.abc import TaskGroup
 
-from .base_agent import BaseAgent
+from autoBMAD.epic_automation.agents.base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class QAAgent(BaseAgent):
         # 集成SDKExecutor
         self.sdk_executor = None
         try:
-            from ..core.sdk_executor import SDKExecutor
+            from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
             self.sdk_executor = SDKExecutor()
         except (ImportError, TypeError):
             self._log_execution("SDKExecutor not available", "warning")

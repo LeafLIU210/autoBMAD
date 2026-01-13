@@ -19,17 +19,17 @@ import logging
 from pathlib import Path
 from typing import Any, TypedDict
 
-from ..core.sdk_executor import SDKExecutor
-from ..core.sdk_result import SDKResult, SDKErrorType
+from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
+from autoBMAD.epic_automation.core.sdk_result import SDKResult, SDKErrorType
 
 logger = logging.getLogger(__name__)
 
 # SDK可用性检测
 _sdk_available = False
 try:
-    from ..sdk_wrapper import SDK_AVAILABLE as _sdk_available
-    from ..sdk_wrapper import ResultMessage
-    from ..sdk_wrapper import query
+    from autoBMAD.epic_automation.sdk_wrapper import SDK_AVAILABLE as _sdk_available
+    from autoBMAD.epic_automation.sdk_wrapper import ResultMessage
+    from autoBMAD.epic_automation.sdk_wrapper import query
 except ImportError:
     ResultMessage = None
     query = None  # type: ignore[assignment]

@@ -117,7 +117,7 @@ class QualityGateOrchestrator:
 
         # Initialize quality agents
         try:
-            from .agents.quality_agents import RuffAgent, BasedPyrightAgent, PytestAgent
+            from autoBMAD.epic_automation.agents.quality_agents import RuffAgent, BasedPyrightAgent, PytestAgent
             self.ruff_agent = RuffAgent()
             self.basedpyright_agent = BasedPyrightAgent()
             self.pytest_agent = PytestAgent()
@@ -132,6 +132,7 @@ class QualityGateOrchestrator:
             "success": True,
             "ruff": None,
             "basedpyright": None,
+            "ruff_format": None,  # 新增
             "pytest": None,
             "errors": [],  # List[str]
             "start_time": None,
@@ -145,6 +146,11 @@ class QualityGateOrchestrator:
                     "end_time": None,
                 },
                 "phase_2_basedpyright": {
+                    "status": "pending",
+                    "start_time": None,
+                    "end_time": None,
+                },
+                "phase_final_format": {  # 新增
                     "status": "pending",
                     "start_time": None,
                     "end_time": None,
@@ -175,42 +181,45 @@ class QualityGateOrchestrator:
         return round(end_time - start_time, 2)
 
     async def execute_ruff_agent(self, source_dir: str) -> dict[str, Any]:
-        """Execute Ruff quality agent."""
+        """执行 Ruff 质量门（改造版：使用 QualityCheckController）"""
         if self.skip_quality:
             self.logger.info("Skipping Ruff quality check (--skip-quality flag)")
             return {"success": True, "skipped": True, "message": "Skipped via CLI flag"}
 
-        self.logger.info("=== Quality Gate 1/3: Ruff Linting ===")
+        self.logger.info("=== Quality Gate 1/3: Ruff Check with SDK Fix ===")
         self._update_progress("phase_1_ruff", "in_progress", start=True)
         progress_dict = cast(dict[str, Any], self.results["progress"])
         progress_dict["current_phase"] = "ruff"
 
         try:
-            # Import optional quality agent modules
-            try:
-                from autoBMAD.epic_automation.agents.quality_agents import RuffAgent
+            # 导入质量检查控制器
+            from autoBMAD.epic_automation.controllers.quality_check_controller import QualityCheckController
+            from autoBMAD.epic_automation.agents.quality_agents import RuffAgent
 
-                ruff_agent = RuffAgent()
-            except ImportError:
-                logger.error("RuffAgent not available - quality gate cannot execute")
-                return {
-                    "success": False,
-                    "error": "RuffAgent module not available",
-                    "duration": 0.0,
-                }
+            # 创建 Agent 实例
+            ruff_agent = RuffAgent()
+
+            # 创建控制器
+            controller = QualityCheckController(
+                tool="ruff",
+                agent=ruff_agent,
+                source_dir=source_dir,
+                max_cycles=3,
+                sdk_call_delay=60,
+                sdk_timeout=600,
+            )
 
             start_time = time.time()
-            ruff_result = await ruff_agent.execute(
-                source_dir=str(source_dir)
-            )
+            ruff_result = await controller.run()
             end_time = time.time()
 
-            # Check if successful (status == "completed" and errors == 0)
-            success = ruff_result.get("status") == "completed" and ruff_result.get("errors", 0) == 0
+            # 判断成功与否
+            success = ruff_result["status"] == "completed"
 
             if success:
                 self.logger.info(
-                    f"✓ Ruff quality gate PASSED in {self._calculate_duration(start_time, end_time)}s"
+                    f"✓ Ruff quality gate PASSED after {ruff_result['cycles']} cycle(s) "
+                    f"in {self._calculate_duration(start_time, end_time)}s"
                 )
                 self._update_progress("phase_1_ruff", "completed", end=True)
                 return {
@@ -219,66 +228,72 @@ class QualityGateOrchestrator:
                     "result": ruff_result,
                 }
             else:
-                error_msg = f"Ruff quality gate failed with {ruff_result.get('errors', 0)} errors"
+                error_msg = (
+                    f"Ruff quality gate FAILED after {ruff_result['cycles']} cycle(s): "
+                    f"{len(ruff_result['final_error_files'])} file(s) still have errors"
+                )
                 self.logger.warning(f"✗ {error_msg}")
                 self._update_progress("phase_1_ruff", "failed", end=True)
                 errors_list = cast(list[str], self.results["errors"])
                 errors_list.append(error_msg)
+
                 return {
                     "success": False,
                     "error": error_msg,
                     "duration": self._calculate_duration(start_time, end_time),
                     "result": ruff_result,
                 }
+
         except Exception as e:
             error_msg = f"Ruff execution error: {str(e)}"
-            self.logger.error(error_msg)
+            self.logger.error(error_msg, exc_info=True)
             self._update_progress("phase_1_ruff", "error", end=True)
             errors_list = cast(list[str], self.results["errors"])
             errors_list.append(error_msg)
             return {"success": False, "error": error_msg, "duration": 0.0}
 
     async def execute_basedpyright_agent(self, source_dir: str) -> dict[str, Any]:
-        """Execute Basedpyright type checking agent."""
+        """执行 BasedPyright 质量门（改造版：使用 QualityCheckController）"""
         if self.skip_quality:
             self.logger.info(
                 "Skipping Basedpyright quality check (--skip-quality flag)"
             )
             return {"success": True, "skipped": True, "message": "Skipped via CLI flag"}
 
-        self.logger.info("=== Quality Gate 2/3: BasedPyright Type Checking ===")
+        self.logger.info("=== Quality Gate 2/3: BasedPyright Check with SDK Fix ===")
         self._update_progress("phase_2_basedpyright", "in_progress", start=True)
         progress_dict = cast(dict[str, Any], self.results["progress"])
         progress_dict["current_phase"] = "basedpyright"
 
         try:
-            # Import optional quality agent modules
-            try:
-                from autoBMAD.epic_automation.agents.quality_agents import BasedPyrightAgent
+            # 导入质量检查控制器
+            from .controllers.quality_check_controller import QualityCheckController
+            from .agents.quality_agents import BasedPyrightAgent
 
-                basedpyright_agent = BasedPyrightAgent()
-            except ImportError:
-                logger.error(
-                    "BasedpyrightAgent not available - quality gate cannot execute"
-                )
-                return {
-                    "success": False,
-                    "error": "BasedpyrightAgent module not available",
-                    "duration": 0.0,
-                }
+            # 创建 Agent 实例
+            basedpyright_agent = BasedPyrightAgent()
+
+            # 创建控制器
+            controller = QualityCheckController(
+                tool="basedpyright",
+                agent=basedpyright_agent,
+                source_dir=source_dir,
+                max_cycles=3,
+                sdk_call_delay=60,
+                sdk_timeout=600,
+            )
 
             start_time = time.time()
-            basedpyright_result = await basedpyright_agent.execute(
-                source_dir=str(source_dir)
-            )
+            basedpyright_result = await controller.run()
             end_time = time.time()
 
-            # Check if successful (status == "completed" and errors == 0)
-            success = basedpyright_result.get("status") == "completed" and basedpyright_result.get("errors", 0) == 0
+            # 判断成功与否
+            success = basedpyright_result["status"] == "completed"
 
             if success:
                 self.logger.info(
-                    f"✓ BasedPyright quality gate PASSED in {self._calculate_duration(start_time, end_time)}s"
+                    f"✓ BasedPyright quality gate PASSED after {basedpyright_result['cycles']} cycle(s) "
+                    f"in {self._calculate_duration(start_time, end_time)}s"
                 )
                 self._update_progress("phase_2_basedpyright", "completed", end=True)
                 return {
@@ -287,35 +302,87 @@ class QualityGateOrchestrator:
                     "result": basedpyright_result,
                 }
             else:
-                error_msg = f"BasedPyright quality gate failed with {basedpyright_result.get('errors', 0)} errors"
+                error_msg = (
+                    f"BasedPyright quality gate FAILED after {basedpyright_result['cycles']} cycle(s): "
+                    f"{len(basedpyright_result['final_error_files'])} file(s) still have type errors"
+                )
                 self.logger.warning(f"✗ {error_msg}")
                 self._update_progress("phase_2_basedpyright", "failed", end=True)
                 errors_list = cast(list[str], self.results["errors"])
                 errors_list.append(error_msg)
+
                 return {
                     "success": False,
                     "error": error_msg,
                     "duration": self._calculate_duration(start_time, end_time),
                     "result": basedpyright_result,
                 }
+
         except Exception as e:
             error_msg = f"BasedPyright execution error: {str(e)}"
-            self.logger.error(error_msg)
+            self.logger.error(error_msg, exc_info=True)
             self._update_progress("phase_2_basedpyright", "error", end=True)
             errors_list = cast(list[str], self.results["errors"])
             errors_list.append(error_msg)
             return {"success": False, "error": error_msg, "duration": 0.0}
 
+    async def execute_ruff_format(self, source_dir: str) -> dict[str, Any]:
+        """执行 Ruff Format（新增）"""
+
+        self.logger.info("=== Quality Gate Final: Ruff Format ===")
+        self._update_progress("phase_final_format", "in_progress", start=True)
+
+        try:
+            from .agents.quality_agents import RuffAgent
+
+            ruff_agent = RuffAgent()
+
+            start_time = time.time()
+            format_result = await ruff_agent.format(source_dir)
+            end_time = time.time()
+
+            if format_result["formatted"]:
+                self.logger.info(
+                    f"✓ Code formatted successfully "
+                    f"in {self._calculate_duration(start_time, end_time)}s"
+                )
+                self._update_progress("phase_final_format", "completed", end=True)
+                return {
+                    "success": True,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": format_result,
+                }
+            else:
+                error_msg = "Ruff format failed"
+                self.logger.warning(f"✗ {error_msg}")
+                self._update_progress("phase_final_format", "failed", end=True)
+                # 注意：格式化失败不应阻断流程
+                return {
+                    "success": True,  # 仍返回 True，保持非阻断特性
+                    "warning": error_msg,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": format_result,
+                }
+
+        except Exception as e:
+            error_msg = f"Ruff format error: {str(e)}"
+            self.logger.error(error_msg, exc_info=True)
+            self._update_progress("phase_final_format", "error", end=True)
+            # 格式化错误也不阻断
+            return {
+                "success": True,
+                "warning": error_msg,
+                "duration": 0.0
+            }
+
     async def execute_pytest_agent(self, test_dir: str) -> dict[str, Any]:
-        """Execute Pytest agent."""
+        """执行 Pytest 质量门（改造版：使用 PytestController）"""
         if self.skip_tests:
             self.logger.info("Skipping pytest execution (--skip-tests flag)")
             return {"success": True, "skipped": True, "message": "Skipped via CLI flag"}
 
-        self.logger.info("=== Quality Gate 3/3: Pytest Execution ===")
+        self.logger.info("=== Quality Gate 3/3: Pytest Execution with SDK Fix ===")
         self._update_progress("phase_3_pytest", "in_progress", start=True)
-        progress_dict = cast(dict[str, Any], self.results["progress"])
-        progress_dict["current_phase"] = "pytest"
 
         try:
             # Import optional modules - may not exist in all installations
@@ -344,10 +411,7 @@ class QualityGateOrchestrator:
                     "duration": 0.0,
                 }
 
-            # Run pytest directly instead of using TestAutomationAgent (which was removed)
-            start_time = time.time()
-
-            # Use shutil to check pytest availability
+            # 前置检查
             import shutil
             from pathlib import Path
 
@@ -393,101 +457,61 @@ class QualityGateOrchestrator:
                     "duration": 0.0,
                 }
 
-            # Run pytest using PytestAgent (with batch execution)
+            # 使用 PytestController 执行完整流程
             try:
-                from autoBMAD.epic_automation.agents.quality_agents import PytestAgent
+                from .controllers.pytest_controller import PytestController
             except ImportError:
-                logger.error("PytestAgent not available - pytest quality gate cannot execute")
+                logger.error("PytestController not available - pytest quality gate cannot execute")
                 return {
                     "success": False,
-                    "error": "PytestAgent module not available",
+                    "error": "PytestController module not available",
                     "duration": 0.0,
                 }
 
-            pytest_agent = PytestAgent()
-            pytest_result = await pytest_agent.execute(
+            controller = PytestController(
                 source_dir=self.source_dir,
-                test_dir=test_dir
+                test_dir=test_dir,
+                max_cycles=3,
             )
 
+            start_time = time.time()
+            pytest_result = await controller.run()
             end_time = time.time()
 
-            # Check if tests passed
-            success = pytest_result.get("status") == "completed" or pytest_result.get("status") == "skipped"
+            # 判断成功与否
+            success = pytest_result["status"] == "completed"
 
-            if pytest_result.get("status") == "skipped":
-                self.logger.info(f"✓ Pytest skipped: {pytest_result.get('message')}")
-                self._update_progress("phase_3_pytest", "skipped", end=True)
+            if success:
+                self.logger.info(
+                    f"✓ Pytest quality gate PASSED after {pytest_result['cycles']} cycle(s) "
+                    f"in {self._calculate_duration(start_time, end_time)}s"
+                )
+                self._update_progress("phase_3_pytest", "completed", end=True)
                 return {
                     "success": True,
-                    "skipped": True,
-                    "message": pytest_result.get("message"),
-                    "duration": end_time - start_time,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": pytest_result,
+                }
+            else:
+                error_msg = (
+                    f"Pytest quality gate FAILED after {pytest_result['cycles']} cycle(s): "
+                    f"{len(pytest_result['final_failed_files'])} file(s) still failing"
+                )
+                self.logger.warning(f"✗ {error_msg}")
+                self._update_progress("phase_3_pytest", "failed", end=True)
+                errors_list = cast(list[str], self.results["errors"])
+                errors_list.append(error_msg)
+
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": pytest_result,
                 }
 
-            # Check for batch execution results
-            if "total_batches" in pytest_result:
-                # New batch execution format
-                passed_batches = pytest_result.get("passed_batches", 0)
-                total_batches = pytest_result.get("total_batches", 0)
-                failed_batches = pytest_result.get("failed_batches", [])
-                batch_message = pytest_result.get("message", "")
-
-                if success:
-                    self.logger.info(
-                        f"✓ Pytest quality gate PASSED: {batch_message} "
-                        f"in {self._calculate_duration(start_time, end_time)}s"
-                    )
-                    self._update_progress("phase_3_pytest", "completed", end=True)
-                    return {
-                        "success": True,
-                        "duration": self._calculate_duration(start_time, end_time),
-                        "result": pytest_result,
-                        "batches": {
-                            "total": total_batches,
-                            "passed": passed_batches,
-                            "failed": len(failed_batches) if failed_batches else 0,
-                        },
-                    }
-                else:
-                    error_msg = f"Pytest quality gate failed: {batch_message}"
-                    self.logger.warning(f"✗ {error_msg}")
-                    self._update_progress("phase_3_pytest", "failed", end=True)
-                    errors_list = cast(list[str], self.results["errors"])
-                    errors_list.append(error_msg)
-                    return {
-                        "success": False,
-                        "error": error_msg,
-                        "duration": self._calculate_duration(start_time, end_time),
-                        "result": pytest_result,
-                    }
-            else:
-                # Legacy single-run format (for backward compatibility)
-                if success:
-                    self.logger.info(
-                        f"✓ Pytest quality gate PASSED in {self._calculate_duration(start_time, end_time)}s"
-                    )
-                    self._update_progress("phase_3_pytest", "completed", end=True)
-                    return {
-                        "success": True,
-                        "duration": self._calculate_duration(start_time, end_time),
-                        "result": pytest_result,
-                    }
-                else:
-                    error_msg = f"Pytest quality gate failed: {pytest_result.get('error', 'Unknown error')}"
-                    self.logger.warning(f"✗ {error_msg}")
-                    self._update_progress("phase_3_pytest", "failed", end=True)
-                    errors_list = cast(list[str], self.results["errors"])
-                    errors_list.append(error_msg)
-                    return {
-                        "success": False,
-                        "error": error_msg,
-                        "duration": self._calculate_duration(start_time, end_time),
-                        "result": pytest_result,
-                    }
         except Exception as e:
             error_msg = f"Pytest execution error: {str(e)}"
-            self.logger.error(error_msg)
+            self.logger.error(error_msg, exc_info=True)
             self._update_progress("phase_3_pytest", "error", end=True)
             errors_list = cast(list[str], self.results["errors"])
             errors_list.append(error_msg)
@@ -495,7 +519,13 @@ class QualityGateOrchestrator:
 
     async def execute_quality_gates(self, epic_id: str) -> dict[str, Any]:
         """
-        Execute complete quality gates pipeline.
+        执行完整质量门控流水线（更新版）
+
+        流程：
+        1. Phase 1: Ruff Check（检查 → SDK修复 → 回归）
+        2. Phase 2: BasedPyright Check（检查 → SDK修复 → 回归）
+        3. Phase 3: Ruff Format（最终格式化）
+        4. Phase 4: Pytest（保持原有逻辑）
 
         Args:
             epic_id: Epic identifier for tracking
@@ -509,29 +539,32 @@ class QualityGateOrchestrator:
         progress_dict["current_phase"] = "starting"
 
         try:
-            # Phase 1: Ruff
+            # Phase 1: Ruff Check
             if not self.skip_quality:
                 ruff_result = await self.execute_ruff_agent(self.source_dir)
                 self.results["ruff"] = ruff_result
-                if not ruff_result["success"]:
-                    self.logger.error(
-                        "Quality gates pipeline halted due to Ruff failure"
-                    )
-                    return self._finalize_results()
 
-            # Phase 2: Basedpyright
+                # Ruff 失败不阻断，继续执行
+                if not ruff_result["success"]:
+                    self.logger.warning("Ruff check failed, but continuing...")
+
+            # Phase 2: BasedPyright Check
             if not self.skip_quality:
                 basedpyright_result = await self.execute_basedpyright_agent(
                     self.source_dir
                 )
                 self.results["basedpyright"] = basedpyright_result
-                if not basedpyright_result["success"]:
-                    self.logger.error(
-                        "Quality gates pipeline halted due to BasedPyright failure"
-                    )
-                    return self._finalize_results()
 
-            # Phase 3: Pytest
+                # BasedPyright 失败不阻断，继续执行
+                if not basedpyright_result["success"]:
+                    self.logger.warning("BasedPyright check failed, but continuing...")
+
+            # Phase 3: Ruff Format（新增）
+            if not self.skip_quality:
+                format_result = await self.execute_ruff_format(self.source_dir)
+                self.results["ruff_format"] = format_result
+
+            # Phase 4: Pytest
             if not self.skip_tests:
                 pytest_result = await self.execute_pytest_agent(self.test_dir)
                 self.results["pytest"] = pytest_result

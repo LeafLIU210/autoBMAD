@@ -11,14 +11,12 @@ from anyio.abc import TaskGroup
 from abc import ABC
 from typing import Any, Optional, Callable, Awaitable, Type
 
-from .config import AgentConfig
+from autoBMAD.epic_automation.agents.config import AgentConfig
 
-# Import anthropic at module level for mocking
+# Import Anthropic at module level for mocking
 try:
-    import anthropic
     from anthropic import Anthropic
 except ImportError:
-    anthropic = None
     Anthropic = None
 
 logger = logging.getLogger(__name__)
