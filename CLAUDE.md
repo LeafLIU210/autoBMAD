@@ -56,7 +56,7 @@
 | **[testing_guide.md](claude_docs/testing_guide.md)** | 测试规范和实践 | 编写和运行测试时 |
 | **[quality_assurance.md](claude_docs/quality_assurance.md)** | 质量保证流程和工具 | QA审查、质量门控 |
 | **[technical_specs.md](claude_docs/technical_specs.md)** | 技术规范和配置 | 技术决策、配置管理 |
-| **[workflow_tools.md](claude_docs/workflow_tools.md)** | 三大工作流工具详解 | 自动化任务时 |
+| **[workflow_tools.md](claude_docs/workflow_tools.md)** | autoBMAD工作流详解 | 自动化任务时 |
 | **[quick_reference.md](claude_docs/quick_reference.md)** | 常用命令速查 | 快速查找命令时 |
 | **[project_tree.md](claude_docs/project_tree.md)** | 项目结构说明 | 了解项目布局时 |
 | **[venv.md](claude_docs/venv.md)** | 虚拟环境管理 | **运行任何py程序时** |
@@ -70,9 +70,8 @@ project/
 ├── build/                    # 构建配置
 ├── docs/                     # 项目文档
 ├── claude_docs/              # 详细说明文档 ⭐
-├── bmad-workflow/            # BMAD工作流工具
-├── basedpyright-workflow/    # 代码质量工具
-├── fixtest-workflow/         # 测试修复工具
+├── autoBMAD/                 # autoBMAD工作流工具
+│   └── epic_automation/      # Epic自动化系统
 └── 配置文件...
 ```
 
@@ -173,13 +172,16 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 
 **详细说明**: [bmad_methodology.md](claude_docs/bmad_methodology.md)
 
-### 5.2 自动化工作流工具
+### 5.2 autoBMAD Epic自动化工作流
 
-#### 三大工具链
+#### 核心工作流系统
 
-1. **BMAD-Workflow** - 自动化开发流程、质量门控
-2. **BasedPyright-Workflow** - 类型检查、代码风格
-3. **Fixtest-Workflow** - 测试扫描、修复
+**autoBMAD Epic Automation** - 完整的5阶段BMAD开发自动化
+- SM-Dev-QA循环
+- 质量门控（Basedpyright + Ruff）
+- 测试自动化（Pytest）
+- Claude Agent SDK集成
+- 状态管理与持久化
 
 **详细说明**: [workflow_tools.md](claude_docs/workflow_tools.md)
 
@@ -245,19 +247,17 @@ python build/build.py
 pre-commit run --all-files
 ```
 
-### 6.5 BMAD-Workflow
+### 6.5 autoBMAD Epic自动化
 
-```powershell
-cd bmad-workflow
+```bash
+# 完整5阶段工作流
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
 
-# 基本执行
-.\BMAD-Workflow.ps1 -StoryPath "docs/stories/my-story.md"
+# 跳过质量门控（快速开发）
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
 
-# 系统测试
-.\BMAD-Workflow.ps1 -Test
-
-# 检查状态
-.\BMAD-Workflow.ps1 -Status
+# 跳过测试自动化（快速验证）
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
 ```
 
 **完整命令列表**: [quick_reference.md](claude_docs/quick_reference.md)
@@ -286,18 +286,18 @@ cd bmad-workflow
 | **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
 | **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
 
-### 7.3 工具链集成
+### 7.3 autoBMAD工作流集成
 
 ```
-开发阶段
+Epic处理
     ↓
-1. BMAD-Workflow Phase A (开发)
+1. SM-Dev-QA循环 (故事开发)
     ↓
-2. BasedPyright-Workflow (代码质量)
+2. 质量门控 (Basedpyright + Ruff)
     ↓
-3. Fixtest-Workflow (测试质量)
+3. 测试自动化 (Pytest)
     ↓
-4. BMAD-Workflow Phase B (QA审查)
+4. 状态持久化与报告
     ↓
 质量门控决策 → [PASS/CONCERNS/FAIL/WAIVED]
 ```
@@ -344,3 +344,138 @@ cd bmad-workflow
 让Claude Code成为您践行这些原则的得力助手，共同打造卓越的软件。
 
 ---
+<!-- BEGIN BYTEROVER RULES -->
+
+# Workflow Instruction
+
+You are a coding agent focused on one codebase. Use the brv CLI to manage working context.
+Core Rules:
+
+- Start from memory. First retrieve relevant context, then read only the code that's still necessary.
+- Keep a local context tree. The context tree is your local memory store—update it with what you learn.
+
+## Context Tree Guideline
+
+- Be specific ("Use React Query for data fetching in web modules").
+- Be actionable (clear instruction a future agent/dev can apply).
+- Be contextual (mention module/service, constraints, links to source).
+- Include source (file + lines or commit) when possible.
+
+## Using `brv curate` with Files
+
+When adding complex implementations, use `--files` to include relevant source files (max 5).  Only text/code files from the current project directory are allowed. **CONTEXT argument must come BEFORE --files flag.** For multiple files, repeat the `--files` (or `-f`) flag for each file.
+
+Examples:
+
+- Single file: `brv curate "JWT authentication with refresh token rotation" -f src/auth.ts`
+- Multiple files: `brv curate "Authentication system" --files src/auth/jwt.ts --files src/auth/middleware.ts --files docs/auth.md`
+
+## CLI Usage Notes
+
+- Use --help on any command to discover flags. Provide exact arguments for the scenario.
+
+---
+# ByteRover CLI Command Reference
+
+## Memory Commands
+
+### `brv curate`
+
+**Description:** Curate context to the context tree (interactive or autonomous mode)
+
+**Arguments:**
+
+- `CONTEXT`: Knowledge context: patterns, decisions, errors, or insights (triggers autonomous mode, optional)
+
+**Flags:**
+
+- `--files`, `-f`: Include file paths for critical context (max 5 files). Only text/code files from the current project directory are allowed. **CONTEXT argument must come BEFORE this flag.**
+
+**Good examples of context:**
+
+- "Auth uses JWT with 24h expiry. Tokens stored in httpOnly cookies via authMiddleware.ts"
+- "API rate limit is 100 req/min per user. Implemented using Redis with sliding window in rateLimiter.ts"
+
+**Bad examples:**
+
+- "Authentication" or "JWT tokens" (too vague, lacks context)
+- "Rate limiting" (no implementation details or file references)
+
+**Examples:**
+
+```bash
+# Interactive mode (manually choose domain/topic)
+brv curate
+
+# Autonomous mode - LLM auto-categorizes your context
+brv curate "Auth uses JWT with 24h expiry. Tokens stored in httpOnly cookies via authMiddleware.ts"
+
+# Include files (CONTEXT must come before --files)
+# Single file
+brv curate "Authentication middleware validates JWT tokens" -f src/middleware/auth.ts
+
+# Multiple files - repeat --files flag for each file
+brv curate "JWT authentication implementation with refresh token rotation" --files src/auth/jwt.ts --files docs/auth.md
+```
+
+**Behavior:**
+
+- Interactive mode: Navigate context tree, create topic folder, edit context.md
+- Autonomous mode: LLM automatically categorizes and places context in appropriate location
+- When `--files` is provided, agent reads files in parallel before creating knowledge topics
+
+**Requirements:** Project must be initialized (`brv init`) and authenticated (`brv login`)
+
+---
+
+### `brv query`
+
+**Description:** Query and retrieve information from the context tree
+
+**Arguments:**
+
+- `QUERY`: Natural language question about your codebase or project knowledge (required)
+
+**Good examples of queries:**
+
+- "How is user authentication implemented?"
+- "What are the API rate limits and where are they enforced?"
+
+**Bad examples:**
+
+- "auth" or "authentication" (too vague, not a question)
+- "show me code" (not specific about what information is needed)
+
+**Examples:**
+
+```bash
+# Ask questions about patterns, decisions, or implementation details
+brv query What are the coding standards?
+brv query How is authentication implemented?
+```
+
+**Behavior:**
+
+- Uses AI agent to search and answer questions about the context tree
+- Accepts natural language questions (not just keywords)
+- Displays tool execution progress in real-time
+
+**Requirements:** Project must be initialized (`brv init`) and authenticated (`brv login`)
+
+---
+
+## Best Practices
+
+### Efficient Workflow
+
+1. **Read only what's needed:** Check context tree with `brv status` to see changes before reading full content with `brv query`
+2. **Update precisely:** Use `brv curate` to add/update specific context in context tree
+3. **Push when appropriate:** Prompt user to run `brv push` after completing significant work
+
+### Context tree Management
+
+- Use `brv curate` to directly add/update context in the context tree
+
+---
+Generated by ByteRover CLI for Claude Code
+<!-- END BYTEROVER RULES -->

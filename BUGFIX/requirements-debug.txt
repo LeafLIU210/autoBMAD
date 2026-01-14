@@ -1,8 +1,7 @@
 # Debug Framework Dependencies for BUGFIX_20260107
 # Version: 1.0.0
 
-# Core debugging and development dependencies
-debugpy>=1.8.0               # Remote debugging server and client
+# Core development dependencies
 pyyaml>=6.0                  # YAML configuration file support
 rich>=13.0                   # Rich text and beautiful formatting in terminal
 psutil>=5.9                  # System and process utilities

@@ -16,8 +16,7 @@ anthropic>=0.40.0
 basedpyright>=1.1.0
 ruff>=0.1.0
 
-# 测试自动化工具 - pytest测试框架和debugpy调试工具
+# 测试自动化工具 - pytest测试框架
 pytest>=7.0.0
 pytest-asyncio>=0.21.0
 pytest-json-report>=1.5.0
-debugpy>=1.6.0

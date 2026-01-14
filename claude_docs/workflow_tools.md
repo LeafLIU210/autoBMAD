@@ -1,808 +1,696 @@
-# 工作流工具集详细说明
+# autoBMAD Epic自动化工作流详细说明
 
-**版本**: 1.0
-**最后更新**: 2026-01-04
+**版本**: 2.0
+**最后更新**: 2026-01-14
 
 ---
 
 ## 目录
 
-1. [工具集概述](#1-工具集概述)
-2. [BMAD-Workflow自动化系统](#2-bmad-workflow自动化系统)
-3. [BasedPyright-Workflow代码质量工具](#3-basedpyright-workflow代码质量工具)
-4. [Fixtest-Workflow测试修复工具](#4-fixtest-workflow测试修复工具)
-5. [工作流选择指南](#5-工作流选择指南)
-6. [工具链集成策略](#6-工具链集成策略)
+1. [工作流概述](#1-工作流概述)
+2. [autoBMAD Epic自动化系统](#2-autobmad-epic自动化系统)
+3. [安装与配置](#3-安装与配置)
+4. [使用指南](#4-使用指南)
+5. [质量门控系统](#5-质量门控系统)
+6. [故障排除](#6-故障排除)
 
 ---
 
-## 1. 工具集概述
+## 1. 工作流概述
 
-本项目集成了三个专业的工作流工具，涵盖从开发自动化到代码质量检查的完整工具链。这些工具遵循项目的四大开发原则（DRY、KISS、YAGNI、奥卡姆剃刀），为不同阶段的开发工作提供自动化支持。
+本项目采用 **autoBMAD Epic Automation** 作为核心工作流系统,它是一个完整的05阶段BMAD开发自动化工具。该系统以Python实现,集成了Claude Agent SDK,提供从故事创建到质量验证的完整自动化支持。
 
-### 1.1 工具定位
+### 1.1 核心特性
 
-| 工具 | 主要功能 | 核心价值 | 适用场景 |
-|------|----------|----------|----------|
-| **BMAD-Workflow** | 自动化开发流程、质量门控 | 完整开发周期自动化 | 敏捷开发、团队协作 |
-| **BasedPyright-Workflow** | 类型检查、代码风格 | 代码质量保证 | 持续集成、代码审查 |
-| **Fixtest-Workflow** | 测试扫描、修复 | 测试质量保证 | TDD、测试修复 |
+| 特性 | 描述 | 核心价值 |
+|------|------|----------|
+| **5阶段工作流** | SM-Dev-QA循环 + 质量门控 + 测试自动化 | 完整开发周期自动化 |
+| **AI驱动创建** | SM Agent使用Claude SDK生成故事 | 智能化文档生成 |
+| **质量门控** | Basedpyright类型检查 + Ruff代码风格 | 代码质量保证 |
+| **测试自动化** | Pytest执行 | 测试质量保证 |
+| **状态管理** | SQLite持久化存储 | 断点恢复能力 |
+| **便携性** | 自包含解决方案 | 快速部署使用 |
 
-### 1.2 工具链协作
+### 1.2 工作流架构
 
 ```
-开发阶段
-    ↓
-1. BMAD-Workflow Phase A (开发)
-    ↓
-2. BasedPyright-Workflow (代码质量)
-    ↓
-3. Fixtest-Workflow (测试质量)
-    ↓
-4. BMAD-Workflow Phase B (QA审查)
-    ↓
-质量门控决策 → [PASS/CONCERNS/FAIL/WAIVED]
+┌─────────────────────────────────────────────────────────────┐
+│                    EPIC处理流程                              │
+└─────────────────────────────────────────────────────────────┘
+
+Phase 1: SM-Dev-QA循环
+├── Story创建 (SM Agent + Claude SDK)
+├── 实现开发 (Dev Agent)
+└── 验证审查 (QA Agent)
+         ↓
+Phase 2: 质量门控
+├── Basedpyright类型检查
+├── Ruff代码风格检查与自动修复
+└── 最多3次重试机会
+         ↓
+Phase 3: 测试自动化
+├── Pytest测试执行
+└── 最多5次重试机会
+         ↓
+Phase 4: 编排管理
+├── Epic Driver管理完整工作流
+├── 阶段门控执行
+└── 进度跟踪
+         ↓
+Phase 5: 文档与测试
+├── 全面文档编写
+├── 集成测试
+└── 用户指导
 ```
 
 ---
 
-## 2. BMAD-Workflow自动化系统
+## 2. autoBMAD Epic自动化系统
 
 ### 2.1 系统概述
 
-**BMAD-Workflow** 位于 `bmad-workflow/` 目录，是实现BMAD开发方法论完全自动化的PowerShell工作流系统。它提供了完整的4阶段开发周期自动化、质量门控决策和并行执行能力。
+**autoBMAD Epic Automation** 位于 `autoBMAD/epic_automation/` 目录,是实现BMAD开发方法论完全自动化的Python工作流系统。它通过Claude Agent SDK集成提供AI驱动的故事创建,并管理完整的5阶段开发周期。
 
 ### 2.2 核心架构
 
-#### 六大核心模块
+#### 主要组件
 
-| 模块 | 行数 | 主要职责 |
-|------|------|----------|
-| `BMAD-Workflow.ps1` | 420行 | CLI接口、命令解析、日志系统 |
-| `BMAD.Workflow.Core.ps1` | 1200行 | 工作流引擎、阶段编排、计时器管理 |
-| `BMAD.Claude.Interface.ps1` | 600+行 | Claude CLI集成、进程管理、会话控制 |
-| `BMAD.Job.Manager.ps1` | 550+行 | 并发调度、作业池管理、资源分配 |
-| `BMAD.State.Manager.ps1` | 250+行 | 状态持久化、检查点、恢复机制 |
-| `BMAD.Hooks.Handler.ps1` | 475行 | 事件钩子系统、扩展处理器 |
-
-### 2.3 四阶段自动化周期
-
-#### 执行流程
 ```
-开始 → Phase A (3x Dev, 15分钟) → Phase B (QA, 30分钟) →
-├─ PASS → Phase D → 完成
-└─ CONCERNS/FAIL → Phase C (3x Dev修复) → Phase B → [循环]
+autoBMAD/epic_automation/
+├── epic_driver.py          # 主编排器和CLI接口(异步Epic解析)
+├── sm_agent.py            # Story Master代理(Claude SDK集成)
+├── dev_agent.py           # 开发代理
+├── qa_agent.py            # 质量保证代理
+├── state_manager.py       # 状态持久化和跟踪(SQLite)
+├── sdk_wrapper.py         # Claude SDK封装
+├── log_manager.py         # 日志管理系统
+├── base_agent.py          # Agent基类
+└── README.md              # 详细文档
 ```
 
-#### 阶段详情
+#### 支持目录
 
-##### Phase A: 初始开发
-- **持续时间**: 15分钟（基于计时器）
-- **执行方式**: 3个并行Dev代理
-- **执行命令**: `*develop-story`
-- **功能**: 实现故事需求、创建测试、运行验证
-- **并发特性**: 3个实例，2秒错开启动
-
-##### Phase B: QA审查与门控决策
-- **持续时间**: 30分钟
-- **执行方式**: 1个QA代理
-- **执行命令**: `*review`
-- **功能**: 全面的代码审查、质量评估、门控决策
-- **输出**: QA结果更新、质量门控文件、风险评估、NFR验证
-
-##### Phase C: 修复模式开发（条件触发）
-- **触发条件**: QA结果 = CONCERNS 或 FAIL
-- **执行方式**: 3个并行Dev代理
-- **执行命令**: `*review-qa`
-- **功能**: 解决QA发现、实施修复、改善覆盖率
-
-##### Phase D: 最终开发（条件触发）
-- **触发条件**: QA结果 = PASS
-- **执行方式**: 1个Dev代理
-- **执行命令**: `*develop-story`
-- **功能**: 最终完善、文档编写、完成
-
-### 2.4 配置管理
-
-#### workflow.config.yaml (243行)
-- 全局超时和并发设置
-- Claude CLI配置参数
-- 环境特定覆盖（dev/test/prod）
-- 安全和通知配置
-
-#### 阶段配置文件 (workflow.execution.phase-*.yaml)
-- `phase-a.yaml`: 3个并行开发流，15分钟计时器
-- `phase-b.yaml`: 1个QA流，门控决策逻辑
-- `phase-c.yaml`: 3个并行修复流
-- `phase-d.yaml`: 1个最终开发流
-
-### 2.5 状态管理
-
-#### BMADWorkflowState类
-```powershell
-class BMADWorkflowState {
-    [GUID] WorkflowId
-    [string] StoryPath
-    [WorkflowStatus] Status
-    [List[WorkflowJob]] Jobs
-    [int] IterationCount
-    [DateTime] StartTime
-    [DateTime] EndTime
-}
+```
+autoBMAD/epic_automation/
+├── agents/                 # Agent配置文件
+├── controllers/            # 控制器模块
+├── core/                   # 核心功能模块
+├── monitoring/             # 监控工具
+├── reports/                # 报告生成
+└── logs/                   # 日志输出
 ```
 
-#### 持久化特性
-- JSON序列化存储
-- 阶段转换自动保存
-- 中断后恢复能力
-- 失败状态自动恢复
+### 2.3 五阶段工作流详解
 
-### 2.6 使用指南
+#### Phase 1: SM-Dev-QA循环
 
-#### 基本执行
-```powershell
-cd bmad-workflow
-.\BMAD-Workflow.ps1 -StoryPath "docs/stories/my-story.md"
+**Story Master (SM) Agent**:
+- **Epic分析**: 使用正则表达式从Epic文档提取Story ID
+- **AI故事创建**: 通过Claude Agent SDK生成完整故事文档
+- **SDK集成**: 直接集成 `claude_agent_sdk.query()` 和 `ClaudeAgentOptions`
+- **自动提示生成**: 构建格式化提示词
+- **权限处理**: 自动设置 `permission_mode="bypassPermissions"`
+
+**Development (Dev) Agent**:
+- 根据规范实现故事
+- 编写代码、测试和文档
+- 遵循最佳实践和编码标准
+- 更新故事文件进度
+
+**Quality Assurance (QA) Agent**:
+- 审查实现质量
+- 验证验收标准
+- 检查代码标准和测试
+- 提供反馈和通过/失败决策
+
+#### Phase 2: 质量门控
+
+**Basedpyright类型检查**:
+- **目的**: 静态类型检查捕获类型相关错误
+- **重试逻辑**: 最多3次自动重试
+- **自动修复**: Ruff可以自动修复许多问题
+- **配置**: 通过 `pyproject.toml` 配置
+
+**Ruff代码风格检查**:
+- **目的**: 快速Python代码检查与自动修复
+- **覆盖范围**: PEP 8、复杂度、导入等
+- **自动修复**: 自动修复可修复的问题
+- **性能**: 非常快,主要受I/O限制
+
+#### Phase 3: 测试自动化
+
+**Pytest执行**:
+- **目的**: 运行测试套件中的所有测试
+- **覆盖范围**: 单元测试、集成测试和E2E测试
+- **报告**: 详细的测试报告和失败分析
+
+#### Phase 4: 编排管理
+
+**Epic Driver**:
+- 管理完整的工作流执行
+- 阶段门控和依赖管理
+- 进度跟踪和状态更新
+- 错误处理和恢复
+
+#### Phase 5: 文档与测试
+
+- 全面的文档编写
+- 集成测试执行
+- 用户指导和最佳实践
+
+### 2.4 状态管理
+
+#### SQLite持久化
+
+**state_manager.py** 提供:
+- 基于SQLite的状态存储
+- 故事状态跟踪
+- 迭代计数
+- QA结果记录
+- 错误消息存储
+- 断点恢复能力
+
+#### 状态转换
+
+```
+PENDING → IN_PROGRESS → QA_REVIEW → 
+├─ PASS → COMPLETED
+└─ FAIL → IN_PROGRESS (重试) → ...
 ```
 
-#### 高级选项
-```powershell
-# 运行系统测试
-.\BMAD-Workflow.ps1 -Test
+### 2.5 日志系统
 
-# 检查工作流状态
-.\BMAD-Workflow.ps1 -Status
-
-# 清理临时文件
-.\BMAD-Workflow.ps1 -Cleanup
-
-# 静默模式执行
-.\BMAD-Workflow.ps1 -StoryPath "story.md" -Silent
-```
-
-### 2.7 日志系统
-
-#### 日志结构
-```
-logs/
-├── bmad-workflow-20260104-143022.log (主日志)
-├── workflow/ (执行详情)
-├── debug/ (调试信息)
-└── prompts/ (Claude交互存档)
-```
-
-#### 日志特性
-- 5级日志系统 (Debug/Info/Warning/Error/Success)
-- 结构化JSON日志支持
-- 30天轮转，1GB大小限制
-- 彩色控制台输出
-- 实时监控能力
-
-### 2.8 测试框架
-
-系统包含全面的测试套件：
-- **298个测试用例** 用于Claude接口
-- **16个核心功能测试**（100%通过率）
-- **模拟框架** 用于Claude CLI模拟
-- **集成测试** 用于端到端工作流
-- **Pester 3.4+兼容性**
+**log_manager.py** 提供:
+- 双写模式(文件+控制台)
+- 结构化日志输出
+- 按阶段和代理分类
+- 详细的执行跟踪
+- 错误和警告高亮
 
 ---
 
-## 3. BasedPyright-Workflow代码质量工具
+## 3. 安装与配置
 
-### 3.1 系统概述
+### 3.1 系统要求
 
-**BasedPyright-Workflow** 位于 `basedpyright-workflow/` 目录，是一个Python代码质量检查和修复工具。它集成了基于pyright的类型检查、Ruff代码风格检查、报告生成和智能冲突解决功能。
+#### 必需软件
 
-### 3.2 系统架构
+- **Python 3.12+**: 核心运行时
+- **Claude Agent SDK**: AI代理功能(SM Agent故事创建)
+- **Basedpyright>=1.1.0**: 类型检查工具
+- **Ruff>=0.1.0**: 代码风格检查工具
+- **Pytest>=7.0.0**: 测试框架
 
-#### 核心包结构
-```
-basedpyright_workflow/
-├── cli.py                    # 命令行接口
-├── core/                     # 核心功能
-│   ├── checker.py           # 基于pyright类型检查
-│   ├── reporter.py          # Markdown报告生成
-│   ├── extractor.py         # 错误数据提取
-│   └── ruff_integration.py  # Ruff集成器
-├── config/                   # 配置管理
-│   └── settings.py
-├── utils/                    # 工具函数
-│   ├── scanner.py           # 文件扫描
-│   ├── paths.py             # 路径处理
-│   └── ruff_utils.py        # Ruff工具
-└── templates/                # 报告模板
-```
+### 3.2 安装步骤
 
-### 3.3 核心功能
+#### 1. 复制模板
 
-#### 1. 类型检查器 (checker.py)
-
-**基于pyright类型检查**:
-- 执行完整的类型分析
-- 生成TXT和JSON格式结果
-- 错误统计和分类
-- 检查时间记录
-
-**支持特性**:
-- 配置文件: `.bpr.json`
-- 项目特定设置
-- 增量检查支持
-- 并发检查优化
-
-#### 2. 报告生成器 (reporter.py)
-
-**Markdown报告输出**:
-```markdown
-# BasedPyright 检查报告
-
-## 执行摘要
-- 检查文件: 89个
-- 错误数量: 886个
-- 警告数量: 7158个
-- 检查耗时: 7.08秒
-
-## 错误详情
-[按文件和规则分组的详细列表]
-```
-
-**报告内容**:
-- 执行摘要和统计
-- 错误详情和位置
-- 按文件分组显示
-- 按规则类型分组
-- 可视化进度指示
-
-#### 3. Ruff集成器 (ruff_integration.py)
-
-**RuffIntegrator类**:
-- 执行Ruff代码风格检查
-- 自动修复代码格式问题
-- 支持PEP 8和更多规则
-- 可配置规则集
-
-**ResultMerger类**:
-- 合并基于pyright和Ruff结果
-- 统一错误格式
-- 避免重复报告
-
-**ConflictResolver类**:
-- 智能冲突解决
-- 类型错误优先级策略
-- 修复建议合并
-- 自动化决策逻辑
-
-#### 4. 错误提取器 (extractor.py)
-
-**ExtractErrorData类**:
-- 从检查结果提取ERROR级别错误
-- 生成结构化JSON数据
-- 支持自动修复流程
-- 错误分类和优先级
-
-### 3.4 PowerShell修复脚本
-
-#### fix_unified_errors_new.ps1
-
-**功能**:
-- 自动发现最新错误文件
-- 逐文件顺序处理
-- 智能冲突解决
-- 增强日志系统
-
-**执行流程**:
-```powershell
-# 1. 发现最新的错误文件
-$errorFiles = Get-ChildItem -Path "results" -Filter "*_errors.json" |
-              Sort-Object LastWriteTime -Descending |
-              Select-Object -First 1
-
-# 2. 读取错误数据
-$errors = Get-Content $errorFiles.FullName | ConvertFrom-Json
-
-# 3. 逐文件处理
-foreach ($file in $errors.files) {
-    # 构造Claude修复提示
-    # 调用Claude CLI
-    # 记录修复结果
-}
-```
-
-#### fix_basedpyright_errors_new.ps1
-
-**特性**:
-- 项目本地化设计
-- Claude Code集成
-- UTF-8编码支持
-- 错误聚合处理
-
-### 3.5 工作流程
-
-#### 完整工作流
-```
-1. basedpyright-workflow check  → 类型检查
-2. basedpyright-workflow report → 生成报告
-3. basedpyright-workflow fix    → 提取错误
-4. fix_unified_errors_new.ps1   → 自动修复
-```
-
-#### 单命令执行
-```powershell
-basedpyright-workflow workflow
-# 自动执行：检查 → 报告 → 提取
-```
-
-### 3.6 使用指南
-
-#### 安装
 ```bash
-cd basedpyright-workflow
-pip install -e .
+# 复制epic_automation文件夹到项目目录
+cp -r /path/to/epic_automation /your/project/autoBMAD/
+
+# Windows
+xcopy /E /I epic_automation \your\project\autoBMAD\epic_automation
 ```
 
-#### 基本使用
+#### 2. 创建虚拟环境(推荐)
+
 ```bash
-# 类型检查
-basedpyright-workflow check
-
-# 生成报告
-basedpyright-workflow report
-
-# 提取错误
-basedpyright-workflow fix
-
-# 完整工作流
-basedpyright-workflow workflow
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
 ```
 
-#### 修复错误
-```powershell
-# 在PowerShell中
-.\fix_unified_errors_new.ps1
+#### 3. 安装依赖
 
-# 观察修复过程
-# 验证修复结果
-basedpyright-workflow check
+```bash
+# 安装Claude Agent SDK
+pip install claude_agent_sdk>=0.1.0
+
+# 安装质量门控工具
+pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0
+
+# 或一次性安装所有依赖
+pip install claude_agent_sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0
 ```
 
-### 3.7 配置示例
+#### 4. 配置环境变量
+
+```bash
+# Windows PowerShell
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+
+# Linux/macOS
+export ANTHROPIC_API_KEY="your_api_key_here"
+```
+
+#### 5. 创建任务指导文件
+
+在 `.bmad-core/tasks/` 目录下创建:
+
+```bash
+mkdir -p .bmad-core/tasks
+```
+
+创建以下文件:
+- `create-next-story.md` - SM Agent指导
+- `develop-story.md` - Dev Agent指导
+- `review-story.md` - QA Agent指导
+
+#### 6. 验证安装
+
+```bash
+# 查看帮助信息
+python autoBMAD/epic_automation/epic_driver.py --help
+
+# 验证依赖
+basedpyright --version
+ruff --version
+pytest --version
+python -c "import claude_agent_sdk; print('Claude Agent SDK installed')"
+```
+
+### 3.3 配置文件
 
 #### pyproject.toml
-```toml
-[project]
-name = "basedpyright-workflow"
-version = "1.0.0"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+在项目根目录创建或更新 `pyproject.toml`:
+
+```toml
+[tool.basedpyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = true
 
 [tool.ruff]
-line-length = 88
 target-version = "py312"
+line-length = 88
+select = ["E", "F", "W", "I", "N", "UP", "YTT", "ANN", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PGH", "PL", "TRY", "FLY", "NPY", "PERF", "FURB", "LOG", "RUF"]
+ignore = ["ANN101", "ANN102"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["S101", "ANN"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
 ```
 
-#### .bpr.json
-```json
-{
-    "include": ["src/**/*"],
-    "exclude": ["tests/**/*"],
-    "report": {
-        "enable": true,
-        "format": "json"
-    }
-}
-```
+### 3.4 目录结构
 
-### 3.8 性能指标
+完整的项目结构:
 
-**bilibiliup项目测试结果**:
-- 检查文件数: 89个Python文件
-- 检测错误: 886个
-- 检测警告: 7158个
-- 检查耗时: 7.08秒
-- 平均速度: ~80ms/文件
-
----
-
-## 4. Fixtest-Workflow测试修复工具
-
-### 4.1 系统概述
-
-**Fixtest-Workflow** 位于 `fixtest-workflow/` 目录，是一个基于奥卡姆剃刀原则的测试修复工作流工具。它提供简单的3步流程：扫描→测试→修复→验证，遵循KISS原则，避免不必要的复杂性。
-
-### 4.2 系统架构
-
-#### 核心脚本 (仅3个)
-```
-fixtest-workflow/
-├── scan_test_files.py      # 脚本1: 测试文件发现
-├── run_tests.py            # 脚本2: 测试执行和错误收集
-├── demo_run_tests.py       # 演示版本 (仅前3个文件)
-├── fix_tests.ps1           # 脚本3: 使用Claude自动修复
-├── Fixtest-Workflow.ps1    # 替代工作流
-├── fileslist/              # 测试文件清单
-├── summaries/              # 测试结果摘要
-└── temp/                   # 临时文件
-```
-
-### 4.3 核心组件
-
-#### 1. scan_test_files.py - 测试发现
-
-**功能**:
-- 递归扫描 `tests/` 目录
-- 发现所有 `test_*.py` 文件
-- 自动检测测试框架 (pytest/unittest)
-- 生成文件清单JSON
-
-**输出**:
-```json
-{
-    "timestamp": "20260104_143022",
-    "framework": "pytest",
-    "files": [
-        {
-            "path": "tests/unit/test_models.py",
-            "size": 2456,
-            "lines": 89,
-            "category": "unit"
-        }
-    ]
-}
-```
-
-**特性**:
-- 自动框架检测
-- 文件大小和行数统计
-- 目录分类
-- 标识大小文件 (>1500行或<100行)
-
-#### 2. run_tests.py - 测试执行
-
-**功能**:
-- 执行pytest/unittest测试
-- 120秒超时保护
-- 收集错误和失败
-- 生成结果摘要
-
-**输出**:
-```json
-{
-    "timestamp": "20260104_143045",
-    "total_files": 45,
-    "executed_files": 45,
-    "files_with_errors": [
-        {
-            "file": "tests/unit/test_models.py",
-            "status": "ERROR",
-            "errors": [
-                "ImportError: cannot import name 'ConfigService'"
-            ]
-        }
-    ]
-}
-```
-
-**特性**:
-- 120秒超时防止挂起
-- 错误、失败、超时分类
-- 仅保存有问题的文件
-- 实时进度显示
-- 统计信息输出
-
-#### 3. fix_tests.ps1 - 自动修复
-
-**功能**:
-- 读取结果摘要JSON
-- 为每个错误文件构造详细提示
-- 调用Claude CLI进行修复
-- 循环直到所有问题解决
-
-**执行流程**:
-```powershell
-# 1. 查找最新的错误摘要
-$summaryFiles = Get-ChildItem "summaries/test_results_summary_*.json" |
-                Sort-Object LastWriteTime -Descending |
-                Select-Object -First 1
-
-# 2. 对每个有错误的文件
-foreach ($file in $summary.errors.files_with_errors) {
-    # 构造详细提示
-    $prompt = @"
-    修复测试文件: $($file.file)
-    错误信息: $($file.errors -join "`n")
-
-    请修复这些错误，确保测试通过。
-    "@
-
-    # 3. 调用Claude
-    claude --dangerously-skip-permissions -p "$prompt"
-
-    # 4. 显示Claude窗口观察过程
-}
-
-# 5. 重复直到所有问题解决
-```
-
-#### 4. Fixtest-Workflow.ps1 - 替代工作流
-
-**设计理念**: 最小化 - 无失败检测，纯委托
-
-**流程**:
-```powershell
-# 扫描测试文件 → 对每个文件调用Claude 2次 → 确保彻底修复
-Scan-TestFiles → ForEach-File → Claude-Fix (2x) → Verify
-```
-
-### 4.4 工具链集成
-
-#### 框架兼容性
-- **pytest** (主要，默认)
-- **unittest** (通过导入语句自动检测)
-
-#### 项目集成
 ```
 project/
-├── tests/                    # 被扫描的主测试目录
-│   ├── unit/                 # 单元测试
-│   ├── integration/          # 集成测试
-│   └── gui/                  # GUI测试
-└── fixtest-workflow/         # 工具目录
-```
-
-### 4.5 工作流程
-
-#### 标准流程
-```bash
-# 步骤1: 发现测试文件
-python scan_test_files.py
-# 输出: fileslist/test_files_list_20260104_143022.json
-
-# 步骤2: 执行测试
-python run_tests.py          # 完整测试套件
-python demo_run_tests.py     # 演示 (仅3个文件)
-# 输出: summaries/test_results_summary_*.json
-
-# 步骤3: 自动修复
-.\fix_tests.ps1
-# 交互式Claude窗口，观察修复过程
-
-# 步骤4: 验证修复
-python run_tests.py
-# 确认所有错误已解决
-```
-
-### 4.6 奥卡姆剃刀原则应用
-
-#### 设计决策
-1. **最小组件**: 仅3个核心脚本
-2. **无复杂状态**: 每次都是全新扫描
-3. **直接委托**: Claude处理复杂修复逻辑
-4. **简单文件管理**: 固定文件夹，时间戳文件
-5. **专注输出**: 仅保存有问题的文件到JSON
-
-#### 避免的复杂性
-- ❌ 复杂状态机
-- ❌ 持久化状态管理
-- ❌ 复杂的依赖图
-- ❌ 过度抽象
-- ❌ 预优化
-
-### 4.7 使用指南
-
-#### 基本使用
-```bash
-# 快速演示 (仅3个文件)
-cd fixtest-workflow
-python demo_run_tests.py
-
-# 完整测试套件
-python run_tests.py
-
-# 修复所有错误
-.\fix_tests.ps1
-
-# 验证修复
-python run_tests.py
-```
-
-#### 自定义配置
-```python
-# 修改 run_tests.py 中的超时设置
-TIMEOUT = 120  # 秒
-
-# 修改要跳过的文件模式
-SKIP_PATTERNS = ["test_*.py"]
-```
-
-### 4.8 数据流
-
-```
-scan_test_files.py
-    ↓
-fileslist/test_files_list_*.json
-    ↓
-run_tests.py
-    ↓
-summaries/test_results_summary_*.json
-    ↓
-fix_tests.ps1
-    ↓
-Claude CLI 修复命令
-    ↓
-重新运行验证
+├── autoBMAD/
+│   └── epic_automation/     # 主自动化包
+│       ├── epic_driver.py
+│       ├── sm_agent.py
+│       ├── dev_agent.py
+│       ├── qa_agent.py
+│       ├── state_manager.py
+│       └── ...
+├── .bmad-core/
+│   └── tasks/              # 任务指导文件
+│       ├── create-next-story.md
+│       ├── develop-story.md
+│       └── review-story.md
+├── docs/
+│   └── epics/              # Epic文档
+│       └── my-epic.md
+├── src/                    # 源代码
+├── tests/                  # 测试代码
+└── pyproject.toml          # 项目配置
 ```
 
 ---
 
-## 5. 工作流选择指南
+## 4. 使用指南
 
-### 5.1 何时使用 BMAD-Workflow
+### 4.1 基本使用
 
-#### 适用场景
-- ✅ 完整的史诗故事开发
-- ✅ 需要严格质量门控的项目
-- ✅ 团队协作开发
-- ✅ 遵循完整BMAD方法论的项目
-- ✅ 需要自动化QA审查的流程
+#### 处理Epic文件
 
-#### 不适用场景
-- ❌ 快速原型开发
-- ❌ 单个简单修复
-- ❌ 学习或实验项目
+```bash
+# 激活虚拟环境
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
 
-### 5.2 何时使用 BasedPyright-Workflow
-
-#### 适用场景
-- ✅ 代码质量保证
-- ✅ 类型检查需求
-- ✅ 代码风格统一
-- ✅ CI/CD集成
-- ✅ 大型项目的持续集成
-
-#### 不适用场景
-- ❌ 脚本文件或工具
-- ❌ 原型或实验代码
-- ❌ 非Python项目
-
-### 5.3 何时使用 Fixtest-Workflow
-
-#### 适用场景
-- ✅ 测试驱动开发 (TDD)
-- ✅ 测试修复和调试
-- ✅ 快速验证测试
-- ✅ 简单直接的工作流
-- ✅ 学习测试框架
-
-#### 不适用场景
-- ❌ 生产环境代码修复
-- ❌ 复杂的测试套件 (>100个文件)
-- ❌ 需要详细报告的测试
-
-### 5.4 组合使用策略
-
-#### 完整开发周期
-```
-1. 故事开发 → BMAD-Workflow
-2. 代码质量检查 → BasedPyright-Workflow
-3. 测试修复 → Fixtest-Workflow
-4. 质量门控 → BMAD-Workflow Phase B
+# 运行完整5阶段工作流
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
 ```
 
-#### 快速开发
-```
-1. 快速实现 → BasedPyright-Workflow (仅检查)
-2. 测试修复 → Fixtest-Workflow
+### 4.2 CLI选项
+
+#### 位置参数
+
+- `epic_path` (必需): Epic Markdown文件路径
+
+#### 可选标志
+
+- `--max-iterations N`: 失败故事的最多重试次数(默认: 3)
+- `--retry-failed`: 启用失败故事的自动重试
+- `--verbose`: 启用详细日志输出
+- `--concurrent`: 并行处理故事(实验性功能)
+- `--no-claude`: 禁用Claude Code CLI集成(使用模拟模式)
+- `--source-dir DIR`: 源代码目录(默认: "src")
+- `--test-dir DIR`: 测试目录(默认: "tests")
+
+#### 质量门控和测试选项
+
+- `--skip-quality`: 跳过代码质量门控(basedpyright和ruff)
+- `--skip-tests`: 跳过测试自动化(pytest)
+
+### 4.3 使用示例
+
+#### 示例1: 完整工作流含质量门控
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
 ```
 
-#### 团队项目
+这将处理 `my-epic.md` 中的所有故事,通过完整的5阶段工作流:
+- Phase 1: SM-Dev-QA循环
+- Phase 2: 质量门控(basedpyright + ruff)
+- Phase 3: 测试自动化(pytest)
+- 质量门控最多3次重试
+- 测试自动化最多5次重试
+
+#### 示例2: 跳过质量门控(快速开发)
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
 ```
-1. 规划阶段 → BMAD-Workflow
-2. 持续开发 → BasedPyright-Workflow (CI集成)
-3. 测试阶段 → Fixtest-Workflow
-4. 发布前 → BMAD-Workflow 质量门控
+
+通过SM-Dev-QA循环和测试自动化处理故事,但跳过质量门控以加快开发迭代。
+
+#### 示例3: 跳过测试自动化(快速验证)
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
 ```
+
+通过SM-Dev-QA循环和质量门控处理故事,但跳过测试自动化以快速验证。
+
+#### 示例4: 同时跳过质量门控和测试
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
+```
+
+仅处理SM-Dev-QA循环,跳过质量门控和测试自动化,在初始开发期间实现最大速度。
+
+#### 示例5: 启用自动重试
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
+```
+
+启用失败故事的自动重试并提供详细的日志输出。
+
+### 4.4 Epic文档格式
+
+#### Epic结构示例
+
+```markdown
+# Epic: 核心算法基础
+
+## 概述
+
+本 Epic 包含核心算法实现的基础故事。
+
+## 故事列表
+
+- **[Story 001: 数据结构实现](docs/stories/story-001.md)**
+- **[Story 002: 算法优化](docs/stories/story-002.md)**
+- **[Story 003: 测试覆盖](docs/stories/story-003.md)**
+
+## Story 001: 数据结构实现
+
+**作为** 开发者,
+**我希望** 实现核心数据结构,
+**以便** 支持后续算法开发。
+
+**验收标准**:
+- [ ] 实现链表结构
+- [ ] 实现树结构
+- [ ] 通过所有单元测试
+```
+
+### 4.5 工作流执行过程
+
+1. **初始化**: epic_driver.py 解析CLI参数并初始化EpicDriver
+2. **Epic解析**: 读取Epic Markdown文件并提取故事引用
+3. **故事处理循环**: 对每个故事:
+   - **SM阶段**: Story Master代理精化和验证故事
+   - **Dev阶段**: Development代理根据规范实现故事
+   - **QA阶段**: Quality Assurance代理验证实现
+4. **重试逻辑**: 如果故事QA失败:
+   - 如果启用 `--retry-failed`,则Dev阶段最多重试 `--max-iterations` 次
+   - 如果禁用 `--retry-failed`,则标记故事为失败并继续处理
+5. **状态管理**: state_manager.py 跟踪每个故事的状态
+6. **报告**: 系统提供汇总统计和详细日志
 
 ---
 
-## 6. 工具链集成策略
+## 5. 质量门控系统
 
-### 6.1 完整质量保证流程
+### 5.1 Basedpyright类型检查
 
-```
-开发阶段
-    ↓
-1. BMAD-Workflow Phase A (开发)
-    ↓
-2. BasedPyright-Workflow (代码质量)
-    ↓
-3. Fixtest-Workflow (测试质量)
-    ↓
-4. BMAD-Workflow Phase B (QA审查)
-    ↓
-质量门控决策 → [PASS/CONCERNS/FAIL/WAIVED]
-```
+#### 功能特性
 
-### 6.2 CI/CD集成示例
+- **静态类型分析**: 捕获类型相关错误
+- **配置灵活**: 通过 `pyproject.toml` 配置
+- **增量检查**: 仅检查变更的文件
+- **并发优化**: 快速检查大型代码库
 
-```yaml
-# .github/workflows/quality-assurance.yml
-name: Quality Assurance
+#### 使用方法
 
-on: [push, pull_request]
+```bash
+# 单独运行basedpyright检查
+basedpyright src/
 
-jobs:
-  quality-check:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Run BasedPyright
-        run: |
-          cd basedpyright-workflow
-          basedpyright-workflow check
-          basedpyright-workflow report
-
-      - name: Run Fixtest-Workflow
-        run: |
-          cd fixtest-workflow
-          python scan_test_files.py
-          python run_tests.py
-
-      - name: Run BMAD-Workflow QA
-        run: |
-          cd bmad-workflow
-          .\BMAD-Workflow.ps1 -StoryPath "docs/stories/auto-qa.md" -Silent
-
-      - name: Upload Reports
-        uses: actions/upload-artifact@v3
-        with:
-          name: quality-reports
-          path: |
-            basedpyright-workflow/reports/
-            fixtest-workflow/summaries/
-            bmad-workflow/logs/
+# 或通过autoBMAD工作流自动执行
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 ```
 
-### 6.3 质量门控决策矩阵
+#### 配置示例
 
-| 工具 | 检查维度 | 门控影响 | 决策权重 |
-|------|----------|----------|----------|
-| **BMAD-Workflow** | 功能完整性、架构合规性 | 主要门控 | 40% |
-| **BasedPyright** | 类型安全、代码风格 | 次要门控 | 35% |
-| **Fixtest-Workflow** | 测试质量、测试覆盖 | 关键门控 | 25% |
+```toml
+[tool.basedpyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = true
+include = ["src"]
+exclude = ["tests", "build"]
+```
 
-### 6.4 决策逻辑
+### 5.2 Ruff代码风格检查
 
-- **全绿** (全部PASS): ✅ 可以继续
-- **1个黄灯** (1个CONCERNS): ⚠️ 谨慎继续，优先修复
-- **1个红灯** (1个FAIL): ❌ 必须修复
-- **多个黄灯** (≥2个CONCERNS): ❌ 必须修复
-- **任意红灯** (任意FAIL): ❌ 必须修复
+#### 功能特性
+
+- **快速检查**: 非常快的Python代码检查器
+- **自动修复**: 自动修复可修复的问题
+- **全面规则**: 支持PEP 8和更多规则
+- **高性能**: 主要受I/O限制
+
+#### 使用方法
+
+```bash
+# 检查并自动修复问题
+ruff check --fix src/
+
+# 格式化代码
+ruff format src/
+
+# 或通过autoBMAD工作流自动执行
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+```
+
+#### 配置示例
+
+```toml
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+select = ["E", "F", "W", "I", "N"]
+ignore = ["ANN101", "ANN102"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["S101", "ANN"]
+```
+
+### 5.3 Pytest测试执行
+
+#### 功能特性
+
+- **全面测试**: 运行单元、集成和E2E测试
+- **详细报告**: 失败分析和详细输出
+- **覆盖率**: 代码覆盖率统计
+- **插件系统**: 丰富的插件生态
+
+#### 使用方法
+
+```bash
+# 运行所有测试
+pytest tests/ -v
+
+# 带覆盖率
+pytest tests/ --cov=src --cov-report=html
+
+# 运行特定测试文件
+pytest tests/test_my_feature.py -v
+
+# 或通过autoBMAD工作流自动执行
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+```
+
+### 5.4 质量门控决策矩阵
+
+| 状态 | 含义 | 后续操作 | 是否可继续 |
+|------|------|----------|------------|
+| **PASS** | 所有关键要求满足 | 无 | ✅ 是 |
+| **CONCERNS** | 发现非关键问题 | 进入修复 | ⚠️ 谨慎进行 |
+| **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
+| **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
+
+---
+
+## 6. 故障排除
+
+### 6.1 常见问题
+
+#### 问题: "Epic文件未找到"
+
+**错误信息**:
+```
+ERROR - Epic file not found: docs/epics/my-epic.md
+```
+
+**解决方案**:
+- 验证文件路径是否正确
+- 确保文件存在
+- 尝试使用绝对路径
+
+#### 问题: "任务目录未找到"
+
+**错误信息**:
+```
+WARNING - Tasks directory not found: .bmad-core/tasks
+```
+
+**解决方案**:
+- 创建目录: `mkdir -p .bmad-core/tasks`
+- 添加任务指导文件
+- 系统将继续但功能减少
+
+#### 问题: "Claude Agent SDK未安装"
+
+**错误信息**:
+```
+ERROR - Claude Agent SDK not installed
+```
+
+**解决方案**:
+```bash
+pip install claude_agent_sdk>=0.1.0
+python -c "import claude_agent_sdk; print('Installed successfully')"
+```
+
+#### 问题: "质量门控工具未找到"
+
+**错误信息**:
+```
+WARNING - Quality gate tools not found
+```
+
+**解决方案**:
+```bash
+# 安装质量门控工具
+pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0
+
+# 或使用 --skip-quality 跳过
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
+```
+
+注意: 系统具有优雅降级 - 即使没有这些工具,也能继续运行,但QA能力会减少。
+
+#### 问题: 故事未被处理
+
+**症状**:
+- Epic中未找到故事
+- 故事存在但未被执行
+
+**解决方案**:
+- 验证Epic文件包含正确格式的故事引用
+- 使用模式: `[Story xxx: ...](path)`
+- 检查故事文件实际存在于引用路径
+
+### 6.2 调试模式
+
+对于详细调试,使用最大详细级别运行:
+
+```bash
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose --max-iterations 1
+```
+
+这将:
+- 显示所有DEBUG级别的日志信息
+- 限制重试为1次以快速获取反馈
+- 显示每个阶段的详细进度
+
+### 6.3 常见问答
+
+**Q: 能否在没有互联网的情况下运行工具?**
+A: 不能,工具需要互联网访问以与Claude SDK通信。
+
+**Q: 能否暂停和恢复处理?**
+A: 可以,状态管理器持久化进度。您可以再次运行相同的命令继续。
+
+**Q: 能否跳过已完成的故事?**
+A: 可以,系统自动跳过标记为"已完成"的故事。
+
+**Q: 在同一个Epic上多次运行是否安全?**
+A: 可以,工具设计为幂等,将跳过已完成的故事。
+
+**Q: 能否自定义代理行为?**
+A: 可以,修改 `.bmad-core/tasks/` 中的任务指导文件可以自定义代理行为。
 
 ---
 
 ## 最佳实践
 
-### BMAD-Workflow
-- 确保故事文档完整且清晰
-- 配置适当的计时器和超时
-- 定期审查质量门控决策
-- 保持日志和状态文件
+### Epic组织
+- 在单个Epic中分组相关故事
+- 使用描述性Epic名称
+- 保持Epic专注于单一功能或领域
 
-### BasedPyright-Workflow
-- 在提交前运行检查
-- 定期更新类型注解
-- 解决类型错误优先于代码风格
-- 使用配置文件统一团队标准
+### 故事结构
+- 遵循BMAD故事模板
+- 包含清晰的验收标准
+- 将复杂任务分解为子任务
 
-### Fixtest-Workflow
-- 保持测试文件小而专注
-- 及时修复测试错误
-- 使用演示模式快速验证
-- 避免测试文件过大
+### 测试
+- 从简单故事开始测试设置
+- 使用 `--verbose` 标志进行调试
+- 保留可工作Epic文件的备份
+
+### 版本控制
+- 提交Epic和故事文件到Git
+- 不提交 `.ai/` 目录(包含临时状态)
+- 跟踪任务指导文件的变更
+
+### 状态管理
+- 状态保存在 `.ai/` 目录
+- 安全删除 `.ai/` 以重置状态
+- Epic可以安全地重新运行
 
 ---
 
@@ -810,8 +698,11 @@ jobs:
 - [BMAD开发方法论](./bmad_methodology.md)
 - [质量保证流程](./quality_assurance.md)
 - [测试指南](./testing_guide.md)
+- [autoBMAD README](../autoBMAD/epic_automation/README.md)
+- [autoBMAD SETUP](../autoBMAD/epic_automation/SETUP.md)
 
 ---
 
 **版本历史**:
-- v1.0 (2026-01-04): 初始版本，完整的工作流工具集说明
+- v2.0 (2026-01-14): 重写为autoBMAD Epic自动化工作流说明
+- v1.0 (2026-01-04): 初始版本,包含BMAD-Workflow、BasedPyright-Workflow、Fixtest-Workflow
