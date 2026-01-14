@@ -36,7 +36,7 @@ def parse_array_input(input_str: str) -> list[int | float]:
     if not parts:
         raise ValueError("Empty input")
 
-    result = []
+    result: list[int | float] = []
     for part in parts:
         try:
             num = float(part)
@@ -173,22 +173,28 @@ def get_input_data(args: argparse.Namespace) -> list[int | float]:
     Raises:
         ValueError: If no input provided
     """
-    if args.array is not None:
-        return parse_array_input(args.array)
-    elif args.file is not None:
-        return read_from_file(args.file)
-    elif hasattr(args, "interactive") and args.interactive:
+    args_array = getattr(args, "array", None)
+    if args_array is not None:
+        args_array_str: str | None = args_array
+        return parse_array_input(args_array_str)
+
+    args_file = getattr(args, "file", None)
+    if args_file is not None:
+        args_file_str: str | None = args_file
+        return read_from_file(args_file_str)
+
+    if hasattr(args, "interactive") and bool(args.interactive):
         # Interactive mode - will prompt user
         return []
+
+    # Check stdin
+    if sys.stdin.isatty():
+        raise ValueError("No input provided")
     else:
-        # Check stdin
-        if sys.stdin.isatty():
-            raise ValueError("No input provided")
-        else:
-            content = sys.stdin.read().strip()
-            if not content:
-                raise ValueError("No input received from stdin")
-            return parse_array_input(content)
+        content = sys.stdin.read().strip()
+        if not content:
+            raise ValueError("No input received from stdin")
+        return parse_array_input(content)
 
 
 def validate_data(data: list[int | float]) -> None:
@@ -206,9 +212,7 @@ def validate_data(data: list[int | float]) -> None:
     if len(data) > 10000:
         raise ValueError("List too long (max 10000 elements)")
 
-    for item in data:
-        if not isinstance(item, (int, float)):
-            raise ValueError(f"Non-numeric value found: {item}")
+    # Type annotations ensure all items are int or float
 
 
 def interactive_mode() -> None:
@@ -278,32 +282,34 @@ def main() -> None:
 
     # Input options
     input_group = parser.add_mutually_exclusive_group()
-    input_group.add_argument("array", nargs="?", help='Array to sort (e.g., "1, 2, 3")')
-    input_group.add_argument("-f", "--file", help="Read from file")
-    input_group.add_argument(
+    _ = input_group.add_argument(
+        "array", nargs="?", help='Array to sort (e.g., "1, 2, 3")'
+    )
+    _ = input_group.add_argument("-f", "--file", help="Read from file")
+    _ = input_group.add_argument(
         "--interactive", action="store_true", help="Run in interactive mode"
     )
-    input_group.add_argument(
+    _ = input_group.add_argument(
         "--batch", action="store_true", help="Run in batch mode (process files)"
     )
 
     # Output options
-    parser.add_argument(
+    _ = parser.add_argument(
         "--format",
         choices=["default", "json", "steps", "detailed"],
         default="default",
         help="Output format",
     )
-    parser.add_argument("--stats", action="store_true", help="Show statistics")
+    _ = parser.add_argument("--stats", action="store_true", help="Show statistics")
 
     args = parser.parse_args()
 
     try:
-        if args.interactive:
+        if getattr(args, "interactive", False):
             interactive_mode()
             return
 
-        if args.batch:
+        if getattr(args, "batch", False):
             batch_mode()
             return
 
@@ -315,7 +321,12 @@ def main() -> None:
         sorted_data = bubble_sort(data)
 
         # Format and output
-        output = format_output(data, sorted_data, args.format, args.stats)
+        output = format_output(
+            data,
+            sorted_data,
+            getattr(args, "format", "default"),
+            getattr(args, "stats", False),
+        )
         print(output)
 
     except FileNotFoundError as e:

@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-01-14T10:47:04.213267",
+  "locks": "<MagicMock name='LockMonitor().get_statistics()' id='2228809270096'>",
+  "sessions": "<MagicMock name='SessionMonitor().get_statistics()' id='2228810056864'>",
+  "tasks": "<MagicMock name='TaskMonitor().get_statistics()' id='2228810058640'>",
+  "system": "<MagicMock name='SystemMonitor().get_system_stats()' id='2228809466848'>",
+  "active_resources": {
+    "locks": "<MagicMock name='LockMonitor().get_active_locks()' id='2228807523632'>",
+    "sessions": "<MagicMock name='SessionMonitor().get_active_sessions()' id='2228807526704'>",
+    "tasks": "<MagicMock name='TaskMonitor().get_active_tasks()' id='2228809468720'>"
+  }
+}

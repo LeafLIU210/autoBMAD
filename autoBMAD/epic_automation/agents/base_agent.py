@@ -62,12 +62,19 @@ class BaseAgent(ABC):
 
     def _init_client(self):
         """初始化 Anthropic 客户端 (向后兼容)"""
-        if self.config and self.config.api_key and Anthropic:
+        if self.config:
+            if not self.config.api_key:
+                raise RuntimeError("API key not found")
+
+            if not Anthropic:
+                raise RuntimeError("Anthropic SDK not installed")
+
             try:
                 # Use the imported Anthropic (which can be mocked in tests)
                 self.client = Anthropic(api_key=self.config.api_key)
-            except Exception:
+            except Exception as e:
                 self.client = None
+                raise RuntimeError(f"Failed to initialize client: {e}")
         else:
             self.client = None
 

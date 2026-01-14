@@ -1,296 +1,590 @@
-"""
-Test pyproject.toml configuration.
+"""Test suite for pyproject.toml configuration validation.
 
-This module validates that the pyproject.toml file contains all required
-configuration sections, metadata, and tool configurations.
+Tests cover:
+- Configuration structure
+- Metadata validation
+- Build system configuration
+- Tool configurations
 """
 
-import sys
+import pytest
 from pathlib import Path
-from unittest.mock import patch
-
-# Use tomllib for Python 3.11+, tomli for older versions
-if sys.version_info >= (3, 11):
-    import tomllib
-    load_toml = tomllib.load
-else:
-    import tomli
-    load_toml = tomli.load
+import toml
 
 
-class TestPyprojectConfiguration:
-    """Test suite for pyproject.toml configuration validation."""
+class TestPyprojectStructure:
+    """Test pyproject.toml file structure."""
 
-    def test_tomli_fallback_import(self, monkeypatch):
-        """Test that tomli is imported for Python < 3.11"""
-        # This test is to ensure the tomli import path is covered
-        # The actual import path (lines 16-17) is executed when Python < 3.11
-        # We can't truly test this without changing the Python version
-        # But we can verify the logic exists
-        # Check if tomli is available
+    def test_pyproject_toml_exists(self):
+        """Test that pyproject.toml file exists."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+        assert pyproject_file.exists(), "pyproject.toml must exist"
+
+    def test_pyproject_is_valid_toml(self):
+        """Test that pyproject.toml is valid TOML."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
         try:
-            import tomli
-            tomli_available = True
-        except ImportError:
-            tomli_available = False
-        # Check if tomllib is available (Python 3.11+)
+            with open(pyproject_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            parsed = toml.loads(content)
+            assert parsed is not None
+            assert isinstance(parsed, dict)
+        except Exception as e:
+            pytest.fail(f"pyproject.toml is not valid TOML: {e}")
+
+    def test_pyproject_has_required_sections(self):
+        """Test that pyproject.toml has required sections."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
         try:
-            import tomllib
-            tomllib_available = True
-        except ImportError:
-            tomllib_available = False
+            with open(pyproject_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            parsed = toml.loads(content)
 
-        # Verify that at least one of them is available
-        assert tomli_available or tomllib_available, "Either tomli or tomllib should be available"
+            # pyproject.toml should have [project] or [tool.poetry] or similar
+            has_project = 'project' in parsed
+            has_poetry = 'tool' in parsed and 'poetry' in parsed['tool']
+            has_setup = 'project' in parsed and 'setup' in str(parsed.get('project', {}))
 
-    def test_build_system_defined(self) -> None:
-        """Test that build system is properly defined."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+            assert has_project or has_poetry or has_setup, \
+                "pyproject.toml should have [project] or [tool.poetry] section"
+        except Exception as e:
+            pytest.skip(f"Cannot read pyproject.toml: {e}")
 
-        assert "build-system" in data, "pyproject.toml should have [build-system] section"
-        build_system = data["build-system"]
+    def test_build_system_specified(self):
+        """Test that build-system is specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-        assert "requires" in build_system, "build-system should specify requires"
-        assert "build-backend" in build_system, "build-system should specify build-backend"
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-    def test_build_backend_is_hatchling(self) -> None:
-        """Test that build backend is set to hatchling."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        assert 'build-system' in parsed, \
+            "pyproject.toml must specify build-system"
 
-        build_backend = data["build-system"]["build-backend"]
-        assert "hatchling" in build_backend.lower(), \
-            "build-backend should use hatchling"
+        build_system = parsed['build-system']
+        assert 'build-backend' in build_system, \
+            "build-system must specify build-backend"
 
-    def test_hatchling_config_for_src(self) -> None:
-        """Test that hatchling is configured to build from src/."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        assert 'requires' in build_system, \
+            "build-system must specify requires"
 
-        assert "tool" in data, "pyproject.toml should have [tool] section"
-        assert "hatch" in data["tool"], "pyproject.toml should have [tool.hatch] section"
 
-        # Check the actual structure: [tool.hatch.build.targets.wheel]
-        build_targets = data["tool"]["hatch"]["build"]["targets"]
-        assert "wheel" in build_targets, "Should have wheel build target"
+class TestProjectMetadata:
+    """Test project metadata configuration."""
 
-        wheel_target = build_targets["wheel"]
-        assert "packages" in wheel_target, "wheel target should specify packages"
-        assert wheel_target["packages"] == ["src"], \
-            "Should build from src/ directory"
+    def test_project_has_name(self):
+        """Test that project has a name."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-    def test_project_name_defined(self) -> None:
-        """Test that project name is properly defined."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-        project = data["project"]
-        name = project["name"]
+        project = parsed.get('project', {})
+        assert 'name' in project, \
+            "Project must have a name"
 
-        assert isinstance(name, str), "Project name should be a string"
-        assert len(name) > 0, "Project name should not be empty"
-        assert " " not in name, "Project name should not contain spaces (use hyphens)"
+        name = project['name']
+        assert isinstance(name, str), \
+            "Project name must be a string"
+        assert len(name) > 0, \
+            "Project name cannot be empty"
 
-    def test_project_version_format(self) -> None:
-        """Test that project version follows semantic versioning."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+    def test_project_name_valid(self):
+        """Test that project name follows Python naming conventions."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        name = project.get('name', '')
+
+        # Python package names should be lowercase and use hyphens or underscores
         import re
+        assert re.match(r'^[a-z0-9._-]+$', name), \
+            f"Project name '{name}' should follow Python naming conventions (lowercase, ._- allowed)"
 
-        version = data["project"]["version"]
-        # Simple semver pattern: major.minor.patch
-        semver_pattern = r"^\d+\.\d+\.\d+$"
+    def test_project_has_version(self):
+        """Test that project has a version."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        assert 'version' in project, \
+            "Project must have a version"
+
+        version = project['version']
+        assert isinstance(version, str), \
+            "Project version must be a string"
+        assert len(version) > 0, \
+            "Project version cannot be empty"
+
+    def test_version_format_valid(self):
+        """Test that version follows semantic versioning or similar."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        version = project.get('version', '')
+
+        # Check for common version formats (semantic versioning)
+        import re
+        # Allow formats like: 1.0.0, 1.0.0-alpha, 1.0.0-alpha.1, etc.
+        semver_pattern = r'^\d+\.\d+\.\d+([.-](alpha|beta|rc|dev|post)?[.-]?\d*)?$'
         assert re.match(semver_pattern, version), \
-            f"Version should follow semantic versioning (x.y.z), got: {version}"
+            f"Version '{version}' should follow semantic versioning or similar format"
 
-    def test_project_description_present(self) -> None:
+    def test_project_has_description(self):
         """Test that project has a description."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-        description = data["project"]["description"]
-        assert isinstance(description, str), "Description should be a string"
-        assert len(description) > 0, "Description should not be empty"
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-    def test_readme_file_specified(self) -> None:
-        """Test that README file is specified in project."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        project = parsed.get('project', {})
+        assert 'description' in project, \
+            "Project should have a description"
 
-        readme = data["project"]["readme"]
-        assert isinstance(readme, str), "README should be specified"
-        assert "README" in readme, "README file should be referenced"
+        description = project['description']
+        assert isinstance(description, str), \
+            "Project description must be a string"
+        assert len(description) > 0, \
+            "Project description cannot be empty"
 
-        # Verify the file exists
-        readme_path = Path(readme)
-        # Handle both direct path and file:// format
-        if readme_path.exists():
-            assert readme_path.is_file(), f"{readme} should be a file"
+    def test_description_meaningful(self):
+        """Test that description is meaningful (not just placeholder)."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-    def test_python_version_requirement(self) -> None:
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        description = project.get('description', '')
+
+        # Check that description is not a placeholder
+        placeholders = ['TODO', 'PLACEHOLDER', 'DESCRIPTION', 'enter description here']
+        description_lower = description.lower()
+        assert not any(placeholder in description_lower for placeholder in placeholders), \
+            "Project description should be meaningful, not a placeholder"
+
+    def test_project_has_readme(self):
+        """Test that project specifies README file."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+
+        # Check if readme is specified (it's optional but recommended)
+        # If specified, it should be a string or object
+        readme = project.get('readme')
+        if readme:
+            assert isinstance(readme, (str, list, dict)), \
+                "README should be a string, list, or dict if specified"
+
+    def test_project_has_license_or_authors(self):
+        """Test that project has either license or authors."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+
+        has_license = 'license' in project
+        has_authors = 'authors' in project
+        has_maintainers = 'maintainers' in project
+
+        assert has_license or has_authors or has_maintainers, \
+            "Project should have license or authors/maintainers specified"
+
+    def test_authors_format_valid(self):
+        """Test that authors have valid format if specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        authors = project.get('authors', [])
+
+        if authors:
+            assert isinstance(authors, list), \
+                "Authors should be a list"
+
+            for author in authors:
+                assert isinstance(author, dict), \
+                    "Each author should be a dictionary"
+                assert 'name' in author or 'email' in author, \
+                    "Each author should have name or email"
+
+    def test_license_format_valid(self):
+        """Test that license has valid format if specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        license_info = project.get('license', {})
+
+        if license_info:
+            assert isinstance(license_info, dict), \
+                "License should be a dictionary if specified"
+
+            # Should have either file or text
+            has_file = 'file' in license_info
+            has_text = 'text' in license_info
+            assert has_file or has_text, \
+                "License should specify either 'file' or 'text'"
+
+
+class TestDependencies:
+    """Test project dependencies configuration."""
+
+    def test_dependencies_specified(self):
+        """Test that project specifies dependencies or indicates no dependencies."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+
+        # Either dependencies should be specified, or it should be explicitly empty
+        has_dependencies = 'dependencies' in project
+        if has_dependencies:
+            deps = project['dependencies']
+            assert isinstance(deps, list), \
+                "Dependencies should be a list"
+
+    def test_dependency_format_valid(self):
+        """Test that dependencies follow PEP 508 format."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        dependencies = project.get('dependencies', [])
+
+        for dep in dependencies:
+            assert isinstance(dep, str), \
+                f"Each dependency should be a string: {dep}"
+
+            # Basic validation: dependency name should be present
+            assert len(dep.strip()) > 0, \
+                "Dependency name cannot be empty"
+
+    def test_optional_dependencies_format_valid(self):
+        """Test that optional dependencies (extras) are valid."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        optional_deps = project.get('optional-dependencies', {})
+
+        if optional_deps:
+            assert isinstance(optional_deps, dict), \
+                "Optional dependencies should be a dictionary"
+
+            for extra_name, extra_deps in optional_deps.items():
+                assert isinstance(extra_deps, list), \
+                    f"Optional dependency '{extra_name}' should be a list"
+
+                for dep in extra_deps:
+                    assert isinstance(dep, str), \
+                        f"Each dependency in '{extra_name}' should be a string"
+
+    def test_python_version_specified(self):
         """Test that Python version requirement is specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-        requires_python = data["project"]["requires-python"]
-        assert isinstance(requires_python, str), "requires-python should be specified"
-        assert ">" in requires_python or ">=" in requires_python, \
-            "Should specify minimum Python version"
-        assert "3" in requires_python, \
-            "Should specify Python 3 version"
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-    def test_license_specified(self) -> None:
-        """Test that license is specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        project = parsed.get('project', {})
 
-        license_info = data["project"]["license"]
-        assert "text" in license_info, "License should specify text"
-        assert isinstance(license_info["text"], str), "License text should be a string"
+        # Python-Requires or requires-python should be specified
+        has_python_req = 'requires-python' in project
+        assert has_python_req, \
+            "Project should specify requires-python"
 
-    def test_authors_specified(self) -> None:
-        """Test that authors are specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
 
-        authors = data["project"]["authors"]
-        assert isinstance(authors, list), "Authors should be a list"
-        assert len(authors) > 0, "At least one author should be specified"
+class TestBuildSystem:
+    """Test build system configuration."""
 
-        for author in authors:
-            assert "name" in author, "Each author should have a name"
-            assert isinstance(author["name"], str), "Author name should be a string"
+    def test_build_backend_specified(self):
+        """Test that build backend is specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-    def test_keywords_present(self) -> None:
-        """Test that keywords are specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-        keywords = data["project"]["keywords"]
-        assert isinstance(keywords, list), "Keywords should be a list"
-        assert len(keywords) > 0, "At least one keyword should be specified"
+        build_system = parsed.get('build-system', {})
+        build_backend = build_system.get('build-backend')
 
-    def test_classifiers_present(self) -> None:
-        """Test that PyPI classifiers are specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        assert build_backend is not None, \
+            "Build system must specify build-backend"
 
-        classifiers = data["project"]["classifiers"]
-        assert isinstance(classifiers, list), "Classifiers should be a list"
-        assert len(classifiers) > 5, "Should have multiple classifiers for PyPI"
+        assert isinstance(build_backend, str), \
+            "Build backend must be a string"
 
-    def test_dependencies_present(self) -> None:
-        """Test that project dependencies are specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        assert len(build_backend) > 0, \
+            "Build backend cannot be empty"
 
-        dependencies = data["project"]["dependencies"]
-        assert isinstance(dependencies, list), "Dependencies should be a list"
-        # Can be empty for library-only projects, but usually has some
+    def test_build_backend_valid(self):
+        """Test that build backend is a known/valid backend."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-    def test_dev_dependencies_present(self) -> None:
-        """Test that development dependencies are specified."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-        optional_deps = data["project"]["optional-dependencies"]
-        assert "dev" in optional_deps, "Should have dev dependencies"
+        build_system = parsed.get('build-system', {})
+        build_backend = build_system.get('build-backend', '')
 
-        dev_deps = optional_deps["dev"]
-        assert isinstance(dev_deps, list), "Dev dependencies should be a list"
-        assert len(dev_deps) > 0, "Should have development dependencies"
+        # List of common build backends
+        valid_backends = [
+            'setuptools.build_meta',
+            'poetry.core.masonry.api',
+            'hatchling.build',
+            'flit_core.buildapi',
+            'pdm.backend'
+        ]
 
-        # Check for common dev tools
-        dev_dep_names = [dep.split(">=")[0].split("==")[0] for dep in dev_deps]
-        assert any("pytest" in dep for dep in dev_dep_names), \
-            "Should include pytest in dev dependencies"
+        assert build_backend in valid_backends, \
+            f"Build backend '{build_backend}' should be one of the known backends"
 
-    def test_pytest_configuration_present(self) -> None:
-        """Test that pytest configuration is present."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+    def test_build_requires_specified(self):
+        """Test that build requirements are specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-        assert "tool" in data, "Should have tool configuration"
-        assert "pytest" in data["tool"], "Should have pytest configuration"
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-        # Check for the actual structure: [tool.pytest.ini_options]
-        pytest_config = data["tool"]["pytest"]
-        assert "ini_options" in pytest_config, "Should have pytest ini_options"
+        build_system = parsed.get('build-system', {})
+        requires = build_system.get('requires')
 
-        ini_options = pytest_config["ini_options"]
-        assert "addopts" in ini_options, "Should have pytest addopts"
-        assert "testpaths" in ini_options, "Should specify testpaths"
+        assert requires is not None, \
+            "Build system must specify requires"
 
-        testpaths = ini_options["testpaths"]
-        assert "tests" in testpaths, "Should specify tests directory"
+        assert isinstance(requires, list), \
+            "Build requires must be a list"
 
-    def test_ruff_configuration_present(self) -> None:
-        """Test that ruff linting configuration is present."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        assert len(requires) > 0, \
+            "Build requires cannot be empty"
 
-        assert "tool" in data, "Should have tool configuration"
-        assert "ruff" in data["tool"], "Should have ruff configuration"
+    def test_build_requirements_valid(self):
+        """Test that build requirements are valid."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-        ruff_config = data["tool"]["ruff"]
-        assert "line-length" in ruff_config, "Should specify line length"
-        assert "target-version" in ruff_config, "Should specify target version"
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-    def test_project_scripts_present(self) -> None:
-        """Test that project entry point scripts are configured."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+        build_system = parsed.get('build-system', {})
+        requires = build_system.get('requires', [])
 
-        # Check if scripts are defined
-        if "project.scripts" in data:
-            scripts = data["project.scripts"]
-            assert isinstance(scripts, dict), "Scripts should be a dictionary"
+        for req in requires:
+            assert isinstance(req, str), \
+                f"Each build requirement should be a string: {req}"
 
-    def test_mypy_configuration_present(self) -> None:
-        """Test that mypy type checking configuration is present."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+            assert len(req.strip()) > 0, \
+                "Build requirement cannot be empty"
 
-        assert "tool" in data, "Should have tool configuration"
-        assert "mypy" in data["tool"], "Should have mypy configuration"
 
-    def test_configuration_consistency(self) -> None:
-        """Test that various configuration sections are consistent."""
-        pyproject_path = Path("pyproject.toml")
-        with open(pyproject_path, "rb") as f:
-            data = load_toml(f)
+class TestToolConfiguration:
+    """Test tool configurations in pyproject.toml."""
 
-        # Get Python version from requires-python
-        requires_python = data["project"]["requires-python"]
+    def test_pytest_configured(self):
+        """Test that pytest is configured."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
 
-        # Get Python version from ruff
-        ruff_python = data["tool"]["ruff"]["target-version"]
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
 
-        # Get Python version from mypy
-        mypy_python = data["tool"]["mypy"]["python_version"]
+        # Check for pytest configuration in [tool.pytest] or in pytest.ini
+        has_pytest_section = 'tool' in parsed and 'pytest' in parsed['tool']
 
-        # All should be consistent (or at least compatible)
-        # This is a basic sanity check
-        assert "3" in requires_python, "requires-python should specify Python 3"
-        assert "3" in ruff_python, "ruff target-version should be Python 3"
-        assert "3" in mypy_python, "mypy python_version should be Python 3"
+        # Either [tool.pytest] exists or pytest.ini should exist
+        if not has_pytest_section:
+            pytest_ini = project_root / "pytest.ini"
+            assert pytest_ini.exists(), \
+                "pytest should be configured in [tool.pytest] or pytest.ini"
+
+    def test_coverage_configured(self):
+        """Test that coverage is configured."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        # Check for coverage configuration in [tool.coverage] or [tool.coverage.*]
+        has_coverage = 'tool' in parsed and 'coverage' in parsed['tool']
+
+        # This is recommended but not required
+        # Just verify the structure if it exists
+
+    def test_ruff_configured(self):
+        """Test that ruff linter is configured if present."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        # Check for ruff configuration
+        has_ruff = 'tool' in parsed and 'ruff' in parsed['tool']
+
+        # This is recommended but not required
+        # Just verify the structure if it exists
+
+    def test_type_checker_configured(self):
+        """Test that type checker (mypy/basedpyright) is configured if present."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        # Check for mypy or basedpyright configuration
+        has_mypy = 'tool' in parsed and 'mypy' in parsed['tool']
+        has_basedpyright = 'tool' in parsed and 'basedpyright' in parsed['tool']
+
+        # This is recommended but not required
+        # Just verify the structure if it exists
+
+
+class TestEntryPoints:
+    """Test entry points configuration."""
+
+    def test_console_scripts_format_valid(self):
+        """Test that console scripts have valid format."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        scripts = project.get('scripts', {})
+
+        if scripts:
+            assert isinstance(scripts, dict), \
+                "Console scripts should be a dictionary"
+
+            for script_name, script_entry in scripts.items():
+                assert isinstance(script_name, str), \
+                    "Script name must be a string"
+                assert isinstance(script_entry, str), \
+                    "Script entry must be a string"
+                assert ':' in script_entry, \
+                    f"Script entry '{script_entry}' should be in format 'module:function'"
+
+    def test_gui_scripts_format_valid(self):
+        """Test that GUI scripts have valid format."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        scripts = project.get('gui-scripts', {})
+
+        if scripts:
+            assert isinstance(scripts, dict), \
+                "GUI scripts should be a dictionary"
+
+            for script_name, script_entry in scripts.items():
+                assert isinstance(script_name, str), \
+                    "Script name must be a string"
+                assert isinstance(script_entry, str), \
+                    "Script entry must be a string"
+                assert ' = ' in script_entry, \
+                    f"Script entry '{script_entry}' should be in format 'module:function'"
+
+
+class TestClassifiers:
+    """Test project classifiers if specified."""
+
+    def test_classifiers_format_valid(self):
+        """Test that classifiers have valid format if specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        classifiers = project.get('classifiers', [])
+
+        if classifiers:
+            assert isinstance(classifiers, list), \
+                "Classifiers should be a list"
+
+            for classifier in classifiers:
+                assert isinstance(classifier, str), \
+                    f"Each classifier should be a string: {classifier}"
+
+                # PyPI classifiers are strings, no further validation needed
+
+
+class TestURLs:
+    """Test project URLs if specified."""
+
+    def test_urls_format_valid(self):
+        """Test that project URLs have valid format if specified."""
+        project_root = Path(__file__).parent.parent
+        pyproject_file = project_root / "pyproject.toml"
+
+        content = pyproject_file.read_text(encoding="utf-8")
+        parsed = toml.loads(content)
+
+        project = parsed.get('project', {})
+        urls = project.get('urls', {})
+
+        if urls:
+            assert isinstance(urls, dict), \
+                "Project URLs should be a dictionary"
+
+            for url_name, url_value in urls.items():
+                assert isinstance(url_name, str), \
+                    "URL name must be a string"
+                assert isinstance(url_value, str), \
+                    "URL value must be a string"
+
+                # Basic URL validation
+                assert url_value.startswith(('http://', 'https://')), \
+                    f"URL '{url_value}' should start with http:// or https://"

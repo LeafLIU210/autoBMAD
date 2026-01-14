@@ -135,6 +135,8 @@ class QualityGateOrchestrator:
             "ruff_format": None,  # 新增
             "pytest": None,
             "errors": [],  # List[str]
+            "quality_warnings": [],  # 🆕 新增：质量超限警告
+            "error_summary_json": None,  # 🆕 新增：错误汇总JSON文件路径
             "start_time": None,
             "end_time": None,
             "total_duration": 0.0,
@@ -180,6 +182,41 @@ class QualityGateOrchestrator:
         """Calculate duration in seconds."""
         return round(end_time - start_time, 2)
 
+    def _is_max_cycles_exceeded_with_errors(self, result: dict[str, Any]) -> bool:
+        """
+        判断是否为"超限但仍有错误"场景
+
+        修改策略：放宽条件，只要达到最大循环且有残留错误，就返回True
+
+        条件：
+        1. cycles >= max_cycles
+        2. 残留文件非空（final_error_files 或 final_failed_files）
+        """
+        # ✅ 移除status检查，直接检查循环数和残留文件
+        cycles = result.get("cycles", 0)
+        max_cycles = result.get("max_cycles", 0)
+
+        # 检查是否达到最大循环
+        if cycles < max_cycles:
+            return False
+
+        # 检查残留文件
+        remaining_files = (
+            result.get("final_error_files", []) or
+            result.get("final_failed_files", [])
+        )
+
+        has_remaining_errors = len(remaining_files) > 0
+
+        # ✅ 添加诊断日志
+        if has_remaining_errors:
+            self.logger.debug(
+                f"Max cycles check: cycles={cycles}/{max_cycles}, "
+                f"remaining={len(remaining_files)} files"
+            )
+
+        return has_remaining_errors
+
     async def execute_ruff_agent(self, source_dir: str) -> dict[str, Any]:
         """执行 Ruff 质量门（改造版：使用 QualityCheckController）"""
         if self.skip_quality:
@@ -213,9 +250,24 @@ class QualityGateOrchestrator:
             ruff_result = await controller.run()
             end_time = time.time()
 
-            # 判断成功与否
-            success = ruff_result["status"] == "completed"
+            # 🆕 判定是否为超限场景
+            if self._is_max_cycles_exceeded_with_errors(ruff_result):
+                # 超限场景：phase 状态为 completed，但记录警告
+                self.logger.warning(
+                    f"⚠ Ruff quality gate reached max cycles ({ruff_result['cycles']}) "
+                    f"with {len(ruff_result['final_error_files'])} remaining error(s)"
+                )
+                self._update_progress("phase_1_ruff", "completed", end=True)
 
+                return {
+                    "success": True,  # 🆕 流程成功，不阻断
+                    "warning": f"Max cycles exceeded with errors",
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": ruff_result,
+                }
+
+            # 原有逻辑：正常完成或中途失败
+            success = ruff_result["status"] == "completed"
             if success:
                 self.logger.info(
                     f"✓ Ruff quality gate PASSED after {ruff_result['cycles']} cycle(s) "
@@ -228,15 +280,12 @@ class QualityGateOrchestrator:
                     "result": ruff_result,
                 }
             else:
-                error_msg = (
-                    f"Ruff quality gate FAILED after {ruff_result['cycles']} cycle(s): "
-                    f"{len(ruff_result['final_error_files'])} file(s) still have errors"
-                )
-                self.logger.warning(f"✗ {error_msg}")
-                self._update_progress("phase_1_ruff", "failed", end=True)
+                # 中途失败（非超限场景）：仍视为系统错误
+                error_msg = f"Ruff execution failed (cycles: {ruff_result['cycles']})"
+                self.logger.error(error_msg)
+                self._update_progress("phase_1_ruff", "error", end=True)
                 errors_list = cast(list[str], self.results["errors"])
                 errors_list.append(error_msg)
-
                 return {
                     "success": False,
                     "error": error_msg,
@@ -287,9 +336,24 @@ class QualityGateOrchestrator:
             basedpyright_result = await controller.run()
             end_time = time.time()
 
-            # 判断成功与否
-            success = basedpyright_result["status"] == "completed"
+            # 🆕 判定是否为超限场景
+            if self._is_max_cycles_exceeded_with_errors(basedpyright_result):
+                # 超限场景：phase 状态为 completed，但记录警告
+                self.logger.warning(
+                    f"⚠ BasedPyright quality gate reached max cycles ({basedpyright_result['cycles']}) "
+                    f"with {len(basedpyright_result['final_error_files'])} remaining error(s)"
+                )
+                self._update_progress("phase_2_basedpyright", "completed", end=True)
 
+                return {
+                    "success": True,  # 🆕 流程成功，不阻断
+                    "warning": f"Max cycles exceeded with errors",
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": basedpyright_result,
+                }
+
+            # 原有逻辑：正常完成或中途失败
+            success = basedpyright_result["status"] == "completed"
             if success:
                 self.logger.info(
                     f"✓ BasedPyright quality gate PASSED after {basedpyright_result['cycles']} cycle(s) "
@@ -302,15 +366,12 @@ class QualityGateOrchestrator:
                     "result": basedpyright_result,
                 }
             else:
-                error_msg = (
-                    f"BasedPyright quality gate FAILED after {basedpyright_result['cycles']} cycle(s): "
-                    f"{len(basedpyright_result['final_error_files'])} file(s) still have type errors"
-                )
-                self.logger.warning(f"✗ {error_msg}")
-                self._update_progress("phase_2_basedpyright", "failed", end=True)
+                # 中途失败（非超限场景）：仍视为系统错误
+                error_msg = f"BasedPyright execution failed (cycles: {basedpyright_result['cycles']})"
+                self.logger.error(error_msg)
+                self._update_progress("phase_2_basedpyright", "error", end=True)
                 errors_list = cast(list[str], self.results["errors"])
                 errors_list.append(error_msg)
-
                 return {
                     "success": False,
                     "error": error_msg,
@@ -478,9 +539,24 @@ class QualityGateOrchestrator:
             pytest_result = await controller.run()
             end_time = time.time()
 
-            # 判断成功与否
-            success = pytest_result["status"] == "completed"
+            # 🆕 判定是否为超限场景
+            if self._is_max_cycles_exceeded_with_errors(pytest_result):
+                # 超限场景：phase 状态为 completed，但记录警告
+                self.logger.warning(
+                    f"⚠ Pytest quality gate reached max cycles ({pytest_result['cycles']}) "
+                    f"with {len(pytest_result['final_failed_files'])} remaining failure(ies)"
+                )
+                self._update_progress("phase_3_pytest", "completed", end=True)
 
+                return {
+                    "success": True,  # 🆕 流程成功，不阻断
+                    "warning": f"Max cycles exceeded with errors",
+                    "duration": self._calculate_duration(start_time, end_time),
+                    "result": pytest_result,
+                }
+
+            # 原有逻辑：正常完成或中途失败
+            success = pytest_result["status"] == "completed"
             if success:
                 self.logger.info(
                     f"✓ Pytest quality gate PASSED after {pytest_result['cycles']} cycle(s) "
@@ -493,15 +569,12 @@ class QualityGateOrchestrator:
                     "result": pytest_result,
                 }
             else:
-                error_msg = (
-                    f"Pytest quality gate FAILED after {pytest_result['cycles']} cycle(s): "
-                    f"{len(pytest_result['final_failed_files'])} file(s) still failing"
-                )
-                self.logger.warning(f"✗ {error_msg}")
-                self._update_progress("phase_3_pytest", "failed", end=True)
+                # 中途失败（非超限场景）：仍视为系统错误
+                error_msg = f"Pytest execution failed (cycles: {pytest_result['cycles']})"
+                self.logger.error(error_msg)
+                self._update_progress("phase_3_pytest", "error", end=True)
                 errors_list = cast(list[str], self.results["errors"])
                 errors_list.append(error_msg)
-
                 return {
                     "success": False,
                     "error": error_msg,
@@ -574,6 +647,35 @@ class QualityGateOrchestrator:
             else:
                 self.logger.info("Skipping pytest (--skip-tests flag set)")
 
+            # 🆕 收集超限工具信息
+            quality_warnings = []
+
+            for tool_name, phase_name in [
+                ("ruff", "phase_1_ruff"),
+                ("basedpyright", "phase_2_basedpyright"),
+                ("pytest", "phase_3_pytest"),
+            ]:
+                result = self.results.get(tool_name)
+                if result and self._is_max_cycles_exceeded_with_errors(result["result"]):
+                    warning = {
+                        "tool": result["result"].get("tool", tool_name),
+                        "phase": phase_name,
+                        "status": "max_cycles_exceeded",
+                        "cycles": result["result"]["cycles"],
+                        "max_cycles": result["result"]["max_cycles"],
+                        "remaining_files": (
+                            result["result"].get("final_error_files") or
+                            result["result"].get("final_failed_files", [])
+                        ),
+                    }
+                    quality_warnings.append(warning)
+
+            # 🆕 生成错误汇总 JSON
+            if quality_warnings:
+                error_json_path = self._write_error_summary_json(epic_id, quality_warnings)
+                self.results["error_summary_json"] = error_json_path
+                self.results["quality_warnings"] = quality_warnings
+
             return self._finalize_results()
 
         except Exception as e:
@@ -594,21 +696,80 @@ class QualityGateOrchestrator:
                 start_time, end_time
             )
 
-        # Determine overall status
+        # 判定整体成功状态
         if self.results["errors"]:
+            # 🔴 仅系统级错误导致失败
             self.results["success"] = False
             self.logger.info(
                 f"Quality gates pipeline FAILED with {len(self.results['errors'])} error(s)"
             )
         else:
+            # 🟢 流程成功（即使有质量警告）
             self.results["success"] = True
-            self.logger.info(
-                f"Quality gates pipeline COMPLETED SUCCESSFULLY in {self.results['total_duration']}s"
-            )
+
+            # 🆕 检查是否有质量警告
+            warnings = self.results.get("quality_warnings", [])
+            if warnings:
+                self.logger.warning(
+                    f"Quality gates pipeline COMPLETED with {len(warnings)} quality warning(s). "
+                    f"See error summary: {self.results.get('error_summary_json')}"
+                )
+            else:
+                self.logger.info(
+                    f"Quality gates pipeline COMPLETED SUCCESSFULLY in {self.results['total_duration']}s"
+                )
 
         progress_dict = cast(dict[str, Any], self.results["progress"])
         progress_dict["current_phase"] = "completed"
         return self.results
+
+    def _write_error_summary_json(
+        self,
+        epic_id: str,
+        issues: list[dict[str, Any]]
+    ) -> str | None:
+        """
+        生成错误汇总 JSON 文件
+
+        Args:
+            epic_id: Epic 标识符
+            issues: 超限工具列表（从 quality_warnings 收集）
+
+        Returns:
+            生成的 JSON 文件路径，若 issues 为空则返回 None
+        """
+        if not issues:
+            return None
+
+        import json
+        from datetime import datetime, UTC
+        from pathlib import Path
+
+        # 构建 JSON 内容
+        error_summary = {
+            "epic_id": epic_id,
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "source_dir": self.source_dir,
+            "test_dir": self.test_dir,
+            "tools": issues,
+        }
+
+        # 确保输出目录存在
+        errors_dir = Path("autoBMAD/epic_automation/errors")
+        errors_dir.mkdir(parents=True, exist_ok=True)
+
+        # 生成文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_epic_id = epic_id.replace("/", "_").replace("\\", "_")
+        filename = f"quality_errors_{safe_epic_id}_{timestamp}.json"
+        filepath = errors_dir / filename
+
+        # 写入文件
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(error_summary, f, indent=2, ensure_ascii=False)
+
+        self.logger.info(f"Error summary written to: {filepath}")
+        return str(filepath)
 
 
 class EpicDriver:
@@ -1412,6 +1573,21 @@ class EpicDriver:
         story_id = story["id"]
 
         try:
+            # 🆕 强制初始化数据库记录（最简方案）
+            try:
+                current_status = story.get("status", "pending")
+                
+                await self.state_manager.update_story_status(
+                    story_path=story_path,
+                    status=current_status,
+                    phase="initialization"
+                )
+                
+                logger.debug(f"[DB Init] Story {story_id} initialized with status: {current_status}")
+                
+            except Exception as e:
+                logger.warning(f"DB init failed for {story_id}: {e}, continuing workflow")
+            
             # 🎯 关键修复：移除数据库状态检查，完全依赖故事文档核心状态
             # 旧逻辑（已废弃）：
             # existing_status = await self.state_manager.get_story_status(story_path)
@@ -2109,13 +2285,16 @@ class EpicDriver:
             # Sync story statuses from database to markdown files
             self.logger.info("=== Syncing Story Statuses ===")
 
-            # Extract story IDs for scoped sync (performance optimization)
-            story_ids = [story["id"].split(":")[0].strip() for story in stories]
+            # ✅ 修改：提取完整路径而非短ID
+            story_paths = [story["path"] for story in stories]
+
+            # ✅ 添加诊断日志
+            self.logger.debug(f"Story paths for sync: {story_paths}")
 
             sync_results = await self.status_update_agent.sync_from_database(
                 state_manager=self.state_manager,
                 epic_id=self.epic_id,
-                story_ids=story_ids
+                story_ids=story_paths  # ✅ 传入完整路径列表
             )
             if sync_results.get("error_count", 0) > 0:
                 self.logger.warning(

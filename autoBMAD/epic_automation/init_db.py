@@ -42,7 +42,8 @@ def create_tables(conn: sqlite3.Connection) -> None:
             error_message TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            phase TEXT
+            phase TEXT,
+            version INTEGER DEFAULT 1
         )
     """)
 
@@ -58,62 +59,11 @@ def create_tables(conn: sqlite3.Connection) -> None:
         ON stories(status)
     """)
 
-    # Create code_quality_phase table (for quality gates)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS code_quality_phase (
-            record_id TEXT PRIMARY KEY,
-            epic_id TEXT NOT NULL,
-            file_path TEXT NOT NULL,
-            error_count INTEGER DEFAULT 0,
-            fix_status TEXT DEFAULT 'pending',
-            basedpyright_errors TEXT,
-            ruff_errors TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (epic_id) REFERENCES stories(epic_path)
-        )
-    """)
-
-    # Create test_automation_phase table (for test automation)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS test_automation_phase (
-            record_id TEXT PRIMARY KEY,
-            epic_id TEXT NOT NULL,
-            test_file_path TEXT NOT NULL,
-            failure_count INTEGER DEFAULT 0,
-            fix_status TEXT DEFAULT 'pending',
-            debug_info TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (epic_id) REFERENCES stories(epic_path)
-        )
-    """)
-
-    # Create indexes for performance on epic_id columns
-    cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_quality_epic
-        ON code_quality_phase(epic_id)
-    """)
-
-    cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_test_epic
-        ON test_automation_phase(epic_id)
-    """)
-
-    # Create epic_processing table (for tracking epic-level progress)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS epic_processing (
-            epic_id TEXT PRIMARY KEY,
-            file_path TEXT NOT NULL,
-            status TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            total_stories INTEGER,
-            completed_stories INTEGER,
-            quality_phase_status TEXT DEFAULT 'pending',
-            test_phase_status TEXT DEFAULT 'pending',
-            quality_phase_errors INTEGER DEFAULT 0,
-            test_phase_failures INTEGER DEFAULT 0
-        )
-    """)
+    # Database migration: ensure version column exists
+    try:
+        cursor.execute("SELECT version FROM stories LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE stories ADD COLUMN version INTEGER DEFAULT 1")
 
     conn.commit()
     print("[OK] All tables created successfully")
@@ -143,17 +93,12 @@ def verify_tables(conn: sqlite3.Connection, verbose: bool = False) -> bool:
     # Required tables
     required_tables = {
         "stories",
-        "code_quality_phase",
-        "test_automation_phase",
-        "epic_processing",
     }
 
     # Required indexes
     required_indexes = {
         "idx_story_path",
         "idx_status",
-        "idx_quality_epic",
-        "idx_test_epic",
     }
 
     # Check tables

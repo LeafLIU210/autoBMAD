@@ -1,317 +1,430 @@
+"""Integration test suite for complete workflows.
+
+Tests cover:
+- End-to-end workflows
+- Multi-module integration
+- CLI integration with core functionality
+- Real-world usage scenarios
 """
-Integration Tests for Story 1.1
-Tests complete workflows and end-to-end scenarios for project setup.
-"""
-import os
+
+import pytest
+from pathlib import Path
 import sys
 import subprocess
-from pathlib import Path
-import pytest
+from unittest.mock import patch
+from io import StringIO
 
 
-class TestIntegrationWorkflow:
-    """Test complete workflows from setup to validation."""
+class TestEndToEndSorting:
+    """Test end-to-end sorting workflows."""
 
-    def test_complete_project_setup_workflow(self):
-        """Test complete project setup from scratch."""
-        # This test validates that all components work together
-        project_root = Path(__file__).parent.parent
-
-        # 1. Verify project structure exists
-        assert (project_root / "src").exists(), "src/ directory should exist"
-        assert (project_root / "tests").exists(), "tests/ directory should exist"
-        assert (project_root / "docs").exists(), "docs/ directory should exist"
-
-        # 2. Verify configuration files exist
-        assert (project_root / "pyproject.toml").exists(), "pyproject.toml should exist"
-        assert (project_root / "README.md").exists(), "README.md should exist"
-        assert (project_root / ".gitignore").exists(), ".gitignore should exist"
-
-        # 3. Verify package structure
-        src_init = project_root / "src" / "__init__.py"
-        assert src_init.exists(), "src/__init__.py should exist"
-
-        # 4. Verify tests structure
-        test_inits = [
-            project_root / "tests" / "__init__.py",
-            project_root / "tests" / "unit" / "__init__.py",
-            project_root / "tests" / "integration" / "__init__.py"
-        ]
-        for init_file in test_inits:
-            assert init_file.exists(), f"{init_file} should exist"
-
-    def test_package_import_workflow(self):
-        """Test that packages can be imported successfully."""
+    def test_complete_sorting_workflow(self):
+        """Test complete sorting from CLI input to output."""
+        # Add src to path
         project_root = Path(__file__).parent.parent
         sys.path.insert(0, str(project_root / "src"))
 
-        # Test autoBMAD import
-        try:
-            import autoBMAD
-            assert autoBMAD is not None
-            assert hasattr(autoBMAD, "__version__")
-        except ImportError as e:
-            pytest.fail(f"Failed to import autoBMAD: {e}")
+        from src.bubblesort.bubble_sort import bubble_sort
+        from src.cli import main, parse_args, validate_input
 
-    def test_pyproject_validation_workflow(self):
-        """Test pyproject.toml validation workflow."""
-        pyproject_file = Path(__file__).parent.parent / "pyproject.toml"
-        content = pyproject_file.read_text(encoding='utf-8')
+        # Test the full workflow: validate -> sort -> output
+        input_numbers = ['5', '3', '8', '1', '4']
+        validated = validate_input(input_numbers)
+        sorted_result = bubble_sort(validated)
 
-        # Verify all required sections exist
-        required_sections = [
-            "[build-system]",
-            "[project]",
-            "name",
-            "version",
-            "description",
-            "requires-python"
+        assert sorted_result == [1, 3, 4, 5, 8]
+
+    def test_cli_to_sorting_pipeline(self):
+        """Test CLI parsing to sorting pipeline."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.cli import parse_args, validate_input
+        from src.bubblesort.bubble_sort import bubble_sort
+
+        args = parse_args(['10', '2', '7', '1', '5'])
+        numbers = validate_input(args.numbers)
+        result = bubble_sort(numbers)
+
+        assert result == [1, 2, 5, 7, 10]
+
+    def test_edge_case_through_pipeline(self):
+        """Test edge cases through the full pipeline."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.bubblesort.bubble_sort import bubble_sort
+        from src.cli import validate_input
+
+        # Test empty list
+        validated = validate_input([])
+        result = bubble_sort(validated)
+        assert result == []
+
+        # Test single element
+        validated = validate_input(['42'])
+        result = bubble_sort(validated)
+        assert result == [42]
+
+        # Test duplicates
+        validated = validate_input(['5', '1', '5', '3', '1'])
+        result = bubble_sort(validated)
+        assert result == [1, 1, 3, 5, 5]
+
+
+class TestCLIModuleIntegration:
+    """Test CLI module integration with core functionality."""
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_main_function_integration(self, mock_stdout):
+        """Test that main function integrates all components."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.cli import main
+
+        with patch('sys.argv', ['cli.py', '4', '2', '6', '1']):
+            main()
+
+        output = mock_stdout.getvalue()
+        assert '[1, 2, 4, 6]' in output
+
+    def test_module_imports_work_together(self):
+        """Test that modules can be imported and used together."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        # Import both modules
+        from src.bubblesort.bubble_sort import bubble_sort
+        from src.cli import parse_args, validate_input
+
+        # Use them together
+        args = parse_args(['9', '1', '6', '3'])
+        numbers = validate_input(args.numbers)
+        result = bubble_sort(numbers)
+
+        assert result == [1, 3, 6, 9]
+
+    def test_function_call_chain(self):
+        """Test function call chain from CLI to sorting."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.cli import parse_args, validate_input
+        from src.bubblesort.bubble_sort import bubble_sort
+
+        # Chain: parse_args -> validate_input -> bubble_sort
+        args = parse_args(['8', '5', '12', '3'])
+        validated = validate_input(args.numbers)
+        sorted_data = bubble_sort(validated)
+
+        assert sorted_data == [3, 5, 8, 12]
+
+
+class TestPackageIntegration:
+    """Test package-level integration."""
+
+    def test_package_import_integration(self):
+        """Test that packages can be imported and work together."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        # Import subpackage
+        import src.bubblesort as bs
+        from src import cli
+
+        # Use both
+        result = bs.bubble_sort.bubble_sort([3, 1, 2])
+        assert result == [1, 2, 3]
+
+        # Check CLI is accessible
+        assert hasattr(cli, 'main')
+        assert hasattr(cli, 'parse_args')
+
+    def test_bubblesort_package_structure(self):
+        """Test bubblesort package structure integration."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        import src.bubblesort
+
+        # Package should have the module
+        assert hasattr(src.bubblesort, 'bubble_sort')
+
+        # Module should have the function
+        from src.bubblesort.bubble_sort import bubble_sort
+
+        # Function should work
+        result = bubble_sort([5, 2, 8, 1])
+        assert result == [1, 2, 5, 8]
+
+
+class TestRealWorldScenarios:
+    """Test real-world usage scenarios."""
+
+    def test_user_sorting_numbers(self):
+        """Test scenario: user wants to sort a list of numbers."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.bubblesort.bubble_sort import bubble_sort
+
+        # User has a list of test scores
+        scores = [85, 92, 78, 96, 88, 73, 91]
+        sorted_scores = bubble_sort(scores)
+
+        assert sorted_scores == [73, 78, 85, 88, 91, 92, 96]
+
+    def test_user_processing_data_from_cli(self):
+        """Test scenario: user processes data via CLI."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.cli import parse_args, validate_input
+        from src.bubblesort.bubble_sort import bubble_sort
+
+        # User provides temperatures: 72, 68, 71, 70, 69
+        args = parse_args(['72', '68', '71', '70', '69'])
+        temps = validate_input(args.numbers)
+        sorted_temps = bubble_sort(temps)
+
+        assert sorted_temps == [68, 69, 70, 71, 72]
+
+    def test_batch_processing(self):
+        """Test scenario: batch processing multiple lists."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
+
+        from src.bubblesort.bubble_sort import bubble_sort
+
+        # Multiple lists to sort
+        lists = [
+            [3, 1, 2],
+            [9, 5, 7],
+            [6, 4, 8, 2]
         ]
 
-        for section in required_sections:
-            assert section in content, \
-                f"pyproject.toml should contain {section}"
+        # Sort each list
+        sorted_lists = [bubble_sort(lst) for lst in lists]
 
-    def test_readme_validation_workflow(self):
-        """Test README.md validation workflow."""
-        readme_file = Path(__file__).parent.parent / "README.md"
-        content = readme_file.read_text(encoding='utf-8').lower()
-
-        # Verify README has required sections
-        required_sections = [
-            "installation",
-            "usage",
-            "quick start",
-            "example"
+        assert sorted_lists == [
+            [1, 2, 3],
+            [5, 7, 9],
+            [2, 4, 6, 8]
         ]
 
-        found_sections = [s for s in required_sections if s in content]
-        assert len(found_sections) >= 2, \
-            f"README should have installation/usage sections (found: {found_sections})"
-
-    def test_git_workflow_validation(self):
-        """Test Git repository workflow."""
+    def test_data_analysis_workflow(self):
+        """Test scenario: simple data analysis workflow."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Verify .git directory exists
-        git_dir = project_root / ".git"
-        assert git_dir.exists(), "Git repository should be initialized"
+        from src.bubblesort.bubble_sort import bubble_sort
 
-        # Verify .gitignore is configured
-        gitignore_file = project_root / ".gitignore"
-        assert gitignore_file.exists(), ".gitignore should exist"
+        # Data: response times in milliseconds
+        response_times = [45, 123, 67, 234, 89, 12, 156]
 
-        content = gitignore_file.read_text(encoding='utf-8')
-        assert "__pycache__" in content, ".gitignore should exclude __pycache__"
+        # Sort for analysis
+        sorted_times = bubble_sort(response_times)
 
-    def test_quality_tools_integration(self):
-        """Test integration of quality tools."""
+        # Calculate statistics
+        min_time = sorted_times[0]
+        max_time = sorted_times[-1]
+        median = sorted_times[len(sorted_times) // 2]
+
+        assert min_time == 12
+        assert max_time == 234
+        assert median == 89
+
+
+class TestWorkflowValidation:
+    """Test workflow validation and error handling."""
+
+    def test_error_propagation(self):
+        """Test that errors propagate correctly through the workflow."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Check pytest configuration
-        pytest_file = project_root / "pytest.ini"
-        if pytest_file.exists():
-            content = pytest_file.read_text(encoding='utf-8')
-            assert "testpaths" in content or "[tool.pytest" in content, \
-                "pytest should be configured"
+        from src.bubblesort.bubble_sort import bubble_sort
 
-        # Check quality tools in pyproject.toml
-        pyproject_file = project_root / "pyproject.toml"
-        content = pyproject_file.read_text(encoding='utf-8')
+        # Invalid input should raise error
+        with pytest.raises(TypeError):
+            bubble_sort(None)
 
-        # Look for quality tools
-        quality_tools = ["ruff", "pytest", "coverage"]
-        found_tools = [tool for tool in quality_tools if tool in content.lower()]
-        assert len(found_tools) >= 1, \
-            f"Quality tools should be configured (found: {found_tools})"
-
-    def test_package_structure_consistency(self):
-        """Test that package structure is consistent across all components."""
+    def test_validation_before_processing(self):
+        """Test that validation happens before processing."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Check src structure
-        src_dir = project_root / "src"
-        if src_dir.exists():
-            # All directories in src should have __init__.py or be valid packages
-            for item in src_dir.iterdir():
-                if item.is_dir() and not item.name.startswith('.') and item.name != '__pycache__':
-                    init_file = item / "__init__.py"
-                    # Either has __init__.py or has .py files
-                    has_init = init_file.exists()
-                    has_py_files = any(f.suffix == '.py' for f in item.iterdir())
-                    assert has_init or has_py_files, \
-                        f"Directory {item} should be a valid package"
+        from src.cli import validate_input
 
-    def test_dependency_consistency(self):
-        """Test that dependencies are consistent across configuration."""
+        # Valid input should work
+        result = validate_input(['1', '2', '3'])
+        assert result == [1, 2, 3]
+
+        # Invalid input should raise error
+        with pytest.raises(ValueError):
+            validate_input(['not_a_number'])
+
+    def test_cli_error_handling(self):
+        """Test that CLI errors are handled gracefully."""
         project_root = Path(__file__).parent.parent
-        pyproject_file = project_root / "pyproject.toml"
-        content = pyproject_file.read_text(encoding='utf-8')
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Verify dependencies section structure
-        lines = content.split('\n')
-        in_deps = False
-        for line in lines:
-            line = line.strip()
-            if 'dependencies' in line.lower() and '=' in line:
-                in_deps = True
-                continue
-            if in_deps:
-                if line.startswith('['):
-                    break
-                if line.strip():
-                    # Dependencies should be properly formatted
-                    assert not line.startswith('#'), \
-                        "Dependencies should not have comments inline"
+        from src.cli import parse_args
 
-    def test_test_discovery_workflow(self):
-        """Test that tests can be discovered by pytest."""
-        pytest.skip("Skipping test discovery due to pytest internal issues")
+        # No arguments should fail
+        with pytest.raises(SystemExit):
+            parse_args([])
 
-        # Run pytest with --collect-only to verify test discovery
-        result = subprocess.run(
-            [sys.executable, "-m", "pytest", "--collect-only", "-q"],
-            cwd=Path(__file__).parent.parent,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
 
-        # pytest should exit with code 0 (successful test collection)
-        assert result.returncode == 0, \
-            f"pytest should successfully discover tests: {result.stderr}"
+class TestCrossModuleConsistency:
+    """Test consistency across modules."""
 
-        # Should collect some tests
-        assert "test session starts" in result.stdout.lower() or \
-               "collected" in result.stdout.lower(), \
-            "pytest should report test collection"
-
-    def test_all_files_are_valid_utf8(self):
-        """Test that all project files are valid UTF-8."""
+    def test_sorting_algorithm_consistency(self):
+        """Test that sorting produces consistent results."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Check important files
-        important_files = [
-            "README.md",
-            "pyproject.toml",
-            ".gitignore",
-            "LICENSE"
-        ]
+        from src.bubblesort.bubble_sort import bubble_sort
 
-        for filename in important_files:
-            file_path = project_root / filename
-            if file_path.exists():
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        f.read()
-                except UnicodeDecodeError as e:
-                    pytest.fail(f"{filename} is not valid UTF-8: {e}")
+        test_data = [5, 1, 4, 2, 8, 3, 7]
 
-    def test_workflow_end_to_end(self):
-        """Test complete end-to-end workflow."""
+        # Sort multiple times, should be consistent
+        result1 = bubble_sort(test_data.copy())
+        result2 = bubble_sort(test_data.copy())
+        result3 = bubble_sort(test_data.copy())
+
+        assert result1 == result2 == result3 == [1, 2, 3, 4, 5, 7, 8]
+
+    def test_algorithm_properties(self):
+        """Test that algorithm maintains mathematical properties."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Simulate a developer checking out the project
-        # 1. Check structure
-        assert (project_root / "src").is_dir()
-        assert (project_root / "tests").is_dir()
-        assert (project_root / "docs").is_dir()
+        from src.bubblesort.bubble_sort import bubble_sort
 
-        # 2. Check configuration
-        pyproject = project_root / "pyproject.toml"
-        assert pyproject.exists()
-        content = pyproject.read_text(encoding='utf-8')
-        assert "build-system" in content
+        # Property 1: Sorting twice should give same result
+        data = [3, 1, 4, 1, 5, 9, 2, 6]
+        result1 = bubble_sort(data)
+        result2 = bubble_sort(result1)
 
-        # 3. Check package can be inspected
-        src_dir = project_root / "src"
-        py_files = list(src_dir.rglob("*.py"))
-        assert len(py_files) > 0, "Should have Python source files"
+        assert result1 == result2
 
-        # 4. Check tests exist
-        test_files = list((project_root / "tests").rglob("test_*.py"))
-        assert len(test_files) > 0, "Should have test files"
+        # Property 2: Output is sorted
+        assert result1 == sorted(result1)
 
+        # Property 3: All elements preserved
+        assert sorted(result1) == sorted(data)
 
-class TestAcceptanceCriteriaIntegration:
-    """Test all acceptance criteria in integration."""
-
-    def test_ac1_package_structure(self):
-        """AC1: Create proper Python package structure with __init__.py files."""
+    def test_cli_and_direct_consistency(self):
+        """Test that CLI and direct function calls give same results."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Main package directories should have __init__.py
-        package_dirs = ["src", "tests"]
-        for dir_name in package_dirs:
-            dir_path = project_root / dir_name
-            init_file = dir_path / "__init__.py"
-            assert init_file.exists(), \
-                f"{dir_name}/ should have __init__.py file"
+        from src.bubblesort.bubble_sort import bubble_sort
+        from src.cli import validate_input
 
-    def test_ac2_pyproject_configuration(self):
-        """AC2: Setup pyproject.toml with project metadata and dependencies."""
+        test_input = ['10', '5', '20', '15', '2']
+
+        # Method 1: Direct function call
+        direct_result = bubble_sort([10, 5, 20, 15, 2])
+
+        # Method 2: Via CLI validation
+        cli_result = bubble_sort(validate_input(test_input))
+
+        assert direct_result == cli_result == [2, 5, 10, 15, 20]
+
+
+class TestPerformanceIntegration:
+    """Test performance-related integration."""
+
+    def test_large_dataset_integration(self):
+        """Test integration with larger datasets."""
         project_root = Path(__file__).parent.parent
-        pyproject_file = project_root / "pyproject.toml"
+        sys.path.insert(0, str(project_root / "src"))
 
-        assert pyproject_file.exists(), "pyproject.toml should exist"
+        from src.bubblesort.bubble_sort import bubble_sort
 
-        content = pyproject_file.read_text(encoding='utf-8')
+        # Create a large sorted list
+        import random
+        random.seed(42)
+        large_data = [random.randint(1, 1000) for _ in range(100)]
 
-        # Check metadata
-        metadata_fields = ["name", "version", "description"]
-        for field in metadata_fields:
-            assert field in content, \
-                f"pyproject.toml should have {field}"
+        result = bubble_sort(large_data)
 
-        # Check dependencies
-        assert "dependencies" in content.lower(), \
-            "pyproject.toml should have dependencies section"
+        # Verify it's sorted
+        assert result == sorted(large_data)
 
-    def test_ac3_readme_documentation(self):
-        """AC3: README.md with installation instructions and basic usage."""
+    def test_memory_efficiency(self):
+        """Test that sorting doesn't modify input."""
         project_root = Path(__file__).parent.parent
-        readme_file = project_root / "README.md"
+        sys.path.insert(0, str(project_root / "src"))
 
-        assert readme_file.exists(), "README.md should exist"
+        from src.bubblesort.bubble_sort import bubble_sort
 
-        content = readme_file.read_text(encoding='utf-8').lower()
+        # Original data
+        original = [5, 2, 8, 1, 9]
+        original_copy = original.copy()
 
-        # Check for installation
-        assert any(word in content for word in ["install", "setup", "pip"]), \
-            "README should have installation instructions"
+        # Sort
+        result = bubble_sort(original)
 
-        # Check for usage
-        assert any(word in content for word in ["usage", "use", "example"]), \
-            "README should have usage instructions"
+        # Original should be unchanged
+        assert original == original_copy
 
-    def test_ac4_directory_structure(self):
-        """AC4: Basic directory structure for source code, tests, and documentation."""
+        # Result should be different
+        assert result != original
+
+        # Result should be sorted
+        assert result == [1, 2, 5, 8, 9]
+
+
+class TestWorkflowCompleteness:
+    """Test that workflows are complete and functional."""
+
+    def test_user_can_complete_task(self):
+        """Test that a user can complete the sorting task end-to-end."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        required_dirs = ["src", "tests", "docs"]
-        for dir_name in required_dirs:
-            dir_path = project_root / dir_name
-            assert dir_path.exists(), f"{dir_name}/ directory should exist"
-            assert dir_path.is_dir(), f"{dir_name}/ should be a directory"
+        from src.bubblesort.bubble_sort import bubble_sort
 
-    def test_ac5_git_repository(self):
-        """AC5: Git repository initialization with appropriate .gitignore file."""
+        # User task: Sort student grades
+        grades = [87, 92, 78, 95, 83, 89, 91, 76, 88, 94]
+
+        # User action: Sort grades
+        sorted_grades = bubble_sort(grades)
+
+        # Verify task completed successfully
+        assert sorted_grades == [76, 78, 83, 87, 88, 89, 91, 92, 94, 95]
+
+    def test_developer_can_import_and_use(self):
+        """Test that developer can import and use the package."""
         project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Check .git exists
-        git_dir = project_root / ".git"
-        assert git_dir.exists(), "Git repository should be initialized"
+        # Developer imports
+        from src.bubblesort.bubble_sort import bubble_sort
+        from src.cli import main
 
-        # Check .gitignore exists
-        gitignore_file = project_root / ".gitignore"
-        assert gitignore_file.exists(), ".gitignore should exist"
+        # Developer uses bubble_sort
+        numbers = [4, 2, 7, 1, 5]
+        result = bubble_sort(numbers)
+        assert result == [1, 2, 4, 5, 7]
 
-        content = gitignore_file.read_text(encoding='utf-8')
+    def test_all_entry_points_work(self):
+        """Test that all entry points are functional."""
+        project_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(project_root / "src"))
 
-        # Should exclude common Python files
-        assert "__pycache__" in content, \
-            ".gitignore should exclude __pycache__"
+        # Test direct import
+        from src.bubblesort.bubble_sort import bubble_sort
 
+        # Test package import
+        import src.bubblesort.bubble_sort as bs_module
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        # Both should work
+        result1 = bubble_sort([3, 1, 2])
+        result2 = bs_module.bubble_sort([3, 1, 2])
+
+        assert result1 == result2 == [1, 2, 3]

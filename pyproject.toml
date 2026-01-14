@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [project]
-name = "pytQt-template"
+name = "pytqt-template"
 version = "2.0.0"
 description = "PyQt Windows应用程序开发模板"
 readme = "README.md"

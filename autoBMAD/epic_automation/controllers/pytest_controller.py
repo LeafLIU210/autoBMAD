@@ -116,6 +116,7 @@ class PytestController:
             return {
                 "status": "failed",
                 "cycles": self.current_cycle,
+                "max_cycles": self.max_cycles,
                 "initial_failed_files": self.initial_failed_files,
                 "final_failed_files": self.failed_files,
                 "summary_json": self.summary_json_path,
@@ -378,6 +379,7 @@ class PytestController:
         return {
             "status": "completed",
             "cycles": self.current_cycle,
+            "max_cycles": self.max_cycles,
             "initial_failed_files": self.initial_failed_files,
             "final_failed_files": [],
             "summary_json": self.summary_json_path,
@@ -390,6 +392,7 @@ class PytestController:
         return {
             "status": "completed" if not self.failed_files else "failed",
             "cycles": self.current_cycle,
+            "max_cycles": self.max_cycles,
             "initial_failed_files": self.initial_failed_files,
             "final_failed_files": self.failed_files,
             "summary_json": self.summary_json_path,

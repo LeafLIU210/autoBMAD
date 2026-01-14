@@ -7,11 +7,14 @@ with comprehensive error handling and support for various numeric types.
 from collections.abc import Iterable
 
 
-def bubble_sort(data: Iterable[int | float]) -> list[int | float]:
+def bubble_sort(data: Iterable[int | float] | None) -> list[int | float]:
     """Sort a list of numbers using the bubble sort algorithm.
 
     This function implements the bubble sort algorithm with optimization for
     already-sorted lists (early exit when no swaps occur).
+
+    Time Complexity: O(n²) worst case and average case, O(n) best case (already sorted)
+    Space Complexity: O(1) - sorts in place, returns a new list
 
     Args:
         data: An iterable of numbers (int or float) to be sorted

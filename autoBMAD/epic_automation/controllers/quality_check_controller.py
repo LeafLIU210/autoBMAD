@@ -252,44 +252,40 @@ class QualityCheckController:
         执行单个文件的 SDK 修复调用
 
         流程：
-        1. 通过 SafeClaudeSDK 发起调用
-        2. 监听 ResultMessage（完成信号）
-        3. 收到完成信号 → 触发取消
-        4. 等待取消确认
-        5. 返回结果
+        1. 使用 sdk_helper.execute_sdk_call() 统一接口
+        2. 自动处理 ClaudeAgentOptions 类型转换
+        3. 使用 SDKResult 统一结果处理
+        4. 移除冗余的 SafeClaudeSDK 包装逻辑
         """
         try:
-            # 导入 SDK 组件
-            from ..sdk_wrapper import SafeClaudeSDK
-            from ..core.sdk_executor import SDKExecutor
+            # 使用 sdk_helper 统一接口
+            from ..agents.sdk_helper import execute_sdk_call
 
-            # 构造 SDK 包装器
-            sdk: SafeClaudeSDK = SafeClaudeSDK(
+            # 统一调用，自动处理类型转换
+            result = await execute_sdk_call(
                 prompt=prompt,
-                options={"model": "claude-3-5-sonnet-20241022"},
-                timeout=float(self.sdk_timeout),
-            )
-
-            # 定义完成标记
-            end_markers: list[str] = [
-                "END_OF_FIX",
-                f"{self.tool.upper()}_FIX_COMPLETE",
-            ]
-
-            # 通过 SDKExecutor 执行
-            executor = SDKExecutor()
-            result: Any = await executor.execute(
-                sdk_func=sdk.execute,
-                target_predicate=lambda msg: (
-                    msg.get("type") == "done" or
-                    any(marker in str(msg) for marker in end_markers)
-                ),
                 agent_name=f"{self.tool.capitalize()}Agent",
+                timeout=float(self.sdk_timeout),
+                permission_mode="bypassPermissions"
             )
 
-            # SDKExecutor 内部已处理取消逻辑
-            self.logger.info(f"SDK fix completed for {file_path}")
-            return {"success": True, "result": result}
+            # 使用 SDKResult 判断成功
+            if result.is_success():
+                self.logger.info(f"SDK fix completed for {file_path}")
+                return {
+                    "success": True,
+                    "result": result,
+                    "duration": result.duration_seconds
+                }
+            else:
+                self.logger.error(
+                    f"SDK fix failed for {file_path}: "
+                    f"{result.error_type.value} - {result.errors}"
+                )
+                return {
+                    "success": False,
+                    "error": f"{result.error_type.value}: {', '.join(result.errors)}"
+                }
 
         except Exception as e:
             self.logger.error(f"SDK execution failed for {file_path}: {e}")
@@ -301,6 +297,7 @@ class QualityCheckController:
             "status": "completed",
             "tool": self.tool,
             "cycles": self.current_cycle,
+            "max_cycles": self.max_cycles,
             "initial_error_files": self.initial_error_files,
             "final_error_files": [],
             "sdk_fix_attempted": False,
@@ -315,6 +312,7 @@ class QualityCheckController:
             "status": "completed" if success else "failed",
             "tool": self.tool,
             "cycles": self.current_cycle,
+            "max_cycles": self.max_cycles,
             "initial_error_files": self.initial_error_files,
             "final_error_files": self.final_error_files,
             "sdk_fix_attempted": True,

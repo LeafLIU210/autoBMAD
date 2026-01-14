@@ -45,6 +45,7 @@ class RuffResult(TypedDict):
     files_checked: int
     issues: list[RuffIssue]
     message: str
+    error: NotRequired[str]
 
 
 class BasedPyrightIssue(TypedDict):
@@ -62,6 +63,7 @@ class BasedPyrightResult(TypedDict):
     files_checked: int
     issues: list[BasedPyrightIssue]
     message: str
+    error: NotRequired[str]
 
 
 class PytestTestCase(TypedDict):
@@ -123,6 +125,8 @@ class BaseQualityAgent(BaseAgent, ABC):
                         shell=True,
                         capture_output=True,
                         text=True,
+                        encoding='utf-8',
+                        errors='ignore',
                         timeout=timeout
                     )
                 ),
@@ -190,10 +194,10 @@ class RuffAgent(BaseQualityAgent):
 
             result = await self._run_subprocess(command)
 
-            if result.status == "completed":
+            if result["status"] == "completed":
                 # 解析 JSON 输出
                 try:
-                    issues_list: list[dict[str, object]] = json.loads(result.stdout) if result.stdout else []
+                    issues_list: list[dict[str, object]] = json.loads(result["stdout"]) if result["stdout"] else []
                     error_count = len([i for i in issues_list if i.get("severity") == "error"])
                     warning_count = len([i for i in issues_list if i.get("severity") == "warning"])
                     filenames = {i.get("filename", "") for i in issues_list}
@@ -218,7 +222,7 @@ class RuffAgent(BaseQualityAgent):
                     )
             else:
                 return RuffResult(
-                    status=result["status"],
+                    status="failed",
                     errors=0,
                     warnings=0,
                     files_checked=0,
@@ -234,7 +238,8 @@ class RuffAgent(BaseQualityAgent):
                 warnings=0,
                 files_checked=0,
                 issues=[],
-                message=f"Ruff check failed: {str(e)}"
+                message=f"Ruff check failed: {str(e)}",
+                error=f"Ruff check failed: {str(e)}"
             )
 
     def parse_errors_by_file(
@@ -376,10 +381,10 @@ class BasedPyrightAgent(BaseQualityAgent):
 
             result = await self._run_subprocess(command)
 
-            if result.status == "completed":
+            if result["status"] == "completed":
                 # 解析 JSON 输出
                 try:
-                    output_dict: dict[str, object] = json.loads(result.stdout) if result.stdout else {}
+                    output_dict: dict[str, object] = json.loads(result["stdout"]) if result["stdout"] else {}
                     issues_list: list[dict[str, object]] = cast(list[dict[str, object]], output_dict.get("generalDiagnostics", []))
                     error_count = len([i for i in issues_list if i.get("severity") == "error"])
                     warning_count = len([i for i in issues_list if i.get("severity") == "warning"])
@@ -405,7 +410,7 @@ class BasedPyrightAgent(BaseQualityAgent):
                     )
             else:
                 return BasedPyrightResult(
-                    status=result["status"],
+                    status="failed",
                     errors=0,
                     warnings=0,
                     files_checked=0,
@@ -421,7 +426,8 @@ class BasedPyrightAgent(BaseQualityAgent):
                 warnings=0,
                 files_checked=0,
                 issues=[],
-                message=f"BasedPyright check failed: {str(e)}"
+                message=f"BasedPyright check failed: {str(e)}",
+                error=f"BasedPyright check failed: {str(e)}"
             )
 
     def parse_errors_by_file(
@@ -594,6 +600,8 @@ class PytestAgent(BaseQualityAgent):
         """
         执行单个测试文件的 pytest
 
+        增强版：添加stderr后备机制
+
         命令：pytest <test_file> -v --tb=short --json-report --json-report-file=<tmp>
 
         Args:
@@ -626,6 +634,28 @@ class PytestAgent(BaseQualityAgent):
             # 3. 解析 json-report
             failures = self._parse_json_report(tmp_json_path, test_file)
 
+            # ✅ 新增：后备机制 - 当failures为空但执行失败时，使用stderr
+            if not failures and result["returncode"] != 0:
+                stderr = result.get("stderr", "")
+                stdout = result.get("stdout", "")
+
+                # 优先使用stderr，如果为空则使用stdout
+                error_output = stderr if stderr else stdout
+
+                if error_output:
+                    # 提取关键错误信息（前500字符）
+                    error_summary = error_output[:500]
+                    failures = [{
+                        "nodeid": test_file,
+                        "failure_type": "error",
+                        "message": f"Pytest execution failed (no JSON report):\n{error_summary}",
+                        "short_tb": "Check pytest output - no structured report available"
+                    }]
+                    self.logger.warning(
+                        f"No failures parsed from JSON but returncode={result['returncode']}, "
+                        f"using stderr/stdout as fallback"
+                    )
+
             # 4. 判断状态
             if result.get("status") == "failed" and "Timeout" in result.get("error", ""):
                 status = "timeout"
@@ -634,7 +664,16 @@ class PytestAgent(BaseQualityAgent):
             elif failures:
                 status = "failed" if any(f["failure_type"] == "failed" for f in failures) else "error"
             else:
+                # 🆕 最终后备：即使无输出也构造错误条目
                 status = "error"
+                if not failures:
+                    failures = [{
+                        "nodeid": test_file,
+                        "failure_type": "error",
+                        "message": f"Test execution failed with returncode {result['returncode']}",
+                        "short_tb": "Run pytest manually for details"
+                    }]
+                    self.logger.info(f"Constructed minimal failure entry for {test_file}")
 
             return {
                 "test_file": test_file,
@@ -656,6 +695,8 @@ class PytestAgent(BaseQualityAgent):
     ) -> list[PytestTestCase]:
         """
         从 pytest-json-report 中提取失败信息
+
+        增强版：支持捕获collection error和测试用例失败
 
         Args:
             json_path: JSON 报告文件路径
@@ -683,6 +724,26 @@ class PytestAgent(BaseQualityAgent):
             return []
 
         failures = []
+
+        # ✅ 新增：检查collection错误
+        collectors = data.get("collectors", [])
+        if collectors:
+            for collector in collectors:
+                if collector.get("outcome") == "failed":
+                    longrepr = collector.get("longrepr", "")
+                    # 提取关键错误信息
+                    error_lines = str(longrepr).split("\n")
+                    error_summary = "\n".join(error_lines[:10])  # 前10行
+
+                    failures.append({
+                        "nodeid": collector.get("nodeid", test_file),
+                        "failure_type": "error",  # collection错误标记为error
+                        "message": f"Collection failed: {error_summary}",
+                        "short_tb": f"Test file collection error at {test_file}"
+                    })
+                    self.logger.warning(f"Captured collection error for {test_file}")
+
+        # ✅ 原有逻辑：提取测试用例失败
         tests = data.get("tests", [])
         for test in tests:
             outcome = test.get("outcome")
@@ -694,10 +755,17 @@ class PytestAgent(BaseQualityAgent):
                 call = test.get("call", {})
                 failures.append({
                     "nodeid": test["nodeid"],
-                    "failure_type": outcome,
+                    "failure_type": outcome,  # 保留原始类型(failed/error)
                     "message": call.get("longrepr", "Unknown error"),
                     "short_tb": self._extract_short_traceback(test),
                 })
+
+        # ✅ 新增：诊断日志
+        if not failures and not tests and not collectors:
+            self.logger.warning(
+                f"JSON report for {test_file} is empty (no tests, no collectors). "
+                f"This may indicate a pytest execution failure."
+            )
 
         return failures
 
@@ -842,7 +910,33 @@ class PytestAgent(BaseQualityAgent):
                 for item in failed_files:
                     item_dict: dict[str, object] = cast(dict[str, object], item)
                     if item_dict["test_file"] == test_file:
-                        return item_dict.get("failures", [])
+                        failures_raw = item_dict.get("failures", [])
+                        # 验证并转换类型
+                        if not isinstance(failures_raw, list):
+                            self.logger.warning(
+                                f"Invalid failures format for {test_file}: expected list, got {type(failures_raw)}"
+                            )
+                            return []
+
+                        # 转换为 PytestTestCase 类型
+                        failures: list[PytestTestCase] = []
+                        for failure in failures_raw:
+                            if not isinstance(failure, dict):
+                                continue
+
+                            # 验证必需字段
+                            if not all(k in failure for k in ["nodeid", "failure_type", "message", "short_tb"]):
+                                self.logger.warning(f"Incomplete failure data: {failure}")
+                                continue
+
+                            failures.append({
+                                "nodeid": str(failure["nodeid"]),
+                                "failure_type": str(failure["failure_type"]),
+                                "message": str(failure["message"]),
+                                "short_tb": str(failure["short_tb"])
+                            })
+
+                        return failures
 
             return []
 

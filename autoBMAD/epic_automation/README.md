@@ -1,10 +1,22 @@
 # autoBMAD Epic Automation System
 
-A comprehensive automation system for the BMAD (Breakthrough Method of Agile AI-driven Development) workflow. This tool processes epic markdown files through a complete 5-phase workflow including SM-Dev-QA cycle, quality gates, and test automation.
+**Version**: 3.0  
+**Date**: 2026-01-14  
+**Status**: Production Ready
+
+A comprehensive automation system for the BMAD (Breakthrough Method of Agile AI-driven Development) workflow. This tool processes epic markdown files through a complete 5-phase workflow with state-driven execution, quality gates, and test automation.
 
 ## Overview
 
-autoBMAD Epic Automation is a portable template that enables teams to quickly set up and use the BMAD methodology in their projects. It reads epic markdown files, identifies stories, and orchestrates the automated execution through all five phases of the complete development workflow.
+autoBMAD Epic Automation is a self-contained Python automation engine that enables teams to quickly set up and use the BMAD methodology in their projects. It features a five-layer architecture with Controllers, Agents, Core infrastructure, and persistent State management.
+
+### System Architecture
+
+- **Five-Layer Architecture**: Epic Driver → Controllers → Agents → Core → State & Logging
+- **State-Driven Workflow**: Story status from markdown drives execution decisions
+- **Controller Pattern**: Specialized controllers for SM, DevQA, Quality Gates, and Pytest
+- **SQLite Persistence**: Progress tracking with WAL mode and optimistic locking
+- **Dual-Write Logging**: Console and file logging with structured output
 
 ### Key Features
 
@@ -30,42 +42,55 @@ cd <your-project>
 
 # Create virtual environment (recommended)
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies including quality gate tools
-pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+# On Windows
+venv\Scripts\activate
 
-# Install Claude Agent SDK
-pip install claude-agent-sdk
+# On Linux/macOS
+source venv/bin/activate
+
+# Install all dependencies including quality gate tools
+pip install claude-agent-sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0 loguru anyio
 
 # Configure environment variables
 # Windows PowerShell:
 $env:ANTHROPIC_API_KEY="your_api_key_here"
 
+# Linux/macOS:
+export ANTHROPIC_API_KEY="your_api_key_here"
 
 # Verify installation
-python autoBMAD/epic_automation/epic_driver.py --help
+python -c "import claude_agent_sdk; print('Claude Agent SDK ready')"
+basedpyright --version
+ruff --version
+pytest --version
 ```
 
-### Basic Usage with Complete 5-Phase Workflow
-export ANTHROPIC_LOG=debug
-source venv/Scripts/activate
-PYTHONPATH=/d/GITHUB/pytQt_template python /d/GITHUB/pytQt_template/autoBMAD/epic_automation/epic_driver.py docs/epics/epic-1-core-algorithm-foundation.md --verbose --max-iterations 2 --source-dir src --test-dir tests --skip-quality --skip-tests
-PYTHONPATH=/d/GITHUB/pytQt_template python /d/GITHUB/pytQt_template/autoBMAD/epic_automation/epic_driver.py docs/epics/epic-1-core-algorithm-foundation.md --verbose --max-iterations 2 --source-dir src --test-dir tests --skip-quality --skip-tests
+### Basic Usage with Complete Workflow
 
 ```bash
 # Activate virtual environment
-.venv\Scripts\activate  # On Windows
+venv\Scripts\activate  # On Windows
 source venv/bin/activate  # On Linux/macOS
 
-# Run epic driver with environment variables configured
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --verbose
+# Full workflow with all phases (SM-Dev-QA + Quality Gates + Tests)
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
 
 # Skip quality gates (for faster development)
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --verbose
 
 # Skip test automation (for quick validation)
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests --verbose
+
+# Skip both quality gates and tests (fastest)
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests --verbose
+```
+
+### Windows PowerShell Example
+
+```powershell
+# Set environment and run
+$env:ANTHROPIC_API_KEY="your_api_key"; $env:PYTHONPATH="d:\GITHUB\pytQt_template"; python d:\GITHUB\pytQt_template\autoBMAD\epic_automation\epic_driver.py docs\epics\epic-1-core-algorithm-foundation.md --verbose --max-iterations 2 --source-dir src --test-dir tests
 ```
 
 ## Complete Workflow
@@ -187,12 +212,22 @@ pytest tests/ --pdb
 
 ### Requirements
 
-- Python 3.12 or higher
-- Claude SDK (for AI agent functionality)
-- Basedpyright>=1.1.0 (for type checking)
-- Ruff>=0.1.0 (for linting)
-- Pytest>=7.0.0 (for testing)
-- Debugpy>=1.6.0 (for debugging)
+#### Core Requirements
+- **Python 3.12+**: Required for latest type hints and async features
+- **Claude Agent SDK** (`claude-agent-sdk>=0.1.0`): AI agent functionality
+- **AnyIO**: Async framework for portable async/await code
+- **Loguru**: Advanced logging with better formatting
+
+#### Quality Gate Tools (Recommended)
+- **BasedPyright** (`basedpyright>=1.1.0`): Advanced type checking
+- **Ruff** (`ruff>=0.1.0`): Fast Python linter and formatter
+- **Pytest** (`pytest>=7.0.0`): Testing framework
+- **Debugpy** (`debugpy>=1.6.0`): Python debugger for VS Code
+
+#### Infrastructure
+- **SQLite3**: Built-in Python module for state persistence
+- **Progress.db**: Automatically created SQLite database with WAL mode
+- **Logs Directory**: Automatically created for log file storage
 
 ### Setup Steps
 
@@ -304,29 +339,38 @@ The `.bmad-core/tasks/` directory contains task guidance files that customize th
 ### Dependencies
 
 **Required Dependencies:**
-- **Python 3.12+**: Core runtime
-- **claude_agent_sdk>=0.1.0**: For AI agent functionality (SM Agent story creation)
-- **Claude SDK**: Must be installed and configured in environment
+- **Python 3.12+**: Core runtime environment
+- **claude-agent-sdk>=0.1.0**: For AI agent functionality (SM, Dev, QA agents)
+- **anyio**: Async framework (replaced trio for better portability)
+- **loguru**: Advanced logging with structured output
 
-**Quality Gate Tools** (one of the following options):
-- **Option A**: Copy `basedpyright-workflow` and `fixtest-workflow` directories to your project
-- **Option B**: Install manually: `basedpyright>=1.1.0`, `ruff>=0.1.0`, `pytest>=7.0.0`, `debugpy>=1.6.0`
+**Quality Gate Tools** (Optional but Recommended):
+- **basedpyright>=1.1.0**: Advanced type checking with better performance than mypy
+- **ruff>=0.1.0**: Fast Python linter and formatter (replaces flake8, black)
+- **pytest>=7.0.0**: Testing framework with rich assertion introspection
+- **debugpy>=1.6.0**: Python debugger for VS Code integration
 
-**Optional:** **bmad-workflow** - Not required (autoBMAD is a standalone system)
+**Infrastructure** (Built-in):
+- **sqlite3**: Built-in Python module for state persistence
+- **asyncio**: Built-in async framework
+- **pathlib**: Built-in path manipulation
 
 ### Dependency Installation
 
 Install all required dependencies:
 
 ```bash
-# Install core dependencies including Claude Agent SDK
-pip install claude_agent_sdk>=0.1.0
+# Install all dependencies at once (recommended)
+pip install claude-agent-sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0 loguru anyio
 
-# Install quality gate tools (optional but recommended)
-pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
+# Or install separately
+pip install claude-agent-sdk>=0.1.0  # Core AI functionality
+pip install basedpyright>=1.1.0 ruff>=0.1.0  # Quality gates
+pip install pytest>=7.0.0 debugpy>=1.6.0  # Testing
+pip install loguru anyio  # Utilities
 ```
 
-**Note**: The `claude_agent_sdk` package is required for SM Agent's AI-powered story creation functionality.
+**Note**: The `claude-agent-sdk` package is **required** for all agent functionality (SM, Dev, QA).
 
 ### Graceful Fallback
 
@@ -374,64 +418,155 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 #### Example 1: Complete Workflow with Quality Gates
 
 ```bash
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
 ```
 
 This will process all stories in `my-epic.md` through the complete 5-phase workflow:
-- Phase 1: SM-Dev-QA cycle for all stories
-- Phase 2: Quality gates (basedpyright + ruff)
-- Phase 3: Test automation (pytest)
-- Max 3 retry attempts for quality gates
-- Max 5 retry attempts for test automation
+- Phase 1: SM-Dev-QA cycle for all stories (state-driven execution)
+- Phase 2: Quality gates (Ruff linting + BasedPyright type checking)
+- Phase 3: Test automation (Pytest execution with batch processing)
+- Max 3 retry cycles for quality gates
+- Max 5 retry cycles for test automation
+- Results saved to `progress.db` SQLite database
+- Logs written to console and file (if enabled)
 
 #### Example 2: Skip Quality Gates (Faster Development)
 
 ```bash
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --verbose
 ```
 
-Processes stories through SM-Dev-QA cycle and test automation, but skips quality gates for faster iteration during development.
+Processes stories through SM-Dev-QA cycle and test automation, but skips quality gates for faster iteration during development. Useful when:
+- Prototyping new features
+- Working on experimental code
+- Quality tools not installed
+- Need quick feedback on functionality
 
 #### Example 3: Skip Test Automation (Quick Validation)
 
 ```bash
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests --verbose
 ```
 
-Processes stories through SM-Dev-QA cycle and quality gates, but skips test automation for quick validation without running tests.
+Processes stories through SM-Dev-QA cycle and quality gates, but skips test automation for quick validation without running tests. Useful when:
+- Validating code quality before tests
+- Tests are broken or incomplete
+- Need quick type checking and linting feedback
+- Working on documentation-only changes
 
 #### Example 4: Skip Both Quality Gates and Tests
 
 ```bash
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --skip-quality --skip-tests
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests --verbose
 ```
 
-Processes only the SM-Dev-QA cycle, skipping both quality gates and test automation for maximum speed during initial development.
+Processes only the SM-Dev-QA cycle, skipping both quality gates and test automation for maximum speed during initial development. Useful when:
+- Creating initial story implementations
+- Rapid prototyping
+- Quality tools not available
+- Focus on core functionality first
 
-#### Example 5: Enable Automatic Retry
+#### Example 5: Custom Directories and Max Iterations
 
 ```bash
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --retry-failed --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --source-dir src --test-dir tests --max-iterations 5 --verbose
 ```
 
-Enables automatic retry of failed stories and provides detailed logging output.
+Customizes source and test directories while increasing retry attempts. This configuration:
+- Uses `src/` for source code quality checks
+- Uses `tests/` for test discovery
+- Allows up to 5 retry cycles for quality gates
+- Provides detailed logging output
+- Saves complete execution history to database
 
 ## Architecture
 
 ### Component Overview
 
-The BMAD Epic Automation system consists of the following components:
+The BMAD Epic Automation system follows a **Five-Layer Architecture** pattern:
+
+```
+┌─────────────────────────────────────┐
+│   Epic Driver (Orchestration)      │  ← Entry point + workflow coordination
+├─────────────────────────────────────┤
+│   Controllers (Process Control)    │  ← Business workflow orchestration
+├─────────────────────────────────────┤
+│   Agents (Business Logic)          │  ← Core business operations
+├─────────────────────────────────────┤
+│   Core (Infrastructure)            │  ← SDK executor, cancellation manager
+├─────────────────────────────────────┤
+│   State & Logging                  │  ← StateManager, LogManager, Database
+└─────────────────────────────────────┘
+```
+
+### Directory Structure
 
 ```
 autoBMAD/epic_automation/
-├── epic_driver.py          # Main orchestrator and CLI interface (async parse_epic)
-├── sm_agent.py            # Story Master agent (with Claude SDK integration)
-├── dev_agent.py           # Development agent
-├── qa_agent.py            # Quality Assurance agent
-└── state_manager.py       # State persistence and tracking
+├── epic_driver.py           # Main orchestrator (2601 lines)
+├── state_manager.py         # State persistence (SQLite-based)
+├── sdk_wrapper.py           # SafeClaudeSDK wrapper
+├── log_manager.py           # Dual-write logging system
+├── init_db.py               # Database initialization
+├── doc_parser.py            # Epic/story document parsing
+├── spec_state_manager.py    # Specification state tracking
+├── test_automation_agent.py # Test execution agent
+│
+├── controllers/             # Workflow Controllers
+│   ├── base_controller.py          # Base controller class
+│   ├── sm_controller.py            # Story Management coordination
+│   ├── devqa_controller.py         # Dev-QA cycle coordination
+│   ├── quality_check_controller.py # Quality gate controller
+│   ├── pytest_controller.py        # Test automation controller
+│   └── quality_controller.py       # Quality orchestration
+│
+├── agents/                  # Business Logic Agents
+│   ├── base_agent.py               # Base agent class
+│   ├── sm_agent.py                 # Story creation from epics
+│   ├── dev_agent.py                # Development implementation
+│   ├── qa_agent.py                 # Quality assurance validation
+│   ├── state_agent.py              # Status parsing and state management
+│   ├── status_update_agent.py      # Story status updates
+│   ├── quality_agents.py           # Ruff, BasedPyright, Pytest agents
+│   ├── pytest_batch_executor.py    # Pytest batch execution
+│   ├── config.py                   # Agent configuration
+│   └── sdk_helper.py               # SDK utilities
+│
+├── core/                    # Core Infrastructure
+│   ├── sdk_executor.py             # Async SDK executor
+│   ├── sdk_result.py               # SDK result types
+│   ├── cancellation_manager.py     # Cancellation handling
+│   └── API_USAGE.md                # Core API documentation
+│
+├── errors/                  # Error Handling
+│   └── quality_errors_*.json       # Quality gate error reports
+│
+├── monitoring/              # Performance Monitoring
+│   └── resource_monitor.py         # Resource usage monitoring
+│
+├── reports/                 # Quality Reports
+│   └── CLAUDE_AGENT_SDK_REPORT.md
+│
+├── architecture/            # Architecture Documentation
+│   ├── architecture.md             # Brownfield architecture document
+│   ├── brownfield-architecture.md  # Current implementation details
+│   └── source-tree.md              # Complete source tree
+│
+├── agentdocs/              # Claude Agent SDK Documentation
+│   └── (SDK integration guides)
+│
+└── logs/                   # Log Files
+    └── (Timestamped log files)
 ```
 
-### Recent Updates (v2.0)
+### Key Features (v3.0)
+
+#### Five-Layer Architecture
+- **Epic Driver Layer**: Central orchestrator for complete workflow pipeline
+- **Controllers Layer**: Business workflow orchestration (SM, DevQA, Quality, Pytest)
+- **Agents Layer**: Core business logic with specialized agents
+- **Core Layer**: Infrastructure components (SDK executor, cancellation manager)
+- **State & Logging Layer**: Persistence and monitoring
 
 #### SM Agent Enhancements
 
@@ -453,86 +588,214 @@ autoBMAD/epic_automation/
 - 🎯 Simpler codebase (fewer methods, clearer responsibilities)
 - 🎯 Better adherence to Occam's Razor (no unnecessary complexity)
 
-### File Structure
+#### Controllers Architecture
+- **SMController**: Orchestrates story creation phase
+- **DevQaController**: Manages Dev-QA cycle with state-driven workflow
+- **QualityCheckController**: Executes quality gates (Ruff, BasedPyright)
+- **PytestController**: Handles test automation with retry logic
+
+#### State Management Improvements
+- **SQLite with WAL Mode**: Fast concurrent read/write operations
+- **Optimistic Locking**: Version-based concurrency control
+- **State-Driven Workflow**: Story status from markdown drives execution
+- **Dual-Write Logging**: Console and file logging simultaneously
+
+#### Quality Gate Integration
+- **Ruff Agent**: Fast linting with auto-fix capabilities
+- **BasedPyright Agent**: Advanced type checking
+- **Pytest Agent**: Comprehensive test execution
+- **Batch Executor**: Efficient parallel test execution
+- **Error Reporting**: JSON-based error summaries with recommendations
+
+### Project Structure
 
 ```
 project/
 ├── autoBMAD/epic_automation/     # Main automation package
-│   ├── epic_driver.py            # CLI entry point
-│   ├── sm_agent.py               # Story Master implementation
-│   ├── dev_agent.py              # Development agent implementation
-│   ├── qa_agent.py               # QA agent implementation
-│   ├── state_manager.py          # State persistence
-│   └── README.md                 # This file
-├── .bmad-core/tasks/              # Task guidance files
-│   ├── create-next-story.md      # SM agent guidance
-│   ├── develop-story.md          # Dev agent guidance
-│   └── review-story.md           # QA agent guidance
-└── docs/epics/                    # Epic documents
-    ├── my-epic.md                # Your epic files
-    └── example-epic.md           # Example epic (see below)
+│   ├── epic_driver.py            # CLI entry point (2601 lines)
+│   ├── state_manager.py          # State persistence (SQLite)
+│   ├── sdk_wrapper.py            # SafeClaudeSDK wrapper
+│   ├── log_manager.py            # Dual-write logging
+│   ├── controllers/              # Workflow controllers
+│   ├── agents/                   # Business logic agents
+│   ├── core/                     # Infrastructure components
+│   ├── errors/                   # Error handling
+│   ├── monitoring/               # Performance monitoring
+│   ├── reports/                  # Quality reports
+│   ├── architecture/             # Architecture docs
+│   ├── agentdocs/               # SDK documentation
+│   ├── logs/                    # Log files
+│   ├── README.md                # This file
+│   └── SETUP.md                 # Setup guide
+├── .bmad-core/tasks/             # Task guidance files
+│   ├── create-next-story.md     # SM agent guidance
+│   ├── develop-story.md         # Dev agent guidance
+│   └── review-story.md          # QA agent guidance
+├── docs/epics/                   # Epic documents
+│   ├── my-epic.md               # Your epic files
+│   └── stories/                 # Story documents
+├── progress.db                   # State database (SQLite)
+└── pyproject.toml               # Project configuration
 ```
 
 ### How It Works
 
-1. **Initialization**: The `epic_driver.py` parses CLI arguments and initializes the EpicDriver with configuration options.
+#### 1. Initialization Phase
+- `epic_driver.py` parses CLI arguments
+- Initializes LogManager with dual-write logging
+- Sets up StateManager with SQLite database
+- Configures SafeClaudeSDK wrapper
+- Initializes controllers and agents
 
-2. **Epic Parsing**: The system reads the epic markdown file and extracts story references using regex patterns.
+#### 2. Epic Parsing Phase
+- Reads epic markdown file
+- Extracts story references using regex patterns
+- Resolves story file paths with fallback mechanisms
+- Parses story status using StateAgent
+- Validates epic structure and dependencies
 
-3. **Story Processing Loop**: For each story:
-   - **SM Phase**: Story Master agent refines and validates the story
-   - **Dev Phase**: Development agent implements the story according to specifications
-   - **QA Phase**: Quality Assurance agent validates the implementation
+#### 3. Story Processing Loop
+For each story, state-driven workflow:
 
-4. **Retry Logic**: If a story fails QA:
-   - If `--retry-failed` is enabled, the Dev phase is retried up to `--max-iterations` times
-   - If `--retry-failed` is disabled, the story is marked as failed and processing continues
+**State-Driven Execution**:
+- **Draft/Ready for SM**: SMController executes story creation
+- **Ready for Development**: DevQaController starts Dev-QA cycle
+- **In Progress**: DevAgent implements the story
+- **Ready for Review**: QAAgent validates implementation
+- **Ready for Done/Done**: Triggers quality gates and test automation
 
-5. **State Management**: The `state_manager.py` tracks the status of each story, including:
-   - Completion status
-   - Current phase
-   - Iteration count
-   - QA results
-   - Error messages
+**Dev-QA Cycle**:
+1. StateAgent parses current status from story markdown
+2. Based on status, execute Dev or QA phase
+3. Agent updates story through SDK
+4. StatusUpdateAgent verifies update success
+5. Loop continues until "Ready for Done" or "Done"
 
-6. **Reporting**: The system provides summary statistics and detailed logging based on the `--verbose` flag.
+#### 4. Quality Gates Phase
+Executed after story reaches "Ready for Done":
+
+**Phase 1: Ruff Linting**
+- Runs Ruff check with auto-fix
+- Collects linting errors
+- Fixes auto-fixable issues
+- Max 3 retry cycles
+
+**Phase 2: BasedPyright Type Checking**
+- Runs type checking
+- Collects type errors
+- Agent attempts fixes through SDK
+- Max 3 retry cycles
+
+**Phase 3: Ruff Format**
+- Applies code formatting
+- Ensures consistent style
+
+**Error Handling**:
+- Errors saved to JSON files in `errors/` directory
+- Quality warnings if max cycles exceeded with residual errors
+- Summary report generated
+
+#### 5. Test Automation Phase
+Executed after quality gates pass:
+
+**Test Execution**:
+- PytestController runs test suite
+- Batch execution for efficiency
+- Collects test results and failures
+- Max 5 retry cycles
+
+**Failure Handling**:
+- TestAutomationAgent fixes persistent failures
+- Uses Claude SDK to analyze and fix
+- Debugpy integration for complex failures
+
+#### 6. State Management
+`state_manager.py` maintains persistent state:
+
+**Database Schema** (SQLite with WAL mode):
+- Story execution records
+- Phase completion status
+- Iteration counts and timestamps
+- Error history and recovery attempts
+
+**Features**:
+- Optimistic locking (version-based)
+- Connection pooling
+- Transaction management
+- Automatic recovery from crashes
+
+#### 7. Logging and Monitoring
+
+**LogManager** (`log_manager.py`):
+- Dual-write: console + file
+- Timestamped log files
+- Structured logging
+- Error categorization
+
+**ResourceMonitor** (`monitoring/resource_monitor.py`):
+- CPU and memory usage tracking
+- Performance metrics collection
+- Resource usage reports
+
+#### 8. Reporting
+- Summary statistics for epic execution
+- Detailed phase-by-phase logs (with `--verbose`)
+- Quality gate error reports (JSON)
+- Test execution results
+- Performance metrics
 
 ### Agent Roles
 
-#### Story Master (SM) Agent
+#### Agents Layer
 
-The SM Agent now includes powerful AI-driven story creation capabilities:
-
+**Story Master (SM) Agent** (`agents/sm_agent.py` - 30.9KB)
 - **Epic Analysis**: Extracts story IDs from epic documents using regex patterns
 - **AI Story Creation**: Uses Claude Agent SDK to generate complete story documents
 - **SDK Integration**: Direct integration with `claude_agent_sdk.query()` and `ClaudeAgentOptions`
-- **Automatic Prompt Generation**: Builds prompts in format: `@.bmad-core/agents/sm.md *draft {epic_path} Create all story documents from epic: {story_list}. Save to @docs/stories`
-- **Permission Handling**: Automatically sets `permission_mode="bypassPermissions"` for seamless execution
-- **Refines story requirements**
-- **Ensures story completeness**
-- **Validates acceptance criteria**
-- **Creates task breakdowns**
+- **Automatic Prompt Generation**: Builds prompts with proper formatting
+- **Permission Handling**: Automatically sets `permission_mode="bypassPermissions"`
+- **Story Refinement**: Validates and refines story requirements
+- **Task Breakdown**: Creates comprehensive task lists
 
-**Key Methods:**
-- `create_stories_from_epic(epic_path)` - Main entry point for story creation
-- `_extract_story_ids_from_epic(content)` - Parses epic documents for story references
-- `_call_claude_create_stories(epic_path, story_ids)` - Invokes Claude SDK
-- `_build_claude_prompt(epic_path, story_ids)` - Constructs proper prompt format
-- `_execute_claude_sdk(prompt)` - Executes the SDK call with proper options
+**Development (Dev) Agent** (`agents/dev_agent.py` - 16.7KB)
+- **Code Implementation**: Implements stories according to specifications
+- **Test Writing**: Creates unit and integration tests
+- **Documentation**: Updates code and story documentation
+- **Standards Compliance**: Follows coding best practices
+- **Progress Tracking**: Updates story status through SDK
 
-#### Development (Dev) Agent
+**Quality Assurance (QA) Agent** (`agents/qa_agent.py` - 6.5KB)
+- **Code Review**: Reviews implementation quality
+- **Acceptance Validation**: Validates against acceptance criteria
+- **Standards Check**: Verifies coding standards compliance
+- **Test Validation**: Ensures test coverage and quality
+- **Feedback Generation**: Provides detailed feedback
 
-- Implements the story according to specifications
-- Writes code, tests, and documentation
-- Follows best practices and coding standards
-- Updates story files with progress
+**State Agent** (`agents/state_agent.py` - 12.4KB)
+- **Status Parsing**: Extracts status from story markdown files
+- **AI-based Parsing**: Uses Claude SDK for intelligent parsing
+- **Regex Fallback**: Falls back to regex for performance
+- **State Mapping**: Maps core status to processing status
+- **Caching**: Implements parsing cache for efficiency
 
-#### Quality Assurance (QA) Agent
+**Status Update Agent** (`agents/status_update_agent.py` - 14.5KB)
+- **Status Updates**: Updates story status through SDK
+- **Markdown Updates**: Modifies story markdown files
+- **Validation**: Validates status transitions
+- **Error Handling**: Robust error handling and recovery
 
-- Reviews implementation quality
-- Validates against acceptance criteria
-- Checks code standards and testing
-- Provides feedback and pass/fail decisions
+**Quality Agents** (`agents/quality_agents.py` - 36.3KB)
+- **Ruff Agent**: Fast linting with auto-fix
+- **BasedPyright Agent**: Advanced type checking
+- **Pytest Agent**: Test execution with detailed reporting
+- **Error Aggregation**: Collects and reports errors
+- **Retry Logic**: Intelligent retry with backoff
+
+**Pytest Batch Executor** (`agents/pytest_batch_executor.py` - 10.6KB)
+- **Batch Execution**: Runs multiple test files efficiently
+- **Parallel Execution**: Supports parallel test runs
+- **Result Aggregation**: Combines results from all tests
+- **Progress Tracking**: Real-time progress updates
 
 ## Troubleshooting
 
@@ -566,21 +829,24 @@ WARNING - Tasks directory not found: .bmad-core/tasks
 
 **Error Message**:
 ```
-WARNING - BasedPyright-Workflow directory not found
-WARNING - Fixtest-Workflow directory not found
+WARNING - Quality gate tools not available: basedpyright, ruff, or pytest not found
 ```
 
 **Solution**:
-- **Option A**: Copy the tool directories to your project:
-  ```bash
-  cp -r /path/to/basedpyright-workflow /your/project/
-  cp -r /path/to/fixtest-workflow /your/project/
-  ```
-- **Option B**: Install dependencies manually:
+- **Option A**: Install all tools at once:
   ```bash
   pip install basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0
   ```
-- **Option C**: Use `--skip-quality` to bypass quality gates (system will continue with WAIVED status)
+- **Option B**: Use `--skip-quality` or `--skip-tests` flags to bypass:
+  ```bash
+  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests
+  ```
+- **Option C**: Install individually:
+  ```bash
+  pip install basedpyright  # For type checking
+  pip install ruff          # For linting
+  pip install pytest        # For testing
+  ```
 
 Note: The system has graceful fallback - it will continue even without these tools but with reduced QA capabilities.
 
@@ -588,13 +854,29 @@ Note: The system has graceful fallback - it will continue even without these too
 
 **Error Message**:
 ```
-ERROR - Failed to import agent classes: No module named 'sm_agent'
+ERROR - Failed to import agent classes: No module named 'autoBMAD'
 ```
 
 **Solution**:
-- Ensure all agent files are in the same directory as `epic_driver.py`
-- Check that Python path includes the automation directory
-- Verify all dependencies are installed
+- Set PYTHONPATH correctly:
+  ```bash
+  # From project root
+  export PYTHONPATH=.  # On Linux/macOS
+  $env:PYTHONPATH="."  # On Windows PowerShell
+  ```
+- Or use absolute paths:
+  ```bash
+  export PYTHONPATH=/path/to/your/project
+  ```
+- Or run from project root:
+  ```bash
+  cd /path/to/your/project
+  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
+  ```
+- Verify all dependencies are installed:
+  ```bash
+  pip list | grep -E "claude-agent-sdk|loguru|anyio"
+  ```
 
 #### Issue: Stories not being processed
 
@@ -629,6 +911,82 @@ ERROR - Max iterations (3) reached for story-path.md
 - Check QA feedback to fix underlying issues
 - Review story requirements for clarity
 
+#### Issue: Database errors or state corruption
+
+**Symptoms**:
+- SQLite errors ("database is locked", "database disk image is malformed")
+- Inconsistent story states
+- Progress not being saved
+
+**Solution**:
+- **Reset state database**:
+  ```bash
+  # Backup current state
+  cp progress.db progress.db.backup
+  
+  # Remove corrupted database
+  rm progress.db
+  
+  # System will create new database on next run
+  ```
+- **Check database integrity**:
+  ```bash
+  sqlite3 progress.db "PRAGMA integrity_check;"
+  ```
+- **Enable WAL mode** (if not already enabled):
+  ```bash
+  sqlite3 progress.db "PRAGMA journal_mode=WAL;"
+  ```
+- **Check file permissions**:
+  ```bash
+  ls -l progress.db  # On Linux/macOS
+  icacls progress.db  # On Windows
+  ```
+
+#### Issue: SDK timeout or connection errors
+
+**Error Message**:
+```
+ERROR - SDK execution timeout after 300 seconds
+ERROR - Failed to connect to Claude Agent SDK
+```
+
+**Solution**:
+- Verify API key is set:
+  ```bash
+  echo $ANTHROPIC_API_KEY  # On Linux/macOS
+  echo $env:ANTHROPIC_API_KEY  # On Windows PowerShell
+  ```
+- Check internet connection
+- Increase timeout in `epic_driver.py` if needed
+- Check SDK version:
+  ```bash
+  pip show claude-agent-sdk
+  ```
+- Reinstall SDK:
+  ```bash
+  pip uninstall claude-agent-sdk
+  pip install claude-agent-sdk>=0.1.0
+  ```
+
+#### Issue: Log files accumulating
+
+**Symptoms**:
+- Large number of log files in `logs/` directory
+- Disk space issues
+
+**Solution**:
+- Clean up old logs manually:
+  ```bash
+  # Keep only last 7 days
+  find autoBMAD/epic_automation/logs/ -name "*.log" -mtime +7 -delete
+  ```
+- Disable file logging (edit `epic_driver.py`):
+  ```python
+  log_manager = LogManager(create_log_file=False)  # Only console output
+  ```
+- Implement log rotation (future enhancement)
+
 #### Issue: Concurrent processing not available
 
 **Warning Message**:
@@ -639,14 +997,23 @@ WARNING - Concurrent processing is experimental and not yet implemented
 **Solution**:
 - This is expected behavior - the feature is not yet implemented
 - Remove the `--concurrent` flag for now
-- Stories will be processed sequentially
+- Stories will be processed sequentially (current implementation)
+- Concurrent processing is a planned future enhancement
 
 ### Debug Mode
 
-For detailed debugging, run with maximum verbosity:
+For detailed debugging information:
 
 ```bash
-PYTHONPATH=autoBMAD python -m epic_automation.epic_driver docs/epics/my-epic.md --verbose --max-iterations 1
+# Maximum verbosity with single iteration for quick feedback
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose --max-iterations 1
+
+# Enable Anthropic SDK debug logging
+export ANTHROPIC_LOG=debug  # On Linux/macOS
+$env:ANTHROPIC_LOG="debug"  # On Windows PowerShell
+
+# Then run with verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
 ```
 
 This will:
@@ -671,22 +1038,60 @@ If you encounter issues not covered here:
 ### FAQ
 
 **Q: Can I run the tool without internet?**
-A: No, the tool requires internet access to communicate with the Claude SDK.
+A: No, the tool requires internet access to communicate with the Claude Agent SDK.
 
 **Q: Can I pause and resume processing?**
-A: Yes, the state manager persists progress. You can run the same command again to continue.
+A: Yes, the state manager persists progress in `progress.db`. You can stop the process (Ctrl+C) and run the same command again to continue from where you left off.
 
 **Q: Can I skip already completed stories?**
-A: Yes, the system automatically skips stories marked as "completed" in the state.
+A: Yes, the system automatically skips stories marked as "Done" in the state database.
 
 **Q: Is it safe to run multiple times on the same epic?**
-A: Yes, the tool is designed to be idempotent and will skip completed stories.
+A: Yes, the tool is designed to be idempotent. It tracks state in `progress.db` and will skip completed stories.
 
 **Q: Can I customize the agent behavior?**
-A: Yes, modify the task guidance files in `.bmad-core/tasks/` to customize agent behavior.
+A: Yes, modify the task guidance files in `.bmad-core/tasks/` to customize how SM, Dev, and QA agents work.
 
 **Q: How do I specify custom source and test directories for QA checks?**
-A: Use the `--source-dir` and `--test-dir` flags when running epic_driver.py. For example: `python epic_driver.py docs/epics/my-epic.md --source-dir my_src --test-dir my_tests`. The default directories are "src" and "tests" respectively.
+A: Use the `--source-dir` and `--test-dir` flags:
+```bash
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --source-dir my_src --test-dir my_tests
+```
+The default directories are `src` and `tests` respectively.
+
+**Q: What happens if the process crashes?**
+A: The SQLite database (`progress.db`) maintains persistent state with WAL mode enabled. Simply restart the process and it will resume from the last saved state.
+
+**Q: Can I run multiple epic processing jobs in parallel?**
+A: Not currently. Concurrent processing is marked as experimental. SQLite database locking may cause issues with parallel runs.
+
+**Q: Where are logs stored?**
+A: Logs are written to:
+- Console output (always)
+- `autoBMAD/epic_automation/logs/` directory (if file logging enabled)
+- Timestamped log files with format: `epic_automation_YYYYMMDD_HHMMSS.log`
+
+**Q: How do I reset the system state?**
+A: 
+```bash
+# Backup first
+cp progress.db progress.db.backup
+
+# Remove state database
+rm progress.db
+
+# Next run will start fresh
+```
+
+**Q: What Python version is required?**
+A: Python 3.12 or higher is required for latest type hints and async features.
+
+**Q: Can I use this in a CI/CD pipeline?**
+A: Yes, but ensure:
+- ANTHROPIC_API_KEY is set as environment variable
+- All dependencies are installed
+- Use `--skip-quality` and `--skip-tests` if tools not available in CI environment
+- Consider timeout limits for long-running processes
 
 ## Example Epic
 
@@ -699,6 +1104,51 @@ This template is part of the BMAD methodology and is provided as-is for use in B
 ## Support
 
 For issues and questions:
-- Review this README
-- Check the example epic
-- Enable verbose logging for detailed diagnostics
+
+1. **Documentation**:
+   - Review this [README.md](README.md) for comprehensive documentation
+   - Check [SETUP.md](SETUP.md) for detailed setup instructions
+   - Read [architecture/architecture.md](architecture/architecture.md) for system architecture
+
+2. **Troubleshooting**:
+   - Enable verbose logging with `--verbose` flag
+   - Check the Troubleshooting section above
+   - Review log files in `autoBMAD/epic_automation/logs/`
+   - Inspect `progress.db` for state information
+
+3. **Examples**:
+   - See example usage in the Quick Start section
+   - Check `docs-test/epics/` for example epic files
+   - Review `tests/` directory for test examples
+
+4. **Community**:
+   - Report issues on GitHub
+   - Contribute improvements via pull requests
+   - Share your experiences and best practices
+
+## Version History
+
+### Version 3.0 (2026-01-14)
+- Five-layer architecture with Controllers pattern
+- State-driven workflow execution
+- Enhanced quality gates with error reporting
+- Batch test execution support
+- Improved logging and monitoring
+- SQLite with WAL mode and optimistic locking
+
+### Version 2.0
+- Claude Agent SDK integration
+- Async story creation
+- Removed hardcoded story templates
+- Simplified codebase per Occam's Razor
+
+### Version 1.0
+- Initial release
+- Basic SM-Dev-QA cycle
+- Manual story creation
+
+---
+
+**Built with**: Python 3.12+ | Claude Agent SDK | SQLite | Loguru  
+**License**: Part of the BMAD methodology  
+**Maintained by**: BMAD Development Team
