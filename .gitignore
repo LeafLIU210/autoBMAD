@@ -148,8 +148,5 @@ Thumbs.db
 # Byterover
 .brv/
 
-# Anthropic
-.claude/
-
 .ruff_cache/
 .pytest_cache/*

@@ -39,7 +39,7 @@ class QualityCheckController:
         agent: BaseQualityAgent,
         source_dir: str,
         max_cycles: int = 3,
-        sdk_call_delay: int = 60,
+        sdk_call_delay: int = 10,
         sdk_timeout: int = 600,
     ):
         """

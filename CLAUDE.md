@@ -39,6 +39,13 @@
 - **结构化工作流**: 从想法到部署的经过验证的模式
 - **清晰的交接**: 每次都使用全新的上下文窗口
 
+### 1.3 项目依赖
+
+本项目的核心依赖：
+- **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** - AI代理编排和执行
+- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI驱动的敏捷开发方法论
+- **autoBMAD Epic Automation** - 完整的自动化工作流系统
+
 ---
 
 ## 2. 快速导航
@@ -137,8 +144,6 @@ project/
 
 **详细说明**: [ai_workflow.md](claude_docs/ai_workflow.md)
 
----
-
 ## 5. 开发工作流
 
 ### 5.1 BMAD开发方法论
@@ -185,7 +190,32 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 
 **详细说明**: [workflow_tools.md](claude_docs/workflow_tools.md)
 
----
+### 5.3 Claude Code Skills集成
+
+autoBMAD系统可以作为Claude Code的Skill安装和使用：
+
+#### 安装Skill
+
+```bash
+# Windows PowerShell
+.\autoBMAD\Skill\install_autoBMAD_skill.ps1
+
+# Linux/macOS
+./autoBMAD/Skill/install_autoBMAD_skill.sh
+```
+
+#### Skill文档
+
+- **[SKILL.md](autoBMAD/Skill/SKILL.md)** - 完整的Skill参考和使用指南
+- **[SKILL_INSTALLATION_GUIDE.md](autoBMAD/Skill/SKILL_INSTALLATION_GUIDE.md)** - 详细安装说明
+
+#### 使用Skill
+
+在Claude Code中直接调用autoBMAD工作流：
+
+```
+请使用autoBMAD工作流处理epic文件 docs/epics/my-epic.md
+```
 
 ## 6. 常用命令
 
@@ -214,27 +244,17 @@ pytest --cov=src --cov-report=html
 
 # GUI测试
 pytest tests/gui/ -v
-
-# Fixtest-Workflow
-cd fixtest-workflow
-python scan_test_files.py
-python run_tests.py
-.\fix_tests.ps1
 ```
 
 ### 6.3 代码质量
 
 ```bash
 # 类型检查
-cd basedpyright-workflow
-basedpyright-workflow check
+basedpyright src/
 
 # 代码风格
 ruff check --fix src/
 black src/
-
-# 自动化修复
-.\fix_unified_errors_new.ps1
 ```
 
 ### 6.4 构建

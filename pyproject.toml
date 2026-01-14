@@ -36,6 +36,7 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-timeout>=2.1.0",
     "debugpy>=1.6.0",
     "ruff>=0.1.0",
     "basedpyright>=0.1.0",
@@ -51,10 +52,11 @@ epic = [
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --cov=src --cov-report=term-missing --json-report --json-report-file=test_results.json"
+addopts = "-ra -q --strict-markers --cov=src --cov-report=term-missing --json-report --json-report-file=test_results.json --tb=short"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
+timeout = 300
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
@@ -65,6 +67,11 @@ markers = [
     "epic: marks tests as epic-related tests",
     "gui: marks tests as GUI tests",
     "acceptance: marks tests as acceptance criteria tests",
+]
+# Configure pytest-json-report plugin for robustness
+filterwarnings = [
+    "ignore::pytest_json_report.plugin.PytestJSONReportWarning:pytest_json_report",
+    "ignore::UserWarning",
 ]
 
 [tool.black]

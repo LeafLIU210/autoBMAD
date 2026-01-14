@@ -1,6 +1,6 @@
 # autoBMAD Epic自动化工作流详细说明
 
-**版本**: 2.0
+**版本**: 2.1
 **最后更新**: 2026-01-14
 
 ---
@@ -12,15 +12,24 @@
 3. [安装与配置](#3-安装与配置)
 4. [使用指南](#4-使用指南)
 5. [质量门控系统](#5-质量门控系统)
-6. [故障排除](#6-故障排除)
+6. [Claude Code Skills集成](#6-claude-code-skills集成)
+7. [故障排除](#7-故障排除)
 
 ---
 
 ## 1. 工作流概述
 
-本项目采用 **autoBMAD Epic Automation** 作为核心工作流系统,它是一个完整的05阶段BMAD开发自动化工具。该系统以Python实现,集成了Claude Agent SDK,提供从故事创建到质量验证的完整自动化支持。
+本项目采用 **autoBMAD Epic Automation** 作为核心工作流系统,它是一个完整的5阶段BMAD开发自动化工具。该系统以Python实现,集成了Claude Agent SDK,提供从故事创建到质量验证的完整自动化支持。
 
-### 1.1 核心特性
+### 1.1 核心依赖
+
+本项目依赖以下核心技术：
+
+- **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** - AI代理编排和执行框架
+- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI驱动的敏捷开发方法论
+- **autoBMAD Epic Automation** - 完整的自动化工作流系统
+
+### 1.2 核心特性
 
 | 特性 | 描述 | 核心价值 |
 |------|------|----------|
@@ -31,7 +40,7 @@
 | **状态管理** | SQLite持久化存储 | 断点恢复能力 |
 | **便携性** | 自包含解决方案 | 快速部署使用 |
 
-### 1.2 工作流架构
+### 1.3 工作流架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -561,11 +570,171 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 | **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
 | **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
 
+## 6. Claude Code Skills集成
+
+autoBMAD系统可以作为Claude Code的Skill安装，实现AI助手直接调用工作流功能。
+
+### 6.1 Skill概述
+
+autoBMAD Skill封装了完整的5阶段工作流，使Claude Code能够：
+- 自动处理Epic文档
+- 执行SM-Dev-QA循环
+- 运行质量门控检查
+- 执行测试自动化
+- 管理状态和生成报告
+
+### 6.2 安装Skill
+
+#### 方法1：使用安装脚本（推荐）
+
+**Windows PowerShell:**
+```powershell
+.\autoBMAD\Skill\install_autoBMAD_skill.ps1
+```
+
+**Linux/macOS:**
+```bash
+chmod +x ./autoBMAD/Skill/install_autoBMAD_skill.sh
+./autoBMAD/Skill/install_autoBMAD_skill.sh
+```
+
+#### 方法2：手动复制
+
+```bash
+# 创建skills目录
+mkdir -p ~/.claude/skills
+
+# 复制skill文件
+cp autoBMAD/Skill/autoBMAD-epic-automation.skill ~/.claude/skills/
+```
+
+### 6.3 Skill文档
+
+完整的Skill文档位于 `autoBMAD/Skill/` 目录：
+
+| 文档 | 描述 |
+|------|------|
+| **[SKILL.md](../autoBMAD/Skill/SKILL.md)** | Skill完整参考文档，包含用法、选项、示例 |
+| **[SKILL_INSTALLATION_GUIDE.md](../autoBMAD/Skill/SKILL_INSTALLATION_GUIDE.md)** | 详细安装指南，包含故障排除 |
+
+### 6.4 使用Skill
+
+#### 在Claude Code中调用
+
+安装Skill后，可以在Claude Code对话中直接调用：
+
+```
+请使用autoBMAD工作流处理epic文件 docs/epics/my-epic.md
+```
+
+Claude Code将自动：
+1. 识别autoBMAD-epic-automation Skill
+2. 执行完整的5阶段工作流
+3. 返回执行结果和报告
+
+#### Skill提供的功能
+
+- ✅ **完整工作流**: SM-Dev-QA循环 + 质量门控 + 测试自动化
+- ✅ **智能重试**: 自动重试失败的阶段（可配置次数）
+- ✅ **状态管理**: SQLite持久化，支持断点恢复
+- ✅ **详细日志**: 双写模式（控制台+文件）
+- ✅ **灵活配置**: 支持跳过质量门控或测试
+- ✅ **错误报告**: JSON格式的详细错误信息
+
+#### 常用调用模式
+
+**完整工作流:**
+```
+请使用autoBMAD处理epic: docs/epics/feature-x.md，启用详细输出
+```
+
+**跳过质量门控（快速开发）:**
+```
+请用autoBMAD处理 docs/epics/feature-x.md，跳过质量检查
+```
+
+**仅运行SM-Dev-QA循环:**
+```
+请用autoBMAD处理 docs/epics/feature-x.md，跳过质量检查和测试
+```
+
+### 6.5 Skill配置
+
+#### 环境变量
+
+Skill需要以下环境变量：
+
+```bash
+# Windows PowerShell
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+
+# Linux/macOS
+export ANTHROPIC_API_KEY="your_api_key_here"
+```
+
+#### CLI选项映射
+
+Skill支持所有CLI选项，可以通过自然语言指定：
+
+| CLI选项 | 自然语言描述 |
+|---------|-------------|
+| `--verbose` | "启用详细输出"、"显示详细日志" |
+| `--skip-quality` | "跳过质量检查"、"不运行质量门控" |
+| `--skip-tests` | "跳过测试"、"不运行测试" |
+| `--max-iterations N` | "最多重试N次"、"迭代次数N" |
+| `--source-dir DIR` | "源代码目录是DIR" |
+| `--test-dir DIR` | "测试目录是DIR" |
+
+### 6.6 Skill验证
+
+#### 检查安装
+
+```bash
+# 验证skill文件存在
+ls ~/.claude/skills/autoBMAD-epic-automation.skill
+
+# 查看skill内容
+unzip -l ~/.claude/skills/autoBMAD-epic-automation.skill
+```
+
+#### 测试Skill
+
+在Claude Code中测试：
+
+```
+请显示autoBMAD skill的帮助信息
+```
+
+Claude应该能够识别并显示Skill的功能描述。
+
+### 6.7 故障排除
+
+#### 问题：Claude Code无法识别Skill
+
+**解决方案:**
+1. 确认skill文件位于正确位置：`~/.claude/skills/`
+2. 重启Claude Code
+3. 检查skill文件权限
+
+#### 问题：Skill执行失败
+
+**解决方案:**
+1. 验证环境变量已设置：`echo $ANTHROPIC_API_KEY`
+2. 检查autoBMAD系统是否存在：`ls autoBMAD/epic_automation/epic_driver.py`
+3. 确认依赖已安装：`pip list | grep claude-agent-sdk`
+
+#### 问题：Epic文件无法找到
+
+**解决方案:**
+1. 使用绝对路径指定epic文件
+2. 确认当前工作目录正确
+3. 检查文件是否存在：`ls docs/epics/your-epic.md`
+
 ---
 
-## 6. 故障排除
+## 7. 故障排除
 
-### 6.1 常见问题
+### 7.1 常见问题
 
 #### 问题: "Epic文件未找到"
 
@@ -633,7 +802,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-qual
 - 使用模式: `[Story xxx: ...](path)`
 - 检查故事文件实际存在于引用路径
 
-### 6.2 调试模式
+### 7.2 调试模式
 
 对于详细调试,使用最大详细级别运行:
 
@@ -646,7 +815,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose -
 - 限制重试为1次以快速获取反馈
 - 显示每个阶段的详细进度
 
-### 6.3 常见问答
+### 7.3 常见问答
 
 **Q: 能否在没有互联网的情况下运行工具?**
 A: 不能,工具需要互联网访问以与Claude SDK通信。
@@ -704,5 +873,6 @@ A: 可以,修改 `.bmad-core/tasks/` 中的任务指导文件可以自定义代�
 ---
 
 **版本历史**:
+- v2.1 (2026-01-14): 添加Claude Code Skills集成章节
 - v2.0 (2026-01-14): 重写为autoBMAD Epic自动化工作流说明
 - v1.0 (2026-01-04): 初始版本,包含BMAD-Workflow、BasedPyright-Workflow、Fixtest-Workflow

@@ -1398,7 +1398,7 @@ class EpicDriver:
 
                 # Update state
                 state_update_success = await self.state_manager.update_story_status(
-                    story_path=story_path, status="sm_completed", phase="sm"
+                    story_path=story_path, status="sm_completed", phase="sm", epic_path=self.epic_id
                 )
 
                 if not state_update_success:
@@ -1413,7 +1413,7 @@ class EpicDriver:
             logger.error(f"SM phase failed for {story_path}: {e}")
             try:
                 await self.state_manager.update_story_status(
-                    story_path=story_path, status="error", error=str(e)
+                    story_path=story_path, status="error", error=str(e), epic_path=self.epic_id
                 )
             except Exception:
                 # Suppress exceptions during error handling to ensure we return False
@@ -1442,7 +1442,7 @@ class EpicDriver:
             )
             try:
                 await self.state_manager.update_story_status(
-                    story_path=story_path, status="failed", error="Max iterations exceeded"
+                    story_path=story_path, status="failed", error="Max iterations exceeded", epic_path=self.epic_id
                 )
             except Exception:
                 # Suppress exceptions during error handling
@@ -1481,7 +1481,7 @@ class EpicDriver:
             logger.error(f"Dev phase failed for {story_path}: {e}")
             try:
                 await self.state_manager.update_story_status(
-                    story_path=story_path, status="error", error=str(e)
+                    story_path=story_path, status="error", error=str(e), epic_path=self.epic_id
                 )
             except Exception:
                 # Suppress exceptions during error handling to ensure we return False
@@ -1580,7 +1580,8 @@ class EpicDriver:
                 await self.state_manager.update_story_status(
                     story_path=story_path,
                     status=current_status,
-                    phase="initialization"
+                    phase="initialization",
+                    epic_path=self.epic_id
                 )
                 
                 logger.debug(f"[DB Init] Story {story_id} initialized with status: {current_status}")
@@ -1679,7 +1680,7 @@ class EpicDriver:
         except Exception as e:
             logger.error(f"Failed to process story {story_path}: {e}")
             await self.state_manager.update_story_status(
-                story_path=story_path, status="error", error=str(e)
+                story_path=story_path, status="error", error=str(e), epic_path=self.epic_id
             )
             return False
 
@@ -2016,7 +2017,7 @@ class EpicDriver:
 
             # Update database state
             await self.state_manager.update_story_status(
-                story_path=story_path, status=expected_status
+                story_path=story_path, status=expected_status, epic_path=self.epic_id
             )
 
             # Log resync action
@@ -2042,7 +2043,7 @@ class EpicDriver:
 
             # Update story status to indicate cancellation
             await self.state_manager.update_story_status(
-                story_path=story_path, status="cancelled"
+                story_path=story_path, status="cancelled", epic_path=self.epic_id
             )
 
             # Log cancellation

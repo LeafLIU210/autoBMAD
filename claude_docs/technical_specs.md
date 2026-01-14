@@ -1,7 +1,7 @@
 # 技术规范详细说明
 
-**版本**: 1.0
-**最后更新**: 2026-01-04
+**版本**: 1.1
+**最后更新**: 2026-01-14
 
 ---
 
@@ -20,7 +20,28 @@
 
 ## 1. 核心依赖
 
-### 1.1 生产依赖
+### 1.1 项目依赖框架
+
+本项目依赖以下核心技术：
+
+#### Claude Agent SDK
+- **版本**: >=0.1.0
+- **用途**: AI代理编排和执行
+- **链接**: [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)
+- **特性**:
+  - AI驱动的代理系统
+  - 异步任务执行
+  - 权限管理和安全控制
+
+#### BMAD Method
+- **用途**: AI驱动的敏捷开发方法论
+- **链接**: [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)
+- **特性**:
+  - 结构化的开发流程
+  - SM-Dev-QA循环
+  - 质量门控集成
+
+### 1.2 生产依赖
 
 #### PySide6
 - **版本**: 最新稳定版
@@ -40,7 +61,7 @@
   - 自动日志轮转
   - 异常捕获
 
-### 1.2 开发依赖
+### 1.3 开发依赖
 
 #### pytest
 - **版本**: 最新稳定版
@@ -74,12 +95,13 @@
   - 最小的配置
   - 自动格式化
 
-### 1.3 依赖管理
+### 1.4 依赖管理
 
 #### requirements.txt (生产依赖)
 ```
 PySide6>=6.5.0
 loguru>=0.7.0
+claude-agent-sdk>=0.1.0
 ```
 
 #### requirements-dev.txt (开发依赖)
@@ -131,6 +153,7 @@ classifiers = [
 dependencies = [
     "PySide6>=6.5.0",
     "loguru>=0.7.0",
+    "claude-agent-sdk>=0.1.0",
 ]
 
 [project.optional-dependencies]

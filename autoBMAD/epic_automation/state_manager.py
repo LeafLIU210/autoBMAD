@@ -290,13 +290,22 @@ class StateManager:
             iteration: 当前迭代次数
             qa_result: QA结果字典
             error: 错误消息
-            epic_path: Epic文件路径
+            epic_path: Epic文件路径 (必须传递，否则报错)
             lock_timeout: 锁获取超时时间（秒）
             expected_version: 期望的版本号（用于乐观锁）
 
         Returns:
             (success, current_version): (是否成功, 当前版本号)
+            
+        Raises:
+            ValueError: epic_path为None时报错
         """
+        # ✅ 参数校验：确保 epic_path 非空
+        if epic_path is None:
+            raise ValueError(
+                f"epic_path is required for story '{story_path}'. "
+                f"Caller must provide epic_path to ensure database integrity."
+            )
         try:
             # Use a simple approach with timeout
             # _update_story_internal already has lock protection
@@ -398,7 +407,7 @@ class StateManager:
                         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
                     """,
                         (
-                            epic_path or "",
+                            epic_path,
                             story_path,
                             status,
                             phase,

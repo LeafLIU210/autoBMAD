@@ -15,6 +15,7 @@ from typing import Any, TypedDict, NotRequired, Literal, cast
 from anyio.abc import TaskGroup
 
 from autoBMAD.epic_automation.agents.base_agent import BaseAgent
+from autoBMAD.epic_automation.core.sdk_result import SDKResult
 
 logger = logging.getLogger(__name__)
 
@@ -838,13 +839,29 @@ class PytestAgent(BaseQualityAgent):
                 failures=failures,
             )
 
-            # 4. 调用 SDK（通过 SafeClaudeSDK）
-            sdk_result: dict[str, object] = cast(dict[str, object], await self._execute_sdk_call_with_cancel(prompt))
+            # 4. 调用 SDK（返回 SDKResult）
+            from ..core.sdk_result import SDKResult
+            sdk_result: SDKResult = await self._execute_sdk_call_with_cancel(prompt)
 
-            return {
-                "success": cast(bool, sdk_result.get("success", False)),
-                "error": None
-            }
+            # 5. 使用 SDKResult 语义
+            if sdk_result.is_success():
+                self.logger.info(
+                    f"SDK fix succeeded for {test_file} "
+                    f"(duration: {sdk_result.duration_seconds:.2f}s)"
+                )
+                return {
+                    "success": True,
+                    "error": None
+                }
+            else:
+                error_summary = sdk_result.get_error_summary()
+                self.logger.error(
+                    f"SDK fix failed for {test_file}: {error_summary}"
+                )
+                return {
+                    "success": False,
+                    "error": error_summary
+                }
 
         except Exception as e:
             self.logger.error(f"SDK fix failed for {test_file}: {e}", exc_info=True)
@@ -853,37 +870,25 @@ class PytestAgent(BaseQualityAgent):
                 "error": str(e),
             }
 
-    async def _execute_sdk_call_with_cancel(self, prompt: str) -> object:
+    async def _execute_sdk_call_with_cancel(self, prompt: str) -> SDKResult:
         """
-        执行 SDK 调用并处理取消流程
+        执行 SDK 调用并处理取消流程（重构为统一路径）
 
-        关键步骤：
-        1. 通过 SafeClaudeSDK 发起调用
-        2. 通过 SDKExecutor 监听 ResultMessage
-        3. 收到 ResultMessage 后，向 SDKCancellationManager 发出取消请求
-        4. 等待取消确认
-        5. 返回结果
+        修复点:
+        1. 使用 execute_sdk_call 统一入口
+        2. 自动处理 ClaudeAgentOptions 构造
+        3. 返回类型明确为 SDKResult
         """
-        from ..sdk_wrapper import SafeClaudeSDK
-        from ..core.sdk_executor import SDKExecutor
+        from .sdk_helper import execute_sdk_call
 
-        # 构造 SDK 包装器
-        sdk = SafeClaudeSDK(
+        # 统一调用，自动处理 options 类型转换
+        result = await execute_sdk_call(
             prompt=prompt,
-            options={"model": "claude-3-5-sonnet-20241022"},
-            timeout=300.0,
-        )
-
-        # 通过 SDKExecutor 执行（内部会自动注册到 CancellationManager）
-        executor = SDKExecutor()
-        result = await executor.execute(
-            sdk_func=sdk.execute,
-            target_predicate=lambda msg: msg.get("type") == "done" or "END_OF_PATCH" in str(msg),
             agent_name="PytestAgent",
+            timeout=300.0,
+            permission_mode="bypassPermissions"
         )
 
-        # 注意：SDKExecutor.execute() 内部已处理取消逻辑
-        # 这里只需要返回结果即可
         return result
 
     def _load_failures_from_json(

@@ -6,6 +6,19 @@
 
 **autoBMAD** (Breakthrough Method of Agile AI-driven Development) is an intelligent automation system that processes epics through a complete 5-phase workflow with integrated code quality gates and test automation.
 
+## 🎯 Project Overview
+
+**Note:** This project was originally created as a development template for Python Qt applications. However, its primary and most powerful feature is the **autoBMAD workflow system**. 
+
+The design relies on:
+- **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** - AI-powered agent orchestration
+- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - Agile AI-driven development methodology
+
+The system targets **fully automated development** of epic documents created by Product Owners (PO), including:
+- **SM-Dev-QA BMAD development cycle** - Story creation, implementation, and validation
+- **Quality gate checks and auto-fixing** - Type checking, linting, and code quality assurance
+- **Test automation** - Comprehensive test execution and reporting
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -83,10 +96,9 @@ The autoBMAD system processes epics through **5 integrated phases**:
 │  └──────────────┘  └──────────────┘                        │
 │                           ↓                                 │
 │  Phase 3: Test Automation                                   │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │    Pytest    │→ │   Debugpy    │                        │
-│  │  (Execute)   │  │ (Debug Failures)                      │
-│  └──────────────┘  └──────────────┘                        │
+│  ┌──────────────────────────────────────┐                  │
+│  │           Pytest (Execute)           │                  │
+│  └──────────────────────────────────────┘                  │
 │                           ↓                                 │
 │  Phase 4: Orchestration                                    │
 │  ┌──────────────────────────────────────┐                  │
@@ -116,9 +128,9 @@ The autoBMAD system processes epics through **5 integrated phases**:
 
 **Phase 3: Test Automation**
 - **Pytest**: Comprehensive test execution
-- **Debugpy**: Persistent debugging for failing tests
 - Maximum 5 retry attempts
 - Detailed test reports
+- Automatic retry logic for failed tests
 
 **Phase 4: Orchestration**
 - Manages complete workflow execution
@@ -240,7 +252,7 @@ def get_user(user_id: int) -> str | None:
 
 ### Pytest Agent
 
-Pytest executes comprehensive test suites with automatic debugging:
+Pytest executes comprehensive test suites with automatic retry logic:
 
 ```bash
 # Run all tests
@@ -253,10 +265,10 @@ pytest --cov=src
 pytest tests/gui/ -v
 ```
 
-**Debugpy Integration:**
-- Automatic activation after 3+ test failures
-- Provides persistent debugging session
-- See `docs/troubleshooting/quality-gates.md` for debugpy troubleshooting
+**Test Features:**
+- Automatic retry for failed tests (max 5 attempts)
+- Detailed test reports and failure analysis
+- Batch execution for efficiency
 
 ### Quality Agents Configuration
 
@@ -331,24 +343,6 @@ pytest --cov=src
 pytest tests/gui/ -v
 ```
 
-### Debugpy Integration
-
-Debugpy provides persistent debugging for test failures:
-
-```bash
-# Run tests with debugging
-python -m debugpy --listen 0.0.0.0:5678 --wait-for-client pytest tests/
-
-# Or use the built-in runner
-python epic_driver.py my-epic.py --verbose
-```
-
-**Debugpy Features:**
-- Attach debugger to running tests
-- Inspect test state
-- Step through failing tests
-- Set breakpoints dynamically
-
 ### CLI Test Options
 
 ```bash
@@ -399,11 +393,10 @@ ruff>=0.1.0
 # Test Automation
 pytest>=7.0.0
 pytest-cov>=4.0.0
-debugpy>=1.6.0
 
 # Core System
 pyside6>=6.0.0
-claude-api>=1.0.0
+claude-agent-sdk>=0.1.0
 asyncio
 sqlite3
 ```
@@ -411,12 +404,8 @@ sqlite3
 ### Environment Variables
 
 ```bash
-# Claude API
-export CLAUDE_API_KEY=your_api_key
-
-# Debug Settings
-export DEBUGPY_ENABLED=true
-export DEBUGPY_PORT=5678
+# Anthropic API (for Claude Agent SDK)
+export ANTHROPIC_API_KEY=your_api_key
 
 # Performance Settings
 export MAX_ITERATIONS=3
@@ -611,15 +600,54 @@ RuntimeError: Attempted to exit cancel scope in a different task than it was ent
 
 See `docs/troubleshooting/quality-gates.md` for detailed troubleshooting.
 
+## 🔌 Claude Code Integration - Skills
+
+The autoBMAD system can be integrated into Claude Code as a **Skill** for seamless AI-powered development.
+
+### Installing the Skill
+
+The autoBMAD skill package is located at `autoBMAD/Skill/`:
+
+```bash
+# Copy skill to Claude Code skills directory
+cp autoBMAD/Skill/autoBMAD-epic-automation.skill ~/.claude/skills/
+
+# Or use the installation script
+# Windows PowerShell
+.\autoBMAD\Skill\install_autoBMAD_skill.ps1
+
+# Linux/macOS
+./autoBMAD/Skill/install_autoBMAD_skill.sh
+```
+
+### Skill Documentation
+
+- **[SKILL.md](autoBMAD/Skill/SKILL.md)** - Complete skill reference and usage guide
+- **[SKILL_INSTALLATION_GUIDE.md](autoBMAD/Skill/SKILL_INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
+
+### Using the Skill in Claude Code
+
+Once installed, Claude Code can invoke the autoBMAD workflow directly:
+
+```
+Please process the epic file docs/epics/my-epic.md using the autoBMAD workflow
+```
+
+The skill provides:
+- ✅ Complete 5-phase workflow automation
+- ✅ SM-Dev-QA cycle orchestration
+- ✅ Quality gates (BasedPyright + Ruff)
+- ✅ Test automation (Pytest)
+- ✅ State management and recovery
+- ✅ Detailed logging and reporting
+
 ## 📚 Documentation
 
 - [Setup Guide](SETUP.md) - Installation and setup
-- [User Guide](docs/user-guide/) - Detailed usage guides
-  - [Quality Gates](docs/user-guide/quality-gates.md)
-  - [Test Automation](docs/user-guide/test-automation.md)
-- [Architecture](docs/architecture/) - System design
-- [API Reference](docs/api/) - Developer documentation
-- [BMAD Workflow](bmad-workflow/) - Workflow automation
+- [Claude Code Guide](CLAUDE.md) - AI-assisted development guide
+- [Workflow Tools](claude_docs/workflow_tools.md) - autoBMAD workflow details
+- [Quality Assurance](claude_docs/quality_assurance.md) - QA processes and gates
+- [BMAD Methodology](claude_docs/bmad_methodology.md) - Development methodology
 
 ## 🤝 Contributing
 
