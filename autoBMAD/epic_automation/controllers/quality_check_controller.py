@@ -66,6 +66,7 @@ class QualityCheckController:
         self.error_files: dict[str, list[dict[str, object]]] = {}
         self.initial_error_files: list[str] = []
         self.final_error_files: list[str] = []
+        self.final_detailed_errors: dict[str, list[dict[str, object]]] = {}
         self.sdk_fix_errors: list[dict[str, object]] = []
 
         self.logger: logging.Logger = logging.getLogger(f"{__name__}.{tool}_controller")
@@ -116,6 +117,8 @@ class QualityCheckController:
 
         # 4. 构造最终结果
         self.final_error_files = list(error_files.keys())
+        # 存储最终详细错误信息
+        self.final_detailed_errors = error_files
         return self._build_final_result()
 
     async def _run_check_phase(self) -> dict[str, list[dict[str, object]]]:
@@ -308,6 +311,26 @@ class QualityCheckController:
         """构造最终结果"""
         success = len(self.final_error_files) == 0
 
+        # 构建详细错误信息
+        detailed_errors = {}
+        if self.final_detailed_errors:
+            detailed_errors = {
+                "total_errors": sum(len(errors) for errors in self.final_detailed_errors.values()),
+                "by_file": {
+                    file: [
+                        {
+                            "line": error.get("line"),
+                            "column": error.get("column"),
+                            "error_code": error.get("code", error.get("rule", "")),
+                            "message": error.get("message", ""),
+                            "rule": error.get("code") or error.get("rule")
+                        }
+                        for error in errors
+                    ]
+                    for file, errors in self.final_detailed_errors.items()
+                }
+            }
+
         return {
             "status": "completed" if success else "failed",
             "tool": self.tool,
@@ -317,4 +340,5 @@ class QualityCheckController:
             "final_error_files": self.final_error_files,
             "sdk_fix_attempted": True,
             "sdk_fix_errors": self.sdk_fix_errors,
+            "detailed_errors": detailed_errors,
         }

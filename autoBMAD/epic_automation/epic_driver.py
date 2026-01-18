@@ -773,6 +773,13 @@ class QualityGateOrchestrator:
             "tools": issues,
         }
 
+        # 添加详细错误信息（从self.results中提取）
+        for tool_info in error_summary["tools"]:
+            tool_name = tool_info.get("tool", "")
+            result = self.results.get(tool_name, {}).get("result")
+            if result and "detailed_errors" in result:
+                tool_info["error_details"] = result["detailed_errors"]
+
         # 确保输出目录存在
         errors_dir = Path("autoBMAD/epic_automation/errors")
         errors_dir.mkdir(parents=True, exist_ok=True)
