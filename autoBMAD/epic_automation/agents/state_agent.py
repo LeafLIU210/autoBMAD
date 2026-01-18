@@ -171,7 +171,7 @@ class SimpleStoryParser:
 
         # 新增：记录文档行数
         total_lines = len(content.split('\n'))
-        logger.debug(f"Document has {total_lines} lines total, will parse first 20 lines")
+        logger.debug(f"Document has {total_lines} lines total, will parse first 10 lines")
 
         # 如果没有提供SDK包装器，使用正则表达式回退
         if not self.sdk_wrapper:
@@ -191,7 +191,7 @@ class SimpleStoryParser:
         使用正则表达式解析状态 - 重构版本
 
         核心改进:
-        1. 只解析文档前 20 行（Status 区块必定在此范围内）
+        1. 只解析文档前 10 行（Status 区块必定在此范围内）
         2. 宽松匹配状态关键词，支持括号、emoji 等装饰内容
         3. 优先级调整：Done 类状态优先于 Review/Development
 
@@ -201,11 +201,11 @@ class SimpleStoryParser:
         Returns:
             标准状态字符串
         """
-        # 提取前 20 行作为解析范围
-        lines = content.split('\n')[:20]
+        # 提取前 10 行作为解析范围
+        lines = content.split('\n')[:10]
         status_section = '\n'.join(lines)
 
-        logger.debug(f"Parsing status from first {len(lines)} lines (max 20)")
+        logger.debug(f"Parsing status from first {len(lines)} lines (max 10)")
 
         # 定义状态模式（优先级从高到低）
         # 注意：Done 类状态优先，避免被历史 Review 状态覆盖
@@ -248,12 +248,12 @@ class SimpleStoryParser:
                 if match:
                     logger.debug(
                         f"Status matched: {status} "
-                        f"(pattern: {pattern}, search range: lines 1-20)"
+                        f"(pattern: {pattern}, search range: lines 1-10)"
                     )
                     return status
 
         # 无匹配时返回默认值
-        logger.debug("No status pattern matched in first 20 lines, returning: Draft")
+        logger.debug("No status pattern matched in first 10 lines, returning: Draft")
         return CORE_STATUS_DRAFT
 
     async def _parse_status_with_ai(self, content: str) -> str:

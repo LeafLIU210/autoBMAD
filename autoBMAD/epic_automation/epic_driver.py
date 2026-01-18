@@ -189,7 +189,7 @@ class QualityGateOrchestrator:
         修改策略：放宽条件，只要达到最大循环且有残留错误，就返回True
 
         条件：
-        1. cycles >= max_cycles
+        1. cycles > max_cycles
         2. 残留文件非空（final_error_files 或 final_failed_files）
         """
         # ✅ 移除status检查，直接检查循环数和残留文件
@@ -242,7 +242,7 @@ class QualityGateOrchestrator:
                 agent=ruff_agent,
                 source_dir=source_dir,
                 max_cycles=3,
-                sdk_call_delay=60,
+                sdk_call_delay=10,
                 sdk_timeout=600,
             )
 
@@ -328,7 +328,7 @@ class QualityGateOrchestrator:
                 agent=basedpyright_agent,
                 source_dir=source_dir,
                 max_cycles=3,
-                sdk_call_delay=60,
+                sdk_call_delay=10,
                 sdk_timeout=600,
             )
 
@@ -656,7 +656,7 @@ class QualityGateOrchestrator:
                 ("pytest", "phase_3_pytest"),
             ]:
                 result = self.results.get(tool_name)
-                if result and self._is_max_cycles_exceeded_with_errors(result["result"]):
+                if result and result.get("result") and self._is_max_cycles_exceeded_with_errors(result["result"]):
                     warning = {
                         "tool": result["result"].get("tool", tool_name),
                         "phase": phase_name,
@@ -669,6 +669,25 @@ class QualityGateOrchestrator:
                         ),
                     }
                     quality_warnings.append(warning)
+
+            # 🆕 保底逻辑：直接检查status=failed的工具
+            if not quality_warnings:
+                for tool_name in ["ruff", "basedpyright", "pytest"]:
+                    result = self.results.get(tool_name)
+                    if result and result.get("result") and result.get("result", {}).get("status") == "failed":
+                        final_files = (
+                            result["result"].get("final_error_files") or
+                            result["result"].get("final_failed_files", [])
+                        )
+                        if final_files:
+                            quality_warnings.append({
+                                "tool": tool_name,
+                                "phase": f"phase_{tool_name}",
+                                "status": "failed",
+                                "cycles": result["result"].get("cycles", 0),
+                                "max_cycles": result["result"].get("max_cycles", 0),
+                                "remaining_files": final_files,
+                            })
 
             # 🆕 生成错误汇总 JSON
             if quality_warnings:
@@ -760,7 +779,7 @@ class QualityGateOrchestrator:
 
         # 生成文件名
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_epic_id = epic_id.replace("/", "_").replace("\\", "_")
+        safe_epic_id = epic_id.replace("/", "_").replace("\\", "_").replace(":", "_")
         filename = f"quality_errors_{safe_epic_id}_{timestamp}.json"
         filepath = errors_dir / filename
 
@@ -1463,12 +1482,13 @@ class EpicDriver:
                 devqa_controller = DevQaController(
                     tg,
                     use_claude=self.use_claude,
-                    log_manager=self.log_manager
+                    log_manager=self.log_manager,
+                    epic_path=self.epic_id  # ← 传递epic_path
                 )
                 self.devqa_controller = devqa_controller
 
                 # Execute Dev-QA pipeline using the controller
-                result = await devqa_controller.execute(story_path)
+                result = await devqa_controller.execute(story_path, epic_path=self.epic_id)
 
                 # 🎯 改进：不再在 execute_dev_phase 中写入 completed。
                 # 状态由 DevAgent/QAAgent 在执行后更新故事文档，

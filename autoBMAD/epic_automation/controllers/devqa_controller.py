@@ -26,7 +26,8 @@ class DevQaController(StateDrivenController):
         task_group: TaskGroup,
         use_claude: bool = True,
         log_manager: Any = None,
-        state_manager: StateManager | None = None
+        state_manager: StateManager | None = None,
+        epic_path: str | None = None
     ):
         """
         初始化 DevQa 控制器
@@ -36,37 +37,53 @@ class DevQaController(StateDrivenController):
             use_claude: 是否使用 Claude 进行真实开发
             log_manager: 日志管理器
             state_manager: 状态管理器实例（可选）
+            epic_path: Epic文件路径（用于数据库状态追踪）
         """
         super().__init__(task_group)
         self.state_agent = StateAgent(task_group=task_group)
         self.dev_agent = DevAgent(task_group=task_group, use_claude=use_claude, log_manager=log_manager)
         self.qa_agent = QAAgent(task_group=task_group, use_claude=use_claude, log_manager=log_manager)
-        # 添加状态管理器（方案2要求）
         self.state_manager = state_manager or StateManager()
         self.max_rounds = 3
         self._story_path: str | None = None
+        self._epic_path: str | None = epic_path  # ← 保存epic_path
         self._log_execution("DevQaController initialized")
 
-    async def execute(self, story_path: str) -> bool:
+    async def execute(self, story_path: str, epic_path: str | None = None) -> bool:
         """
         执行 Dev-QA 流水线
 
         Args:
             story_path: 故事文件路径
+            epic_path: Epic文件路径（可选，优先使用实例属性）
 
         Returns:
             bool: 执行是否成功
         """
         self._story_path = story_path
+
+        # ✅ 优先使用传入的epic_path，否则使用实例属性
+        if epic_path:
+            self._epic_path = epic_path
+
+        # ✅ 参数校验
+        if not self._epic_path:
+            self._log_execution(
+                f"[Warning] epic_path not provided for story {story_path}. "
+                f"Processing status updates will be skipped.",
+                "warning"
+            )
+
         self._log_execution(f"Starting Dev-QA pipeline for {story_path}")
 
         try:
             # 方案2：标记开始处理（写入数据库状态）
-            await self._update_processing_status(
-                story_id=story_path,
-                processing_status='in_progress',
-                context='Dev-QA cycle started'
-            )
+            if self._epic_path:
+                await self._update_processing_status(
+                    story_id=story_path,
+                    processing_status='in_progress',
+                    context='Dev-QA cycle started'
+                )
 
             # 启动状态机循环
             result = await self.run_state_machine(
@@ -229,22 +246,32 @@ class DevQaController(StateDrivenController):
         context: str | None = None
     ) -> bool:
         """
-        更新Story的处理状态（方案2实现）
+        更新故事的处理状态（方案2实现）
 
         Args:
             story_id: Story标识
-            processing_status: 处理状态值
-            context: 上下文信息（用于日志）
+            processing_status: 处理状态（'in_progress', 'review', 'completed'）
+            context: 上下文描述（用于日志）
 
         Returns:
             是否更新成功
         """
         try:
+            # ✅ 参数校验：确保epic_path已设置
+            if not self._epic_path:
+                self._log_execution(
+                    f"[StateTransition] Warning: epic_path not set for controller. "
+                    f"Cannot update processing_status for {story_id}",
+                    "warning"
+                )
+                return False
+
             timestamp = datetime.now()
             success = await self.state_manager.update_story_processing_status(
                 story_id=story_id,
                 processing_status=processing_status,
                 timestamp=timestamp,
+                epic_id=self._epic_path,  # ← 传递epic_path
                 metadata={'context': context} if context else None
             )
 

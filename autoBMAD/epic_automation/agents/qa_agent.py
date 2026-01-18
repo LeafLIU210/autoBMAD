@@ -99,7 +99,7 @@ class QAAgent(BaseAgent):
                 "@.bmad-core\\agents\\qa.md "
                 "@.bmad-core\\tasks\\review-story.md "
                 f"Review @{story_path}, "
-                "create or update the story gate file in @docs\\qa\\gates. "
+                "create or update the story gate yaml file in @docs\\qa\\gates. "
                 'If the story document passes review, change the Status field in the story document '
                 'from "Ready for Review" to "Ready for Done"; '
                 'otherwise change it to "In Progress".'

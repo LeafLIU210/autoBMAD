@@ -86,7 +86,7 @@ class QualityCheckController:
             }
         """
         # 1. 首轮全量检查
-        self.current_cycle = 0
+        self.current_cycle = 1
         error_files = await self._run_check_phase()
         self.initial_error_files = list(error_files.keys())
 
@@ -100,7 +100,7 @@ class QualityCheckController:
             return self._build_success_result()
 
         # 3. 进入修复循环（最多 3 轮）
-        while error_files and self.current_cycle < self.max_cycles:
+        while error_files and self.current_cycle <= self.max_cycles:
             self.logger.info(
                 f"{self.tool} cycle {self.current_cycle}/{self.max_cycles}: "
                 f"Fixing {len(error_files)} files"

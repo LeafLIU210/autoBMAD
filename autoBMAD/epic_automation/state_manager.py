@@ -1025,25 +1025,32 @@ class StateManager:
         story_id: str,
         processing_status: str,
         timestamp: datetime,
-        epic_id: str | None = None,
+        epic_id: str,
         metadata: Dict[str, Any] | None = None
     ) -> bool:
         """
-        更新Story的处理状态（方案2实现）
-
-        这是专门为Dev-QA流程设计的状态写入方法，简化了接口并增强了日志记录。
-        与update_story_status不同，这个方法专门处理处理状态值（processing_status）的写入。
+        更新故事的处理状态（方案2实现）
 
         Args:
-            story_id: Story标识（故事文件路径或ID）
-            processing_status: 处理状态值 ('in_progress' | 'review' | 'completed')
+            story_id: Story标识（story_path）
+            processing_status: 处理状态（'in_progress', 'review', 'completed'）
             timestamp: 更新时间
-            epic_id: Epic标识（可选）
+            epic_id: Epic标识（epic_path）- **必需参数**
             metadata: 额外元数据（如错误信息、重试次数等）
 
         Returns:
             是否更新成功
+
+        Raises:
+            ValueError: epic_id为空时抛出异常
         """
+        # ✅ 新增参数校验
+        if not epic_id:
+            raise ValueError(
+                f"epic_id is required for story '{story_id}'. "
+                f"Caller must provide epic_id to update processing status."
+            )
+
         # 参数校验
         valid_statuses = {'in_progress', 'review', 'completed'}
         if processing_status not in valid_statuses:
@@ -1051,20 +1058,19 @@ class StateManager:
             raise ValueError(f"Invalid processing_status: {processing_status}. Must be one of {valid_statuses}")
 
         try:
-            # 使用现有的update_story_status方法，但传入简化的参数
-            # 这里我们使用phase字段来存储processing_status，保持数据库结构不变
+            # 使用现有的update_story_status方法，传递epic_path参数
             success, _ = await self.update_story_status(
                 story_path=story_id,
-                status=processing_status,  # 使用status字段存储processing_status
-                phase=processing_status,  # 冗余存储到phase字段
-                epic_path=epic_id,
+                status=processing_status,
+                phase=processing_status,
+                epic_path=epic_id,  # ← 保证非空
             )
 
             if success:
                 logger.info(
                     f"[StateTransition] Story {story_id}: "
                     f"processing_status updated to '{processing_status}' "
-                    f"(timestamp: {timestamp.isoformat()})"
+                    f"(epic: {epic_id}, timestamp: {timestamp.isoformat()})"
                 )
                 if metadata:
                     logger.debug(f"[StateTransition] Metadata: {metadata}")
