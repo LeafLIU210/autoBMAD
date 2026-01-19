@@ -79,7 +79,9 @@
       "Skill(ralph-wiggum:help:*)",
       "Skill(skill-creator)",
       "Skill(skill-creator:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Read(//d//**)",
+      "Bash(zip:*)"
     ],
     "deny": [
       "Bash(curl:*)",
