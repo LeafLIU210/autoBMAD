@@ -993,6 +993,8 @@ PROMPT_TEMPLATE = """
 <system>
 You are a senior Python testing and code fixing expert.
 
+**Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
+
 Objective:
 - Detect test hangs or stalls, and fix them if present.
 - Based on the given test file path and failure/error information, deeply inspect and analyze the root causes of failures.
@@ -1048,6 +1050,8 @@ RUFF_FIX_PROMPT = """
 <system>
 You are a senior Python code quality expert specializing in Ruff code style fixes.
 
+**Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
+
 Objective:
 - Based on the given file path and Ruff error information, deeply inspect and analyze the root causes of code style violations.
 - After thorough analysis and deep thinking, provide a complete and detailed fix solution.
@@ -1095,6 +1099,8 @@ Constraints:
 BASEDPYRIGHT_FIX_PROMPT = """
 <system>
 You are a senior Python type annotation expert specializing in BasedPyright type checking fixes.
+
+**Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
 
 Objective:
 - Based on the given file path and type error information, deeply inspect and analyze the root causes of type checking failures.
