@@ -1,7 +1,7 @@
 # autoBMAD Epic自动化工作流详细说明
 
 **版本**: 2.1
-**最后更新**: 2026-01-14
+**最后更新**: 2026-01-22
 
 ---
 
@@ -873,6 +873,7 @@ A: 可以,修改 `.bmad-core/tasks/` 中的任务指导文件可以自定义代�
 ---
 
 **版本历史**:
+- v2.2 (2026-01-22): 移除CI/CD集成，更新为autoBMAD工作流
 - v2.1 (2026-01-14): 添加Claude Code Skills集成章节
 - v2.0 (2026-01-14): 重写为autoBMAD Epic自动化工作流说明
-- v1.0 (2026-01-04): 初始版本,包含BMAD-Workflow、BasedPyright-Workflow、Fixtest-Workflow
+- v1.0 (2026-01-04): 初始版本，包含BMAD-Workflow、BasedPyright-Workflow、Fixtest-Workflow

@@ -1,7 +1,7 @@
 # 常用命令速查
 
 **版本**: 1.0
-**最后更新**: 2026-01-04
+**最后更新**: 2026-01-22
 
 ---
 
@@ -71,22 +71,17 @@ pytest tests/gui/ -v
 
 ### Fixtest-Workflow
 ```bash
-cd fixtest-workflow
-
-# 扫描测试文件
-python scan_test_files.py
-
 # 运行所有测试
-python run_tests.py
+pytest tests/ -v
 
-# 演示模式（仅3个文件）
-python demo_run_tests.py
+# 生成覆盖率报告
+pytest tests/ --cov=src --cov-report=html
 
-# PowerShell中自动修复
-.\fix_tests.ps1
+# 运行特定测试
+pytest tests/test_specific.py -v
 
-# 验证修复
-python run_tests.py
+# 通过autoBMAD自动执行
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
 ```
 
 ---
@@ -95,19 +90,11 @@ python run_tests.py
 
 ### 类型检查
 ```bash
-cd basedpyright-workflow
+# BasedPyright类型检查
+basedpyright src/
 
-# 类型检查
-basedpyright-workflow check
-
-# 生成报告
-basedpyright-workflow report
-
-# 提取错误
-basedpyright-workflow fix
-
-# 完整工作流
-basedpyright-workflow workflow
+# 通过autoBMAD工作流自动执行
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
 ```
 
 ### 代码风格
@@ -138,10 +125,9 @@ black --diff src/ tests/
 ```
 
 ### 自动化修复
-```powershell
-# PowerShell中运行
-cd basedpyright-workflow
-.\fix_unified_errors_new.ps1
+```bash
+# 通过autoBMAD工作流自动修复
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 ```
 
 ---
@@ -179,24 +165,19 @@ pre-commit autoupdate
 
 ## 5. 工作流工具
 
-### BMAD-Workflow
-```powershell
-cd bmad-workflow
+### autoBMAD Epic自动化
+```bash
+# 完整5阶段工作流
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
-# 基本执行
-.\BMAD-Workflow.ps1 -StoryPath "docs/stories/my-story.md"
+# 跳过质量门控（快速开发）
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
 
-# 系统测试
-.\BMAD-Workflow.ps1 -Test
+# 跳过测试自动化
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
 
-# 检查状态
-.\BMAD-Workflow.ps1 -Status
-
-# 清理临时文件
-.\BMAD-Workflow.ps1 -Cleanup
-
-# 静默模式
-.\BMAD-Workflow.ps1 -StoryPath "story.md" -Silent
+# 同时跳过质量门控和测试
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality --skip-tests
 ```
 
 ### Claude AI代理命令
@@ -324,26 +305,22 @@ pytest -v
 
 # 3. 代码格式化
 ruff check --fix src/
-black src/
+ruff format src/
 
 # 4. 类型检查
-cd basedpyright-workflow && basedpyright-workflow check
+basedpyright src/
 
 # 5. 提交前检查
 pre-commit run --all-files
 ```
 
-### CI/CD流程
+### autoBMAD工作流
 ```bash
-# 代码质量检查
-ruff check src/
-basedpyright-workflow check
+# 完整工作流
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
-# 运行测试
-pytest --cov=src
-
-# 构建
-python build/build.py
+# 跳过质量门控
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
 ```
 
 ---

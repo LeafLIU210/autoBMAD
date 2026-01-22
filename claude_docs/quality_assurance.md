@@ -1,7 +1,7 @@
 # 质量保证流程详细说明
 
 **版本**: 1.0
-**最后更新**: 2026-01-04
+**最后更新**: 2026-01-22
 
 ---
 
@@ -362,19 +362,17 @@ Phase D        Phase C       Phase C      完成
 5. **性能**: NFR评估满足要求
 
 #### 使用示例
-```powershell
-# 执行完整的工作流
-cd bmad-workflow
-.\BMAD-Workflow.ps1 -StoryPath "docs/stories/my-story.md"
+```bash
+# 执行完整的autoBMAD工作流
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
-# 查看质量门控状态
-.\BMAD-Workflow.ps1 -Status
-
-# 查看详细日志
-Get-Content "logs/bmad-workflow-20260104-143022.log"
+# 跳过质量门控
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
 ```
 
-### 7.3 BasedPyright-Workflow代码质量保证
+### 7.3 autoBMAD工作流质量保证
+
+autoBMAD系统集成了完整的质量保证流程：
 
 #### 质量检查维度
 
@@ -395,23 +393,17 @@ Get-Content "logs/bmad-workflow-20260104-143022.log"
 
 #### 执行工作流
 ```bash
-cd basedpyright-workflow
+# 完整质量检查流程
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
-# 1. 运行检查
-basedpyright-workflow check
-# 输出: results/basedpyright_results.txt, results/basedpyright_results.json
+# 单独运行BasedPyright
+basedpyright src/
 
-# 2. 生成报告
-basedpyright-workflow report
-# 输出: reports/basedpyright_report_20260104_143022.md
+# 单独运行Ruff检查
+ruff check --fix src/
 
-# 3. 提取错误
-basedpyright-workflow fix
-# 输出: results/extracted_errors_20260104_143022.json
-
-# 4. 自动修复
-.\fix_unified_errors_new.ps1
-# 交互式Claude修复过程
+# 单独运行Ruff格式化
+ruff format src/
 ```
 
 #### 报告示例
@@ -433,7 +425,7 @@ basedpyright-workflow fix
 - 风格合规率: 92%
 ```
 
-### 7.4 Fixtest-Workflow测试质量保证
+### 7.4 Pytest测试质量保证
 
 #### 测试质量指标
 
@@ -454,23 +446,17 @@ basedpyright-workflow fix
 
 #### 执行流程
 ```bash
-cd fixtest-workflow
+# 1. 运行所有测试
+pytest tests/ -v
 
-# 1. 扫描测试文件
-python scan_test_files.py
-# 发现: 45个测试文件
+# 2. 生成覆盖率报告
+pytest tests/ --cov=src --cov-report=html
 
-# 2. 执行测试
-python run_tests.py
-# 结果: 12个文件有错误
+# 3. 运行特定测试文件
+pytest tests/test_my_feature.py -v
 
-# 3. 自动修复
-.\fix_tests.ps1
-# 修复: 逐个文件调用Claude
-
-# 4. 验证修复
-python run_tests.py
-# 验证: 所有错误已解决
+# 4. 通过autoBMAD自动执行
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
 ```
 
 #### 测试结果摘要
@@ -494,66 +480,31 @@ python run_tests.py
 
 #### 完整质量保证流程
 ```
-开发阶段
+autoBMAD 5阶段工作流
     ↓
-1. BMAD-Workflow Phase A (开发)
+Phase 1: SM-Dev-QA循环 (故事开发)
     ↓
-2. BasedPyright-Workflow (代码质量)
+Phase 2: 质量门控
+├── Ruff Check (代码风格)
+├── BasedPyright (类型检查)
+└── Ruff Format (格式化)
     ↓
-3. Fixtest-Workflow (测试质量)
+Phase 3: 测试自动化 (Pytest)
     ↓
-4. BMAD-Workflow Phase B (QA审查)
+Phase 4: 编排管理
+    ↓
+Phase 5: 文档与测试
     ↓
 质量门控决策 → [PASS/CONCERNS/FAIL/WAIVED]
 ```
 
-#### CI/CD集成示例
-```yaml
-# .github/workflows/quality-assurance.yml
-name: Quality Assurance
-
-on: [push, pull_request]
-
-jobs:
-  quality-check:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Run BasedPyright
-        run: |
-          cd basedpyright-workflow
-          basedpyright-workflow check
-          basedpyright-workflow report
-
-      - name: Run Fixtest-Workflow
-        run: |
-          cd fixtest-workflow
-          python scan_test_files.py
-          python run_tests.py
-
-      - name: Run BMAD-Workflow QA
-        run: |
-          cd bmad-workflow
-          .\BMAD-Workflow.ps1 -StoryPath "docs/stories/auto-qa.md" -Silent
-
-      - name: Upload Reports
-        uses: actions/upload-artifact@v3
-        with:
-          name: quality-reports
-          path: |
-            basedpyright-workflow/reports/
-            fixtest-workflow/summaries/
-            bmad-workflow/logs/
-```
-
 ### 7.6 质量门控决策矩阵
 
-| 工具 | 检查维度 | 门控影响 | 决策权重 |
+| 工具 | 检查维度 | 门控影响 | 重试次数 |
 |------|----------|----------|----------|
-| **BMAD-Workflow** | 功能完整性、架构合规性 | 主要门控 | 40% |
-| **BasedPyright** | 类型安全、代码风格 | 次要门控 | 35% |
-| **Fixtest-Workflow** | 测试质量、测试覆盖 | 关键门控 | 25% |
+| **Ruff** | 代码风格、导入排序 | 质量门控 | 3次 |
+| **BasedPyright** | 类型安全、静态分析 | 质量门控 | 3次 |
+| **Pytest** | 测试质量、覆盖率 | 测试门控 | 5次 |
 
 #### 决策逻辑
 - **全绿** (全部PASS): ✅ 可以继续
