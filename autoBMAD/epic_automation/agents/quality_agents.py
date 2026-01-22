@@ -538,10 +538,37 @@ class PytestAgent(BaseQualityAgent):
             # 执行所有批次
             result = await executor.execute_batches()
 
-            # 确保result符合PytestResult格式
+            # 转换结果格式为PytestResult
+            files = []
+            if "results" in result:
+                for batch_result in result.get("results", []):
+                    # 解析stdout中的测试信息
+                    stdout = batch_result.get("stdout", "")
+                    tests_passed = batch_result.get("tests_passed", 0)
+                    tests_failed = batch_result.get("tests_failed", 0)
+
+                    # 构建文件结果
+                    file_result = {
+                        "test_file": batch_result.get("batch_name", ""),
+                        "status": "passed" if batch_result.get("success", False) else "failed",
+                        "failures": []
+                    }
+
+                    # 如果有失败的测试，添加失败信息
+                    if tests_failed > 0:
+                        # 简单的失败信息提取（实际实现中可能需要更复杂的解析）
+                        file_result["failures"].append({
+                            "nodeid": f"{batch_result.get('batch_name', '')}::*",
+                            "failure_type": "failed",
+                            "message": f"Batch failed: {tests_failed} tests failed, {tests_passed} tests passed",
+                            "short_tb": stdout
+                        })
+
+                    files.append(file_result)
+
             return PytestResult(
                 status=result.get("status", "failed"),
-                files=result.get("files", [])
+                files=files
             )
 
         except Exception as e:

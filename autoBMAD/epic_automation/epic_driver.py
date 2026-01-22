@@ -186,18 +186,15 @@ class QualityGateOrchestrator:
         """
         判断是否为"超限但仍有错误"场景
 
-        修改策略：放宽条件，只要达到最大循环且有残留错误，就返回True
-
-        条件：
-        1. cycles > max_cycles
+        修复后的条件：
+        1. cycles > max_cycles (严格大于)
         2. 残留文件非空（final_error_files 或 final_failed_files）
         """
-        # ✅ 移除status检查，直接检查循环数和残留文件
         cycles = result.get("cycles", 0)
         max_cycles = result.get("max_cycles", 0)
 
-        # 检查是否达到最大循环
-        if cycles < max_cycles:
+        # 修复：只有当cycles严格大于max_cycles时才可能超限
+        if cycles <= max_cycles:
             return False
 
         # 检查残留文件
@@ -208,10 +205,10 @@ class QualityGateOrchestrator:
 
         has_remaining_errors = len(remaining_files) > 0
 
-        # ✅ 添加诊断日志
+        # 添加诊断日志
         if has_remaining_errors:
             self.logger.debug(
-                f"Max cycles check: cycles={cycles}/{max_cycles}, "
+                f"Max cycles exceeded: cycles={cycles}/{max_cycles}, "
                 f"remaining={len(remaining_files)} files"
             )
 
@@ -667,6 +664,8 @@ class QualityGateOrchestrator:
                             result["result"].get("final_error_files") or
                             result["result"].get("final_failed_files", [])
                         ),
+                        # 新增：详细错误信息
+                        "detailed_errors": self._collect_detailed_errors(tool_name, result["result"])
                     }
                     quality_warnings.append(warning)
 
@@ -687,6 +686,8 @@ class QualityGateOrchestrator:
                                 "cycles": result["result"].get("cycles", 0),
                                 "max_cycles": result["result"].get("max_cycles", 0),
                                 "remaining_files": final_files,
+                                # 新增：详细错误信息
+                                "detailed_errors": self._collect_detailed_errors(tool_name, result["result"])
                             })
 
             # 🆕 生成错误汇总 JSON
@@ -741,6 +742,61 @@ class QualityGateOrchestrator:
         progress_dict = cast(dict[str, Any], self.results["progress"])
         progress_dict["current_phase"] = "completed"
         return self.results
+
+    def _collect_detailed_errors(self, tool_name: str, result: dict[str, Any]) -> dict[str, Any]:
+        """
+        收集特定工具的详细错误信息
+
+        Args:
+            tool_name: 工具名称 ('ruff', 'basedpyright', 'pytest')
+            result: 质量检查结果字典
+
+        Returns:
+            包含详细错误信息的字典
+        """
+        detailed_errors = {
+            "tool": tool_name,
+            "status": result.get("status", "unknown"),
+            "summary": result.get("message", ""),
+            "errors": []
+        }
+
+        if tool_name == "ruff":
+            # 解析Ruff的JSON输出错误
+            issues = result.get("issues", [])
+            for issue in issues:
+                detailed_errors["errors"].append({
+                    "file": issue.get("filename", ""),
+                    "line": issue.get("location", {}).get("row"),
+                    "column": issue.get("location", {}).get("column"),
+                    "message": issue.get("message", ""),
+                    "severity": issue.get("severity", "error")
+                })
+
+        elif tool_name == "basedpyright":
+            # 解析BasedPyright的错误信息
+            issues = result.get("issues", [])
+            for issue in issues:
+                detailed_errors["errors"].append({
+                    "file": issue.get("file", ""),
+                    "line": issue.get("range", {}).get("start", {}).get("line"),
+                    "message": issue.get("message", ""),
+                    "severity": issue.get("severity", "error")
+                })
+
+        elif tool_name == "pytest":
+            # 解析pytest的失败测试
+            files = result.get("files", [])
+            for file_result in files:
+                for test_case in file_result.get("failures", []):
+                    detailed_errors["errors"].append({
+                        "file": file_result.get("test_file", ""),
+                        "line": None,  # pytest错误通常不包含具体行号
+                        "message": test_case.get("message", ""),
+                        "short_traceback": test_case.get("short_tb", "")
+                    })
+
+        return detailed_errors
 
     def _write_error_summary_json(
         self,
