@@ -854,6 +854,66 @@ class QualityGateOrchestrator:
         return str(filepath)
 
 
+async def run_quality_gates_standalone(
+    source_dir: str = "src",
+    test_dir: str = "tests",
+    epic_id: str = "standalone-quality",
+    skip_quality: bool = False,
+    skip_tests: bool = False,
+    max_cycles: int = 3,
+    verbose: bool = False,
+    create_log_file: bool = False,
+) -> dict[str, Any]:
+    """
+    独立执行质量门禁流水线
+
+    Args:
+        source_dir: 源代码目录
+        test_dir: 测试目录
+        epic_id: 标识符
+        skip_quality: 跳过静态检查
+        skip_tests: 跳过测试
+        max_cycles: 最大修复循环
+        verbose: 详细日志
+        create_log_file: 创建日志文件
+
+    Returns:
+        质量门禁执行结果字典
+    """
+    # 1. 初始化日志
+    log_manager = LogManager(create_log_file=create_log_file)
+    init_logging(log_manager)
+
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    try:
+        # 2. 验证目录
+        source_path = Path(source_dir).resolve()
+
+        if not source_path.exists():
+            return {
+                "success": False,
+                "error": f"Source directory not found: {source_dir}"
+            }
+
+        # 3. 创建编排器
+        orchestrator = QualityGateOrchestrator(
+            source_dir=str(source_path),
+            test_dir=str(test_dir),
+            skip_quality=skip_quality,
+            skip_tests=skip_tests,
+        )
+
+        # 4. 执行质量门禁
+        results = await orchestrator.execute_quality_gates(epic_id)
+
+        return results
+
+    finally:
+        cleanup_logging()
+
+
 class EpicDriver:
     """Main orchestrator for complete BMAD workflow."""
 
@@ -2489,7 +2549,7 @@ class EpicDriver:
 
 
 def parse_arguments():
-    """Parse command line arguments."""
+    """Parse command line arguments with subcommand support."""
     parser = argparse.ArgumentParser(
         description="BMAD Epic Automation - Process epic markdown files through Dev-QA workflow with quality gates",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -2519,6 +2579,25 @@ Quality Gates Examples:
   # Enable log file creation
   python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --log-file
 
+Standalone Quality Gates Examples:
+  # Run quality gates only (Ruff, BasedPyright, Pytest)
+  python -m autoBMAD.epic_automation.epic_driver run-quality
+
+  # Skip quality checks, run only pytest
+  python -m autoBMAD.epic_automation.epic_driver run-quality --skip-quality
+
+  # Skip pytest, run only quality checks
+  python -m autoBMAD.epic_automation.epic_driver run-quality --skip-tests
+
+  # Custom source and test directories
+  python -m autoBMAD.epic_automation.epic_driver run-quality --source-dir src --test-dir tests
+
+  # Custom epic ID for error reporting
+  python -m autoBMAD.epic_automation.epic_driver run-quality --epic-id my-custom-id
+
+  # Enable verbose logging
+  python -m autoBMAD.epic_automation.epic_driver run-quality --verbose --log-file
+
 Standard Examples:
   python epic_driver.py docs/epics/my-epic.md --max-iterations 5
   python epic_driver.py docs/epics/my-epic.md --retry-failed --verbose
@@ -2528,13 +2607,18 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
         """,
     )
 
-    # Positional argument
-    _ = parser.add_argument(
-        "epic_path", type=str, help="Path to epic markdown file (required)"
-    )
+    # Create subparsers
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
-    # Optional arguments
-    _ = parser.add_argument(
+    # --- Subcommand 1: run-epic (original functionality, default behavior) ---
+    epic_parser = subparsers.add_parser(
+        'run-epic',
+        help='Run full epic workflow (SM-Dev-QA + Quality Gates)'
+    )
+    epic_parser.add_argument('epic_path', type=str, help='Path to epic markdown file')
+
+    # Epic-specific arguments
+    _ = epic_parser.add_argument(
         "--max-iterations",
         type=int,
         default=3,
@@ -2542,29 +2626,29 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
         help="Maximum retry attempts for failed stories (default: 3, must be positive)",
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--retry-failed",
         action="store_true",
         help="Enable automatic retry of failed stories",
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--verbose", action="store_true", help="Enable detailed logging output"
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--concurrent",
         action="store_true",
         help="Process stories in parallel (experimental feature)",
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--no-claude",
         action="store_true",
         help="Disable Claude Code CLI integration (use simulation mode)",
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--source-dir",
         type=str,
         default="src",
@@ -2572,7 +2656,7 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
         help='Source code directory for QA checks (default: "src")',
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--test-dir",
         type=str,
         default="tests",
@@ -2580,63 +2664,157 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
         help='Test directory for QA checks (default: "tests")',
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--skip-quality",
         action="store_true",
         help="Skip quality gates (ruff and basedpyright checks)",
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--skip-tests", action="store_true", help="Skip pytest execution"
     )
 
-    _ = parser.add_argument(
+    _ = epic_parser.add_argument(
         "--log-file",
         action="store_true",
         help="Enable timestamped log file creation (disabled by default)"
     )
 
-    args = parser.parse_args()
+    # --- Subcommand 2: run-quality (new) ---
+    quality_parser = subparsers.add_parser(
+        'run-quality',
+        help='Run quality gates only (Ruff, BasedPyright, Pytest)'
+    )
 
-    # Validate max_iterations
-    if args.max_iterations <= 0:  # type: ignore[operator]
+    quality_parser.add_argument(
+        '--source-dir', type=str, default='src',
+        help='Source code directory (default: src)'
+    )
+    quality_parser.add_argument(
+        '--test-dir', type=str, default='tests',
+        help='Test directory (default: tests)'
+    )
+    quality_parser.add_argument(
+        '--epic-id', type=str, default='standalone-quality',
+        help='Identifier for error summary JSON'
+    )
+    quality_parser.add_argument(
+        '--skip-quality', action='store_true',
+        help='Skip ruff and basedpyright checks'
+    )
+    quality_parser.add_argument(
+        '--skip-tests', action='store_true',
+        help='Skip pytest execution'
+    )
+    quality_parser.add_argument(
+        '--max-cycles', type=int, default=3,
+        help='Maximum fix cycles (default: 3)'
+    )
+    quality_parser.add_argument(
+        '--verbose', action='store_true',
+        help='Enable verbose logging'
+    )
+    quality_parser.add_argument(
+        '--log-file', action='store_true',
+        help='Create timestamped log file'
+    )
+
+    # --- Backward compatibility: positional argument without subcommand ---
+    # Handle python epic_driver.py epic.md old calling style
+    # We need to check sys.argv before parsing to determine the mode
+
+    # Check the first argument to determine parsing mode
+    if len(sys.argv) > 1 and sys.argv[1] in ['run-epic', 'run-quality']:
+        # Subcommand provided - use normal argparse
+        args = parser.parse_args()
+    elif len(sys.argv) > 1 and not sys.argv[1].startswith('-'):
+        # Old style: positional epic_path without subcommand
+        # Temporarily modify sys.argv to include subcommand
+        original_argv = sys.argv.copy()
+        try:
+            # Insert 'run-epic' as the subcommand
+            sys.argv = [sys.argv[0], 'run-epic'] + sys.argv[1:]
+            args = parser.parse_args()
+            # Remove command from args since we're adding it manually
+            if hasattr(args, 'command'):
+                delattr(args, 'command')
+        finally:
+            # Restore original sys.argv
+            sys.argv = original_argv
+    else:
+        # No arguments or flags only, use normal argparse
+        args = parser.parse_args()
+
+    # Validate max_iterations for run-epic command
+    if hasattr(args, 'max_iterations') and args.max_iterations <= 0:
         parser.error("--max-iterations must be a positive integer")
+
+    # Validate max_cycles for run-quality command
+    if hasattr(args, 'max_cycles') and args.max_cycles <= 0:
+        parser.error("--max-cycles must be a positive integer")
 
     return args
 
 
 async def main():
-    """Main entry point."""
+    """Main entry point with subcommand routing."""
     args = parse_arguments()
 
-    # Configure logging level based on verbose flag
-    if args.verbose:  # type: ignore[truthy-bool]
-        logging.getLogger().setLevel(logging.DEBUG)
+    # Route to corresponding handler
+    if args.command == 'run-quality':
+        # 独立质量门禁
+        results = await run_quality_gates_standalone(
+            source_dir=args.source_dir,
+            test_dir=args.test_dir,
+            epic_id=args.epic_id,
+            skip_quality=args.skip_quality,
+            skip_tests=args.skip_tests,
+            max_cycles=args.max_cycles,
+            verbose=args.verbose,
+            create_log_file=args.log_file,
+        )
 
-    # Check if epic file exists
-    epic_path = Path(args.epic_path)  # type: ignore[arg-type]
-    if not epic_path.exists():
-        logger.error(f"Epic file not found: {epic_path}")
-        sys.exit(1)
+        # 输出结果摘要
+        if results.get("success"):
+            logger.info("✓ Quality gates completed successfully")
+            sys.exit(0)
+        else:
+            logger.error(f"✗ Quality gates failed: {results.get('errors', [])}")
+            sys.exit(1)
 
-    # Create driver with CLI options
-    driver = EpicDriver(
-        epic_path=str(epic_path),
-        max_iterations=args.max_iterations,  # type: ignore[arg-type]
-        retry_failed=args.retry_failed,  # type: ignore[arg-type]
-        verbose=args.verbose,  # type: ignore[arg-type]
-        concurrent=args.concurrent,  # type: ignore[arg-type]
-        use_claude=not args.no_claude,  # type: ignore[arg-type]
-        source_dir=args.source_dir,  # type: ignore[arg-type]
-        test_dir=args.test_dir,  # type: ignore[arg-type]
-        skip_quality=args.skip_quality,  # type: ignore[arg-type]
-        skip_tests=args.skip_tests,  # type: ignore[arg-type]
-        create_log_file=args.log_file,  # type: ignore[arg-type]
-    )
+    elif args.command == 'run-epic':
+        # 原有完整流程
+        # Configure logging level based on verbose flag
+        if args.verbose:  # type: ignore[truthy-bool]
+            logging.getLogger().setLevel(logging.DEBUG)
 
-    success = await driver.run()
+        # Check if epic file exists
+        epic_path = Path(args.epic_path)  # type: ignore[arg-type]
+        if not epic_path.exists():
+            logger.error(f"Epic file not found: {epic_path}")
+            sys.exit(1)
 
-    sys.exit(0 if success else 1)
+        # Create driver with CLI options
+        driver = EpicDriver(
+            epic_path=str(epic_path),
+            max_iterations=args.max_iterations,  # type: ignore[arg-type]
+            retry_failed=args.retry_failed,  # type: ignore[arg-type]
+            verbose=args.verbose,  # type: ignore[arg-type]
+            concurrent=args.concurrent,  # type: ignore[arg-type]
+            use_claude=not args.no_claude,  # type: ignore[arg-type]
+            source_dir=args.source_dir,  # type: ignore[arg-type]
+            test_dir=args.test_dir,  # type: ignore[arg-type]
+            skip_quality=args.skip_quality,  # type: ignore[arg-type]
+            skip_tests=args.skip_tests,  # type: ignore[arg-type]
+            create_log_file=args.log_file,  # type: ignore[arg-type]
+        )
+
+        success = await driver.run()
+        sys.exit(0 if success else 1)
+
+    else:
+        # 无子命令，显示帮助
+        parse_arguments()
 
 
 if __name__ == "__main__":

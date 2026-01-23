@@ -36,7 +36,15 @@ Write-Host ""
 Write-Host "✅ Skill 安装验证通过!" -ForegroundColor Green
 Write-Host ""
 Write-Host "使用方法:" -ForegroundColor Yellow
-Write-Host "  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/your-epic.md --verbose" -ForegroundColor White
 Write-Host ""
-Write-Host "快速开发（跳过质量门控）:" -ForegroundColor Yellow
-Write-Host "  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/your-epic.md --skip-quality --verbose" -ForegroundColor White
+Write-Host "完整工作流 (SM-Dev-QA + 质量门控):" -ForegroundColor Cyan
+Write-Host "  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/your-epic.md --verbose" -ForegroundColor White
+Write-Host ""
+Write-Host "独立质量门控 (Ruff + BasedPyright + Pytest):" -ForegroundColor Cyan
+Write-Host "  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-quality --verbose" -ForegroundColor White
+Write-Host ""
+Write-Host "快速开发（跳过质量门控）:" -ForegroundColor Cyan
+Write-Host "  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/your-epic.md --skip-quality --verbose" -ForegroundColor White
+Write-Host ""
+Write-Host "仅质量检查（跳过测试）:" -ForegroundColor Cyan
+Write-Host "  PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-quality --skip-tests --verbose" -ForegroundColor White

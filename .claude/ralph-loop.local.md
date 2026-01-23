@@ -1,9 +1,9 @@
 ---
 active: true
 iteration: 1
-max_iterations: 10
+max_iterations: 20
 completion_promise: "DONE"
-started_at: "2026-01-16T11:18:38Z"
+started_at: "2026-01-23T11:24:15Z"
 ---
 
-根据 @fix_epic_path_missing.md，针对 @ERROR_REPORT_FIX.md ，执行方案开发和创建覆盖测试到主目录 ，并修复卡顿测试，解决测试失败和错误。测试全部通过时<promise>DONE</promise>
+根据 @autoBMAD\epic_automation\reports\QUALITY_GATE_STANDALONE_TDD_PLAN.md，针对 @autoBMAD\epic_automation @tests，执行方案的全部内容，创建并执行测试，并持续发现和解决测试错误。如果全部测试验证通过且无错误<promise>DONE</promise>

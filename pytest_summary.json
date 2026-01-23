@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "total_files": 1,
+    "failed_files_initial": 0,
+    "failed_files_final": 0,
+    "cycles": 1
+  },
+  "rounds": [
+    {
+      "round_index": 1,
+      "round_type": "initial",
+      "timestamp": "2026-01-23T11:41:26Z",
+      "failed_files": []
+    }
+  ]
+}
