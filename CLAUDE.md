@@ -2,7 +2,7 @@
 
 **项目名称**: PyQt Windows 应用程序开发模板
 **版本**: 2.0
-**最后更新**: 2026-02-08
+**最后更新**: 2026-02-06
 
 ---
 
@@ -331,6 +331,8 @@ Epic处理
 
 | 日期 | 版本 | 提交信息 | 变更内容 |
 |------|------|----------|----------|
+| 2026-02-06 | 2.0 | 770e2538 - 测试Python版本post-commit hook安装程序（TDD开发） | 测试Python版本post-commit hook安装程序（TDD开发），修改了test_python_tdd_installer.txt |
+| 2026-02-06 | 2.0 | 6ab8683b - 清理测试文件并完成post-commit hook安装验证 | 清理测试文件并完成post-commit hook安装验证，修改了36个文件 |
 | 2026-02-08 | 2.0 | 7896a011 - 验证修复后的post-commit hook自动更新功能 | 验证修复后的post-commit hook自动更新功能 |
 | 2026-02-08 | 2.0 | 1fc2d083 - TDD 最终验证：通过 git commit 完整测试 post-commit hook | TDD最终验证：通过git commit完整测试post-commit hook |
 | 2026-02-07 | 2.0 | None | 更新文档日期；添加更新记录章节以追踪变更 |
