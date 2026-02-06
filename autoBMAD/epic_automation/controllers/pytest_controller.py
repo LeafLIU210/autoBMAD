@@ -32,7 +32,7 @@ class PytestController:
         self,
         source_dir: str,
         test_dir: str,
-        max_cycles: int = 3,
+        max_cycles: int = 5,
         summary_json_path: str | None = None,
     ):
         """
@@ -92,7 +92,7 @@ class PytestController:
                 return self._build_success_result()
 
             # 3. 进入修复循环
-            while failed_files and self.current_cycle <= self.max_cycles:
+            while failed_files and self.current_cycle < self.max_cycles:
                 logger.info(f"Starting cycle {self.current_cycle}/{self.max_cycles}")
 
                 # SDK 修复阶段

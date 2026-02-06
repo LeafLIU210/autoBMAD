@@ -12,7 +12,7 @@ import subprocess
 import re
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 
 # Project root directory
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -128,12 +128,12 @@ def update_claude_md_ai(content: str) -> bool:
     if not ANTHROPIC_SDK_AVAILABLE:
         print("anthropic SDK not available")
         return False
-    
+
     try:
         from anthropic import Anthropic
-        
+
         api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-        
+
         if not api_key:
             settings_path = PROJECT_ROOT / '.claude' / 'settings.local.json'
             if settings_path.exists():
@@ -141,18 +141,18 @@ def update_claude_md_ai(content: str) -> bool:
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
                     api_key = settings.get('anthropic_api_key', '')
-        
+
         if not api_key:
             print("API key not configured")
             return False
-        
+
         client = Anthropic(api_key=api_key)
-        
+
         claude_md_path = PROJECT_ROOT / 'CLAUDE.md'
         existing_content = ""
         if claude_md_path.exists():
             existing_content = claude_md_path.read_text(encoding='utf-8')
-        
+
         prompt = f"""Update CLAUDE.md with this commit:
 
 {content}
@@ -168,12 +168,13 @@ Current CLAUDE.md:
 
 Return complete updated content:"""
 
+        # 使用较短的max_tokens来减少响应时间
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=8192,
+            max_tokens=2048,  # 减少token数量
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         # Handle both text blocks and thinking blocks
         if hasattr(message.content[0], 'text'):
             updated_content = message.content[0].text
@@ -186,28 +187,30 @@ Return complete updated content:"""
         else:
             print("Unexpected response format")
             return False
-        
+
         claude_md_path.write_text(updated_content, encoding='utf-8')
         return True
-        
+
     except Exception as e:
         print(f"AI update failed: {e}")
-        return False
+        # 如果AI更新失败，降级到基础模式
+        print("Falling back to basic update mode...")
+        return update_claude_md_basic(content)
 
 
 def update_claude_md_basic(content: str) -> bool:
     """Basic update mode without AI"""
     claude_md_path = PROJECT_ROOT / 'CLAUDE.md'
-    
+
     try:
         if not claude_md_path.exists():
             print("CLAUDE.md not found")
             return False
-        
+
         existing_content = claude_md_path.read_text(encoding='utf-8')
-        
-        # Update timestamp
-        timestamp= datetime.now().strftime('%Y-%m-%d')
+
+        # Update timestamp in the header
+        timestamp = datetime.now().strftime('%Y-%m-%d')
         date_pattern = r'\*\*最后更新\*\*: \d{4}-\d{2}-\d{2}'
         if re.search(date_pattern, existing_content):
             existing_content = re.sub(
@@ -215,23 +218,118 @@ def update_claude_md_basic(content: str) -> bool:
                 f"**最后更新**: {timestamp}",
                 existing_content
             )
-        
-        # Append new content to update records section
-        if "## Update Records" in existing_content:
-            parts = existing_content.split("## Update Records", 1)
-            updated_content = parts[0] + "## Update Records" + content + "\n" + parts[1]
-        elif "## 更新记录" in existing_content:
-            parts = existing_content.split("## 更新记录", 1)
-            updated_content = parts[0] + "## 更新记录" + content + "\n" + parts[1]
+
+        # Parse the content to extract commit info
+        commit_info = _parse_commit_content(content)
+        if commit_info:
+            # Insert new row into the update records table
+            table_row = f"| {commit_info['date']} | 2.0 | {commit_info['hash']} - {commit_info['subject']} | {commit_info['files']} |\n"
+
+            # Find the table section and insert after the separator row
+            if "| 日期 | 版本 | 提交信息 | 变更内容 |" in existing_content:
+                # Find the separator row (|------|------|----------|----------|)
+                table_start = existing_content.find("| 日期 | 版本 | 提交信息 | 变更内容 |")
+                if table_start != -1:
+                    # Find the end of the header line
+                    header_end = existing_content.find('\n', table_start)
+                    if header_end != -1:
+                        # Find the separator line
+                        separator_start = existing_content.find('\n|------', header_end)
+                        if separator_start != -1:
+                            # Find the end of the separator line
+                            separator_end = existing_content.find('\n', separator_start)
+                            # Insert the new row after the separator
+                            updated_content = (
+                                existing_content[:separator_end] +
+                                '\n' + table_row +
+                                existing_content[separator_end:]
+                            )
+                        else:
+                            # No separator found, just insert after header
+                            updated_content = (
+                                existing_content[:header_end] +
+                                '\n|------|------|----------|----------|\n' +
+                                table_row +
+                                existing_content[header_end:]
+                            )
+                    else:
+                        # Fallback: just append
+                        updated_content = existing_content + "\n" + table_row
+                else:
+                    # Fallback: just append
+                    updated_content = existing_content + "\n" + table_row
+            else:
+                # If no table found, just append
+                updated_content = existing_content + "\n" + table_row
         else:
-            updated_content = existing_content + content + "\n"
-        
+            # Fallback: just append the content
+            updated_content = existing_content + "\n" + content
+
         claude_md_path.write_text(updated_content, encoding='utf-8')
         return True
-        
+
     except Exception as e:
         print(f"Basic update failed: {e}")
         return False
+
+
+def _parse_commit_content(content: str) -> Optional[Dict[str, str]]:
+    """Parse commit information from generated content"""
+    try:
+        # 处理 None 或空内容
+        if content is None or content.strip() == "":
+            return {
+                'date': datetime.now().strftime('%Y-%m-%d'),
+                'files': '代码变更'
+            }
+
+        lines = content.strip().split('\n')
+        commit_info = {}
+
+        for line in lines:
+            if line.startswith('- **Commit**:'):
+                parts = line.split(' - ', 1)
+                if len(parts) == 2:
+                    commit_info['hash'] = parts[0].replace('- **Commit**: ', '').strip()
+                    commit_info['subject'] = parts[1].strip()
+                else:
+                    commit_info['hash'] = parts[0].replace('- **Commit**: ', '').strip()
+                    commit_info['subject'] = ''
+            elif line.startswith('- **Author**:'):
+                commit_info['author'] = line.replace('- **Author**: ', '').strip()
+            elif line.startswith('- **Time**:'):
+                commit_info['date'] = line.replace('- **Time**: ', '').strip()
+            elif '**Changed Files**' in content:
+                if line.startswith('- `'):
+                    files_info = line.replace('- `', '').replace('`', '').strip()
+                    if 'files' not in commit_info:
+                        commit_info['files'] = files_info
+                    else:
+                        commit_info['files'] += ', ' + files_info
+
+        # Extract just the date part
+        if 'date' in commit_info:
+            # Parse the date string and format it properly
+            date_str = commit_info['date']
+            try:
+                # Try to parse the date and format it as YYYY-MM-DD
+                parsed_date = datetime.strptime(date_str, '%a %b %d %H:%M:%S %Y %z')
+                commit_info['date'] = parsed_date.strftime('%Y-%m-%d')
+            except:
+                # If parsing fails, just use today's date
+                commit_info['date'] = datetime.now().strftime('%Y-%m-%d')
+
+        # Default files info if not found
+        if 'files' not in commit_info:
+            commit_info['files'] = '代码变更'
+
+        return commit_info if commit_info else None
+    except Exception as e:
+        print(f"Error parsing commit content: {e}")
+        return {
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'files': '代码变更'
+        }
 
 
 def main() -> int:
@@ -264,11 +362,17 @@ def main() -> int:
         return 1
 
     # Update CLAUDE.md
-    if ANTHROPIC_SDK_AVAILABLE:
+    # 默认使用基础模式，更可靠
+    force_basic = os.environ.get('CLAUDE_MD_FORCE_BASIC', 'true').lower() == 'true'
+
+    if ANTHROPIC_SDK_AVAILABLE and not force_basic:
         print("Using AI update mode...")
         success = update_claude_md_ai(content)
     else:
-        print("Using basic update mode...")
+        if force_basic:
+            print("Using basic update mode (reliable)...")
+        else:
+            print("Using basic update mode...")
         success = update_claude_md_basic(content)
     
     if success:

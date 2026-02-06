@@ -1175,3 +1175,785 @@ print(f"响应: {message.content}")
    - 设置每日调用限额
    - 使用较短的 prompt
    - 限制 max_tokens 参数
+
+---
+
+## 参考实现：SafeClaudeSDK 包装器
+
+### sdk_wrapper.py 参考模式
+
+本方案参考项目 `D:\GITHUB\pytQt_template\autoBMAD\epic_automation\sdk_wrapper.py` 中的 SafeClaudeSDK 实现，该文件（954行）提供了生产级别的 SDK 封装模式，包括安全的异步生成器包装、消息跟踪和取消管理。以下是核心模式及其在本方案中的应用：
+
+#### SafeAsyncGenerator 模式
+
+```python
+class SafeAsyncGenerator:
+    """安全的异步生成器包装器
+
+    确保异步迭代器在使用完毕后正确清理资源，
+    避免资源泄漏和句柄未释放问题。
+    """
+    def __init__(
+        self,
+        generator: AsyncIterator[Any],
+        cleanup_timeout: float = 1.0
+    ) -> None:
+        self.generator = generator
+        self.cleanup_timeout = cleanup_timeout
+        self._closed = False
+
+    async def __anext__(self) -> Any:
+        """异步迭代协议实现"""
+        if self._closed:
+            raise StopAsyncIteration
+        try:
+            return await self.generator.__anext__()
+        except StopAsyncIteration:
+            self._closed = True
+            raise
+
+    async def aclose(self) -> None:
+        """异步关闭，释放资源"""
+        if not self._closed:
+            self._closed = True
+            if hasattr(self.generator, 'aclose'):
+                await self.generator.aclose()
+```
+
+**在本方案中的应用**：更新脚本中的异步 API 调用需要确保资源正确释放，防止文件句柄泄漏。
+
+#### SDKMessageTracker 模式
+
+```python
+class SDKMessageTracker:
+    """消息跟踪器，用于跟踪和取消 API 调用"""
+    def __init__(self) -> None:
+        self.current_request_id: str | None = None
+        self.cancellation_manager = None
+
+    async def track(
+        self,
+        request_id: str,
+        cancellation_manager: BaseCancellationManager | None = None
+    ) -> None:
+        """跟踪新的请求"""
+        self.current_request_id = request_id
+        self.cancellation_manager = cancellation_manager
+
+    async def stop(self) -> None:
+        """停止当前跟踪"""
+        self.current_request_id = None
+        self.cancellation_manager = None
+```
+
+**在本方案中的应用**：对于长时间运行的文档更新操作，需要能够取消或中断更新请求。
+
+#### 取消管理集成
+
+```python
+from contextlib import asynccontextmanager
+from agents import cancelation
+
+@asynccontextmanager
+async def track_cancellation(
+    tracker: SDKMessageTracker,
+    request_id: str
+):
+    """上下文管理器用于跟踪取消状态"""
+    cancellation_mgr = cancelation.CancellationManager()
+    await tracker.track(request_id, cancellation_mgr)
+    try:
+        yield cancellation_mgr
+    finally:
+        await tracker.stop()
+```
+
+**在本方案中的应用**：支持用户在更新过程中取消长时间运行的 AI 分析。
+
+### 增强的 Python 更新脚本
+
+以下是基于 sdk_wrapper.py 模式增强的完整更新脚本，支持同时更新 CLAUDE.md 和 claude_docs/ 目录：
+
+```python
+#!/usr/bin/env python3
+"""
+CLAUDE.md 和 claude_docs/ 智能更新脚本
+
+本脚本在 git commit 后被调用，利用 Claude Agent SDK 智能更新：
+1. 根目录的 CLAUDE.md 文件
+2. claude_docs/ 目录下的相关文档
+
+集成 SafeClaudeSDK 包装器模式，确保异步操作的资源安全和取消支持。
+"""
+
+import sys
+import os
+import subprocess
+import asyncio
+from pathlib import Path
+from datetime import datetime
+from typing import Any, AsyncIterator, Optional
+from contextlib import asynccontextmanager
+import json
+
+# 添加项目根目录到 Python 路径
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# claude_docs 目录路径
+CLAUDE_DOCS_DIR = PROJECT_ROOT / "claude_docs"
+
+try:
+    from agents import cancelation
+    from anthropic import Anthropic
+    AGENTS_SDK_AVAILABLE = True
+except ImportError:
+    AGENTS_SDK_AVAILABLE = False
+    print("警告: agents SDK 未安装，将使用基础更新模式")
+
+
+# ==================== SafeClaudeSDK 模式实现 ====================
+
+class SafeAsyncGenerator:
+    """安全的异步生成器包装器 - 参考 sdk_wrapper.py"""
+    def __init__(
+        self,
+        generator: AsyncIterator[Any],
+        cleanup_timeout: float = 1.0
+    ) -> None:
+        self.generator = generator
+        self.cleanup_timeout = cleanup_timeout
+        self._closed = False
+        self._iterator = None
+
+    def __aiter__(self) -> "SafeAsyncGenerator":
+        self._iterator = self.generator.__aiter__()
+        return self
+
+    async def __anext__(self) -> Any:
+        if self._closed:
+            raise StopAsyncIteration
+        try:
+            return await self._iterator.__anext__()
+        except StopAsyncIteration:
+            self._closed = True
+            raise
+
+    async def aclose(self) -> None:
+        """异步关闭，释放资源"""
+        if not self._closed:
+            self._closed = True
+            if hasattr(self.generator, 'aclose'):
+                try:
+                    await self.generator.aclose()
+                except Exception:
+                    pass  # 忽略关闭时的错误
+
+
+class SDKMessageTracker:
+    """消息跟踪器 - 参考 sdk_wrapper.py"""
+    def __init__(self) -> None:
+        self.current_request_id: Optional[str] = None
+        self.cancellation_manager = None
+
+    async def track(
+        self,
+        request_id: str,
+        cancellation_manager: Any = None
+    ) -> None:
+        """跟踪新的请求"""
+        self.current_request_id = request_id
+        self.cancellation_manager = cancellation_manager
+
+    async def stop(self) -> None:
+        """停止当前跟踪"""
+        self.current_request_id = None
+        self.cancellation_manager = None
+
+
+# 全局消息跟踪器
+message_tracker = SDKMessageTracker()
+
+
+@asynccontextmanager
+async def track_cancellation(tracker: SDKMessageTracker, request_id: str):
+    """上下文管理器用于跟踪取消状态"""
+    cancellation_mgr = None
+    if AGENTS_SDK_AVAILABLE:
+        cancellation_mgr = cancelation.CancellationManager()
+    await tracker.track(request_id, cancellation_mgr)
+    try:
+        yield cancellation_mgr
+    finally:
+        await tracker.stop()
+
+
+# ==================== Claude Agent SDK 集成 ====================
+
+async def analyze_changes_ai(
+    commit_info: dict,
+    changed_files: list[str],
+    diff_summary: str
+) -> dict[str, Any]:
+    """使用 Claude Agent SDK 智能分析变更
+
+    Args:
+        commit_info: 提交信息字典
+        changed_files: 变更文件列表
+        diff_summary: 变更摘要
+
+    Returns:
+        包含分析结果的字典，包括 CLAUDE.md 更新内容和 claude_docs 更新建议
+    """
+    request_id = f"analyze-{commit_info.get('short_hash', 'unknown')}"
+
+    async with track_cancellation(message_tracker, request_id) as cancellation_mgr:
+        if not AGENTS_SDK_AVAILABLE:
+            return _fallback_analysis(commit_info, changed_files, diff_summary)
+
+        try:
+            client = Anthropic()
+
+            # 构建分析提示
+            prompt = _build_analysis_prompt(commit_info, changed_files, diff_summary)
+
+            # 使用流式响应
+            async with client.messages.stream(
+                model="claude-sonnet-4-20250514",
+                max_tokens=8192,
+                messages=[{"role": "user", "content": prompt}]
+            ) as stream:
+                response_text = ""
+
+                async for chunk in SafeAsyncGenerator(stream):
+                    if chunk.type == "content_block_delta":
+                        if chunk.delta.type == "text_delta":
+                            response_text += chunk.delta.text
+                    # 检查是否需要取消
+                    if cancellation_mgr and cancellation_mgr.is_cancelled:
+                        stream.cancel()
+                        break
+
+            # 解析 AI 响应
+            return _parse_ai_response(response_text, commit_info)
+
+        except Exception as e:
+            print(f"AI 分析失败: {e}")
+            return _fallback_analysis(commit_info, changed_files, diff_summary)
+
+
+def _build_analysis_prompt(
+    commit_info: dict,
+    changed_files: list[str],
+    diff_summary: str
+) -> str:
+    """构建 AI 分析提示词"""
+    files_content = ""
+    for f in changed_files[:10]:  # 限制分析文件数量
+        files_content += f"- `{f}`\n"
+
+    prompt = f"""请智能分析以下 Git 提交，并为 CLAUDE.md 和 claude_docs/ 目录生成更新建议。
+
+## 提交信息
+- **哈希**: {commit_info.get('short_hash', 'unknown')}
+- **消息**: {commit_info.get('subject', '无')}
+- **作者**: {commit_info.get('author', 'unknown')}
+- **时间**: {commit_info.get('date', 'unknown')}
+
+## 变更文件
+{files_content}
+
+## 变更统计
+{diff_summary or '无详细统计信息'}
+
+请返回 JSON 格式的分析结果，包含以下字段：
+{{
+    "claude_md_content": "CLAUDE.md 的更新内容（Markdown格式）",
+    "claude_docs_updates": [
+        {{
+            "file": "claude_docs/相关文档路径",
+            "action": "add|update|skip",
+            "content": "需要添加或更新的内容"
+        }}
+    ],
+    "impact_summary": "变更影响摘要（1-2句话）",
+    "category": "feat|fix|docs|refactor|test|chore|other"
+}}
+
+请确保：
+1. 如果变更涉及新功能，在 CLAUDE.md 的适当位置添加功能说明
+2. 如果变更修复问题，在更新记录中标记为 bug fix
+3. 如果有文档变更，同步更新 claude_docs/ 相关文档
+4. 保持文档格式的一致性
+5. 不要删除现有内容"""
+
+    return prompt
+
+
+def _parse_ai_response(response_text: str, commit_info: dict) -> dict[str, Any]:
+    """解析 AI 响应"""
+    try:
+        # 尝试从 JSON 响应中提取结果
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        if json_match:
+            result = json.loads(json_match.group())
+            # 确保包含基本字段
+            result.setdefault("claude_md_content", _default_claude_md_content(commit_info))
+            result.setdefault("claude_docs_updates", [])
+            result.setdefault("impact_summary", commit_info.get('subject', ''))
+            result.setdefault("category", "other")
+            return result
+    except (json.JSONDecodeError, AttributeError) as e:
+        print(f"解析 AI 响应失败: {e}")
+
+    # 返回默认值
+    return {
+        "claude_md_content": _default_claude_md_content(commit_info),
+        "claude_docs_updates": [],
+        "impact_summary": commit_info.get('subject', ''),
+        "category": "other"
+    }
+
+
+def _default_claude_md_content(commit_info: dict) -> str:
+    """生成默认的 CLAUDE.md 更新内容"""
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return f"""
+### {timestamp}
+- **提交**: {commit_info.get('short_hash', 'unknown')} - {commit_info.get('subject', '无')}
+- **作者**: {commit_info.get('author', 'unknown')}
+- **时间**: {commit_info.get('date', 'unknown')}"""
+
+
+def _fallback_analysis(
+    commit_info: dict,
+    changed_files: list[str],
+    diff_summary: str
+) -> dict[str, Any]:
+    """当 AI 不可用时的降级分析"""
+    return {
+        "claude_md_content": _default_claude_md_content(commit_info),
+        "claude_docs_updates": [],
+        "impact_summary": commit_info.get('subject', ''),
+        "category": "other"
+    }
+
+
+# ==================== 文档更新逻辑 ====================
+
+def update_claude_md(content: str) -> bool:
+    """更新 CLAUDE.md 文件"""
+    try:
+        claude_md_path = PROJECT_ROOT / "CLAUDE.md"
+        if not claude_md_path.exists():
+            print(f"警告: CLAUDE.md 文件不存在: {claude_md_path}")
+            return False
+
+        existing_content = claude_md_path.read_text(encoding='utf-8')
+
+        # 更新"最后更新"日期
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        import re
+        date_pattern = r"\*\*最后更新\*\*: \d{4}-\d{2}-\d{2}"
+        if re.search(date_pattern, existing_content):
+            existing_content = re.sub(
+                date_pattern,
+                f"**最后更新**: {timestamp}",
+                existing_content
+            )
+
+        # 追加更新内容
+        if "## 更新记录" in existing_content:
+            parts = existing_content.split("## 更新记录", 1)
+            existing_content = parts[0] + "## 更新记录" + content + "\n" + parts[1]
+        else:
+            existing_content += f"\n\n## 更新记录{content}"
+
+        claude_md_path.write_text(existing_content, encoding='utf-8')
+        return True
+    except Exception as e:
+        print(f"更新 CLAUDE.md 失败: {e}")
+        return False
+
+
+def update_claude_docs(updates: list[dict]) -> dict[str, bool]:
+    """更新 claude_docs/ 目录下的文档
+
+    Args:
+        updates: 更新建议列表，每个元素包含 file, action, content 字段
+
+    Returns:
+        更新结果字典 {文件路径: 成功与否}
+    """
+    results = {}
+
+    if not CLAUDE_DOCS_DIR.exists():
+        print(f"警告: claude_docs/ 目录不存在: {CLAUDE_DOCS_DIR}")
+        return results
+
+    for update in updates:
+        file_path = update.get("file", "")
+        action = update.get("action", "skip")
+        content = update.get("content", "")
+
+        if not file_path or action == "skip":
+            continue
+
+        target_path = CLAUDE_DOCS_DIR / file_path
+        try:
+            if action == "add":
+                # 创建新文档
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.write_text(content, encoding='utf-8')
+                results[str(target_path)] = True
+                print(f"创建文档: {target_path}")
+
+            elif action == "update":
+                # 更新现有文档
+                if target_path.exists():
+                    existing = target_path.read_text(encoding='utf-8')
+                    # 在适当位置插入新内容
+                    if "## 更新历史" in existing:
+                        parts = existing.split("## 更新历史", 1)
+                        updated = parts[0] + "## 更新历史\n" + content + "\n" + parts[1]
+                    else:
+                        updated = existing + "\n\n" + content
+                    target_path.write_text(updated, encoding='utf-8')
+                    results[str(target_path)] = True
+                    print(f"更新文档: {target_path}")
+                else:
+                    print(f"警告: 文档不存在，无法更新: {target_path}")
+                    results[str(target_path)] = False
+
+        except Exception as e:
+            print(f"更新文档失败 {target_path}: {e}")
+            results[str(target_path)] = False
+
+    return results
+
+
+# ==================== Git 信息获取 ====================
+
+def get_commit_info() -> Optional[dict]:
+    """获取最近的提交信息"""
+    try:
+        result = subprocess.run(
+            ['git', 'log', '-1', '--format=%H|%s|%an|%ad'],
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_ROOT
+        )
+
+        if result.returncode == 0:
+            parts = result.stdout.strip().split('|')
+            if len(parts) >= 4:
+                return {
+                    'hash': parts[0],
+                    'short_hash': parts[0][:8],
+                    'subject': parts[1],
+                    'author': parts[2],
+                    'date': parts[3]
+                }
+    except Exception as e:
+        print(f"获取提交信息时出错: {e}")
+
+    return None
+
+
+def get_changed_files() -> list[str]:
+    """获取本次提交变更的文件列表"""
+    try:
+        result = subprocess.run(
+            ['git', 'diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'],
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_ROOT
+        )
+
+        if result.returncode == 0:
+            files = result.stdout.strip().split('\n')
+            return [f for f in files if f]
+    except Exception as e:
+        print(f"获取变更文件时出错: {e}")
+
+    return []
+
+
+def get_diff_summary() -> str:
+    """获取变更的摘要信息"""
+    try:
+        result = subprocess.run(
+            ['git', 'diff', '--stat', 'HEAD~1..HEAD'],
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_ROOT
+        )
+
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception as e:
+        print(f"获取变更统计时出错: {e}")
+
+    return ""
+
+
+# ==================== 主流程 ====================
+
+async def main_async() -> int:
+    """异步主函数"""
+    print(f"开始智能更新文档... ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})")
+
+    # 获取提交信息
+    commit_info = get_commit_info()
+    if not commit_info:
+        print("无法获取提交信息，更新取消")
+        return 1
+
+    print(f"提交: {commit_info['short_hash']} - {commit_info['subject']}")
+
+    # 获取变更文件
+    changed_files = get_changed_files()
+    print(f"变更文件: {', '.join(changed_files) if changed_files else '无'}")
+
+    # 获取变更统计
+    diff_summary = get_diff_summary()
+
+    # AI 智能分析
+    print("正在分析变更...")
+    analysis_result = await analyze_changes_ai(
+        commit_info,
+        changed_files,
+        diff_summary
+    )
+
+    # 更新 CLAUDE.md
+    print("更新 CLAUDE.md...")
+    claude_md_success = update_claude_md(analysis_result.get("claude_md_content", ""))
+
+    # 更新 claude_docs/
+    print("更新 claude_docs/...")
+    docs_updates = analysis_result.get("claude_docs_updates", [])
+    docs_results = update_claude_docs(docs_updates)
+
+    # 汇总结果
+    print("\n=== 更新完成 ===")
+    print(f"CLAUDE.md: {'✓ 成功' if claude_md_success else '✗ 失败'}")
+    print(f"claude_docs/ 更新: {sum(docs_results.values())}/{len(docs_results)} 成功")
+
+    if analysis_result.get("impact_summary"):
+        print(f"影响摘要: {analysis_result['impact_summary']}")
+
+    return 0 if claude_md_success else 1
+
+
+def main() -> int:
+    """主入口函数"""
+    if AGENTS_SDK_AVAILABLE:
+        return asyncio.run(main_async())
+    else:
+        # 降级到同步基础模式
+        print("使用基础更新模式...")
+        commit_info = get_commit_info()
+        if not commit_info:
+            return 1
+
+        content = _default_claude_md_content(commit_info)
+        success = update_claude_md(content)
+        return 0 if success else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+### 官方 SDK API 参考
+
+本方案基于官方 `claude-agent-sdk-python` 的核心 API 构建。参考 `D:\GITHUB\pytQt_template\autoBMAD\agentdocs\06_python_sdk.md`（2000+行官方文档），以下是关键 API 的使用说明：
+
+#### query() 函数
+
+```python
+async def query(
+    prompt: str | AsyncIterable[dict[str, Any]],
+    options: ClaudeAgentOptions | None = None
+) -> AsyncIterator[Message]
+```
+
+**参数说明**：
+- `prompt`: 提示词字符串或异步迭代器（支持流式输入）
+- `options`: 可选的 ClaudeAgentOptions 配置
+
+**返回值**: 异步迭代器，产出 Message 对象
+
+#### ClaudeAgentOptions 配置
+
+```python
+from agents import ClaudeAgentOptions
+
+options = ClaudeAgentOptions(
+    model="claude-sonnet-4-20250514",
+    max_tokens=8192,
+    temperature=0.7,
+    system_prompt="你是一个专业的技术文档助手..."
+)
+```
+
+#### ClaudeSDKClient 持续对话
+
+```python
+from agents import ClaudeSDKClient
+
+# 创建客户端实例
+client = ClaudeSDKClient(
+    api_key=os.environ.get("ANTHROPIC_API_KEY")
+)
+
+# 发送消息并获取响应
+async for message in client.query(
+    prompt="请分析以下代码变更...",
+    options=options
+):
+    print(message.content)
+```
+
+#### @tool 装饰器定义工具
+
+```python
+from agents import tool
+
+@tool
+def update_file(file_path: str, content: str) -> str:
+    """更新指定文件的内容
+
+    Args:
+        file_path: 文件路径
+        content: 文件内容
+
+    Returns:
+        操作结果描述
+    """
+    path = Path(file_path)
+    path.write_text(content, encoding='utf-8')
+    return f"已更新文件: {file_path}"
+```
+
+### 与 sdk_wrapper.py 的集成
+
+将 `sdk_wrapper.py` 中的安全模式集成到本方案的更新脚本中：
+
+```python
+# 从 sdk_wrapper.py 导入安全模式
+from sdk_wrapper import (
+    SafeClaudeSDK,
+    SafeAsyncGenerator,
+    SDKMessageTracker,
+    CancellationManager
+)
+
+# 初始化安全的 SDK 包装器
+sdk = SafeClaudeSDK(
+    api_key=os.environ.get("ANTHROPIC_API_KEY"),
+    model="claude-sonnet-4-20250514"
+)
+
+# 使用上下文管理器确保资源安全
+async def safe_analyze(prompt: str) -> str:
+    async with sdk.query(prompt) as response:
+        async for chunk in SafeAsyncGenerator(response):
+            # 处理响应块
+            yield chunk
+```
+
+---
+
+## claude_docs 目录结构
+
+当启用 claude_docs/ 目录更新功能时，建议采用以下目录结构：
+
+```
+claude_docs/
+├── README.md                    # 文档目录说明
+├── 01_getting_started.md       # 入门指南
+├── 02_project_overview.md       # 项目概述
+├── 03_code_standards.md        # 代码规范
+├── 04_workflow.md              # 工作流程
+├── 05_tools.md                 # 工具说明
+├── 06_python_sdk.md            # Python SDK 文档
+├── 07_api_reference.md         # API 参考
+├── 08_troubleshooting.md       # 故障排除
+├── 09_changelog.md             # 变更日志
+├── 10_contributing.md          # 贡献指南
+└── update_history/              # 更新历史记录
+    └── {年}-{月}.md           # 按月归档
+```
+
+### claude_docs 更新策略
+
+| 变更类型 | CLAUDE.md 更新 | claude_docs 更新 |
+|---------|---------------|-----------------|
+| 新功能 | 在"项目功能"节添加 | 创建或更新 01_xxx.md |
+| Bug 修复 | 在更新记录中标记 | 更新 08_troubleshooting.md |
+| 文档更新 | 更新日期 | 更新相应文档 |
+| 重构 | 简要说明 | 可选更新架构文档 |
+| 测试 | 一般不更新 | 更新 09_changelog.md |
+
+### 智能分类示例
+
+AI 分析器会根据提交内容自动分类：
+
+```python
+# 提交分类映射
+CLASSIFICATION_MAP = {
+    "feat": {
+        "emoji": "✨",
+        "claude_docs_action": "update",
+        "target_doc": "01_getting_started.md"
+    },
+    "fix": {
+        "emoji": "🐛",
+        "claude_docs_action": "update",
+        "target_doc": "08_troubleshooting.md"
+    },
+    "docs": {
+        "emoji": "📝",
+        "claude_docs_action": "update",
+        "target_doc": None  # 文档变更由 AI 分析确定
+    },
+    "refactor": {
+        "emoji": "♻️",
+        "claude_docs_action": "skip",
+        "target_doc": None
+    },
+    "test": {
+        "emoji": "✅",
+        "claude_docs_action": "update",
+        "target_doc": "09_changelog.md"
+    },
+    "chore": {
+        "emoji": "🔧",
+        "claude_docs_action": "skip",
+        "target_doc": None
+    }
+}
+```
+
+---
+
+## 版本历史
+
+| 版本 | 日期 | 描述 |
+|------|------|------|
+| 1.0 | 2026-02-06 | 初始版本，支持 CLAUDE.md 更新 |
+| 1.1 | 2026-02-06 | 添加 Claude Agent SDK 完整测试和跨平台支持 |
+| 1.2 | 2026-02-07 | 添加 SafeClaudeSDK 参考模式，支持 claude_docs/ 目录更新 |
+
+---
+
+## 参考资源
+
+- [Git Hooks 官方文档](https://git-scm.com/docs/githooks)
+- [Claude Agent SDK Python 官方仓库](https://github.com/anthropics/claude-agent-sdk-python)
+- [Python pathlib 文档](https://docs.python.org/3/library/pathlib.html)
+- [sdk_wrapper.py 参考实现](file:///D:/GITHUB/pytQt_template/autoBMAD/epic_automation/sdk_wrapper.py)
+- [Python SDK 官方文档](file:///D:/GITHUB/pytQt_template/autoBMAD/agentdocs/06_python_sdk.md)

@@ -238,7 +238,7 @@ class QualityGateOrchestrator:
                 tool="ruff",
                 agent=ruff_agent,
                 source_dir=source_dir,
-                max_cycles=3,
+                max_cycles=5,
                 sdk_call_delay=10,
                 sdk_timeout=600,
             )
@@ -324,7 +324,7 @@ class QualityGateOrchestrator:
                 tool="basedpyright",
                 agent=basedpyright_agent,
                 source_dir=source_dir,
-                max_cycles=3,
+                max_cycles=5,
                 sdk_call_delay=10,
                 sdk_timeout=600,
             )
@@ -529,7 +529,7 @@ class QualityGateOrchestrator:
             controller = PytestController(
                 source_dir=self.source_dir,
                 test_dir=test_dir,
-                max_cycles=3,
+                max_cycles=5,
             )
 
             start_time = time.time()
@@ -863,7 +863,7 @@ async def run_quality_gates_standalone(
     epic_id: str = "standalone-quality",
     skip_quality: bool = False,
     skip_tests: bool = False,
-    max_cycles: int = 3,
+    max_cycles: int = 5,
     verbose: bool = False,
     create_log_file: bool = False,
 ) -> dict[str, Any]:
@@ -2624,9 +2624,9 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
     _ = epic_parser.add_argument(
         "--max-iterations",
         type=int,
-        default=3,
+        default=5,
         metavar="N",
-        help="Maximum retry attempts for failed stories (default: 3, must be positive)",
+        help="Maximum retry attempts for failed stories (default: 5, must be positive)",
     )
 
     _ = epic_parser.add_argument(
@@ -2710,8 +2710,8 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
         help='Skip pytest execution'
     )
     quality_parser.add_argument(
-        '--max-cycles', type=int, default=3,
-        help='Maximum fix cycles (default: 3)'
+        '--max-cycles', type=int, default=5,
+        help='Maximum fix cycles (default: 5)'
     )
     quality_parser.add_argument(
         '--verbose', action='store_true',

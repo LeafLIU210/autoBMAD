@@ -38,7 +38,7 @@ class QualityCheckController:
         tool: str,  # 'ruff' | 'basedpyright'
         agent: BaseQualityAgent,
         source_dir: str,
-        max_cycles: int = 3,
+        max_cycles: int = 5,
         sdk_call_delay: int = 10,
         sdk_timeout: int = 600,
     ):

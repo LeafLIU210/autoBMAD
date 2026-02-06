@@ -89,7 +89,7 @@ class StateDrivenController(BaseController, ABC):
 
     def __init__(self, task_group: TaskGroup):
         super().__init__(task_group)
-        self.max_iterations = 3
+        self.max_iterations = 5
 
     async def run_state_machine(self, initial_state: str, max_rounds: int = 3) -> bool:
         """

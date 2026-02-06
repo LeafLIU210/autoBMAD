@@ -135,7 +135,7 @@ Phase 5: Orchestration & Documentation
 - **Ruff Check**: Linting with auto-fix (Cycle 1)
 - **BasedPyright**: Static type checking (Cycle 2)
 - **Ruff Format**: Final code formatting (Cycle 3)
-- Maximum 3 retry cycles per tool
+- Maximum 5 retry cycles per tool
 - Non-blocking: continues even with quality warnings
 - Error summaries saved to JSON files
 
@@ -212,7 +212,7 @@ ruff check --fix src/  # Auto-fixes linting issues
 ```
 - Checks PEP 8 compliance, unused imports, code complexity
 - Automatic fixes applied where possible
-- Max 3 retry cycles
+- Max 5 retry cycles
 
 **Cycle 2: BasedPyright**
 ```bash
@@ -220,7 +220,7 @@ basedpyright src/  # Type checking
 ```
 - Static type validation
 - Reports type errors and missing annotations
-- Max 3 retry cycles
+- Max 5 retry cycles
 
 **Cycle 3: Ruff Format**
 ```bash

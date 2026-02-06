@@ -453,7 +453,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 | `--epic-id` | str | "standalone-quality" | Identifier for error summary JSON |
 | `--skip-quality` | flag | False | Skip ruff and basedpyright checks |
 | `--skip-tests` | flag | False | Skip pytest execution |
-| `--max-cycles` | int | 3 | Maximum fix cycles |
+| `--max-cycles` | int | 5 | Maximum fix cycles |
 | `--verbose` | flag | False | Enable verbose logging |
 | `--log-file` | flag | False | Create timestamped log file |
 

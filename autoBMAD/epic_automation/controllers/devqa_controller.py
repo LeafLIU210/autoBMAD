@@ -49,7 +49,7 @@ class DevQaController(StateDrivenController):
         self.dev_agent = DevAgent(task_group=task_group, use_claude=use_claude, log_manager=log_manager)
         self.qa_agent = QAAgent(task_group=task_group, use_claude=use_claude, log_manager=log_manager)
         self.state_manager = state_manager or StateManager()
-        self.max_rounds = 3
+        self.max_rounds = 5
         self._story_path: str | None = None
         self._epic_path: str | None = epic_path  # ← 保存epic_path
         self._consecutive_failures = 0  # 断路器计数器
