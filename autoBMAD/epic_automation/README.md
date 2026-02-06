@@ -74,16 +74,37 @@ venv\Scripts\activate  # On Windows
 source venv/bin/activate  # On Linux/macOS
 
 # Full workflow with all phases (SM-Dev-QA + Quality Gates + Tests)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --verbose
 
 # Skip quality gates (for faster development)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-quality --verbose
 
 # Skip test automation (for quick validation)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-tests --verbose
 
 # Skip both quality gates and tests (fastest)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-quality --skip-tests --verbose
+```
+
+### Standalone Quality Gates (NEW)
+
+```bash
+# Run quality gates only (Ruff + BasedPyright + Pytest)
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality
+
+# Skip tests, run only code quality checks
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --skip-tests
+
+# Skip static checks, run only pytest
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --skip-quality
+
+# Custom directories
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality \
+  --source-dir autoBMAD/epic_automation \
+  --test-dir tests/epic_automation
+
+# Verbose mode with log file
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --verbose --log-file
 ```
 
 ### Windows PowerShell Example
@@ -384,41 +405,77 @@ If quality gate tools are not available, the system will:
 This ensures the system can still be used for development even without the full toolchain.
 ## Usage
 
+### CLI Commands
+
+The system supports two main commands:
+
+| Command | Description |
+|---------|-------------|
+| `run-epic <epic_path>` | Run full epic workflow (SM-Dev-QA + Quality Gates) |
+| `run-quality` | Run quality gates only (Ruff, BasedPyright, Pytest) |
+
 ### Basic Usage
 
 Process an epic file with default settings:
 
 ```bash
+# Full epic workflow
+python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md
+
+# Backward compatible (auto-detects epic file)
 python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 ```
 
 ### CLI Options
 
-#### Positional Arguments
+#### run-epic Command
 
-- `epic_path` (required): Path to the epic markdown file
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `epic_path` | positional | required | Path to epic markdown file |
+| `--max-iterations` | int | 3 | Maximum retry attempts for failed stories |
+| `--retry-failed` | flag | False | Enable automatic retry of failed stories |
+| `--verbose` | flag | False | Enable detailed logging output |
+| `--concurrent` | flag | False | Process stories in parallel (experimental) |
+| `--no-claude` | flag | False | Disable Claude Code CLI (simulation mode) |
+| `--source-dir` | str | "src" | Source code directory for QA checks |
+| `--test-dir` | str | "tests" | Test directory for QA checks |
+| `--skip-quality` | flag | False | Skip quality gates (ruff/basedpyright) |
+| `--skip-tests` | flag | False | Skip test automation (pytest) |
+| `--log-file` | flag | False | Create timestamped log file |
 
-#### Optional Flags
+#### run-quality Command (NEW)
 
-- `--max-iterations N`: Maximum retry attempts for failed stories (default: 3)
-- `--retry-failed`: Enable automatic retry of failed stories
-- `--verbose`: Enable detailed logging output
-- `--concurrent`: Process stories in parallel (experimental feature)
-- `--no-claude`: Disable Claude Code CLI integration (use simulation mode)
-- `--source-dir DIR`: Source code directory for QA checks (default: "src")
-- `--test-dir DIR`: Test directory for QA checks (default: "tests")
-
-#### Quality Gate and Test Options
-
-- `--skip-quality`: Skip code quality gates (basedpyright and ruff)
-- `--skip-tests`: Skip test automation (pytest)
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `--source-dir` | str | "src" | Source code directory |
+| `--test-dir` | str | "tests" | Test directory |
+| `--epic-id` | str | "standalone-quality" | Identifier for error summary JSON |
+| `--skip-quality` | flag | False | Skip ruff and basedpyright checks |
+| `--skip-tests` | flag | False | Skip pytest execution |
+| `--max-cycles` | int | 3 | Maximum fix cycles |
+| `--verbose` | flag | False | Enable verbose logging |
+| `--log-file` | flag | False | Create timestamped log file |
 
 ### Usage Examples
 
-#### Example 1: Complete Workflow with Quality Gates
+#### Example 1: Standalone Quality Gates
 
 ```bash
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
+# Full quality check (recommended before commit)
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --verbose
+
+# Quick code quality check only
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --skip-tests
+
+# Test-only run
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --skip-quality
+```
+
+#### Example 2: Complete Workflow with Quality Gates
+
+```bash
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --verbose
 ```
 
 This will process all stories in `my-epic.md` through the complete 5-phase workflow:
@@ -430,10 +487,10 @@ This will process all stories in `my-epic.md` through the complete 5-phase workf
 - Results saved to `progress.db` SQLite database
 - Logs written to console and file (if enabled)
 
-#### Example 2: Skip Quality Gates (Faster Development)
+#### Example 3: Skip Quality Gates (Faster Development)
 
 ```bash
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-quality --verbose
 ```
 
 Processes stories through SM-Dev-QA cycle and test automation, but skips quality gates for faster iteration during development. Useful when:
@@ -442,10 +499,10 @@ Processes stories through SM-Dev-QA cycle and test automation, but skips quality
 - Quality tools not installed
 - Need quick feedback on functionality
 
-#### Example 3: Skip Test Automation (Quick Validation)
+#### Example 4: Skip Test Automation (Quick Validation)
 
 ```bash
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-tests --verbose
 ```
 
 Processes stories through SM-Dev-QA cycle and quality gates, but skips test automation for quick validation without running tests. Useful when:
@@ -454,10 +511,10 @@ Processes stories through SM-Dev-QA cycle and quality gates, but skips test auto
 - Need quick type checking and linting feedback
 - Working on documentation-only changes
 
-#### Example 4: Skip Both Quality Gates and Tests
+#### Example 5: Skip Both Quality Gates and Tests
 
 ```bash
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality --skip-tests --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-quality --skip-tests --verbose
 ```
 
 Processes only the SM-Dev-QA cycle, skipping both quality gates and test automation for maximum speed during initial development. Useful when:
@@ -466,10 +523,10 @@ Processes only the SM-Dev-QA cycle, skipping both quality gates and test automat
 - Quality tools not available
 - Focus on core functionality first
 
-#### Example 5: Custom Directories and Max Iterations
+#### Example 6: Custom Directories and Max Iterations
 
 ```bash
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --source-dir src --test-dir tests --max-iterations 5 --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --source-dir src --test-dir tests --max-iterations 5 --verbose
 ```
 
 Customizes source and test directories while increasing retry attempts. This configuration:
@@ -1127,6 +1184,12 @@ For issues and questions:
    - Share your experiences and best practices
 
 ## Version History
+
+### Version 3.1 (2026-01-23)
+- **NEW**: `run-quality` subcommand for standalone quality gates
+- **NEW**: CLI subcommand architecture (`run-epic`, `run-quality`)
+- Backward compatible with positional epic_path argument
+- Flexible quality gate execution without full Epic workflow
 
 ### Version 3.0 (2026-01-14)
 - Five-layer architecture with Controllers pattern

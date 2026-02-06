@@ -43,6 +43,7 @@ class StatusUpdateAgent(BaseAgent):
 
     # 状态映射表：处理状态（processing_status） → 核心状态
     PROCESSING_TO_CORE_STATUS = {
+        'ready_for_development': 'Ready for Development',
         'in_progress': 'Ready for Development',
         'review': 'Ready for Review',
         'completed': 'Ready for Done',

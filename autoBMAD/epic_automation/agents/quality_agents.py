@@ -106,7 +106,7 @@ class BaseQualityAgent(BaseAgent, ABC):
 
     async def _run_subprocess(self, command: str, timeout: int = 300) -> SubprocessResult:
         """
-        运行子进程命令
+        运行子进程命令（增加超时后强制终止）
 
         Args:
             command: 要执行的命令
@@ -115,34 +115,53 @@ class BaseQualityAgent(BaseAgent, ABC):
         Returns:
             SubprocessResult: 执行结果
         """
+        process = None
         try:
-            # 在线程池中运行子进程，避免 cancel scope 传播
             loop = asyncio.get_event_loop()
-            process = await asyncio.wait_for(
-                loop.run_in_executor(
-                    None,
-                    lambda: subprocess.run(
-                        command,
-                        shell=True,
-                        capture_output=True,
-                        text=True,
-                        encoding='utf-8',
-                        errors='ignore',
-                        timeout=timeout
-                    )
-                ),
-                timeout=timeout + 10  # 额外增加10秒的超时保护
+
+            # 使用Popen替代run，以便控制进程生命周期
+            def run_with_popen():
+                nonlocal process
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    encoding='utf-8',
+                    errors='ignore',
+                )
+                stdout, _ = process.communicate(timeout=timeout)
+                return subprocess.CompletedProcess(
+                    args=command,
+                    returncode=process.returncode,
+                    stdout=stdout,
+                    stderr=""
+                )
+
+            completed = await asyncio.wait_for(
+                loop.run_in_executor(None, run_with_popen),
+                timeout=timeout + 10
             )
 
             return SubprocessResult(
                 status="completed",
-                returncode=process.returncode,
-                stdout=process.stdout,
-                stderr=process.stderr,
-                success=process.returncode == 0
+                returncode=completed.returncode,
+                stdout=completed.stdout,
+                stderr=completed.stderr,
+                success=completed.returncode == 0
             )
-        except TimeoutError:
+
+        except (TimeoutError, subprocess.TimeoutExpired):
             self.logger.error(f"Command timed out after {timeout} seconds: {command}")
+
+            # P0修复: 强制终止进程及其子进程
+            if process is not None:
+                try:
+                    self._kill_process_tree(process.pid)
+                except Exception as kill_err:
+                    self.logger.warning(f"Failed to kill process: {kill_err}")
+
             return SubprocessResult(
                 status="failed",
                 returncode=-1,
@@ -152,6 +171,7 @@ class BaseQualityAgent(BaseAgent, ABC):
                 error=f"Timeout after {timeout} seconds",
                 command=command
             )
+
         except Exception as e:
             self.logger.error(f"Command failed: {e}")
             return SubprocessResult(
@@ -164,6 +184,65 @@ class BaseQualityAgent(BaseAgent, ABC):
                 command=command
             )
 
+    def _kill_process_tree(self, pid: int) -> None:
+        """终止进程及其所有子进程（二阶段强制终止）"""
+        import psutil
+
+        GRACE_TIMEOUT = 3   # 优雅退出等待时间
+        FORCE_TIMEOUT = 2   # 强杀后等待时间
+
+        try:
+            parent = psutil.Process(pid)
+            children = parent.children(recursive=True)
+
+            # === 阶段1：优雅终止 ===
+            for child in children:
+                try:
+                    child.terminate()
+                except psutil.NoSuchProcess:
+                    pass
+
+            gone, alive = psutil.wait_procs(children, timeout=GRACE_TIMEOUT)
+
+            # === 阶段2：强制杀死未退出的子进程 ===
+            for p in alive:
+                try:
+                    self.logger.warning(f"Force killing child process {p.pid}")
+                    p.kill()
+                except psutil.NoSuchProcess:
+                    pass
+
+            # 等待强杀生效
+            if alive:
+                psutil.wait_procs(alive, timeout=FORCE_TIMEOUT)
+
+            # === 阶段3：终止父进程 ===
+            try:
+                parent.terminate()
+                parent.wait(timeout=GRACE_TIMEOUT)
+            except psutil.TimeoutExpired:
+                self.logger.warning(f"Force killing parent process {pid}")
+                parent.kill()
+                parent.wait(timeout=FORCE_TIMEOUT)
+
+        except psutil.NoSuchProcess:
+            pass  # 进程已退出
+        except Exception as e:
+            self.logger.error(f"Error killing process tree {pid}: {e}")
+            # 最后手段：尝试OS级强杀
+            self._os_force_kill(pid)
+
+    def _os_force_kill(self, pid: int) -> None:
+        """操作系统级强制终止（后备方案）"""
+        import os
+        import signal
+        try:
+            if os.name == 'nt':  # Windows
+                os.system(f'taskkill /F /T /PID {pid}')
+            else:  # Unix
+                os.kill(pid, signal.SIGKILL)
+        except Exception:
+            pass
 
 class RuffAgent(BaseQualityAgent):
     """Ruff 代码风格检查 Agent（改造版 - 支持SDK自动修复）"""
@@ -283,7 +362,6 @@ class RuffAgent(BaseQualityAgent):
         self,
         tool: str,
         file_path: str,
-        file_content: str,
         errors: list[dict[str, object]],
     ) -> str:
         """
@@ -292,31 +370,29 @@ class RuffAgent(BaseQualityAgent):
         Args:
             tool: 工具名称 ('ruff')
             file_path: 文件路径
-            file_content: 文件内容
             errors: 错误列表
 
         Returns:
             完整的修复 Prompt
         """
-        errors_summary = self._format_errors_summary(errors)
+        errors_summary = self._format_errors_summary(file_path, errors)
 
         return RUFF_FIX_PROMPT.format(
-            file_path=file_path,
-            file_content=file_content,
             errors_summary=errors_summary,
         )
 
-    def _format_errors_summary(self, errors: list[dict[str, object]]) -> str:
-        """格式化错误摘要"""
-        lines = []
+    def _format_errors_summary(self, file_path: str, errors: list[dict[str, object]]) -> str:
+        """格式化错误摘要（包含文件路径）"""
+        lines = [f"## File: {file_path}\n"]
         for i, error in enumerate(errors, 1):
             error_dict = cast(dict[str, Any], error)
+            message = str(error_dict.get('message', ''))
             lines.append(f"""
 ### Error {i}
 - **Line**: {error_dict.get('line')}
 - **Column**: {error_dict.get('column')}
 - **Code**: `{error_dict.get('code')}`
-- **Message**: {error_dict.get('message')}
+- **Message**: {message}
 - **Severity**: {error_dict.get('severity')}""".strip())
 
         return "\n\n".join(lines)
@@ -473,29 +549,27 @@ class BasedPyrightAgent(BaseQualityAgent):
         self,
         tool: str,
         file_path: str,
-        file_content: str,
         errors: list[dict[str, object]],
     ) -> str:
         """构造 BasedPyright 修复 Prompt"""
-        errors_summary = self._format_errors_summary(errors)
+        errors_summary = self._format_errors_summary(file_path, errors)
 
         return BASEDPYRIGHT_FIX_PROMPT.format(
-            file_path=file_path,
-            file_content=file_content,
             errors_summary=errors_summary,
         )
 
-    def _format_errors_summary(self, errors: list[dict[str, object]]) -> str:
-        """格式化错误摘要"""
-        lines = []
+    def _format_errors_summary(self, file_path: str, errors: list[dict[str, object]]) -> str:
+        """格式化错误摘要（包含文件路径）"""
+        lines = [f"## File: {file_path}\n"]
         for i, error in enumerate(errors, 1):
             error_dict = cast(dict[str, Any], error)
+            message = str(error_dict.get('message', ''))
             lines.append(f"""
 ### Type Error {i}
 - **Line**: {error_dict.get('line')}
 - **Column**: {error_dict.get('column')}
 - **Rule**: `{error_dict.get('rule')}`
-- **Message**: {error_dict.get('message')}
+- **Message**: {message}
 - **Severity**: {error_dict.get('severity')}""".strip())
 
         return "\n\n".join(lines)
@@ -587,7 +661,7 @@ class PytestAgent(BaseQualityAgent):
         round_type: str,
     ) -> dict[str, object]:
         """
-        按文件顺序执行 pytest -v --tb=short
+        按文件顺序执行 pytest -v --tb=short（增加资源错误检测）
 
         Args:
             test_files: 测试文件列表
@@ -609,6 +683,7 @@ class PytestAgent(BaseQualityAgent):
         self.logger.info(f"Running sequential tests: {len(test_files)} files (round {round_index}, type: {round_type})")
 
         results = []
+        consecutive_resource_errors = 0
 
         for test_file in test_files:
             # 执行单个文件的 pytest
@@ -618,7 +693,28 @@ class PytestAgent(BaseQualityAgent):
             )
             results.append(file_result)
 
+            # 检测资源错误
+            if self._is_resource_error(file_result):
+                consecutive_resource_errors += 1
+                self.logger.warning(f"Resource error detected for {test_file} (count: {consecutive_resource_errors})")
+                if consecutive_resource_errors >= 3:
+                    self.logger.error(
+                        "System resources exhausted, aborting remaining tests"
+                    )
+                    break
+            else:
+                consecutive_resource_errors = 0
+
         return {"files": results}
+
+    def _is_resource_error(self, result: dict[str, Any]) -> bool:
+        """检测是否为系统资源耗尽错误"""
+        RESOURCE_ERROR_CODES = {8, 1450, 1455}  # WinError资源相关错误
+        failures = result.get("failures", [])
+        if not failures:
+            return False
+        error_msg = str(failures[0].get("message", ""))
+        return any(f"WinError {code}" in error_msg for code in RESOURCE_ERROR_CODES)
 
     async def _run_pytest_single_file(
         self,
@@ -654,7 +750,8 @@ class PytestAgent(BaseQualityAgent):
         tmp_json.close()
 
         try:
-            cmd = f'pytest {test_file} -v --tb=short --json-report --json-report-file={tmp_json_path}'
+            # 使用 -o addopts= 覆盖 pyproject.toml 的默认配置，避免冲突
+            cmd = f'pytest {test_file} -v --tb=short --json-report --json-report-file={tmp_json_path} -o addopts='
 
             # 2. 执行（复用 BaseQualityAgent._run_subprocess）
             result = await self._run_subprocess(cmd, timeout=timeout)
@@ -1080,8 +1177,7 @@ You are a senior Python code quality expert specializing in Ruff code style fixe
 **Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
 
 Objective:
-- Based on the given file path and Ruff error information, deeply inspect and analyze the root causes of code style violations.
-- After thorough analysis and deep thinking, provide a complete and detailed fix solution.
+- Read the file at the given path and fix all Ruff errors listed below.
 - Execute the fix immediately to ensure the code passes Ruff checks.
 - Keep business logic unchanged, only fix code style issues.
 
@@ -1090,35 +1186,13 @@ Constraints:
 - Do not perform unrelated refactoring or optimization.
 - Maintain code readability and consistency.
 - Follow PEP 8 specifications.
-
-输出格式示例：
-## Summary of Changes
-- 修复点 1：移除未使用的导入
-- 修复点 2：修正行长度问题
-
-## Fixed File
-### File: {file_path}
-```python
-# 完整修复后的文件内容
-```
-
-<RUFF_FIX_COMPLETE>
 </system>
 
 <user>
-## File Information
-- **File path**: {file_path}
-
-## File Content (Current)
-```python
-{file_content}
-```
-
-## Ruff Errors
 {errors_summary}
 
 ## Expected Result
-修复上述所有 Ruff 错误，使代码通过 Ruff 检查。输出完整修复后的文件内容。
+读取上述文件，修复所有 Ruff 错误，使代码通过检查。
 </user>
 """
 
@@ -1127,47 +1201,19 @@ BASEDPYRIGHT_FIX_PROMPT = """
 <system>
 You are a senior Python type annotation expert specializing in BasedPyright type checking fixes.
 
-**Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
-
 Objective:
-- Based on the given file path and type error information, deeply inspect and analyze the root causes of type checking failures.
-- After thorough analysis and deep thinking, provide a complete and detailed fix solution.
+- Read the file at the given path and fix all type errors listed below.
 - Execute the fix immediately to ensure the code passes BasedPyright type checks.
-- Add necessary type annotations and fix type mismatch issues.
 
 Constraints:
 - Only modify necessary code to resolve type checking issues.
-- Use standard typing module type annotations.
 - Keep business logic unchanged.
-- Ensure type annotations are accurate and complete.
-
-输出格式示例：
-## Summary of Changes
-- 修复点 1：添加函数返回类型注解
-- 修复点 2：修正参数类型不匹配
-
-## Fixed File
-### File: {file_path}
-```python
-# 完整修复后的文件内容
-```
-
-<BASEDPYRIGHT_FIX_COMPLETE>
 </system>
 
 <user>
-## File Information
-- **File path**: {file_path}
-
-## File Content (Current)
-```python
-{file_content}
-```
-
-## BasedPyright Type Errors
 {errors_summary}
 
 ## Expected Result
-修复上述所有类型检查错误，添加必要的类型注解。输出完整修复后的文件内容。
+读取上述文件，修复所有类型检查错误，添加必要的类型注解。
 </user>
 """

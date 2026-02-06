@@ -16,6 +16,7 @@
         pass
 """
 import logging
+import os
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -99,7 +100,24 @@ async def execute_sdk_call(
     """
     # 检查SDK可用性
     if not SDK_AVAILABLE or query is None:
+        # 提供详细的诊断信息
+        import sys
+        sdk_error_details = []
+        sdk_error_details.append(f"SDK_AVAILABLE: {SDK_AVAILABLE}")
+        sdk_error_details.append(f"query is None: {query is None}")
+        sdk_error_details.append(f"Python version: {sys.version}")
+        sdk_error_details.append(f"Current working directory: {os.getcwd() if 'os' in globals() else 'N/A'}")
+
+        # 检查 claude_agent_sdk 包是否已安装
+        try:
+            import claude_agent_sdk
+            sdk_error_details.append(f"claude_agent_sdk location: {claude_agent_sdk.__file__}")
+            sdk_error_details.append(f"claude_agent_sdk version: {getattr(claude_agent_sdk, '__version__', 'unknown')}")
+        except ImportError as e:
+            sdk_error_details.append(f"Failed to import claude_agent_sdk: {e}")
+
         logger.warning(f"[{agent_name}] Claude Agent SDK not available")
+        logger.warning(f"[{agent_name}] SDK diagnostic details: {'; '.join(sdk_error_details)}")
         return SDKResult(
             has_target_result=False,
             cleanup_completed=True,
@@ -107,7 +125,7 @@ async def execute_sdk_call(
             session_id=f"{agent_name}-no-sdk",
             agent_name=agent_name,
             error_type=SDKErrorType.SDK_ERROR,
-            errors=["Claude Agent SDK not installed"]
+            errors=["Claude Agent SDK not installed", *sdk_error_details]
         )
 
     # 导入SDK类型

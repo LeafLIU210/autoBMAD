@@ -1,0 +1,69 @@
+{
+  "epic_id": "standalone-quality",
+  "timestamp": "2026-01-27T00:24:30.312205Z",
+  "source_dir": "D:\\GITHUB\\wuwa_datasource\\src",
+  "test_dir": "tests",
+  "tools": [
+    {
+      "tool": "basedpyright",
+      "phase": "phase_basedpyright",
+      "status": "failed",
+      "cycles": 3,
+      "max_cycles": 3,
+      "remaining_files": [
+        "d:\\GITHUB\\wuwa_datasource\\src\\etl\\character_name_etl.py",
+        "d:\\GITHUB\\wuwa_datasource\\src\\etl\\pipeline.py"
+      ],
+      "detailed_errors": {
+        "tool": "basedpyright",
+        "status": "failed",
+        "summary": "",
+        "errors": []
+      },
+      "error_details": {
+        "total_errors": 5,
+        "by_file": {
+          "d:\\GITHUB\\wuwa_datasource\\src\\etl\\character_name_etl.py": [
+            {
+              "line": 32,
+              "column": 13,
+              "error_code": "reportExplicitAny",
+              "message": "不允许使用 `Any` 类型",
+              "rule": "reportExplicitAny"
+            },
+            {
+              "line": 35,
+              "column": 57,
+              "error_code": "reportExplicitAny",
+              "message": "不允许使用 `Any` 类型",
+              "rule": "reportExplicitAny"
+            },
+            {
+              "line": 41,
+              "column": 30,
+              "error_code": "reportExplicitAny",
+              "message": "不允许使用 `Any` 类型",
+              "rule": "reportExplicitAny"
+            },
+            {
+              "line": 109,
+              "column": 56,
+              "error_code": "reportExplicitAny",
+              "message": "不允许使用 `Any` 类型",
+              "rule": "reportExplicitAny"
+            }
+          ],
+          "d:\\GITHUB\\wuwa_datasource\\src\\etl\\pipeline.py": [
+            {
+              "line": 355,
+              "column": 28,
+              "error_code": "reportImplicitStringConcatenation",
+              "message": "不允许隐式的字符串拼接",
+              "rule": "reportImplicitStringConcatenation"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

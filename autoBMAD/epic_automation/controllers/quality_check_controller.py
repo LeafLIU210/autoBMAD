@@ -194,24 +194,10 @@ class QualityCheckController:
             )
 
             try:
-                # 1. 读取文件内容
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        file_content = f.read()
-                except Exception as e:
-                    self.logger.error(f"Failed to read {file_path}: {e}")
-                    self.sdk_fix_errors.append({
-                        "file": file_path,
-                        "error": f"File read error: {str(e)}",
-                        "cycle": self.current_cycle,
-                    })
-                    continue
-
-                # 2. 构造 Prompt
+                # 移除文件读取逻辑，直接构造prompt
                 prompt = self.agent.build_fix_prompt(
                     tool=self.tool,
                     file_path=file_path,
-                    file_content=file_content,
                     errors=errors,
                 )
 

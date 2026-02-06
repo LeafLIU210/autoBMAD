@@ -313,8 +313,8 @@ class QualityGateOrchestrator:
 
         try:
             # 导入质量检查控制器
-            from .controllers.quality_check_controller import QualityCheckController
-            from .agents.quality_agents import BasedPyrightAgent
+            from autoBMAD.epic_automation.controllers.quality_check_controller import QualityCheckController
+            from autoBMAD.epic_automation.agents.quality_agents import BasedPyrightAgent
 
             # 创建 Agent 实例
             basedpyright_agent = BasedPyrightAgent()
@@ -391,7 +391,7 @@ class QualityGateOrchestrator:
         self._update_progress("phase_final_format", "in_progress", start=True)
 
         try:
-            from .agents.quality_agents import RuffAgent
+            from autoBMAD.epic_automation.agents.quality_agents import RuffAgent
 
             ruff_agent = RuffAgent()
 
@@ -488,9 +488,9 @@ class QualityGateOrchestrator:
                     "duration": 0.0,
                 }
 
-            # Check if there are any Python test files
-            test_files = list(test_path.glob("test_*.py")) + list(
-                test_path.glob("*_test.py")
+            # Check if there are any Python test files (recursively)
+            test_files = list(test_path.rglob("test_*.py")) + list(
+                test_path.rglob("*_test.py")
             )
             if not test_files:
                 error_msg = f"No test files found in {test_dir} - skipping pytest"
@@ -517,7 +517,7 @@ class QualityGateOrchestrator:
 
             # 使用 PytestController 执行完整流程
             try:
-                from .controllers.pytest_controller import PytestController
+                from autoBMAD.epic_automation.controllers.pytest_controller import PytestController
             except ImportError:
                 logger.error("PytestController not available - pytest quality gate cannot execute")
                 return {
@@ -645,7 +645,7 @@ class QualityGateOrchestrator:
                 self.logger.info("Skipping pytest (--skip-tests flag set)")
 
             # 🆕 收集超限工具信息
-            quality_warnings = []
+            quality_warnings: list[dict[str, Any]] = []
 
             for tool_name, phase_name in [
                 ("ruff", "phase_1_ruff"),
@@ -831,6 +831,9 @@ class QualityGateOrchestrator:
 
         # 添加详细错误信息（从self.results中提取）
         for tool_info in error_summary["tools"]:
+            # 类型断言，确保tool_info是字典类型
+            if not isinstance(tool_info, dict):
+                continue
             tool_name = tool_info.get("tool", "")
             result = self.results.get(tool_name, {}).get("result")
             if result and "detailed_errors" in result:
@@ -2735,9 +2738,8 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
             # Insert 'run-epic' as the subcommand
             sys.argv = [sys.argv[0], 'run-epic'] + sys.argv[1:]
             args = parser.parse_args()
-            # Remove command from args since we're adding it manually
-            if hasattr(args, 'command'):
-                delattr(args, 'command')
+            # Ensure command attribute exists for main() routing
+            args.command = 'run-epic'
         finally:
             # Restore original sys.argv
             sys.argv = original_argv

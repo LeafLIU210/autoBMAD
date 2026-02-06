@@ -4,7 +4,9 @@ DevQa Controller - Dev-QA 流水线控制器
 """
 from __future__ import annotations
 import logging
+import re
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from anyio.abc import TaskGroup
@@ -20,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class DevQaController(StateDrivenController):
     """Dev-QA 流水线控制器"""
+    
+    # 断路器配置
+    MAX_CONSECUTIVE_FAILURES = 3  # 连续失败次数阈值
 
     def __init__(
         self,
@@ -47,6 +52,7 @@ class DevQaController(StateDrivenController):
         self.max_rounds = 3
         self._story_path: str | None = None
         self._epic_path: str | None = epic_path  # ← 保存epic_path
+        self._consecutive_failures = 0  # 断路器计数器
         self._log_execution("DevQaController initialized")
 
     async def execute(self, story_path: str, epic_path: str | None = None) -> bool:
@@ -236,8 +242,59 @@ class DevQaController(StateDrivenController):
 
     def _is_termination_state(self, state: str) -> bool:
         """判断是否为 Dev-QA 的终止状态"""
-        # Failed 状态允许重新开发，不视为终止状态
-        return state in ["Done", "Ready for Done", "Error"]
+        # Failed 状态现在也是终止状态（断路器触发后）
+        return state in ["Done", "Ready for Done", "Error", "Failed"]
+
+    async def _update_story_file_status(self, story_path: str, new_status: str) -> bool:
+        """
+        更新Story文件中的Status字段
+        
+        Args:
+            story_path: Story文件路径
+            new_status: 新状态值
+            
+        Returns:
+            是否更新成功
+        """
+        try:
+            story_file = Path(story_path)
+            if not story_file.exists():
+                self._log_execution(f"Story file not found: {story_path}", "error")
+                return False
+            
+            content = story_file.read_text(encoding="utf-8")
+            
+            # 更新Status字段
+            # 匹配模式: **Status**: xxx 或 Status: xxx
+            pattern = r'(\*\*Status\*\*:\s*).+'
+            replacement = f'\\1{new_status}'
+            
+            new_content, count = re.subn(pattern, replacement, content, count=1)
+            
+            if count == 0:
+                # 尝试备选模式
+                pattern2 = r'(Status:\s*).+'
+                new_content, count = re.subn(pattern2, f'\\1{new_status}', content, count=1)
+            
+            if count > 0:
+                story_file.write_text(new_content, encoding="utf-8")
+                self._log_execution(
+                    f"[Status Update] Story {story_path}: Status updated to '{new_status}'"
+                )
+                return True
+            else:
+                self._log_execution(
+                    f"[Status Update] Could not find Status field in {story_path}",
+                    "warning"
+                )
+                return False
+                
+        except Exception as e:
+            self._log_execution(
+                f"[Status Update] Error updating story status: {e}",
+                "error"
+            )
+            return False
 
     async def _update_processing_status(
         self,
@@ -308,19 +365,40 @@ class DevQaController(StateDrivenController):
             dev_result: Dev执行结果
         """
         if dev_result:
-            # Dev成功 → 进入评审阶段
+            # Dev成功 → 进入评审阶段，重置失败计数器
+            self._consecutive_failures = 0
             await self._update_processing_status(
                 story_id=story_id,
                 processing_status='review',
                 context='Dev completed successfully'
             )
         else:
-            # Dev失败 → 继续开发
-            await self._update_processing_status(
-                story_id=story_id,
-                processing_status='in_progress',
-                context='Dev failed, continuing development'
+            # Dev失败 → 断路器计数
+            self._consecutive_failures += 1
+            self._log_execution(
+                f"[Circuit Breaker] Dev failed, consecutive failures: {self._consecutive_failures}/{self.MAX_CONSECUTIVE_FAILURES}",
+                "warning"
             )
+            
+            if self._consecutive_failures >= self.MAX_CONSECUTIVE_FAILURES:
+                # 达到阈值，更新Story状态为Failed并中止
+                self._log_execution(
+                    f"[Circuit Breaker] Max failures reached, marking story as Failed",
+                    "error"
+                )
+                await self._update_story_file_status(story_id, "Failed")
+                await self._update_processing_status(
+                    story_id=story_id,
+                    processing_status='failed',
+                    context=f'Circuit breaker triggered after {self._consecutive_failures} consecutive failures'
+                )
+            else:
+                # 继续开发
+                await self._update_processing_status(
+                    story_id=story_id,
+                    processing_status='in_progress',
+                    context=f'Dev failed ({self._consecutive_failures}/{self.MAX_CONSECUTIVE_FAILURES}), retrying'
+                )
 
     async def _update_processing_status_after_qa(
         self,

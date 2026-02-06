@@ -81,7 +81,15 @@
       "Skill(skill-creator:*)",
       "Bash(unzip:*)",
       "Read(//d//**)",
-      "Bash(zip:*)"
+      "Bash(zip:*)",
+      "Bash(/c/Windows/System32/WindowsPowerShell/v1.0/powershell:*)",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(%s)",
+      "Bash(%an:*)",
+      "Bash(%ad:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(test_post_commit_hook_report.txt << 'EOF'\n# post-commit Hook 安装与测试报告\n\n## 测试时间\n2026-02-06 16:47:00\n\n## 安装步骤总结\n\n### 1. 初始安装\n- 尝试执行 PowerShell 安装脚本 \\(scripts/install_post_commit_hook.ps1\\)\n- 发现 PowerShell 版本兼容性问题 \\(v1.0 vs 需要 v5.1+\\)\n- 决定手动安装 hook\n\n### 2. 手动安装步骤\n- ✅ 复制 scripts/post-commit 到 .git/hooks/post-commit\n- ✅ 设置执行权限 \\(chmod +x\\)\n\n### 3. 问题修复\n\n#### 问题1: PowerShell 脚本兼容性\n**症状**: #!/usr/bin/env pwsh 报错 \\(pwsh: command not found\\)\n**原因**: 环境没有安装 pwsh，且 PowerShell v1.0 不支持脚本语法\n**解决方案**: 重写为 bash 版本的 post-commit hook\n\n#### 问题2: Python 脚本编码问题\n**症状**: UnicodeDecodeError: 'gbk' codec can't decode byte 0x80\n**原因**: Windows 上 subprocess 需要明确指定 encoding\n**解决方案**: 在所有 subprocess.run\\(\\) 调用中添加 encoding='utf-8' 参数\n\n### 4. 测试结果\n\n#### 测试1: 手动执行更新脚本\n```bash\n$ ./venv/Scripts/python.exe scripts/update_claude_md.py --version\n```\n**结果**: ✅ 成功更新 CLAUDE.md\n\n#### 测试2: Git 提交触发 hook\n```bash\n$ git commit -m \"验证修复后的post-commit hook自动更新功能\"\n```\n**结果**: ✅ hook 自动触发，成功更新 CLAUDE.md\n\n#### 测试3: 日志记录\n**日志文件**: scripts/post-commit.log\n**结果**: ✅ 所有操作都被正确记录\n\n## 功能验证\n\n### ✅ 已验证功能\n1. post-commit hook 正确安装到 .git/hooks/\n2. hook 在每次 git commit 后自动执行\n3. Python 更新脚本 \\(scripts/update_claude_md.py\\) 正常工作\n4. CLAUDE.md 自动更新 \"## 更新记录\" 部分\n5. 操作日志正确记录到 scripts/post-commit.log\n\n### 📋 更新记录格式\n每次提交后，CLAUDE.md 会在 \"## 更新记录\" 表格顶部添加新行：\n- 日期: 自动生成\n- 版本: 2.0 \\(当前项目版本\\)\n- 提交信息: 格式为 \"short_hash - commit message\"\n- 变更内容: 智能分析生成\n\n## 文件变更\n\n### 修改的文件\n1. scripts/update_claude_md.py\n   - 添加 encoding='utf-8' 到所有 subprocess.run\\(\\) 调用\n   - 修复 Windows 编码问题\n\n2. .git/hooks/post-commit \\(完全重写\\)\n   - 从 PowerShell 脚本改为 bash 脚本\n   - 保持相同的功能和错误处理\n\n### 新文件\n- 无\n\n## 结论\n\n✅ **安装成功**\n✅ **所有功能正常工作**\n✅ **通过完整测试**\n\npost-commit hook 现在可以在每次 git commit 时自动更新 CLAUDE.md，项目开发流程已完善。\nEOF)"
     ],
     "deny": [
       "Bash(curl:*)",

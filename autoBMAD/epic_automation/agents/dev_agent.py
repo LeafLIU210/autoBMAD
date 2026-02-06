@@ -132,21 +132,29 @@ class DevAgent(BaseAgent):
                 self._log_execution(
                     f"Development tasks executed (result={development_success})"
                 )
+                
+                # 返回实际的开发结果
+                if not development_success:
+                    self._log_execution(
+                        "Development failed, returning False to trigger retry or failure",
+                        "warning"
+                    )
+                    return False
             else:
                 self._log_execution(f"Story file not found: {story_path}", "warning")
+                return False
 
             self._log_execution(
-                "Development execution completed, "
-                "Epic Driver will re-parse status to determine next step"
+                "Development execution completed successfully"
             )
             return True
 
         except Exception as e:
             self._log_execution(
-                f"Exception during development: {e}, continuing workflow",
-                "warning",
+                f"Exception during development: {e}",
+                "error",
             )
-            return True
+            return False
 
     async def _execute_development_tasks(
         self, requirements: dict[str, Any], story_path: str
@@ -168,20 +176,38 @@ class DevAgent(BaseAgent):
             )
 
             if self.sdk_executor:
-                await self._execute_sdk_call(self.sdk_executor, base_prompt)
+                sdk_result = await self._execute_sdk_call(self.sdk_executor, base_prompt)
+                
+                # 检查SDK调用结果
+                if sdk_result and hasattr(sdk_result, 'is_success'):
+                    if not sdk_result.is_success():
+                        self._log_execution(
+                            f"SDK call failed: {getattr(sdk_result, 'errors', ['Unknown error'])}",
+                            "error"
+                        )
+                        return False
+                elif sdk_result and hasattr(sdk_result, 'has_target_result'):
+                    if not sdk_result.has_target_result:
+                        self._log_execution(
+                            f"SDK call did not produce target result",
+                            "error"
+                        )
+                        return False
+            else:
+                self._log_execution("SDK executor not available", "error")
+                return False
 
             self._log_execution(
-                f"Development execution completed, "
-                f"Epic Driver will re-parse status to determine next step"
+                f"Development execution completed successfully"
             )
             return True
 
         except Exception as e:
             self._log_execution(
-                f"Exception during development tasks: {e}, continuing workflow",
-                "warning",
+                f"Exception during development tasks: {e}",
+                "error",
             )
-            return True
+            return False
 
     async def _extract_requirements(self, story_content: str) -> dict[str, Any]:
         """提取需求 - 保持现有实现"""

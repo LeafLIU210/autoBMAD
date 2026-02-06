@@ -1,0 +1,202 @@
+#!/usr/bin/env pwsh
+# -*- coding: utf-8 -*-
+<#@
+.SYNOPSIS
+    Git Post-Commit Hook - 触发 CLAUDE.md 自动更新
+    
+.DESCRIPTION
+    此脚本在 git commit 完成后自动执行，调用 Python 脚本更新 CLAUDE.md。
+    它通过 Claude Agent SDK 智能分析提交内容，生成有意义的更新记录。
+    
+.NOTES
+    文件名: post-commit
+    位置: .git/hooks/post-commit
+    平台: Windows PowerShell
+    
+.USAGE
+    1. 将此文件复制到 .git/hooks/post-commit
+    2. 确保文件具有执行权限
+    3. 后续每次 git commit 都会自动触发更新
+    
+.LINK
+    详细文档: claude_docs/git-commit-trigger-update.md
+#>
+
+[CmdletBinding()]
+param()
+
+# ============================================================
+# 初始化配置
+# ============================================================
+
+# 错误处理策略
+$ErrorActionPreference = "Continue"
+
+# 脚本版本
+$ScriptVersion = "1.0.0"
+$ScriptName = "post-commit hook"
+
+# ============================================================
+# 路径配置
+# ============================================================
+
+# 获取项目根目录（Git hooks 在 .git 目录执行）
+$GitDir = (Get-Location).Path
+$ProjectRoot = Join-Path -Path $GitDir -ChildPath ".."
+$ProjectRoot = (Get-Item $ProjectRoot).FullName
+
+# 脚本目录
+$ScriptDir = Join-Path -Path $ProjectRoot -ChildPath "scripts"
+
+# 虚拟环境 Python 解释器路径
+$VenvPython = Join-Path -Path $ProjectRoot -ChildPath "venv\Scripts\python.exe"
+
+# 更新脚本路径
+$UpdateScript = Join-Path -Path $ScriptDir -ChildPath "update_claude_md.py"
+
+# 日志文件路径
+$LogFile = Join-Path -Path $ProjectRoot -ChildPath "scripts\post-commit.log"
+
+# ============================================================
+# 辅助函数
+# ============================================================
+
+function Write-LogMessage {
+    <#
+    .SYNOPSIS
+        写入日志消息
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+        
+        [Parameter()]
+        [ValidateSet('INFO', 'WARNING', 'ERROR')]
+        [string]$Level = 'INFO'
+    )
+    
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogEntry = "[$Timestamp] [$Level] $Message"
+    
+    # 输出到控制台
+    Write-Host $LogEntry
+    
+    # 输出到日志文件
+    try {
+        Add-Content -Path $LogFile -Value $LogEntry -ErrorAction SilentlyContinue
+    }
+    catch {
+        # 忽略日志写入错误
+    }
+}
+
+function Test-PathExists {
+    <#
+    .SYNOPSIS
+        验证文件或目录是否存在
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        
+        [Parameter(Mandatory)]
+        [string]$Description
+    )
+    
+    if (-not (Test-Path -Path $Path -PathType Leaf)) {
+        Write-LogMessage -Message "$Description 未找到: $Path" -Level "WARNING"
+        return $false
+    }
+    return $true
+}
+
+function Invoke-PythonScript {
+    <#
+    .SYNOPSIS
+        执行 Python 脚本
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$PythonPath,
+        
+        [Parameter(Mandatory)]
+        [string]$ScriptPath
+    )
+    
+    try {
+        Write-LogMessage -Message "执行更新脚本: $ScriptPath"
+        
+        $Result = & $PythonPath $ScriptPath 2>&1
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-LogMessage -Message "更新脚本执行成功"
+            $Result | ForEach-Object { Write-LogMessage -Message "  $_" }
+            return $true
+        }
+        else {
+            Write-LogMessage -Message "更新脚本执行失败 (退出码: $LASTEXITCODE)" -Level "ERROR"
+            $Result | ForEach-Object { Write-LogMessage -Message "  $_" }
+            return $false
+        }
+    }
+    catch {
+        Write-LogMessage -Message "执行更新脚本时发生异常: $_" -Level "ERROR"
+        return $false
+    }
+}
+
+# ============================================================
+# 主执行流程
+# ============================================================
+
+function Start-MainExecution {
+    <#
+    .SYNOPSIS
+        主执行流程
+    #>
+    Write-LogMessage -Message "========================================"
+    Write-LogMessage -Message "$ScriptName v$ScriptVersion 开始执行"
+    Write-LogMessage -Message "项目根目录: $ProjectRoot"
+    
+    # 验证必要的文件和目录存在
+    Write-LogMessage -Message "验证必要的文件..."
+    
+    if (-not (Test-PathExists -Path $VenvPython -Description "虚拟环境 Python")) {
+        Write-LogMessage -Message "跳过 CLAUDE.md 更新: 虚拟环境 Python 未找到" -Level "WARNING"
+        return $true  # 不阻止提交
+    }
+    
+    if (-not (Test-PathExists -Path $UpdateScript -Description "更新脚本")) {
+        Write-LogMessage -Message "跳过 CLAUDE.md 更新: 更新脚本未找到" -Level "WARNING"
+        return $true  # 不阻止提交
+    }
+    
+    # 执行更新脚本
+    $UpdateSuccess = Invoke-PythonScript -PythonPath $VenvPython -ScriptPath $UpdateScript
+    
+    if ($UpdateSuccess) {
+        Write-LogMessage -Message "CLAUDE.md 更新完成"
+    }
+    else {
+        Write-LogMessage -Message "CLAUDE.md 更新失败，但不影响提交" -Level "WARNING"
+    }
+    
+    Write-LogMessage -Message "$ScriptName 执行完成"
+    Write-LogMessage -Message "========================================"
+    
+    return $true
+}
+
+# ============================================================
+# 脚本入口点
+# ============================================================
+
+try {
+    $Result = Start-MainExecution
+    exit 0
+}
+catch {
+    Write-LogMessage -Message "脚本执行时发生未预期的错误: $_" -Level "ERROR"
+    Write-LogMessage -Message $_.ScriptStackTrace -Level "ERROR"
+    exit 0  # 不阻止提交
+}
