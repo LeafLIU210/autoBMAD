@@ -1957,3 +1957,11 @@ CLASSIFICATION_MAP = {
 - [Python pathlib 文档](https://docs.python.org/3/library/pathlib.html)
 - [sdk_wrapper.py 参考实现](file:///D:/GITHUB/pytQt_template/autoBMAD/epic_automation/sdk_wrapper.py)
 - [Python SDK 官方文档](file:///D:/GITHUB/pytQt_template/autoBMAD/agentdocs/06_python_sdk.md)
+
+
+## Update Records
+
+### 2026-02-09 15:20:58
+- **Commit**: 5708bb28 - feat: implement multi-document auto-update system with anti-loop protection
+- **Author**: LeafLIU210
+- **Changed Files**: scripts/test_multi_doc_update.py, scripts/update_claude_md.py
