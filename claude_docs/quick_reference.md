@@ -335,3 +335,11 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-qual
 
 **版本历史**:
 - v1.0 (2026-01-04): 初始版本，完整的常用命令速查
+
+
+## Update Records
+
+### 2026-02-11 12:16:07
+- **Commit**: 4144725c - feat(scripts): implement multi-document auto-update system with anti-loop protection
+- **Author**: LeafLIU210
+- **Changed Files**: .last_update.timestamp, CHANGES.md, CLAUDE.md, claude_docs/git-commit-trigger-update.md, scripts/test_multi_doc_update.py...

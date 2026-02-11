@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Multi-Document Auto Update Script (English Version)
+Multi-Document Auto Update Script with Claude SDK Integration
 
 This script automatically updates CLAUDE.md and related documents in claude_docs/
-directory after git commits. It uses Claude Agent SDK for intelligent updates when available.
+directory after git commits. It uses Claude Agent SDK for intelligent updates.
 
 Features:
-- Multi-document intelligent updates
+- Claude SDK intelligent analysis
+- Multi-document updates
 - Anti-loop protection mechanisms
 - Smart document mapping based on file changes
 - Batch processing for improved performance
@@ -17,15 +18,38 @@ import os
 import subprocess
 import re
 import time
-import json
-import shutil
+import asyncio
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Dict, List, Union, Set
+from typing import Dict, List, Any, Set
 from dataclasses import dataclass
 
 # Project root directory
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# Required packages check
+REQUIRED_PACKAGES = ["anthropic"]
+
+
+def check_dependencies():
+    """Check for required dependencies"""
+    missing = []
+    for package in REQUIRED_PACKAGES:
+        try:
+            __import__(package.replace("-", "_"))
+        except ImportError:
+            missing.append(package)
+
+    if missing:
+        print(f"Error: Missing required packages: {', '.join(missing)}")
+        print(f"Please run: pip install {' '.join(missing)}")
+        sys.exit(1)
+
+
+check_dependencies()
+
+# Import Anthropic SDK after verification
+from anthropic import Anthropic
 
 
 @dataclass
@@ -38,12 +62,92 @@ class UpdateConfig:
     log_file: Path = PROJECT_ROOT / 'scripts' / 'multi_doc_update.log'
 
 
+@dataclass
+class CommitInfo:
+    """Git commit information data class"""
+    full_hash: str
+    short_hash: str
+    subject: str
+    author: str
+    date: str
+    files: List[str]
+    diff_summary: str
+
+
+class ClaudeSDKManager:
+    """Claude SDK async manager for intelligent document updates"""
+
+    def __init__(self, api_key: str | None = None):
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+        self.client = Anthropic(api_key=self.api_key)
+
+    async def analyze_commit_async(self, commit_info: CommitInfo) -> Dict[str, Any]:
+        """Async analysis of commit content using Claude SDK"""
+        prompt = self._build_analysis_prompt(commit_info)
+
+        try:
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=4096,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return self._parse_ai_response(response)
+        except Exception as e:
+            print(f"Claude SDK error: {e}")
+            return {"success": False, "analysis": "", "error": str(e)}
+
+    def _build_analysis_prompt(self, commit_info: CommitInfo) -> str:
+        """Build analysis prompt from commit info"""
+        files_str = "\n".join([f"- {f}" for f in commit_info.files[:10]])
+        if len(commit_info.files) > 10:
+            files_str += f"\n... and {len(commit_info.files) - 10} more files"
+
+        return f"""Analyze this git commit and provide a concise summary suitable for documentation:
+
+**Commit Hash**: {commit_info.short_hash}
+**Subject**: {commit_info.subject}
+**Author**: {commit_info.author}
+**Date**: {commit_info.date}
+
+**Changed Files**:
+{files_str}
+
+**Diff Summary**:
+{commit_info.diff_summary}
+
+Provide a brief (2-3 sentence) summary of what changed and why it matters for documentation purposes."""
+
+    def _parse_ai_response(self, response: Any) -> Dict[str, Any]:
+        """Parse AI response into structured data"""
+        try:
+            text = response.content[0].text if hasattr(response.content[0], 'text') else str(response.content[0])
+            return {"success": True, "analysis": text.strip()}
+        except Exception as e:
+            return {"success": False, "analysis": "", "error": str(e)}
+
+    def sync_analyze(self, commit_info: CommitInfo) -> Dict[str, Any]:
+        """Synchronous wrapper for analyze_commit_async"""
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    future = pool.submit(asyncio.run, self.analyze_commit_async(commit_info))
+                    return future.result()
+            else:
+                return asyncio.run(self.analyze_commit_async(commit_info))
+        except RuntimeError:
+            return asyncio.run(self.analyze_commit_async(commit_info))
+
+
 class AntiLoopProtection:
     """Anti-loop protection mechanism"""
 
-    def __init__(self, config: UpdateConfig = None):
+    def __init__(self, config: UpdateConfig | None = None):
         self.config = config or UpdateConfig()
-        self._acquired_lock = False
+        self._acquired_lock: bool = False
 
     def can_proceed(self) -> bool:
         """Check if update can proceed"""
@@ -119,7 +223,7 @@ class MultiDocUpdater:
 
     def __init__(self):
         # Target documents list
-        self.target_docs = [
+        self.target_docs: List[str] = [
             'CLAUDE.md',
             'claude_docs/ai_workflow.md',
             'claude_docs/bmad_methodology.md',
@@ -136,7 +240,7 @@ class MultiDocUpdater:
         ]
 
         # Build mapping from file changes to document updates
-        self.update_mapping = {
+        self.update_mapping: Dict[str, List[str]] = {
             'scripts/': ['claude_docs/git-commit-trigger-update.md'],
             'autoBMAD/': ['claude_docs/workflow_tools.md'],
             'claude_docs/core_principles.md': ['claude_docs/core_principles.md'],
@@ -154,7 +258,7 @@ class MultiDocUpdater:
 
     def get_docs_to_update(self, changed_files: List[str]) -> List[str]:
         """Determine which documents need to be updated based on changed files"""
-        docs_to_update = set()
+        docs_to_update: Set[str] = set()
 
         # Always update CLAUDE.md
         docs_to_update.add('CLAUDE.md')
@@ -184,10 +288,10 @@ class MultiDocUpdater:
                     break
 
         # Filter out non-existent documents
-        existing_docs = []
+        existing_docs: List[str] = []
         for doc in docs_to_update:
-            doc_path = PROJECT_ROOT / doc
-            if doc_path.exists():
+            doc_full_path = PROJECT_ROOT / doc
+            if doc_full_path.exists():
                 existing_docs.append(doc)
             else:
                 print(f"Warning: Document does not exist {doc}")
@@ -269,7 +373,8 @@ class MultiDocUpdater:
                 else:
                     updated_content = existing_content + "\n" + table_row
             else:
-                updated_content = existing_content + "\n" + content
+                content_value = content if content is not None else ""
+                updated_content = existing_content + "\n" + content_value
 
             claude_md_path.write_text(updated_content, encoding='utf-8')
             print(f"CLAUDE.md updated successfully")
@@ -302,7 +407,7 @@ class MultiDocUpdater:
             return False
 
     def _generate_update_content(self, commit_info: Dict[str, str],
-                                changed_files: List[str], diff_summary: str) -> str:
+                                changed_files: List[str], diff_summary: str) -> str | None:
         """Generate update content"""
         if not commit_info:
             return None
@@ -326,7 +431,7 @@ class MultiDocUpdater:
 
         return content
 
-    def _parse_commit_content(self, content: str) -> Optional[Dict[str, str]]:
+    def _parse_commit_content(self, content: str | None) -> Dict[str, str] | None:
         """Parse commit information"""
         try:
             if content is None or content.strip() == "":
@@ -336,7 +441,7 @@ class MultiDocUpdater:
                 }
 
             lines = content.strip().split('\n')
-            commit_info = {}
+            commit_info: Dict[str, str] = {}
 
             for line in lines:
                 if line.startswith('- **Commit**:'):
@@ -361,11 +466,11 @@ class MultiDocUpdater:
 
             # Extract date part
             if 'date' in commit_info:
-                date_str = commit_info['date']
+                date_str: str = commit_info['date']
                 try:
                     parsed_date = datetime.strptime(date_str, '%a %b %d %H:%M:%S %Y %z')
                     commit_info['date'] = parsed_date.strftime('%Y-%m-%d')
-                except:
+                except Exception:
                     commit_info['date'] = datetime.now().strftime('%Y-%m-%d')
 
             if 'files' not in commit_info:
@@ -380,7 +485,7 @@ class MultiDocUpdater:
             }
 
 
-def get_commit_info() -> Optional[Dict[str, str]]:
+def get_commit_info() -> Dict[str, str] | None:
     """Get recent commit information"""
     try:
         result = subprocess.run(
@@ -446,18 +551,6 @@ def get_diff_summary() -> str:
     return ""
 
 
-def check_anthropic_sdk() -> bool:
-    """Check if anthropic SDK is available"""
-    try:
-        from anthropic import Anthropic
-        return True
-    except ImportError:
-        return False
-
-
-ANTHROPIC_SDK_AVAILABLE = check_anthropic_sdk()
-
-
 def main() -> int:
     """Main function - Multi-document update system entry"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -481,12 +574,12 @@ def main() -> int:
 
     try:
         # Get commit info
-        commit_info = get_commit_info()
-        if not commit_info:
+        commit_info_dict = get_commit_info()
+        if not commit_info_dict:
             print("Cannot get commit info, skipping update")
             return 1
 
-        print(f"Commit: {commit_info['short_hash']} - {commit_info['subject']}")
+        print(f"Commit: {commit_info_dict['short_hash']} - {commit_info_dict['subject']}")
 
         # Get changed files list
         changed_files = get_changed_files()
@@ -497,6 +590,38 @@ def main() -> int:
 
         # Get diff summary
         diff_summary = get_diff_summary()
+
+        # Initialize Claude SDK manager if API key is available
+        sdk_manager: ClaudeSDKManager | None = None
+        ai_analysis: Dict[str, Any] | None = None
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            try:
+                sdk_manager = ClaudeSDKManager()
+                print("Claude SDK initialized successfully")
+            except ValueError as e:
+                print(f"Claude SDK initialization skipped: {e}")
+        else:
+            print("ANTHROPIC_API_KEY not set, using template-based updates")
+
+        # Perform AI analysis if SDK is available
+        if sdk_manager:
+            commit_info_obj = CommitInfo(
+                full_hash=commit_info_dict['hash'],
+                short_hash=commit_info_dict['short_hash'],
+                subject=commit_info_dict['subject'],
+                author=commit_info_dict['author'],
+                date=commit_info_dict['date'],
+                files=changed_files,
+                diff_summary=diff_summary
+            )
+            print("Analyzing commit with Claude SDK...")
+            ai_analysis = sdk_manager.sync_analyze(commit_info_obj)
+            if ai_analysis.get("success"):
+                analysis_text = ai_analysis.get('analysis', '')
+                if analysis_text:
+                    print(f"AI Analysis: {analysis_text[:200]}...")
+            else:
+                print(f"AI Analysis failed: {ai_analysis.get('error', 'Unknown error')}")
 
         # Determine which documents to update
         docs_to_update = updater.get_docs_to_update(changed_files)
@@ -513,7 +638,7 @@ def main() -> int:
 
         for i, doc_path in enumerate(docs_to_update, 1):
             print(f"\n[{i}/{total_docs}] Updating document: {doc_path}")
-            if updater.update_single_doc(doc_path, commit_info, changed_files):
+            if updater.update_single_doc(doc_path, commit_info_dict, changed_files):
                 success_count += 1
                 print(f"  SUCCESS")
             else:

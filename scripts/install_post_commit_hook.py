@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Python 版本的 post-commit hook 安装程序
+Python 版本的 post-commit hook 安装程序 (v2.0.0)
 使用 TDD 方式开发
 
 此脚本自动安装和配置 post-commit hook，使每次 git commit 后
 自动更新 CLAUDE.md 文件。
 
+特性：
+- 命令行参数支持
+- 跨平台路径检测
+- 详细输出模式
+
 使用方式：
     python scripts/install_post_commit_hook.py
+    python scripts/install_post_commit_hook.py --verbose
+    python scripts/install_post_commit_hook.py -p /path/to/project
 """
 
 import sys
@@ -16,9 +23,10 @@ import os
 import shutil
 import subprocess
 import platform
+import argparse
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Any
 
 
 # 简单的日志记录器（无 Unicode）
@@ -54,23 +62,132 @@ class Logger:
         print(f"[ERROR] {message}")
 
 
-class PostCommitInstaller:
-    """post-commit hook 安装程序"""
+class PathResolver:
+    """Smart path resolver for cross-platform Python detection"""
 
-    def __init__(self, project_root: Optional[Path] = None):
+    def __init__(self, project_root: Path, venv_name: str = "venv"):
+        self.project_root: Path = Path(project_root).resolve()
+        self.venv_name: str = venv_name
+
+    def get_venv_python(self) -> Path | None:
+        """Cross-platform Python path detection"""
+        system = platform.system().lower()
+
+        if system == "windows":
+            candidates = [
+                self.project_root / self.venv_name / "Scripts" / "python.exe",
+                self.project_root / self.venv_name / "python.exe",
+            ]
+        else:  # Linux/macOS
+            candidates = [
+                self.project_root / self.venv_name / "bin" / "python",
+                self.project_root / self.venv_name / "python",
+            ]
+
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return None
+
+    def get_venv_pip(self) -> Path | None:
+        """Cross-platform pip path detection"""
+        system = platform.system().lower()
+
+        if system == "windows":
+            candidates = [
+                self.project_root / self.venv_name / "Scripts" / "pip.exe",
+                self.project_root / self.venv_name / "pip.exe",
+            ]
+        else:  # Linux/macOS
+            candidates = [
+                self.project_root / self.venv_name / "bin" / "pip",
+                self.project_root / self.venv_name / "pip",
+            ]
+
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return None
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        description="Post-Commit Hook 安装程序",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例:
+  python scripts/install_post_commit_hook.py
+  python scripts/install_post_commit_hook.py --verbose
+  python scripts/install_post_commit_hook.py -p /path/to/project
+  python scripts/install_post_commit_hook.py -v myenv -s scripts --force
+        """
+    )
+    parser.add_argument(
+        '--project-root', '-p',
+        type=Path,
+        default=Path.cwd(),
+        help='项目根目录路径 (默认: 当前目录)'
+    )
+    parser.add_argument(
+        '--venv-name', '-v',
+        type=str,
+        default='venv',
+        help='虚拟环境名称 (默认: venv)'
+    )
+    parser.add_argument(
+        '--scripts-dir', '-s',
+        type=str,
+        default='scripts',
+        help='脚本目录名称 (默认: scripts)'
+    )
+    parser.add_argument(
+        '--force', '-f',
+        action='store_true',
+        help='强制安装，忽略现有备份'
+    )
+    parser.add_argument(
+        '--verify-only', '-x',
+        action='store_true',
+        help='仅验证现有安装，不执行安装'
+    )
+    parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='显示详细输出'
+    )
+    return parser.parse_args()
+
+
+class PostCommitInstaller:
+    """post-commit hook 安装程序 (v2.0.0)"""
+
+    def __init__(self, project_root: Path | None = None,
+                 venv_name: str = "venv",
+                 scripts_dir: str = "scripts",
+                 verbose: bool = False):
         """
         初始化安装程序
 
         Args:
             project_root: 项目根目录，默认为当前工作目录
+            venv_name: 虚拟环境名称
+            scripts_dir: 脚本目录名称
+            verbose: 是否显示详细输出
         """
-        self.project_root = project_root or Path.cwd()
-        self.scripts_dir = self.project_root / "scripts"
-        self.git_hooks_dir = self.project_root / ".git" / "hooks"
-        self.venv_python = self.project_root / "venv" / "Scripts" / "python.exe"
-        self.post_commit_source = self.scripts_dir / "post-commit"
-        self.post_commit_target = self.git_hooks_dir / "post-commit"
-        self.log_file = self.scripts_dir / "install_post_commit_hook.log"
+        self.project_root: Path = project_root or Path.cwd()
+        self.scripts_dir: Path = self.project_root / scripts_dir
+        self.git_hooks_dir: Path = self.project_root / ".git" / "hooks"
+        self.verbose: bool = verbose
+
+        # Use PathResolver for cross-platform path detection
+        self.path_resolver: PathResolver = PathResolver(self.project_root, venv_name)
+        self.venv_python: Path | None = self.path_resolver.get_venv_python()
+
+        # Determine post-commit source (Python version)
+        self.post_commit_source: Path = self.scripts_dir / "post-commit.py"
+        self.post_commit_target: Path = self.git_hooks_dir / "post-commit"
+        self.log_file: Path = self.scripts_dir / "install_post_commit_hook.log"
 
     def check_python_version(self) -> bool:
         """检查 Python 版本"""
@@ -129,13 +246,13 @@ class PostCommitInstaller:
         """复制 post-commit hook"""
         Logger.step(4, "复制 post-commit hook")
 
-        # 检查源文件
+        # 检查源文件 (Python version)
         if not self.post_commit_source.exists():
             Logger.error(f"Hook 源文件不存在: {self.post_commit_source}")
             Logger.warning(f"请确保 {self.post_commit_source} 存在")
             return False
 
-        Logger.success("Hook 源文件存在")
+        Logger.success(f"Hook 源文件存在: {self.post_commit_source}")
 
         # 备份现有 hook
         if self.post_commit_target.exists():
@@ -144,21 +261,36 @@ class PostCommitInstaller:
             shutil.copy2(self.post_commit_target, backup_path)
             Logger.success("备份完成")
 
-        # 复制新 hook
-        Logger.step(4.2, "复制 hook 到 .git/hooks/")
+        # 创建 hook 文件内容 (calls Python script)
+        Logger.step(4.2, "创建 hook 到 .git/hooks/")
 
         try:
-            shutil.copy2(self.post_commit_source, self.post_commit_target)
+            hook_content = self._generate_hook_content()
+            self.post_commit_target.write_text(hook_content, encoding='utf-8')
 
             # 设置可执行权限（Unix 系统）
             if platform.system() != 'Windows':
                 os.chmod(self.post_commit_target, 0o755)
 
-            Logger.success("Hook 复制成功")
+            Logger.success("Hook 创建成功")
             return True
         except Exception as e:
-            Logger.error(f"复制 hook 失败: {e}")
+            Logger.error(f"创建 hook 失败: {e}")
             return False
+
+    def _generate_hook_content(self) -> str:
+        """Generate hook script content"""
+        python_path = self.venv_python
+        script_path = self.post_commit_source
+
+        if platform.system().lower() == "windows":
+            return f"""@echo off
+"{python_path}" "{script_path}"
+"""
+        else:
+            return f"""#!/bin/bash
+"{python_path}" "{script_path}"
+"""
 
     def validate_hook(self) -> bool:
         """验证 hook 安装"""
@@ -214,8 +346,25 @@ class PostCommitInstaller:
 
 def main():
     """主函数"""
+    args = parse_arguments()
+
     try:
-        installer = PostCommitInstaller()
+        installer = PostCommitInstaller(
+            project_root=args.project_root,
+            venv_name=args.venv_name,
+            scripts_dir=args.scripts_dir,
+            verbose=args.verbose
+        )
+
+        if args.verify_only:
+            Logger.section("验证 post-commit hook 安装")
+            success = installer.validate_hook()
+            if success:
+                Logger.success("Hook 已正确安装")
+            else:
+                Logger.error("Hook 未安装或安装不正确")
+            sys.exit(0 if success else 1)
+
         success = installer.run()
         sys.exit(0 if success else 1)
     except KeyboardInterrupt:

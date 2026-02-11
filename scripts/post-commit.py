@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Git Post-Commit Hook - Python 跨平台版本
+Git Post-Commit Hook - Python 跨平台版本 with Async Execution
 
 此脚本在 git commit 完成后自动执行，调用 Python 脚本更新 CLAUDE.md。
 它通过 Claude Agent SDK 智能分析提交内容，生成有意义的更新记录。
 
-跨平台兼容：Windows (PowerShell/Git Bash)、Linux、macOS
+特性：
+- 后台守护线程异步执行，不阻塞 git commit
+- 跨平台兼容：Windows (PowerShell/Git Bash)、Linux、macOS
+- 5分钟超时控制
 
 使用方式：
 1. 将 scripts/post-commit.py 复制到 .git/hooks/post-commit
@@ -17,9 +20,9 @@ import sys
 import os
 import subprocess
 import logging
+import threading
 from pathlib import Path
-from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 # 配置日志
 logging.basicConfig(
@@ -32,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 版本信息
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "2.0.0"
 SCRIPT_NAME = "post-commit hook"
 
 
@@ -71,7 +74,7 @@ class GitHookInstaller:
         return current.parent
     
     @staticmethod
-    def get_venv_python(venv_name: str = "venv") -> Optional[Path]:
+    def get_venv_python(venv_name: str = "venv") -> Path | None:
         """获取虚拟环境 Python 解释器路径"""
         project_root = GitHookInstaller.get_project_root()
         logger.info(f"项目根目录: {project_root}")
@@ -92,7 +95,7 @@ class GitHookInstaller:
         return None
     
     @staticmethod
-    def get_update_script() -> Optional[Path]:
+    def get_update_script() -> Path | None:
         """获取更新脚本路径"""
         project_root = GitHookInstaller.get_project_root()
         update_script = project_root / "scripts" / "update_claude_md.py"
@@ -104,55 +107,65 @@ class GitHookInstaller:
 
 
 class PostCommitHook:
-    """Post-Commit Hook 执行器"""
-    
+    """Post-Commit Hook 执行器 with async support"""
+
     def __init__(self):
-        self.project_root = GitHookInstaller.get_project_root()
-        self.venv_python = GitHookInstaller.get_venv_python()
-        self.update_script = GitHookInstaller.get_update_script()
-    
+        self.project_root: Path = GitHookInstaller.get_project_root()
+        self.venv_python: Path | None = GitHookInstaller.get_venv_python()
+        self.update_script: Path | None = GitHookInstaller.get_update_script()
+
     def run(self) -> bool:
         """执行 hook 主逻辑"""
         logger.info("=" * 50)
         logger.info(f"{SCRIPT_NAME} v{SCRIPT_VERSION} 开始执行")
         logger.info(f"项目根目录: {self.project_root}")
-        
+
         # 验证必要的文件
         if not self._validate_prerequisites():
             logger.warning("跳过 CLAUDE.md 更新：先决条件验证失败")
             return True
-        
-        # 执行更新脚本
+
+        # 使用后台守护线程执行（非阻塞）
+        logger.info("启动后台线程执行文档更新...")
+        thread = threading.Thread(target=self._run_update_script, daemon=True)
+        thread.start()
+
+        logger.info("主进程返回，提交完成")
+        logger.info("=" * 50)
+        return True
+
+    def _validate_prerequisites(self) -> bool:
+        """验证先决条件"""
+        logger.info("验证必要的文件...")
+
+        if self.venv_python is None:
+            logger.error(f"虚拟环境 Python 未找到")
+            return False
+
+        if self.update_script is None:
+            logger.error(f"更新脚本未找到")
+            return False
+
+        return True
+
+    def _run_update_script(self):
+        """在后台线程中执行更新脚本"""
         success = self._execute_update_script()
-        
+
         if success:
             logger.info("CLAUDE.md 更新完成")
         else:
             logger.warning("CLAUDE.md 更新失败，但不影响提交")
-        
-        logger.info(f"{SCRIPT_NAME} 执行完成")
-        logger.info("=" * 50)
-        
-        return True
-    
-    def _validate_prerequisites(self) -> bool:
-        """验证先决条件"""
-        logger.info("验证必要的文件...")
-        
-        if self.venv_python is None:
-            logger.error(f"虚拟环境 Python 未找到")
-            return False
-        
-        if self.update_script is None:
-            logger.error(f"更新脚本未找到")
-            return False
-        
-        return True
-    
+
+        logger.info(f"{SCRIPT_NAME} 后台执行完成")
+
     def _execute_update_script(self) -> bool:
         """执行更新脚本"""
         logger.info(f"执行更新脚本: {self.update_script}")
-        
+
+        # 构建环境变量
+        env = os.environ.copy()
+
         try:
             # 使用subprocess 执行 Python 脚本
             result = subprocess.run(
@@ -160,29 +173,30 @@ class PostCommitHook:
                 capture_output=True,
                 text=True,
                 cwd=str(self.project_root),
-                timeout=60  # 60秒超时
+                env=env,
+                timeout=300  # 5分钟超时（从60秒增加）
             )
-            
+
             # 输出脚本的日志
             if result.stdout:
                 for line in result.stdout.strip().split('\n'):
                     if line:
                         logger.info(f"  {line}")
-            
+
             if result.stderr:
                 for line in result.stderr.strip().split('\n'):
                     if line:
                         logger.warning(f"  {line}")
-            
+
             if result.returncode == 0:
                 logger.info("更新脚本执行成功")
                 return True
             else:
                 logger.error(f"更新脚本执行失败 (退出码: {result.returncode})")
                 return False
-                
+
         except subprocess.TimeoutExpired:
-            logger.error("更新脚本执行超时 (60秒)")
+            logger.error("更新脚本执行超时 (300秒)")
             return False
         except Exception as e:
             logger.error(f"执行更新脚本时发生异常: {e}")
