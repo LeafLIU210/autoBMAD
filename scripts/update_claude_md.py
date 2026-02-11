@@ -11,6 +11,7 @@ Features:
 - Anti-loop protection mechanisms
 - Smart document mapping based on file changes
 - Batch processing for improved performance
+- Real-time file logging
 """
 
 import sys
@@ -30,6 +31,22 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Required packages check
 REQUIRED_PACKAGES = ["anthropic"]
 
+# 日志文件配置
+LOG_FILE = PROJECT_ROOT / 'scripts' / 'post-commit.log'
+
+
+def log_to_file(message: str, level: str = "INFO"):
+    """同时输出到控制台和日志文件（实时写入）"""
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    formatted = f"[{timestamp}] [{level}] {message}"
+    print(formatted)
+    try:
+        with open(LOG_FILE, 'a', encoding='utf-8') as f:
+            f.write(formatted + '\n')
+            f.flush()
+    except Exception:
+        pass  # 日志写入失败不影响主流程
+
 
 def check_dependencies():
     """Check for required dependencies"""
@@ -41,8 +58,8 @@ def check_dependencies():
             missing.append(package)
 
     if missing:
-        print(f"Error: Missing required packages: {', '.join(missing)}")
-        print(f"Please run: pip install {' '.join(missing)}")
+        log_to_file(f"Error: Missing required packages: {', '.join(missing)}", "ERROR")
+        log_to_file(f"Please run: pip install {' '.join(missing)}", "ERROR")
         sys.exit(1)
 
 
@@ -151,24 +168,24 @@ class AntiLoopProtection:
 
     def can_proceed(self) -> bool:
         """Check if update can proceed"""
-        print("Checking anti-loop protection...")
+        log_to_file("Checking anti-loop protection...")
 
         # Check lock file
         if self.config.lock_file.exists():
-            print(f"Update skipped: Lock file exists {self.config.lock_file}")
+            log_to_file(f"Update skipped: Lock file exists {self.config.lock_file}", "WARNING")
             return False
 
         # Check environment variable
         if os.environ.get(self.config.env_var) == '1':
-            print(f"Update skipped: Environment variable {self.config.env_var} is set")
+            log_to_file(f"Update skipped: Environment variable {self.config.env_var} is set", "WARNING")
             return False
 
         # Check time window
         if self._is_too_frequent():
-            print(f"Update skipped: Update frequency too high (executed within 5 minutes)")
+            log_to_file(f"Update skipped: Update frequency too high (executed within 5 minutes)", "WARNING")
             return False
 
-        print("Anti-loop protection check passed")
+        log_to_file("Anti-loop protection check passed")
         return True
 
     def _is_too_frequent(self) -> bool:
@@ -180,10 +197,10 @@ class AntiLoopProtection:
             last_update = float(self.config.timestamp_file.read_text().strip())
             time_since_last = time.time() - last_update
             if time_since_last < self.config.max_frequency:
-                print(f"Time since last update: {time_since_last:.1f}s, threshold: {self.config.max_frequency}s")
+                log_to_file(f"Time since last update: {time_since_last:.1f}s, threshold: {self.config.max_frequency}s", "WARNING")
                 return True
         except Exception as e:
-            print(f"Failed to read timestamp file: {e}")
+            log_to_file(f"Failed to read timestamp file: {e}", "ERROR")
 
         return False
 
@@ -198,7 +215,7 @@ class AntiLoopProtection:
             self._acquired_lock = True
             return True
         except Exception as e:
-            print(f"Failed to acquire lock: {e}")
+            log_to_file(f"Failed to acquire lock: {e}", "ERROR")
             return False
 
     def release_lock(self):
@@ -207,7 +224,7 @@ class AntiLoopProtection:
             try:
                 self.config.lock_file.unlink()
             except Exception as e:
-                print(f"Failed to release lock: {e}")
+                log_to_file(f"Failed to release lock: {e}", "ERROR")
         self._acquired_lock = False
 
     def update_timestamp(self):
@@ -215,7 +232,7 @@ class AntiLoopProtection:
         try:
             self.config.timestamp_file.write_text(str(time.time()))
         except Exception as e:
-            print(f"Failed to update timestamp: {e}")
+            log_to_file(f"Failed to update timestamp: {e}", "ERROR")
 
 
 class MultiDocUpdater:
@@ -268,23 +285,23 @@ class MultiDocUpdater:
             if not file_path:
                 continue
 
-            print(f"Analyzing changed file: {file_path}")
+            log_to_file(f"Analyzing changed file: {file_path}")
 
             # Check exact match
             if file_path in self.update_mapping:
                 docs_to_update.update(self.update_mapping[file_path])
-                print(f"  -> Exact match, update: {self.update_mapping[file_path]}")
+                log_to_file(f"  -> Exact match, update: {self.update_mapping[file_path]}")
                 continue
 
             # Check prefix match
             for pattern, docs in self.update_mapping.items():
                 if pattern.endswith('/') and file_path.startswith(pattern):
                     docs_to_update.update(docs)
-                    print(f"  -> Prefix match '{pattern}', update: {docs}")
+                    log_to_file(f"  -> Prefix match '{pattern}', update: {docs}")
                     break
                 elif not pattern.endswith('/') and pattern in file_path:
                     docs_to_update.update(docs)
-                    print(f"  -> Content match '{pattern}', update: {docs}")
+                    log_to_file(f"  -> Content match '{pattern}', update: {docs}")
                     break
 
         # Filter out non-existent documents
@@ -294,7 +311,7 @@ class MultiDocUpdater:
             if doc_full_path.exists():
                 existing_docs.append(doc)
             else:
-                print(f"Warning: Document does not exist {doc}")
+                log_to_file(f"Warning: Document does not exist {doc}", "WARNING")
 
         return sorted(existing_docs)
 
@@ -303,10 +320,10 @@ class MultiDocUpdater:
         """Update a single document"""
         try:
             doc_full_path = PROJECT_ROOT / doc_path
-            print(f"Updating document: {doc_path}")
+            log_to_file(f"Updating document: {doc_path}")
 
             if not doc_full_path.exists():
-                print(f"Document does not exist: {doc_path}")
+                log_to_file(f"Document does not exist: {doc_path}", "WARNING")
                 return False
 
             if doc_path == 'CLAUDE.md':
@@ -315,7 +332,7 @@ class MultiDocUpdater:
                 return self._update_doc_md(doc_path, commit_info, changed_files)
 
         except Exception as e:
-            print(f"Failed to update document {doc_path}: {e}")
+            log_to_file(f"Failed to update document {doc_path}: {e}", "ERROR")
             return False
 
     def _update_claude_md(self, commit_info: Dict[str, str],
@@ -377,11 +394,11 @@ class MultiDocUpdater:
                 updated_content = existing_content + "\n" + content_value
 
             claude_md_path.write_text(updated_content, encoding='utf-8')
-            print(f"CLAUDE.md updated successfully")
+            log_to_file(f"CLAUDE.md updated successfully")
             return True
 
         except Exception as e:
-            print(f"Failed to update CLAUDE.md: {e}")
+            log_to_file(f"Failed to update CLAUDE.md: {e}", "ERROR")
             return False
 
     def _update_doc_md(self, doc_path: str, commit_info: Dict[str, str],
@@ -399,11 +416,11 @@ class MultiDocUpdater:
 
             updated_content = existing_content + update_entry
             doc_full_path.write_text(updated_content, encoding='utf-8')
-            print(f"{doc_path} updated successfully")
+            log_to_file(f"{doc_path} updated successfully")
             return True
 
         except Exception as e:
-            print(f"Failed to update {doc_path}: {e}")
+            log_to_file(f"Failed to update {doc_path}: {e}", "ERROR")
             return False
 
     def _generate_update_content(self, commit_info: Dict[str, str],
@@ -478,7 +495,7 @@ class MultiDocUpdater:
 
             return commit_info if commit_info else None
         except Exception as e:
-            print(f"Failed to parse commit content: {e}")
+            log_to_file(f"Failed to parse commit content: {e}", "ERROR")
             return {
                 'date': datetime.now().strftime('%Y-%m-%d'),
                 'files': 'Code changes'
@@ -507,7 +524,7 @@ def get_commit_info() -> Dict[str, str] | None:
                     'date': parts[3]
                 }
     except Exception as e:
-        print(f"Error getting commit info: {e}")
+        log_to_file(f"Error getting commit info: {e}", "ERROR")
 
     return None
 
@@ -527,7 +544,7 @@ def get_changed_files() -> List[str]:
             files = result.stdout.strip().split('\n')
             return [f for f in files if f]
     except Exception as e:
-        print(f"Error getting changed files: {e}")
+        log_to_file(f"Error getting changed files: {e}", "ERROR")
 
     return []
 
@@ -546,7 +563,7 @@ def get_diff_summary() -> str:
         if result.returncode == 0:
             return result.stdout.strip()
     except Exception as e:
-        print(f"Error getting diff summary: {e}")
+        log_to_file(f"Error getting diff summary: {e}", "ERROR")
 
     return ""
 
@@ -554,9 +571,9 @@ def get_diff_summary() -> str:
 def main() -> int:
     """Main function - Multi-document update system entry"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print("=" * 60)
-    print(f"Multi-document auto-update system started... ({timestamp})")
-    print("=" * 60)
+    log_to_file("=" * 60)
+    log_to_file(f"Multi-document auto-update system started... ({timestamp})")
+    log_to_file("=" * 60)
 
     # Initialize components
     updater = MultiDocUpdater()
@@ -564,29 +581,29 @@ def main() -> int:
 
     # Anti-loop check
     if not protection.can_proceed():
-        print("Update skipped: Anti-loop protection triggered")
+        log_to_file("Update skipped: Anti-loop protection triggered")
         return 0
 
     # Acquire lock
     if not protection.acquire_lock():
-        print("Failed to acquire lock, skipping update")
+        log_to_file("Failed to acquire lock, skipping update", "ERROR")
         return 0
 
     try:
         # Get commit info
         commit_info_dict = get_commit_info()
         if not commit_info_dict:
-            print("Cannot get commit info, skipping update")
+            log_to_file("Cannot get commit info, skipping update", "ERROR")
             return 1
 
-        print(f"Commit: {commit_info_dict['short_hash']} - {commit_info_dict['subject']}")
+        log_to_file(f"Commit: {commit_info_dict['short_hash']} - {commit_info_dict['subject']}")
 
         # Get changed files list
         changed_files = get_changed_files()
         if changed_files:
-            print(f"Changed files ({len(changed_files)}): {', '.join(changed_files[:3])}{'...' if len(changed_files) > 3 else ''}")
+            log_to_file(f"Changed files ({len(changed_files)}): {', '.join(changed_files[:3])}{'...' if len(changed_files) > 3 else ''}")
         else:
-            print("No changed files")
+            log_to_file("No changed files")
 
         # Get diff summary
         diff_summary = get_diff_summary()
@@ -597,11 +614,11 @@ def main() -> int:
         if os.environ.get("ANTHROPIC_API_KEY"):
             try:
                 sdk_manager = ClaudeSDKManager()
-                print("Claude SDK initialized successfully")
+                log_to_file("Claude SDK initialized successfully")
             except ValueError as e:
-                print(f"Claude SDK initialization skipped: {e}")
+                log_to_file(f"Claude SDK initialization skipped: {e}", "WARNING")
         else:
-            print("ANTHROPIC_API_KEY not set, using template-based updates")
+            log_to_file("ANTHROPIC_API_KEY not set, using template-based updates")
 
         # Perform AI analysis if SDK is available
         if sdk_manager:
@@ -614,21 +631,21 @@ def main() -> int:
                 files=changed_files,
                 diff_summary=diff_summary
             )
-            print("Analyzing commit with Claude SDK...")
+            log_to_file("Analyzing commit with Claude SDK...")
             ai_analysis = sdk_manager.sync_analyze(commit_info_obj)
             if ai_analysis.get("success"):
                 analysis_text = ai_analysis.get('analysis', '')
                 if analysis_text:
-                    print(f"AI Analysis: {analysis_text[:200]}...")
+                    log_to_file(f"AI Analysis: {analysis_text[:200]}...")
             else:
-                print(f"AI Analysis failed: {ai_analysis.get('error', 'Unknown error')}")
+                log_to_file(f"AI Analysis failed: {ai_analysis.get('error', 'Unknown error')}", "WARNING")
 
         # Determine which documents to update
         docs_to_update = updater.get_docs_to_update(changed_files)
-        print(f"Determined to update {len(docs_to_update)} documents: {docs_to_update}")
+        log_to_file(f"Determined to update {len(docs_to_update)} documents: {docs_to_update}")
 
         if not docs_to_update:
-            print("No documents need updating")
+            log_to_file("No documents need updating")
             protection.update_timestamp()
             return 0
 
@@ -637,31 +654,31 @@ def main() -> int:
         total_docs = len(docs_to_update)
 
         for i, doc_path in enumerate(docs_to_update, 1):
-            print(f"\n[{i}/{total_docs}] Updating document: {doc_path}")
+            log_to_file(f"\n[{i}/{total_docs}] Updating document: {doc_path}")
             if updater.update_single_doc(doc_path, commit_info_dict, changed_files):
                 success_count += 1
-                print(f"  SUCCESS")
+                log_to_file(f"  SUCCESS")
             else:
-                print(f"  FAILED")
+                log_to_file(f"  FAILED", "ERROR")
 
         # Update completion
         protection.update_timestamp()
-        print("\n" + "=" * 60)
-        print(f"Multi-document update completed: {success_count}/{total_docs} successful")
-        print("=" * 60)
+        log_to_file("\n" + "=" * 60)
+        log_to_file(f"Multi-document update completed: {success_count}/{total_docs} successful")
+        log_to_file("=" * 60)
 
         if success_count == total_docs:
-            print("All documents updated successfully")
+            log_to_file("All documents updated successfully")
             return 0
         elif success_count > 0:
-            print("Partial documents updated successfully")
+            log_to_file("Partial documents updated successfully")
             return 0
         else:
-            print("All documents update failed")
+            log_to_file("All documents update failed", "ERROR")
             return 1
 
     except Exception as e:
-        print(f"Error during update process: {e}")
+        log_to_file(f"Error during update process: {e}", "ERROR")
         import traceback
         traceback.print_exc()
         return 1

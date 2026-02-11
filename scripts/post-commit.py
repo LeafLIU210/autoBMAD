@@ -23,6 +23,7 @@ import logging
 import threading
 from pathlib import Path
 from typing import Optional, Any
+from logging.handlers import WatchedFileHandler
 
 # 配置日志
 logging.basicConfig(
@@ -35,7 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 版本信息
-SCRIPT_VERSION = "2.0.0"
+SCRIPT_VERSION = "2.1.0"
 SCRIPT_NAME = "post-commit hook"
 
 
@@ -77,19 +78,19 @@ class GitHookInstaller:
     def get_venv_python(venv_name: str = "venv") -> Path | None:
         """获取虚拟环境 Python 解释器路径"""
         project_root = GitHookInstaller.get_project_root()
-        logger.info(f"项目根目录: {project_root}")
-        
+
         # 不同平台的 Python 路径
         candidates = [
             project_root / venv_name / "Scripts" / "python.exe",      # Windows
             project_root / venv_name / "bin" / "python",              # Linux/macOS
             project_root / venv_name / "python.exe",                   # Windows (备用)
         ]
-        
+
         for candidate in candidates:
-            logger.info(f"检查: {candidate} (存在: {candidate.exists()})")
+            rel_path = candidate.relative_to(project_root) if candidate.is_relative_to(project_root) else candidate
+            logger.info(f"检查: {rel_path} (存在: {candidate.exists()})")
             if candidate.exists():
-                logger.info(f"找到 Python 解释器: {candidate}")
+                logger.info(f"找到 Python 解释器: {rel_path}")
                 return candidate
         
         return None
@@ -113,12 +114,26 @@ class PostCommitHook:
         self.project_root: Path = GitHookInstaller.get_project_root()
         self.venv_python: Path | None = GitHookInstaller.get_venv_python()
         self.update_script: Path | None = GitHookInstaller.get_update_script()
+        self.log_file: Path = self.project_root / 'scripts' / 'post-commit.log'
+        self._setup_file_logging()
+
+    def _setup_file_logging(self):
+        """配置文件日志处理器 - 实时写入"""
+        # 确保日志目录存在
+        self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # 创建 WatchedFileHandler（追加模式，实时刷新）
+        handler = WatchedFileHandler(self.log_file, mode='a', encoding='utf-8')
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
 
     def run(self) -> bool:
         """执行 hook 主逻辑"""
         logger.info("=" * 50)
         logger.info(f"{SCRIPT_NAME} v{SCRIPT_VERSION} 开始执行")
-        logger.info(f"项目根目录: {self.project_root}")
+        logger.info(f"项目根目录: .")
 
         # 验证必要的文件
         if not self._validate_prerequisites():
@@ -161,7 +176,7 @@ class PostCommitHook:
 
     def _execute_update_script(self) -> bool:
         """执行更新脚本"""
-        logger.info(f"执行更新脚本: {self.update_script}")
+        logger.info(f"执行更新脚本: scripts/update_claude_md.py")
 
         # 构建环境变量
         env = os.environ.copy()
