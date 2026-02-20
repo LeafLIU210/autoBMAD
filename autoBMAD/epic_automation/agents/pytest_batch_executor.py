@@ -299,9 +299,11 @@ class PytestBatchExecutor:
             else:
                 cmd.extend(["-n", batch.workers])  # "auto"
 
-        # 覆盖率（仅主批次）
+        # 覆盖率和类型检查（仅主批次）
         if batch.name in ["unit", "integration", "loose_tests"]:
             cmd.extend([f"--cov={self.source_dir}", "--cov-report=term-missing"])
+            # 新增：Typeguard 运行时类型检查
+            cmd.extend(["--typeguard-packages", str(self.source_dir)])
 
         # 失败快速停止（阻断批次）
         if batch.blocking:

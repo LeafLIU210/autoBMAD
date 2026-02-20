@@ -171,6 +171,7 @@ class DevAgent(BaseAgent):
                 f'Create or improve comprehensive test suites @tests. '
                 f'Perform Test-Driven Development (TDD) iteratively until achieving '
                 f'100% tests pass with comprehensive coverage. '
+                f'All commands must be executed in the virtual environment @venv. '
                 f'Run "pytest -v --tb=short --cov" to verify tests and coverage. '
                 f'Change story Status to "Ready for Review" when complete.'
             )

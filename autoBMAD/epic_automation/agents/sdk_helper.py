@@ -20,7 +20,11 @@ import os
 from pathlib import Path
 from typing import Any, TypedDict
 
-from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
+
 from autoBMAD.epic_automation.core.sdk_result import SDKResult, SDKErrorType
 
 logger = logging.getLogger(__name__)
@@ -63,6 +67,26 @@ def is_error_result(message: Any) -> bool:
     if not is_result_message(message):
         return False
     return hasattr(message, "is_error") and message.is_error
+
+
+def is_success_result_message(message: Any) -> bool:
+    """
+    检查消息是否为成功的ResultMessage。
+
+    Args:
+        message: SDK消息
+
+    Returns:
+        True 如果消息是非错误的ResultMessage
+    """
+    if not is_result_message(message):
+        return False
+
+    # 检查是否为错误结果
+    if hasattr(message, "is_error") and message.is_error:
+        return False
+
+    return True
 
 
 def extract_result_content(message: Any) -> str | None:
@@ -148,6 +172,9 @@ async def execute_sdk_call(
         permission_mode=permission_mode,  # type: ignore[arg-type, reportArgumentType]
         cwd=cwd or str(Path.cwd())
     )
+
+    # 延迟导入SDKExecutor以避免循环导入
+    from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
 
     # 创建SDK执行器
     executor = SDKExecutor()

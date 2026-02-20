@@ -68,22 +68,60 @@ pytest --version
 
 ### Basic Usage with Complete Workflow
 
+#### Using the Venv Wrapper Script (Recommended)
+
+The `run_epic_with_venv.sh` script automatically handles virtual environment setup and dependency installation:
+
+```bash
+# Full workflow with automatic dependency management
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose
+
+# With log file output
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
+
+# Skip quality gates for faster development
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --skip-quality --verbose
+
+# Custom directories and options
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --source-dir src --test-dir tests --max-iterations 5 --verbose
+
+# Show help
+autoBMAD/epic_automation/run_epic_with_venv.sh --help
+```
+
+**Features:**
+- Automatically creates and activates virtual environment if needed
+- Installs/updates all required dependencies
+- Automatically sets PYTHONPATH to project root
+- Colorized output for better readability
+- Supports all epic_driver.py options
+- No manual environment setup required
+
+#### Manual Execution (Advanced Users)
+
+If you prefer manual control over the environment:
+
 ```bash
 # Activate virtual environment
 venv\Scripts\activate  # On Windows
 source venv/bin/activate  # On Linux/macOS
 
 # Full workflow with all phases (SM-Dev-QA + Quality Gates + Tests)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-04-input-system-script-execution.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-04.log
+
+# Using the venv wrapper script (automatically handles dependencies)
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-01-foundation-data-layer.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic1.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
 
 # Skip quality gates (for faster development)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-quality --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-{num}.md --skip-quality --verbose
 
 # Skip test automation (for quick validation)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-tests --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-{num}.md --skip-tests --verbose
 
 # Skip both quality gates and tests (fastest)
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --skip-quality --skip-tests --verbose
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-{num}.md --skip-quality --skip-tests --verbose
 ```
 
 ### Standalone Quality Gates (NEW)
@@ -403,6 +441,73 @@ If quality gate tools are not available, the system will:
 5. Allow the workflow to continue
 
 This ensures the system can still be used for development even without the full toolchain.
+
+## Venv Wrapper Script
+
+The `run_epic_with_venv.sh` script provides automatic environment management for epic automation. It's the **recommended way** to run epic automation, especially for new users or in fresh environments.
+
+### Features
+
+- **Zero-Config Setup**: Automatically creates virtual environment if it doesn't exist
+- **Smart Dependency Management**: Installs/updates dependencies from requirements.txt
+- **Path Auto-Detection**: Automatically finds project root from script location
+- **Colorized Output**: Color-coded log messages for better readability
+- **Full Compatibility**: Supports all epic_driver.py command-line options
+- **Error Handling**: Clear error messages and validation
+- **Cross-Platform**: Works on Linux, macOS, and Windows (Git Bash)
+
+### Usage
+
+```bash
+# Basic usage - automatic setup and execution
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/my-epic.md --verbose
+
+# With log file capture
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/my-epic.md --verbose 2>&1 | tee logs/epic.log
+
+# Skip quality gates
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/my-epic.md --skip-quality --verbose
+
+# Custom options
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/my-epic.md \
+  --source-dir src \
+  --test-dir tests \
+  --max-iterations 5 \
+  --verbose
+
+# Show help
+autoBMAD/epic_automation/run_epic_with_venv.sh --help
+```
+
+### How It Works
+
+1. **Environment Check**: Verifies or creates virtual environment at project root
+2. **Activation**: Activates the virtual environment (Windows/Linux/macOS compatible)
+3. **Dependency Install**: Upgrades pip and installs all requirements
+4. **Path Setup**: Sets PYTHONPATH to project root automatically
+5. **Execution**: Runs epic_driver.py with all provided arguments
+6. **Verification**: Validates key dependencies are installed correctly
+
+### Advantages Over Manual Execution
+
+| Aspect | Manual | Wrapper Script |
+|--------|--------|----------------|
+| Venv setup | Manual | Automatic |
+| Dependency install | Manual | Automatic |
+| PYTHONPATH config | Manual | Automatic |
+| Error checking | Manual | Built-in |
+| Cross-platform | Complex | Works everywhere |
+| Reproducibility | Variable | Consistent |
+
+### Location
+
+The script is now located at:
+```
+autoBMAD/epic_automation/run_epic_with_venv.sh
+```
+
+Previously it was in `scripts/run_epic_with_venv.sh` - the new location keeps all epic automation tools together.
+
 ## Usage
 
 ### CLI Commands
@@ -561,6 +666,7 @@ The BMAD Epic Automation system follows a **Five-Layer Architecture** pattern:
 ```
 autoBMAD/epic_automation/
 ├── epic_driver.py           # Main orchestrator (2601 lines)
+├── run_epic_with_venv.sh    # Venv wrapper script (NEW)
 ├── state_manager.py         # State persistence (SQLite-based)
 ├── sdk_wrapper.py           # SafeClaudeSDK wrapper
 ├── log_manager.py           # Dual-write logging system
@@ -1184,6 +1290,16 @@ For issues and questions:
    - Share your experiences and best practices
 
 ## Version History
+
+### Version 3.2 (2026-02-17)
+- **NEW**: `run_epic_with_venv.sh` - Bash wrapper script for automatic venv management
+- Automatic virtual environment creation and activation
+- Automatic dependency installation from requirements.txt
+- Project root auto-detection from script location
+- Colorized terminal output for better readability
+- Full passthrough of epic_driver.py options
+- Integrated help system
+- Migrated from scripts/ to epic_automation/ directory
 
 ### Version 3.1 (2026-01-23)
 - **NEW**: `run-quality` subcommand for standalone quality gates

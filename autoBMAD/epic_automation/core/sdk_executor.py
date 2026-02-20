@@ -24,6 +24,34 @@ from autoBMAD.epic_automation.core.cancellation_manager import CancellationManag
 if TYPE_CHECKING:
     from anyio.abc import TaskGroup
 
+# 默认的fallback函数定义（避免循环导入）
+def is_result_message(message: Any) -> bool:
+    """检查是否为ResultMessage"""
+    return hasattr(message, "__class__") and "ResultMessage" in type(message).__name__
+
+def is_error_result(message: Any) -> bool:
+    """检查ResultMessage是否为错误"""
+    return is_result_message(message) and getattr(message, "is_error", False)
+
+
+class PostResultMessageError(Exception):
+    """
+    自定义异常：用于在ResultMessage之后发生错误时传递成功结果信息
+
+    当SDK调用在接收到ResultMessage之后但在清理过程中发生错误时使用。
+    这样execute()方法可以识别这种情况并返回成功结果。
+    """
+
+    def __init__(
+        self,
+        message: str,
+        last_result_message: Any = None,
+        captured_messages: list[Any] | None = None
+    ):
+        super().__init__(message)
+        self.last_result_message = last_result_message
+        self.captured_messages = captured_messages or []
+
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +118,60 @@ class SDKExecutor:
                 )
 
         except Exception as e:
-            # 所有异常都封装在结果中
+            # SDK_CLI_EXIT_CODE_FIX: 检查是否是PostResultMessageError
+            # 可能直接是PostResultMessageError，也可能在ExceptionGroup中
+            post_result_error = None
+            captured_msgs = []
+
+            if isinstance(e, PostResultMessageError):
+                post_result_error = e
+                captured_msgs = e.captured_messages
+            elif isinstance(e, BaseExceptionGroup):
+                # 从ExceptionGroup中提取PostResultMessageError
+                for sub_exc in e.exceptions:
+                    if isinstance(sub_exc, PostResultMessageError):
+                        post_result_error = sub_exc
+                        captured_msgs = sub_exc.captured_messages
+                        break
+                    # 也检查__cause__链
+                    if sub_exc.__cause__ and isinstance(sub_exc.__cause__, PostResultMessageError):
+                        post_result_error = sub_exc.__cause__
+                        captured_msgs = sub_exc.__cause__.captured_messages
+                        break
+
+            if post_result_error is not None:
+                last_msg = post_result_error.last_result_message
+                captured_messages = post_result_error.captured_messages or []
+
+                # 检查是否捕获了有效的ResultMessage
+                if last_msg is not None:
+                    is_error_result_flag = (
+                        hasattr(last_msg, "is_error") and
+                        last_msg.is_error
+                    )
+
+                    if not is_error_result_flag:
+                        duration = time.time() - start_time
+                        logger.warning(
+                            f"[{agent_name}] Post-ResultMessage error (caught at execute level): {post_result_error}"
+                        )
+                        logger.info(
+                            f"[{agent_name}] Returning success based on captured ResultMessage"
+                        )
+
+                        return SDKResult(
+                            has_target_result=True,
+                            cleanup_completed=True,
+                            duration_seconds=duration,
+                            session_id=session_id,
+                            agent_name=agent_name,
+                            messages=captured_messages,
+                            target_message=last_msg,
+                            error_type=SDKErrorType.SUCCESS,
+                            errors=[f"Post-completion error (ignored): {str(post_result_error)[:200]}"]
+                        )
+
+            # 所有其他异常都封装在结果中
             duration = time.time() - start_time
             logger.error(
                 f"[{agent_name}] SDK call failed: {e}",
@@ -171,6 +252,10 @@ class SDKExecutor:
         errors = []
         start_time = time.time()
 
+        # Track ResultMessage for post-error recovery (SDK_CLI_EXIT_CODE_FIX)
+        result_message_received = False
+        last_result_message = None
+
         try:
             # 检查sdk_func的类型来决定处理方式
             import inspect
@@ -194,6 +279,13 @@ class SDKExecutor:
                             self.cancel_manager.request_cancel(call_id)
 
                             # 注意：不break，继续收集消息直到生成器结束
+
+                        # SDK_CLI_EXIT_CODE_FIX: Track ResultMessage for error recovery
+                        # 使用is_result_message函数进行更可靠的检查
+                        if is_result_message(message):
+                            result_message_received = True
+                            last_result_message = message
+                            logger.debug(f"[{agent_name}] ResultMessage captured for error recovery")
 
                     except Exception as e:
                         errors.append(f"Target predicate error: {e}")
@@ -227,6 +319,13 @@ class SDKExecutor:
                     except Exception as e:
                         errors.append(f"Target predicate error: {e}")
                         logger.error(f"[{agent_name}] Target predicate error: {e}")
+
+                # SDK_CLI_EXIT_CODE_FIX: Track ResultMessage for error recovery (coroutine path)
+                # 使用is_result_message函数进行更可靠的检查
+                if is_result_message(sdk_result):
+                    result_message_received = True
+                    last_result_message = sdk_result
+                    logger.debug(f"[{agent_name}] ResultMessage captured for error recovery")
 
                 # 协程正常结束，标记清理完成
                 self.cancel_manager.mark_cleanup_completed(call_id)
@@ -282,8 +381,42 @@ class SDKExecutor:
             )
 
         except Exception as e:
-            # 其他异常 - 让异常传播到execute方法进行TaskGroup级别的处理
-            raise
+            # SDK_CLI_EXIT_CODE_FIX: 检查是否在接收ResultMessage之后发生错误
+            if result_message_received and last_result_message is not None:
+                # 检查ResultMessage是否表示成功
+                is_error_result_flag = (
+                    hasattr(last_result_message, "is_error") and
+                    last_result_message.is_error
+                )
+
+                if not is_error_result_flag:
+                    duration = time.time() - start_time
+                    logger.warning(
+                        f"[{agent_name}] Post-ResultMessage error ignored: {e}"
+                    )
+                    logger.info(
+                        f"[{agent_name}] Returning success based on captured ResultMessage"
+                    )
+
+                    # 返回成功结果
+                    return SDKResult(
+                        has_target_result=True,
+                        cleanup_completed=True,
+                        duration_seconds=duration,
+                        session_id=f"{agent_name}-{call_id[:8]}",
+                        agent_name=agent_name,
+                        messages=messages,
+                        target_message=last_result_message,
+                        error_type=SDKErrorType.SUCCESS,
+                        errors=[f"Post-completion error (ignored): {str(e)[:200]}"]
+                    )
+
+            # 没有捕获到有效结果，传播带有上下文的异常
+            raise PostResultMessageError(
+                str(e),
+                last_result_message=last_result_message,
+                captured_messages=messages
+            ) from e
 
         finally:
             # 清理

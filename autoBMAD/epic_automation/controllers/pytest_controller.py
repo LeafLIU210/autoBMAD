@@ -154,6 +154,7 @@ class PytestController:
             timeout_per_file=180,
             round_index=round_index,
             round_type="initial",
+            source_dir=self.source_dir,
         )
 
         # 3. 提取失败文件列表
@@ -195,6 +196,7 @@ class PytestController:
             timeout_per_file=600,
             round_index=round_index,
             round_type="retry",
+            source_dir=self.source_dir,
         )
 
         files_list = cast(List[dict[str, Any]], round_result["files"])

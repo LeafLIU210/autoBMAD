@@ -1796,9 +1796,9 @@ class EpicDriver:
                     await self.execute_dev_phase(story_path, iteration)
 
                 elif current_status == "Ready for Review":
-                    # 需要 QA
+                    # 需要 QA - DevQaController 内部会调用 qa_agent
                     logger.info(f"[Cycle {iteration}] Executing QA phase (status: {current_status})")
-                    await self.execute_qa_phase(story_path)
+                    await self.execute_dev_phase(story_path, iteration)
                     # ⚠️ 不检查返回值，继续循环
 
                 elif current_status == "Failed":

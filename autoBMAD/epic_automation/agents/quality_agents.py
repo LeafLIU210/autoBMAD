@@ -659,6 +659,7 @@ class PytestAgent(BaseQualityAgent):
         timeout_per_file: int,
         round_index: int,
         round_type: str,
+        source_dir: str | None = None,
     ) -> dict[str, object]:
         """
         按文件顺序执行 pytest -v --tb=short（增加资源错误检测）
@@ -668,6 +669,7 @@ class PytestAgent(BaseQualityAgent):
             timeout_per_file: 每个文件的超时时间（秒）
             round_index: 轮次索引
             round_type: "initial" | "retry"
+            source_dir: 源代码目录（用于 typeguard 类型检查）
 
         Returns:
             {
@@ -690,6 +692,7 @@ class PytestAgent(BaseQualityAgent):
             file_result = await self._run_pytest_single_file(
                 test_file=test_file,
                 timeout=timeout_per_file,
+                source_dir=source_dir,
             )
             results.append(file_result)
 
@@ -720,6 +723,7 @@ class PytestAgent(BaseQualityAgent):
         self,
         test_file: str,
         timeout: int,
+        source_dir: str | None = None,
     ) -> PytestFileResult:
         """
         执行单个测试文件的 pytest
@@ -731,6 +735,7 @@ class PytestAgent(BaseQualityAgent):
         Args:
             test_file: 测试文件路径
             timeout: 超时时间（秒）
+            source_dir: 源代码目录（用于 typeguard 类型检查）
 
         Returns:
             {
@@ -750,8 +755,14 @@ class PytestAgent(BaseQualityAgent):
         tmp_json.close()
 
         try:
-            # 使用 -o addopts= 覆盖 pyproject.toml 的默认配置，避免冲突
-            cmd = f'pytest {test_file} -v --tb=short --json-report --json-report-file={tmp_json_path} -o addopts='
+            # 构建基础命令
+            base_cmd = f'pytest {test_file} -v --tb=short --json-report --json-report-file={tmp_json_path}'
+
+            # 添加 typeguard 参数（如果提供了 source_dir）
+            if source_dir:
+                cmd = f'{base_cmd} --typeguard-packages={source_dir} -o addopts='
+            else:
+                cmd = f'{base_cmd} -o addopts='
 
             # 2. 执行（复用 BaseQualityAgent._run_subprocess）
             result = await self._run_subprocess(cmd, timeout=timeout)
@@ -812,6 +823,24 @@ class PytestAgent(BaseQualityAgent):
                 Path(tmp_json_path).unlink(missing_ok=True)
             except Exception:
                 pass
+
+    def _is_typeguard_error(self, failure: dict[str, Any]) -> bool:
+        """
+        判断是否为 typeguard 产生的类型错误
+
+        Args:
+            failure: 失败信息字典
+
+        Returns:
+            bool: 是否为类型错误
+        """
+        message = str(failure.get("message", ""))
+        type_error_patterns = [
+            "TypeError",
+            "was expected, got",
+            "type of argument",
+        ]
+        return any(pattern in message for pattern in type_error_patterns)
 
     def _parse_json_report(
         self,

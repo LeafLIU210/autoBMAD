@@ -100,6 +100,7 @@ class QAAgent(BaseAgent):
                 "@.bmad-core\\tasks\\review-story.md "
                 f"Review @{story_path}, "
                 "create or update the story gate yaml file in @docs\\qa\\gates. "
+                "All commands must be executed in the virtual environment @venv. "
                 'If the story document passes review, change the Status field in the story document '
                 'from "Ready for Review" to "Ready for Done"; '
                 'otherwise change it to "In Progress".'
