@@ -1,0 +1,24 @@
+# Analyst Node Evaluation Criteria - Story 2.8
+# Universal criteria: completeness, clarity, consistency, actionability, evidence_quality
+# Analyst focus: evidence_quality (0.40), actionability (0.30)
+
+criteria:
+  - name: evidence_quality
+    description: "Quality and reliability of evidence, sources, and data supporting conclusions"
+    weight: 0.40
+  - name: actionability
+    description: "Degree to which recommendations can be directly implemented"
+    weight: 0.30
+  - name: completeness
+    description: "Extent to which all required components and details are present"
+    weight: 0.15
+  - name: clarity
+    description: "Clear and unambiguous communication of findings and recommendations"
+    weight: 0.10
+  - name: consistency
+    description: "Logical coherence and internal consistency of the analysis"
+    weight: 0.05
+
+thresholds:
+  approval: 0.70
+  escalation: 0.50

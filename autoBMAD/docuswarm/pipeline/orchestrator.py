@@ -1,0 +1,1133 @@
+"""Hybrid Orchestrator for pipeline execution - Story 3.5.
+
+This module provides the HybridOrchestrator class that combines:
+- LLM-based context validation (Kimi Instant)
+- Rule-based dependency checking
+- LangGraph StateGraph with SqliteSaver for checkpoint/resume
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
+
+import structlog
+from kaos.path import KaosPath
+from kimi_agent_sdk import Message
+
+from autoBMAD.docuswarm.llm.response import extract_text_from_messages
+from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+from autoBMAD.docuswarm.pipeline.graph import (
+    PIPELINE_NODES,
+    create_pipeline_graph,
+)
+from autoBMAD.docuswarm.pipeline.state import (
+    CANCELLED,
+    PAUSED,
+    RUNNING,
+    create_initial_state,
+)
+from autoBMAD.docuswarm.storage.checkpoints import (
+    create_checkpoint_config,
+    generate_thread_id,
+)
+from autoBMAD.docuswarm.storage.state_manager import StateManager
+from autoBMAD.docuswarm.utils.logging import set_log_context
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import Runnable
+    from langgraph.checkpoint.base import BaseCheckpointSaver
+    from langgraph.checkpoint.sqlite import SqliteSaver
+
+logger = structlog.get_logger(__name__)
+
+# Context validation prompt template
+CONTEXT_VALIDATION_PROMPT = """You are a technical context validator. Analyze the context and output ONLY a JSON object.
+
+**Context to validate:**
+{subject_context}
+
+**Validation rules:**
+1. Check if there's a clear objective (what to create)
+2. Check if scope is defined (requirements stated)
+3. Check if there's sufficient detail to start
+
+**Output format (respond with ONLY this JSON, no markdown blocks, no other text):**
+
+{{
+  "valid": true,
+  "reason": "Brief validation reason",
+  "missing_info": []
+}}
+
+**Important:**
+- Do NOT call any tools
+- Do NOT use markdown code blocks
+- Output ONLY the JSON object
+- Use lowercase true/false for booleans
+"""
+
+# Decision outcomes
+DECISION_PROCEED = "proceed"
+DECISION_PAUSE = "pause"
+DECISION_HALT = "halt"
+
+
+class OrchestratorError(Exception):
+    """Base exception for orchestrator errors."""
+
+    pass
+
+
+class ContextValidationError(OrchestratorError):
+    """Raised when context validation fails."""
+
+    pass
+
+
+class DependencyError(OrchestratorError):
+    """Raised when dependency checking fails."""
+
+    pass
+
+
+class PipelineNotFoundError(OrchestratorError):
+    """Raised when pipeline is not found."""
+
+    pass
+
+
+class PipelineAlreadyCompletedError(OrchestratorError):
+    """Raised when trying to resume a completed pipeline."""
+
+    pass
+
+
+class HybridOrchestrator:
+    """Hybrid orchestrator combining LLM-based validation with rule-based control.
+
+    This orchestrator manages pipeline execution with:
+    - LLM-based context validation using Kimi Instant
+    - Rule-based dependency checking
+    - LangGraph StateGraph with SqliteSaver for checkpoint/resume
+    - Thread isolation for concurrent pipeline execution
+    - Session-aware resume for interrupted pipelines (Story 9.3)
+
+    Args:
+        db_path: Path to the SQLite database for state persistence.
+        checkpointer: Optional SqliteSaver checkpointer. If not provided, creates one.
+        session_manager: Optional KimiSessionManager for session resume and LLM calls. If not provided, creates one.
+        work_dir: Optional working directory for sessions. Defaults to current directory.
+
+    Example:
+        >>> orchestrator = HybridOrchestrator(db_path="checkpoints.db")
+        >>> pipeline_id = await orchestrator.start_pipeline(subject_context)
+        >>> status = await orchestrator.get_pipeline_status(pipeline_id)
+    """
+
+    def __init__(
+        self,
+        db_path: str | None = None,
+        checkpointer: BaseCheckpointSaver[Any] | SqliteSaver | None = None,
+        session_manager: KimiSessionManager | None = None,
+        work_dir: str | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
+        """Initialize HybridOrchestrator.
+
+        Args:
+            db_path: Path to SQLite database. Defaults to "docuswarm.db".
+            checkpointer: Optional checkpointer for LangGraph.
+            session_manager: Optional KimiSessionManager for session resume and LLM calls.
+            work_dir: Optional working directory for sessions.
+            api_key: Optional Kimi API key (from .env or environment).
+            base_url: Optional Kimi API base URL (from .env or environment).
+        """
+        self._db_path = db_path or "docuswarm.db"
+        self._checkpointer = checkpointer
+        self._session_manager = session_manager
+        # Initialize work_dir, default to autoBMAD/output
+        if work_dir is None:
+            # Calculate autoBMAD root: orchestrator.py → pipeline/ → docuswarm/ → autoBMAD/
+            autoBMAD_root = Path(__file__).parent.parent.parent.resolve()
+            self._work_dir = str(autoBMAD_root / "output")
+        else:
+            self._work_dir = work_dir
+        self._api_key = api_key
+        self._base_url = base_url
+
+        # Initialize state manager for pipeline metadata
+        self._state_manager = StateManager(db_path=self._db_path)
+
+        logger.info(
+            "hybrid_orchestrator_initialized",
+            db_path=self._db_path,
+            work_dir=self._work_dir,
+        )
+
+    @property
+    def session_manager(self) -> KimiSessionManager | None:
+        """Get the session manager instance."""
+        return self._session_manager
+
+    def _get_or_create_session_manager(
+        self,
+        pipeline_id: str | None = None,
+    ) -> KimiSessionManager:
+        """Get existing session manager or create a new one.
+
+        Args:
+            pipeline_id: Optional pipeline ID for pipeline-specific work_dir.
+
+        Returns:
+            KimiSessionManager instance.
+
+        Raises:
+            OrchestratorError: If session manager cannot be created.
+        """
+        # Return cached manager if no pipeline_id specified
+        if self._session_manager is not None and pipeline_id is None:
+            return self._session_manager
+
+        try:
+            if pipeline_id:
+                # Pipeline-specific work_dir
+                work_dir = KaosPath(str(Path(self._work_dir) / pipeline_id))
+            else:
+                # Global work_dir (never falls back to cwd)
+                work_dir = KaosPath(self._work_dir)
+
+            session_manager = KimiSessionManager(
+                work_dir=work_dir,
+                api_key=self._api_key,
+                base_url=self._base_url,
+            )
+
+            # Only cache global session_manager
+            if pipeline_id is None:
+                self._session_manager = session_manager
+
+            logger.info(
+                "session_manager_created",
+                work_dir=str(work_dir),
+                pipeline_id=pipeline_id,
+            )
+            return session_manager
+        except Exception as e:
+            logger.error("failed_to_create_session_manager", error=str(e))
+            raise OrchestratorError(f"Failed to create session manager: {e}") from e
+
+    async def _validate_context(
+        self,
+        subject_context: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Validate subject context using LLM (Kimi Instant).
+
+        Args:
+            subject_context: The context dictionary to validate.
+
+        Returns:
+            Validation result with valid, reason, and missing_info fields.
+
+        Raises:
+            ContextValidationError: If validation fails.
+        """
+        logger.info("validating_context", context=subject_context)
+
+        # Get or create session manager
+        session_manager = self._get_or_create_session_manager()
+
+        try:
+            # Format the prompt with subject context
+            context_str = json.dumps(subject_context, indent=2)
+            prompt = CONTEXT_VALIDATION_PROMPT.format(subject_context=context_str)
+
+            # Call LLM with instant mode using session_manager
+            messages: list[Message] = await session_manager.single_prompt(
+                prompt=prompt,
+                mode="agent",
+                yolo=True,
+            )
+
+            # Parse the response
+            try:
+                # Extract content from messages using unified utility
+                content = extract_text_from_messages(messages)
+
+                if not content:
+                    raise ValueError("Empty response from LLM")
+
+                # Extract JSON from response content
+                content = content.strip()
+                # Handle potential markdown code blocks
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.startswith("```"):
+                    content = content[3:]
+                if content.endswith("```"):
+                    content = content[:-3]
+
+                result = json.loads(content.strip())
+
+                logger.info(
+                    "context_validation_complete",
+                    valid=result.get("valid"),
+                    reason=result.get("reason"),
+                )
+
+                return result
+
+            except (json.JSONDecodeError, ValueError) as e:
+                # Default to "empty" for logging if content wasn't set
+                content_str = ""
+                logger.error(
+                    "failed_to_parse_validation_response",
+                    content=content_str,
+                    error=str(e),
+                )
+                # Default to valid if we can't parse - fail open for robustness
+                return {
+                    "valid": True,
+                    "reason": "Could not parse validation response, defaulting to valid",
+                    "missing_info": [],
+                }
+
+        except Exception as e:
+            logger.warning("context_validation_skipped", error=str(e))
+            # Fail open - allow pipeline to proceed if LLM is unavailable
+            return {
+                "valid": True,
+                "reason": f"LLM validation failed: {e}, defaulting to valid",
+                "missing_info": [],
+            }
+
+    def _check_dependencies(
+        self,
+        current_node: str,
+        completed_nodes: list[str],
+        deliverables: dict[str, dict[str, Any]],
+    ) -> bool:
+        """Check if dependencies are met for the current node using rule-based logic.
+
+        Dependencies are satisfied when:
+        - All previous nodes in the workflow have completed
+        - Previous nodes have produced deliverables
+
+        Args:
+            current_node: The node to check dependencies for.
+            completed_nodes: List of already completed node IDs.
+            deliverables: Dictionary of node deliverables.
+
+        Returns:
+            True if all dependencies are met, False otherwise.
+        """
+        logger.info(
+            "checking_dependencies",
+            current_node=current_node,
+            completed_nodes=completed_nodes,
+        )
+
+        # Find current node index in workflow
+        if current_node not in PIPELINE_NODES:
+            logger.warning("unknown_node", node=current_node)
+            return False
+
+        current_index = PIPELINE_NODES.index(current_node)
+
+        # Check all previous nodes
+        for i in range(current_index):
+            required_node = PIPELINE_NODES[i]
+
+            # Check if node is in completed list
+            if required_node not in completed_nodes:
+                logger.info(
+                    "dependency_not_met",
+                    required=required_node,
+                    reason="node_not_completed",
+                )
+                return False
+
+            # Check if node has deliverables (optional but recommended)
+            if required_node not in deliverables:
+                logger.warning(
+                    "dependency_warning",
+                    required=required_node,
+                    reason="no_deliverables",
+                )
+
+        logger.info("dependencies_met", current_node=current_node)
+        return True
+
+    async def start_pipeline(
+        self,
+        subject_context: dict[str, Any],
+        pipeline_id: str | None = None,
+    ) -> str:
+        """Start a new pipeline with validated context.
+
+        This method:
+        1. Validates the subject context using LLM
+        2. Creates the pipeline in the database
+        3. Executes the pipeline using LangGraph
+
+        Args:
+            subject_context: Context information about the subject being processed.
+            pipeline_id: Optional custom pipeline ID. If not provided, generates one.
+
+        Returns:
+            The pipeline ID.
+
+        Raises:
+            ContextValidationError: If context validation fails.
+        """
+        logger.info("starting_pipeline", subject_context=subject_context)
+
+        # Step 1: Validate context using LLM
+        validation_result = await self._validate_context(subject_context)
+
+        if not validation_result.get("valid", False):
+            error_msg = (
+                f"Context validation failed: {validation_result.get('reason', 'Unknown reason')}. "
+                f"Missing info: {validation_result.get('missing_info', [])}"
+            )
+            logger.error("context_validation_failed", result=validation_result)
+            raise ContextValidationError(error_msg)
+
+        # Step 2: Create pipeline in database
+        subject = subject_context.get("subject", "Untitled")
+        db_pipeline_id = self._state_manager.create_pipeline(
+            subject=subject,
+            subject_context=subject_context,
+        )
+
+        # Use provided pipeline_id or generated one
+        final_pipeline_id = pipeline_id or db_pipeline_id
+
+        # Step 3: Update status to running
+        _ = self._state_manager.update_pipeline_status(
+            final_pipeline_id,
+            status=RUNNING,
+            current_node=PIPELINE_NODES[0],  # Start with first node
+        )
+
+        # Step 4: Set logging context for this pipeline
+        set_log_context(run_id=final_pipeline_id, node_id="orchestrator")
+
+        # Step 4.5: Ensure pipeline output directory exists
+        pipeline_work_dir = Path(self._work_dir) / final_pipeline_id
+        pipeline_work_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            "pipeline_work_dir_created",
+            path=str(pipeline_work_dir),
+            pipeline_id=final_pipeline_id,
+        )
+
+        # Step 5: Create and execute the pipeline graph
+        try:
+            # Generate thread ID from pipeline ID
+            thread_id = generate_thread_id(final_pipeline_id)
+            config = create_checkpoint_config(thread_id)
+
+            # Create initial state
+            initial_state = create_initial_state(final_pipeline_id, subject_context)
+
+            # Create pipeline graph with checkpointer
+            checkpointer = self._checkpointer
+            if checkpointer is None:
+                import aiosqlite
+                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+                # Create async connection for the checkpointer
+                aconn = await aiosqlite.connect(self._db_path)
+
+                # Enable WAL mode
+                await aconn.execute("PRAGMA journal_mode=WAL")
+                await aconn.execute("PRAGMA synchronous=NORMAL")
+
+                # Add is_alive method for langgraph compatibility
+                if not hasattr(aconn, "is_alive"):
+
+                    def _is_alive() -> bool:
+                        return True
+
+                    aconn.is_alive = _is_alive  # type: ignore[attr-defined]
+
+                checkpointer = AsyncSqliteSaver(conn=aconn)
+
+            # Get session_manager for integrated node execution (Story 11.4)
+            session_manager = self._get_or_create_session_manager()
+
+            graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
+                db_path=self._db_path,
+                checkpointer=checkpointer,
+                session_manager=session_manager,
+            )
+
+            # Execute the graph
+            result: dict[str, Any] = await graph.ainvoke(initial_state, config)
+
+            # Update status to completed and sync current_node from final state
+            final_current_node = result.get("current_node", "po")
+            _ = self._state_manager.update_pipeline_status(
+                final_pipeline_id,
+                status="completed",  # type: ignore[arg-type]
+                current_node=final_current_node,
+            )
+
+            logger.info(
+                "pipeline_started",
+                pipeline_id=final_pipeline_id,
+                result=result,
+            )
+
+            return final_pipeline_id
+
+        except Exception as e:
+            logger.error("pipeline_execution_error", error=str(e))
+            _ = self._state_manager.update_pipeline_status(
+                final_pipeline_id,
+                status="failed",  # type: ignore[arg-type]
+            )
+            raise
+
+    async def resume_pipeline(self, pipeline_id: str) -> dict[str, Any]:
+        """Resume a paused pipeline from its last checkpoint with session recovery.
+
+        This method implements Story 9.3: Pipeline Resume with Session Recovery.
+        It retrieves the checkpoint state and attempts to resume the SDK session
+        for the last interrupted node. If the session is not found, it falls back
+        to restarting the node.
+
+        Args:
+            pipeline_id: The ID of the pipeline to resume.
+
+        Returns:
+            The final pipeline state after execution.
+
+        Raises:
+            PipelineNotFoundError: If pipeline doesn't exist.
+            PipelineAlreadyCompletedError: If pipeline is already completed.
+        """
+        logger.info("resuming_pipeline", pipeline_id=pipeline_id)
+
+        # Set logging context for this pipeline
+        set_log_context(run_id=pipeline_id, node_id="orchestrator")
+
+        # Get pipeline from database
+        pipeline = self._state_manager.get_pipeline(pipeline_id)
+        if pipeline is None:
+            raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
+
+        # Check if already completed
+        if pipeline["status"] == "completed":
+            raise PipelineAlreadyCompletedError(f"Pipeline already completed: {pipeline_id}")
+
+        # Get the current node and session_id from checkpoint state
+        checkpoint_state = pipeline.get("state", {})
+        last_node = checkpoint_state.get("current_node")
+        session_id = checkpoint_state.get("current_node_session_id")
+
+        logger.info(
+            "resume_pipeline_checking_session",
+            pipeline_id=pipeline_id,
+            last_node=last_node,
+            session_id=session_id,
+        )
+
+        # Update status to running
+        _ = self._state_manager.update_pipeline_status(
+            pipeline_id,
+            status=RUNNING,
+        )
+
+        try:
+            # Step 1: Attempt SDK session resume if session_id exists
+            session_resumed = False
+            if session_id and last_node:
+                session_resumed = await self._attempt_session_resume(
+                    pipeline_id=pipeline_id,
+                    session_id=session_id,
+                    last_node=last_node,
+                )
+
+            # Step 2: Continue with pipeline execution
+            # Generate thread ID and config
+            thread_id = generate_thread_id(pipeline_id)
+            config = create_checkpoint_config(thread_id)
+
+            # Create checkpointer
+            checkpointer = self._checkpointer
+            if checkpointer is None:
+                import aiosqlite
+                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+                # Create async connection for the checkpointer
+                aconn = await aiosqlite.connect(self._db_path)
+
+                # Enable WAL mode
+                await aconn.execute("PRAGMA journal_mode=WAL")
+                await aconn.execute("PRAGMA synchronous=NORMAL")
+
+                # Add is_alive method for langgraph compatibility
+                if not hasattr(aconn, "is_alive"):
+
+                    def _is_alive() -> bool:
+                        return True
+
+                    aconn.is_alive = _is_alive  # type: ignore[attr-defined]
+
+                checkpointer = AsyncSqliteSaver(conn=aconn)
+
+            # Create pipeline graph
+            # Get session_manager for integrated node execution (Story 11.4)
+            session_manager = self._get_or_create_session_manager()
+
+            graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
+                db_path=self._db_path,
+                checkpointer=checkpointer,
+                session_manager=session_manager,
+            )
+
+            # Get subject context from checkpoint
+            subject_context = checkpoint_state.get("subject_context", {})
+
+            # Create initial state from checkpoint (preserves all progress)
+            initial_state = create_initial_state(pipeline_id, subject_context)
+
+            # Restore state from checkpoint
+            initial_state["current_node"] = checkpoint_state.get("current_node")
+            initial_state["completed_nodes"] = checkpoint_state.get("completed_nodes", [])
+            initial_state["deliverables"] = checkpoint_state.get("deliverables", {})
+            initial_state["questions"] = checkpoint_state.get("questions", {})
+            initial_state["evaluations"] = checkpoint_state.get("evaluations", {})
+            initial_state["node_iterations"] = checkpoint_state.get("node_iterations", {})
+            initial_state["session_ids"] = checkpoint_state.get("session_ids", {})
+            initial_state["session_metadata"] = checkpoint_state.get("session_metadata", {})
+            initial_state["current_node_session_id"] = session_id if session_resumed else None
+            initial_state["status"] = RUNNING
+
+            logger.info(
+                "resume_pipeline_executing",
+                pipeline_id=pipeline_id,
+                last_node=last_node,
+                session_resumed=session_resumed,
+                completed_nodes=initial_state["completed_nodes"],
+            )
+
+            # Execute from checkpoint
+            result: dict[str, Any] = await graph.ainvoke(initial_state, config)
+
+            # Update status
+            _ = self._state_manager.update_pipeline_status(
+                pipeline_id,
+                status="completed",  # type: ignore[arg-type]
+            )
+
+            logger.info(
+                "pipeline_resumed",
+                pipeline_id=pipeline_id,
+                session_resumed=session_resumed,
+                result=result,
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error("pipeline_resume_error", error=str(e))
+            _ = self._state_manager.update_pipeline_status(
+                pipeline_id,
+                status="failed",  # type: ignore[arg-type]
+            )
+            raise
+
+    async def restart_from_node(
+        self,
+        pipeline_id: str,
+        node_id: str,
+    ) -> dict[str, Any]:
+        """Restart pipeline from a specific node, clearing subsequent nodes.
+
+        This method allows restarting from any node in the pipeline, clearing
+        all results from that node onwards while preserving deliverables from
+        earlier nodes.
+
+        Args:
+            pipeline_id: The ID of the pipeline to restart.
+            node_id: The node ID to restart from (must be a valid PIPELINE_NODE).
+
+        Returns:
+            The final pipeline state after execution.
+
+        Raises:
+            PipelineNotFoundError: If pipeline doesn't exist.
+            ValueError: If node_id is not a valid pipeline node.
+        """
+        logger.info("restarting_from_node", pipeline_id=pipeline_id, node_id=node_id)
+
+        # Validate node_id
+        if node_id not in PIPELINE_NODES:
+            raise ValueError(f"Invalid node_id: {node_id}. Must be one of: {PIPELINE_NODES}")
+
+        # Set logging context for this pipeline
+        set_log_context(run_id=pipeline_id, node_id=node_id)
+
+        # Get pipeline from database
+        pipeline = self._state_manager.get_pipeline(pipeline_id)
+        if pipeline is None:
+            raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
+
+        # Get the current checkpoint state
+        checkpoint_state = pipeline.get("state", {})
+        subject_context = checkpoint_state.get("subject_context", {})
+
+        # Get completed nodes and deliverables from checkpoint
+        completed_nodes: list[str] = checkpoint_state.get("completed_nodes", [])
+        deliverables: dict[str, Any] = checkpoint_state.get("deliverables", {})
+        questions: dict[str, Any] = checkpoint_state.get("questions", {})
+        evaluations: dict[str, Any] = checkpoint_state.get("evaluations", {})
+        node_iterations: dict[str, int] = checkpoint_state.get("node_iterations", {})
+
+        # Find the index of restart node
+        try:
+            restart_index = PIPELINE_NODES.index(node_id)
+        except ValueError:
+            restart_index = 0
+
+        # Clear deliverables from restart node onwards
+        nodes_to_clear = PIPELINE_NODES[restart_index:]
+        for node in nodes_to_clear:
+            if node in deliverables:
+                del deliverables[node]
+            if node in questions:
+                del questions[node]
+            if node in evaluations:
+                del evaluations[node]
+
+        # Update completed nodes to only include nodes before restart
+        new_completed_nodes = [
+            n for n in completed_nodes if PIPELINE_NODES.index(n) < restart_index
+        ]
+
+        # Update status to running
+        _ = self._state_manager.update_pipeline_status(
+            pipeline_id,
+            status=RUNNING,
+            current_node=node_id,
+        )
+
+        try:
+            # Generate thread ID and config
+            thread_id = generate_thread_id(pipeline_id)
+            config = create_checkpoint_config(thread_id)
+
+            # Create checkpointer
+            checkpointer = self._checkpointer
+            if checkpointer is None:
+                import aiosqlite
+                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+                # Create async connection for the checkpointer
+                aconn = await aiosqlite.connect(self._db_path)
+
+                # Enable WAL mode
+                await aconn.execute("PRAGMA journal_mode=WAL")
+                await aconn.execute("PRAGMA synchronous=NORMAL")
+
+                # Add is_alive method for langgraph compatibility
+                if not hasattr(aconn, "is_alive"):
+
+                    def _is_alive() -> bool:
+                        return True
+
+                    aconn.is_alive = _is_alive  # type: ignore[attr-defined]
+
+                checkpointer = AsyncSqliteSaver(conn=aconn)
+
+            # Create pipeline graph
+            # Get session_manager for integrated node execution (Story 11.4)
+            session_manager = self._get_or_create_session_manager()
+
+            graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
+                db_path=self._db_path,
+                checkpointer=checkpointer,
+                session_manager=session_manager,
+            )
+
+            # Create initial state for restart
+            initial_state = create_initial_state(pipeline_id, subject_context)
+
+            # Restore state with cleared values
+            initial_state["current_node"] = node_id
+            initial_state["completed_nodes"] = new_completed_nodes
+            initial_state["deliverables"] = deliverables
+            initial_state["questions"] = questions
+            initial_state["evaluations"] = evaluations
+            initial_state["node_iterations"] = node_iterations
+            initial_state["status"] = RUNNING
+
+            logger.info(
+                "restart_from_node_executing",
+                pipeline_id=pipeline_id,
+                node_id=node_id,
+                completed_nodes=new_completed_nodes,
+                cleared_nodes=nodes_to_clear,
+            )
+
+            # Execute from restart node
+            result: dict[str, Any] = await graph.ainvoke(initial_state, config)
+
+            # Update status
+            _ = self._state_manager.update_pipeline_status(
+                pipeline_id,
+                status="completed",  # type: ignore[arg-type]
+            )
+
+            logger.info(
+                "pipeline_restarted_from_node",
+                pipeline_id=pipeline_id,
+                node_id=node_id,
+                result=result,
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error("pipeline_restart_from_node_error", error=str(e))
+            _ = self._state_manager.update_pipeline_status(
+                pipeline_id,
+                status="failed",  # type: ignore[arg-type]
+            )
+            raise
+
+    async def _attempt_session_resume(
+        self,
+        pipeline_id: str,
+        session_id: str,
+        last_node: str,
+    ) -> bool:
+        """Attempt to resume the SDK session for the interrupted node.
+
+        Args:
+            pipeline_id: The pipeline ID.
+            session_id: The session ID to resume.
+            last_node: The last node that was executing.
+
+        Returns:
+            True if session was successfully resumed, False otherwise.
+        """
+        logger.info(
+            "attempting_session_resume",
+            pipeline_id=pipeline_id,
+            session_id=session_id,
+            last_node=last_node,
+        )
+
+        try:
+            # Get or create session manager
+            session_manager = self._get_or_create_session_manager()
+
+            # Attempt to resume the session
+            session = await session_manager.resume_session(session_id=session_id)
+
+            if session is not None:
+                logger.info(
+                    "session_resume_success",
+                    pipeline_id=pipeline_id,
+                    session_id=session_id,
+                    last_node=last_node,
+                    resumed_session_id=session.id,
+                )
+                return True
+            else:
+                logger.warning(
+                    "session_not_found_will_restart",
+                    pipeline_id=pipeline_id,
+                    session_id=session_id,
+                    last_node=last_node,
+                )
+                return False
+
+        except Exception as e:
+            logger.warning(
+                "session_resume_failed_will_restart",
+                pipeline_id=pipeline_id,
+                session_id=session_id,
+                last_node=last_node,
+                error=str(e),
+            )
+            return False
+
+    async def _restart_node(
+        self,
+        pipeline_id: str,
+        node_id: str,
+        checkpoint_state: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Restart a node from its last checkpoint when session resume fails.
+
+        This is the fallback method when the SDK session is not found.
+        It restarts the node execution from the last checkpoint state.
+
+        Args:
+            pipeline_id: The pipeline ID.
+            node_id: The node ID to restart.
+            checkpoint_state: The checkpoint state to restart from.
+
+        Returns:
+            The result of the restarted node execution.
+        """
+        logger.info(
+            "restarting_node",
+            pipeline_id=pipeline_id,
+            node_id=node_id,
+        )
+
+        # Generate thread ID and config
+        thread_id = generate_thread_id(pipeline_id)
+        config = create_checkpoint_config(thread_id)
+
+        # Create checkpointer
+        checkpointer = self._checkpointer
+        if checkpointer is None:
+            import aiosqlite
+            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+            # Create async connection for the checkpointer
+            aconn = await aiosqlite.connect(self._db_path)
+
+            # Enable WAL mode
+            await aconn.execute("PRAGMA journal_mode=WAL")
+            await aconn.execute("PRAGMA synchronous=NORMAL")
+
+            # Add is_alive method for langgraph compatibility
+            if not hasattr(aconn, "is_alive"):
+
+                def _is_alive() -> bool:
+                    return True
+
+                aconn.is_alive = _is_alive  # type: ignore[attr-defined]
+
+            checkpointer = AsyncSqliteSaver(conn=aconn)
+
+        # Create pipeline graph
+        # Get session_manager for integrated node execution (Story 11.4)
+        session_manager = self._get_or_create_session_manager()
+
+        graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
+            db_path=self._db_path,
+            checkpointer=checkpointer,
+            session_manager=session_manager,
+        )
+
+        # Get subject context
+        subject_context = checkpoint_state.get("subject_context", {})
+
+        # Create initial state from checkpoint
+        initial_state = create_initial_state(pipeline_id, subject_context)
+
+        # Restore state (without session_id since we're restarting)
+        initial_state["current_node"] = checkpoint_state.get("current_node")
+        initial_state["completed_nodes"] = checkpoint_state.get("completed_nodes", [])
+        initial_state["deliverables"] = checkpoint_state.get("deliverables", {})
+        initial_state["questions"] = checkpoint_state.get("questions", {})
+        initial_state["evaluations"] = checkpoint_state.get("evaluations", {})
+        initial_state["node_iterations"] = checkpoint_state.get("node_iterations", {})
+        initial_state["session_ids"] = checkpoint_state.get("session_ids", {})
+        initial_state["session_metadata"] = checkpoint_state.get("session_metadata", {})
+        initial_state["current_node_session_id"] = None  # Clear session_id for restart
+        initial_state["status"] = RUNNING
+
+        logger.info(
+            "node_restarting",
+            pipeline_id=pipeline_id,
+            node_id=node_id,
+        )
+
+        # Execute from checkpoint
+        result: dict[str, Any] = await graph.ainvoke(initial_state, config)
+
+        logger.info(
+            "node_restarted",
+            pipeline_id=pipeline_id,
+            node_id=node_id,
+        )
+
+        return result
+
+    async def pause_pipeline(self, pipeline_id: str) -> bool:
+        """Pause a running pipeline, preserving its state.
+
+        Args:
+            pipeline_id: The ID of the pipeline to pause.
+
+        Returns:
+            True if pause was successful.
+
+        Raises:
+            PipelineNotFoundError: If pipeline doesn't exist.
+        """
+        logger.info("pausing_pipeline", pipeline_id=pipeline_id)
+
+        # Verify pipeline exists
+        pipeline = self._state_manager.get_pipeline(pipeline_id)
+        if pipeline is None:
+            raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
+
+        # Update status to paused
+        _ = self._state_manager.update_pipeline_status(
+            pipeline_id,
+            status=PAUSED,
+        )
+
+        logger.info("pipeline_paused", pipeline_id=pipeline_id)
+        return True
+
+    async def cancel_current_node(
+        self,
+        pipeline_id: str,
+        cancellation_reason: str = "user_request",
+    ) -> bool:
+        """Cancel the currently running node in a pipeline.
+
+        This method implements Story 9.4: Native Cancellation Integration.
+        It retrieves the active session for the current node and calls session.cancel()
+        to trigger the RunCancelled exception in the agent execution.
+
+        Args:
+            pipeline_id: The ID of the pipeline to cancel.
+            cancellation_reason: Reason for cancellation (user_request, timeout, error).
+
+        Returns:
+            True if cancellation was successful, False if no active session found.
+
+        Raises:
+            PipelineNotFoundError: If pipeline doesn't exist.
+        """
+        logger.info(
+            "canceling_pipeline",
+            pipeline_id=pipeline_id,
+            reason=cancellation_reason,
+        )
+
+        # Get pipeline from database
+        pipeline = self._state_manager.get_pipeline(pipeline_id)
+        if pipeline is None:
+            raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
+
+        # Get the current node and session_id from state
+        state = pipeline.get("state", {})
+        current_node = state.get("current_node")
+        session_id = state.get("current_node_session_id")
+
+        if not current_node:
+            logger.warning(
+                "cancel_no_current_node",
+                pipeline_id=pipeline_id,
+            )
+            return False
+
+        if not session_id:
+            logger.warning(
+                "cancel_no_session_id",
+                pipeline_id=pipeline_id,
+                current_node=current_node,
+            )
+            return False
+
+        # Get session manager
+        session_manager = self._get_or_create_session_manager()
+
+        # Get the active session
+        session = session_manager.get_active(session_id)
+
+        if session is None:
+            logger.warning(
+                "cancel_session_not_active",
+                pipeline_id=pipeline_id,
+                session_id=session_id,
+            )
+            return False
+
+        # Cancel the session - this triggers RunCancelled in agent execution
+        # Type cast: we've already verified session is not None above
+        try:
+            await cast(Any, session).cancel()
+            logger.info(
+                "cancel_session_called",
+                pipeline_id=pipeline_id,
+                session_id=session_id,
+                current_node=current_node,
+            )
+        except Exception as e:
+            logger.error(
+                "cancel_session_error",
+                pipeline_id=pipeline_id,
+                session_id=session_id,
+                error=str(e),
+            )
+            return False
+
+        # Update pipeline status to CANCELLED
+        self._state_manager.update_pipeline_status(
+            pipeline_id,
+            status=CANCELLED,
+            current_node=current_node,  # Preserve current_node for debugging
+        )
+
+        logger.info(
+            "pipeline_cancelled",
+            pipeline_id=pipeline_id,
+            current_node=current_node,
+            reason=cancellation_reason,
+        )
+
+        return True
+
+    async def get_pipeline_status(self, pipeline_id: str) -> dict[str, Any]:
+        """Get the current status of a pipeline.
+
+        Args:
+            pipeline_id: The ID of the pipeline to query.
+
+        Returns:
+            Dictionary with pipeline status information.
+
+        Raises:
+            PipelineNotFoundError: If pipeline doesn't exist.
+        """
+        logger.info("getting_pipeline_status", pipeline_id=pipeline_id)
+
+        pipeline = self._state_manager.get_pipeline(pipeline_id)
+        if pipeline is None:
+            raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
+
+        return {
+            "pipeline_id": pipeline["pipeline_id"],
+            "subject": pipeline["subject"],
+            "status": pipeline["status"],
+            "current_node": pipeline.get("current_node"),
+            "state": pipeline.get("state", {}),
+            "created_at": pipeline.get("created_at"),
+            "updated_at": pipeline.get("updated_at"),
+        }
+
+    async def close(self) -> None:
+        """Close the orchestrator and cleanup resources."""
+        if self._session_manager:
+            await self._session_manager.close_all()
+        logger.info("orchestrator_closed")
+
+
+__all__ = [
+    "HybridOrchestrator",
+    "OrchestratorError",
+    "ContextValidationError",
+    "DependencyError",
+    "PipelineNotFoundError",
+    "PipelineAlreadyCompletedError",
+    "DECISION_PROCEED",
+    "DECISION_PAUSE",
+    "DECISION_HALT",
+]

@@ -11,9 +11,10 @@
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict, List, Tuple, Dict
+from typing import Any, TypedDict, override
 
 from anyio.abc import TaskGroup
+
 from .base_agent import BaseAgent
 from .sdk_helper import execute_sdk_call
 
@@ -24,7 +25,7 @@ class BatchUpdateResults(TypedDict):
     """批量更新结果类型"""
     success_count: int
     error_count: int
-    errors: List[str]
+    errors: list[str]
 
 
 class StatusUpdateAgent(BaseAgent):
@@ -40,6 +41,11 @@ class StatusUpdateAgent(BaseAgent):
     - 通过映射表转换为核心状态
     - 不使用其他数据源（历史记录、Markdown当前状态等）
     """
+
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "status_update"
 
     # 状态映射表：处理状态（processing_status） → 核心状态
     PROCESSING_TO_CORE_STATUS = {
@@ -82,10 +88,7 @@ class StatusUpdateAgent(BaseAgent):
             ValueError: 处理状态值非法
         """
         if processing_status not in self.PROCESSING_TO_CORE_STATUS:
-            logger.warning(
-                f"Unknown processing_status '{processing_status}', "
-                f"defaulting to 'Ready for Development'"
-            )
+            logger.warning(f"Unknown processing_status '{processing_status}', defaulting to 'Ready for Development'")
             return 'Ready for Development'  # 默认值（容错）
 
         return self.PROCESSING_TO_CORE_STATUS[processing_status]
@@ -174,7 +177,7 @@ Requirements:
 
     async def batch_update_statuses(
         self,
-        status_mappings: List[Tuple[str, str]]
+        status_mappings: list[tuple[str, str]]
     ) -> BatchUpdateResults:
         """
         批量更新故事状态
@@ -199,7 +202,7 @@ Requirements:
         # 并发执行更新任务
         if self.task_group:
             # 如果提供了task_group，使用它进行并发控制
-            tasks: List[Any] = []
+            tasks: list[Any] = []
             for story_path, target_status in status_mappings:
                 task = self.task_group.create_task(  # type: ignore[attr-defined, reportAttributeAccessIssue]
                     self._update_single_story(story_path, target_status, results)
@@ -219,11 +222,7 @@ Requirements:
             for story_path, target_status in status_mappings:
                 await self._update_single_story(story_path, target_status, results)
 
-        logger.info(
-            f"Batch update completed: "
-            f"{results['success_count']} succeeded, "
-            f"{results['error_count']} failed"
-        )
+        logger.info(f"Batch update completed: {results['success_count']} succeeded, {results['error_count']} failed")
 
         return results
 
@@ -259,10 +258,10 @@ Requirements:
 
     def validate_processing_statuses(
         self,
-        epic_id: str,
-        story_ids: List[str],
-        records: List[Dict[str, Any]]
-    ) -> Tuple[int, List[Dict[str, Any]]]:
+        _epic_id: str,
+        _story_ids: list[str],
+        records: list[dict[str, Any]]
+    ) -> tuple[int, list[dict[str, Any]]]:
         """
         验证数据库中的处理状态值是否合法（方案3方法）
 
@@ -275,7 +274,7 @@ Requirements:
             (valid_count, invalid_records)
         """
         valid_statuses = set(self.PROCESSING_TO_CORE_STATUS.keys())
-        invalid_records: List[Dict[str, Any]] = []
+        invalid_records: list[dict[str, Any]] = []
 
         for record in records:
             status = record.get('status')  # processing_status存储在status字段中
@@ -298,9 +297,9 @@ Requirements:
     async def sync_from_database(
         self,
         state_manager: Any,
-        filter_statuses: List[str] | None = None,
+        filter_statuses: list[str] | None = None,
         epic_id: str | None = None,
-        story_ids: List[str] | None = None
+        story_ids: list[str] | None = None
     ) -> BatchUpdateResults:
         """
         从数据库同步状态到文档（方案3实现）
@@ -334,11 +333,7 @@ Requirements:
                 stories = await state_manager.get_stories_by_ids(epic_id, story_ids)
             else:
                 # 传统方式：全库同步（仅用于向后兼容）
-                logger.warning(
-                    "Using full database sync (no scope limit). "
-                    "This may be slow for large databases. "
-                    "Consider passing epic_id and story_ids for better performance."
-                )
+                logger.warning("Using full database sync (no scope limit). This may be slow for large databases. Consider passing epic_id and story_ids for better performance.")
                 stories = await state_manager.get_all_stories()
 
             # Step 1.5: 验证数据合法性（可选）
@@ -350,7 +345,7 @@ Requirements:
                     logger.warning(f"Proceeding with {valid_count} valid stories")
 
             # Step 2-4: 逐个处理
-            status_mappings: List[Tuple[str, str]] = []
+            status_mappings: list[tuple[str, str]] = []
             for record in stories:
                 try:
                     story_path = record.get("story_path")
@@ -370,10 +365,7 @@ Requirements:
                     # Note: 实际文本生成在 update_story_status_via_sdk 中完成
 
                     # 记录映射日志
-                    logger.info(
-                        f"[StatusUpdate] {record.get('story_path')}: "
-                        f"{processing_status} → {core_status}"
-                    )
+                    logger.info(f"[StatusUpdate] {record.get('story_path')}: {processing_status} → {core_status}")
 
                     status_mappings.append((story_path, core_status))
 
@@ -406,6 +398,7 @@ Requirements:
                 errors=[f"Database sync failed: {str(e)}"]
             )
 
+    @override
     async def execute(self, *args: Any, **kwargs: Any) -> Any:
         """
         执行Agent主逻辑

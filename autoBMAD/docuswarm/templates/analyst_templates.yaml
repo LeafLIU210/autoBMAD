@@ -1,0 +1,65 @@
+# Analyst 节点文档模板配置
+version: "1.0"
+node_id: analyst
+description: "Templates for Analyst node deliverables"
+
+templates:
+  - template_id: market_research
+    title: "Market Research Report"
+    filename_pattern: "market-research-report.md"
+    description: "Comprehensive market analysis and trends"
+    sections:
+      - heading: "Executive Summary"
+        required: true
+        description: "High-level overview of findings"
+      - heading: "Market Overview"
+        required: true
+        description: "Current market state and trends"
+      - heading: "Target Segments"
+        required: true
+        description: "Identified customer segments"
+      - heading: "Competitive Landscape"
+        required: true
+        description: "Competitor analysis"
+      - heading: "Market Opportunities"
+        required: true
+        description: "Growth opportunities"
+      - heading: "Recommendations"
+        required: true
+        description: "Strategic recommendations"
+
+  - template_id: user_personas
+    title: "User Persona Analysis"
+    filename_pattern: "user-personas.md"
+    description: "Detailed user persona definitions"
+    sections:
+      - heading: "Overview"
+        required: true
+      - heading: "Primary Personas"
+        required: true
+      - heading: "Secondary Personas"
+        required: false
+      - heading: "User Journey Maps"
+        required: true
+        note: "Use Mermaid sequence diagrams"
+
+  - template_id: risk_assessment
+    title: "Risk Assessment Report"
+    filename_pattern: "risk-assessment.md"
+    description: "Project risk identification and mitigation"
+    sections:
+      - heading: "Risk Overview"
+        required: true
+      - heading: "Technical Risks"
+        required: true
+      - heading: "Business Risks"
+        required: true
+      - heading: "Mitigation Strategies"
+        required: true
+
+# 文档标准引用
+standards:
+  style_guide: "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+  diagram_format: "mermaid"
+  no_time_estimates: true
+  commonmark_strict: true

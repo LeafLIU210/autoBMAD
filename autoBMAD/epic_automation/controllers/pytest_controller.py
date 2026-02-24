@@ -13,7 +13,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, List, cast
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +51,9 @@ class PytestController:
 
         # 状态
         self.current_cycle: int = 0
-        self.failed_files: List[str] = []
-        self.initial_failed_files: List[str] = []
-        self.sdk_fix_errors: List[dict[str, Any]] = []
+        self.failed_files: list[str] = []
+        self.initial_failed_files: list[str] = []
+        self.sdk_fix_errors: list[dict[str, Any]] = []
 
         # Agent 实例
         from ..agents.quality_agents import PytestAgent
@@ -127,7 +127,7 @@ class PytestController:
                 }],
             }
 
-    async def _run_test_phase_all_files(self, round_index: int) -> List[str]:
+    async def _run_test_phase_all_files(self, round_index: int) -> list[str]:
         """
         遍历 tests/ 下所有测试文件，依次执行 pytest
 
@@ -158,7 +158,7 @@ class PytestController:
         )
 
         # 3. 提取失败文件列表
-        files_list = cast(List[dict[str, Any]], round_result["files"])
+        files_list = cast(list[dict[str, Any]], round_result["files"])
         failed_files = [
             item["test_file"]
             for item in files_list
@@ -176,9 +176,9 @@ class PytestController:
 
     async def _run_test_phase_failed_files(
         self,
-        failed_files: List[str],
+        failed_files: list[str],
         round_index: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         仅对失败文件执行回归 pytest
 
@@ -199,7 +199,7 @@ class PytestController:
             source_dir=self.source_dir,
         )
 
-        files_list = cast(List[dict[str, Any]], round_result["files"])
+        files_list = cast(list[dict[str, Any]], round_result["files"])
         new_failed_files = [
             item["test_file"]
             for item in files_list
@@ -216,7 +216,7 @@ class PytestController:
 
     async def _run_sdk_phase(
         self,
-        failed_files: List[str],
+        failed_files: list[str],
         round_index: int,
     ) -> None:
         """
@@ -268,7 +268,7 @@ class PytestController:
                 self.sdk_fix_errors.append(error_info)
                 logger.error(f"SDK fix exception for {test_file}: {e}", exc_info=True)
 
-    def _discover_test_files(self) -> List[str]:
+    def _discover_test_files(self) -> list[str]:
         """递归枚举 test_dir 下所有测试文件，按字典序排序"""
         test_path = Path(self.test_dir)
 
@@ -341,7 +341,7 @@ class PytestController:
         # 更新汇总信息
         initial_failed: list[Any] = summary_data["rounds"][0]["failed_files"] if summary_data["rounds"] else []
         final_failed: list[Any] = summary_data["rounds"][-1]["failed_files"] if summary_data["rounds"] else []
-        round_files = cast(List[dict[str, Any]], round_result["files"])
+        round_files = cast(list[dict[str, Any]], round_result["files"])
 
         summary_data["summary"] = {
             "total_files": len(round_files),
@@ -360,7 +360,7 @@ class PytestController:
         """加载现有汇总 JSON，如果不存在则创建新结构"""
         if Path(self.summary_json_path).exists():
             try:
-                with open(self.summary_json_path, "r", encoding="utf-8") as f:
+                with open(self.summary_json_path, encoding="utf-8") as f:
                     return json.load(f)
             except (json.JSONDecodeError, Exception) as e:
                 logger.warning(f"Failed to load summary JSON: {e} - creating new structure")

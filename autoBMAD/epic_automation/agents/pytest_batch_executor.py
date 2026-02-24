@@ -4,11 +4,12 @@ Pytest目录遍历分批执行器 - 动态扫描版本
 """
 
 from __future__ import annotations
+
 import logging
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -93,10 +94,7 @@ class PytestBatchExecutor:
                 blocking=config["blocking"],  # type: ignore[arg-type]
                 priority=config["priority"]  # type: ignore[arg-type]
             ))
-            self.logger.info(
-                f"Mapped directory '{subdir.name}' → "
-                f"timeout={config['timeout']}s, parallel={config['parallel']}, priority={config['priority']}"
-            )
+            self.logger.info(f"Mapped directory '{subdir.name}' → timeout={config['timeout']}s, parallel={config['parallel']}, priority={config['priority']}")
 
         # 2. 检查散装测试文件并创建映射
         loose_files = list(self.test_dir.glob("test_*.py"))
@@ -111,10 +109,7 @@ class PytestBatchExecutor:
                 blocking=config["blocking"],  # type: ignore[arg-type]
                 priority=config["priority"]  # type: ignore[arg-type]
             ))
-            self.logger.info(
-                f"Mapped {len(loose_files)} loose test files → 'loose_tests' task "
-                f"(timeout={config['timeout']}s)"
-            )
+            self.logger.info(f"Mapped {len(loose_files)} loose test files → 'loose_tests' task (timeout={config['timeout']}s)")
 
         # 3. 按优先级排序
         batches.sort(key=lambda b: b.priority)  # type: ignore[arg-type]
@@ -262,7 +257,7 @@ class PytestBatchExecutor:
 
             return result
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.error(f"✗ Batch '{batch.name}' TIMEOUT after {batch.timeout}s")
             return {
                 "batch_name": batch.name,
@@ -302,8 +297,8 @@ class PytestBatchExecutor:
         # 覆盖率和类型检查（仅主批次）
         if batch.name in ["unit", "integration", "loose_tests"]:
             cmd.extend([f"--cov={self.source_dir}", "--cov-report=term-missing"])
-            # 新增：Typeguard 运行时类型检查
-            cmd.extend(["--typeguard-packages", str(self.source_dir)])
+            # Typeguard 运行时类型检查 - removed as pytest-typeguard plugin is not available
+            # The typeguard library is used directly in code for runtime type checking
 
         # 失败快速停止（阻断批次）
         if batch.blocking:

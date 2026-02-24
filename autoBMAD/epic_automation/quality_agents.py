@@ -2,10 +2,10 @@
 Re-export quality_agents for backward compatibility with tests.
 """
 from .agents.quality_agents import (
-    BaseQualityAgent,
-    RuffAgent,
     BasedPyrightAgent,
+    BaseQualityAgent,
     PytestAgent,
+    RuffAgent,
 )
 
 __all__ = [

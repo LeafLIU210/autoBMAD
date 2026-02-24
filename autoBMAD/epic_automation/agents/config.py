@@ -1,7 +1,6 @@
 """
 Configuration classes for all agents.
 """
-from typing import Optional, List
 from enum import Enum
 
 
@@ -23,7 +22,7 @@ class AgentConfig:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         self.task_name = task_name
         self.max_tokens = max_tokens
@@ -42,7 +41,7 @@ class DevConfig:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         self.task_name = task_name
         self.use_claude = use_claude
@@ -61,7 +60,7 @@ class SMConfig:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         self.task_name = task_name
         self.max_tokens = max_tokens
@@ -79,7 +78,7 @@ class QAConfig:
         max_tokens: int = 4096,
         temperature: float = 0.7,
         model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         self.task_name = task_name
         self.max_tokens = max_tokens
@@ -95,8 +94,8 @@ class QAResult:
         self,
         passed: bool,
         score: float = 0.0,
-        details: Optional[str] = None,
-        suggestions: Optional[List[str]] = None,
+        details: str | None = None,
+        suggestions: list[str] | None = None,
     ):
         self.passed = passed
         self.score = score

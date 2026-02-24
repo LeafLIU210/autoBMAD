@@ -3,18 +3,19 @@ DevQa Controller - Dev-QA 流水线控制器
 控制开发-测试-审查的循环流程
 """
 from __future__ import annotations
+
 import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 from anyio.abc import TaskGroup
 
-from autoBMAD.epic_automation.controllers.base_controller import StateDrivenController
-from autoBMAD.epic_automation.agents.state_agent import StateAgent
 from autoBMAD.epic_automation.agents.dev_agent import DevAgent
 from autoBMAD.epic_automation.agents.qa_agent import QAAgent
+from autoBMAD.epic_automation.agents.state_agent import StateAgent
+from autoBMAD.epic_automation.controllers.base_controller import StateDrivenController
 from autoBMAD.epic_automation.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class DevQaController(StateDrivenController):
     """Dev-QA 流水线控制器"""
-    
+
     # 断路器配置
     MAX_CONSECUTIVE_FAILURES = 3  # 连续失败次数阈值
 
@@ -55,6 +56,7 @@ class DevQaController(StateDrivenController):
         self._consecutive_failures = 0  # 断路器计数器
         self._log_execution("DevQaController initialized")
 
+    @override
     async def execute(self, story_path: str, epic_path: str | None = None) -> bool:
         """
         执行 Dev-QA 流水线
@@ -74,11 +76,7 @@ class DevQaController(StateDrivenController):
 
         # ✅ 参数校验
         if not self._epic_path:
-            self._log_execution(
-                f"[Warning] epic_path not provided for story {story_path}. "
-                f"Processing status updates will be skipped.",
-                "warning"
-            )
+            self._log_execution(f"[Warning] epic_path not provided for story {story_path}. Processing status updates will be skipped.", "warning")
 
         self._log_execution(f"Starting Dev-QA pipeline for {story_path}")
 
@@ -127,10 +125,11 @@ class DevQaController(StateDrivenController):
         finally:
             self.max_rounds = original_rounds
 
+    @override
     async def _make_decision(self, current_state: str) -> str:
         """
         基于 StateAgent 解析的核心状态值做出 Dev-QA 决策
-        
+
         循环模式：State → Dev/QA → State
         每次循环开始和结束都通过 StateAgent 获取最新核心状态
 
@@ -147,10 +146,10 @@ class DevQaController(StateDrivenController):
 
             # 🎯 关键：每次决策前，先通过 StateAgent 获取核心状态值
             self._log_execution("[State-Dev-QA Cycle] Querying StateAgent for current status")
-            
+
             async def query_state():
                 return await self.state_agent.execute(self._story_path)
-            
+
             current_status = await self._execute_within_taskgroup(query_state)
 
             if not current_status:
@@ -240,6 +239,7 @@ class DevQaController(StateDrivenController):
             self._log_execution(f"Decision error: {e}", "error")
             return "Error"
 
+    @override
     def _is_termination_state(self, state: str) -> bool:
         """判断是否为 Dev-QA 的终止状态"""
         # Failed 状态现在也是终止状态（断路器触发后）
@@ -248,11 +248,11 @@ class DevQaController(StateDrivenController):
     async def _update_story_file_status(self, story_path: str, new_status: str) -> bool:
         """
         更新Story文件中的Status字段
-        
+
         Args:
             story_path: Story文件路径
             new_status: 新状态值
-            
+
         Returns:
             是否更新成功
         """
@@ -261,21 +261,21 @@ class DevQaController(StateDrivenController):
             if not story_file.exists():
                 self._log_execution(f"Story file not found: {story_path}", "error")
                 return False
-            
+
             content = story_file.read_text(encoding="utf-8")
-            
+
             # 更新Status字段
             # 匹配模式: **Status**: xxx 或 Status: xxx
             pattern = r'(\*\*Status\*\*:\s*).+'
             replacement = f'\\1{new_status}'
-            
+
             new_content, count = re.subn(pattern, replacement, content, count=1)
-            
+
             if count == 0:
                 # 尝试备选模式
                 pattern2 = r'(Status:\s*).+'
                 new_content, count = re.subn(pattern2, f'\\1{new_status}', content, count=1)
-            
+
             if count > 0:
                 story_file.write_text(new_content, encoding="utf-8")
                 self._log_execution(
@@ -288,7 +288,7 @@ class DevQaController(StateDrivenController):
                     "warning"
                 )
                 return False
-                
+
         except Exception as e:
             self._log_execution(
                 f"[Status Update] Error updating story status: {e}",
@@ -316,11 +316,7 @@ class DevQaController(StateDrivenController):
         try:
             # ✅ 参数校验：确保epic_path已设置
             if not self._epic_path:
-                self._log_execution(
-                    f"[StateTransition] Warning: epic_path not set for controller. "
-                    f"Cannot update processing_status for {story_id}",
-                    "warning"
-                )
+                self._log_execution(f"[StateTransition] Warning: epic_path not set for controller. Cannot update processing_status for {story_id}", "warning")
                 return False
 
             timestamp = datetime.now()
@@ -338,10 +334,7 @@ class DevQaController(StateDrivenController):
                     f"processing_status = '{processing_status}' ({context or 'update'})"
                 )
             else:
-                self._log_execution(
-                    f"[StateTransition] Failed to update processing_status for {story_id}",
-                    "error"
-                )
+                self._log_execution(f"[StateTransition] Failed to update processing_status for {story_id}", "error")
 
             return success
 
@@ -379,11 +372,11 @@ class DevQaController(StateDrivenController):
                 f"[Circuit Breaker] Dev failed, consecutive failures: {self._consecutive_failures}/{self.MAX_CONSECUTIVE_FAILURES}",
                 "warning"
             )
-            
+
             if self._consecutive_failures >= self.MAX_CONSECUTIVE_FAILURES:
                 # 达到阈值，更新Story状态为Failed并中止
                 self._log_execution(
-                    f"[Circuit Breaker] Max failures reached, marking story as Failed",
+                    "[Circuit Breaker] Max failures reached, marking story as Failed",
                     "error"
                 )
                 await self._update_story_file_status(story_id, "Failed")

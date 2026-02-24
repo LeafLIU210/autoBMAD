@@ -6,7 +6,7 @@ QA Agent - Quality Assurance Agent
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any, override
 
 from anyio.abc import TaskGroup
 
@@ -20,11 +20,16 @@ class QAAgent(BaseAgent):
     Quality Assurance agent for handling QA review tasks.
     """
 
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "qa"
+
     def __init__(
         self,
-        task_group: Optional[TaskGroup] = None,
+        task_group: TaskGroup | None = None,
         use_claude: bool = True,
-        log_manager: Optional[Any] = None,
+        log_manager: Any | None = None,
     ):
         """
         初始化QA代理
@@ -47,10 +52,11 @@ class QAAgent(BaseAgent):
 
         self._log_execution("QAAgent initialized")
 
+    @override
     async def execute(
         self,
         story_path: str,
-        cached_status: Optional[str] = None,
+        _cached_status: str | None = None,
     ) -> dict[str, Any]:
         """
         执行QA审查
@@ -67,15 +73,15 @@ class QAAgent(BaseAgent):
         if not self._validate_execution_context():
             self._log_execution("Execution context invalid", "warning")
             # 即使没有TaskGroup也继续执行
-            return await self._execute_qa_review(story_path, cached_status)
+            return await self._execute_qa_review(story_path, _cached_status)
 
         # 使用_execute_within_taskgroup来执行
         async def _execute():
-            return await self._execute_qa_review(story_path, cached_status)
+            return await self._execute_qa_review(story_path, _cached_status)
 
         return await self._execute_within_taskgroup(_execute)
 
-    async def _execute_qa_review(self, story_path: str, cached_status: Optional[str] = None) -> dict[str, Any]:
+    async def _execute_qa_review(self, story_path: str, _cached_status: str | None = None) -> dict[str, Any]:
         """
         执行QA审查的核心逻辑
 
@@ -108,7 +114,7 @@ class QAAgent(BaseAgent):
 
             # 2. 通过 BaseAgent._execute_sdk_call 统一调用 SDK
             sdk_result = await self._execute_sdk_call(
-                sdk_executor=None,          # 按基类约定，这个参数已不再使用
+                _sdk_executor=None,          # 按基类约定，这个参数已不再使用
                 prompt=base_prompt,
                 timeout=1800.0,             # 30分钟超时
                 permission_mode="bypassPermissions",  # 与 DevAgent 行为保持一致
@@ -118,10 +124,7 @@ class QAAgent(BaseAgent):
             if sdk_result and hasattr(sdk_result, 'is_success'):
                 self._log_execution(f"SDK call result: {sdk_result.is_success()}")
 
-            self._log_execution(
-                "QA execution completed, "
-                "Epic Driver will re-parse status to determine next step"
-            )
+            self._log_execution("QA execution completed, Epic Driver will re-parse status to determine next step")
 
             # 4. 返回固定结构
             # 实际成功/失败由 EpicDriver 通过 StateAgent 重新解析 Status 判断
@@ -147,9 +150,9 @@ class QAAgent(BaseAgent):
     async def execute_qa_phase(
         self,
         story_path: str,
-        source_dir: str = "src",
-        test_dir: str = "tests",
-        cached_status: Optional[str] = None,
+        _source_dir: str = "src",
+        _test_dir: str = "tests",
+        cached_status: str | None = None,
     ) -> bool:
         """
         简化的QA阶段执行方法，用于Dev Agent调用
@@ -165,12 +168,9 @@ class QAAgent(BaseAgent):
         """
         self._log_execution(f"Executing QA phase for {story_path}")
 
-        result = await self.execute(story_path=story_path, cached_status=cached_status)
+        result = await self.execute(story_path=story_path, _cached_status=cached_status)
 
-        self._log_execution(
-            f"QA phase completed (result={result.get('passed', False)}), "
-            f"Epic Driver will re-parse status to determine next step"
-        )
+        self._log_execution(f"QA phase completed (result={result.get('passed', False)}), Epic Driver will re-parse status to determine next step")
         return True
 
 

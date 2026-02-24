@@ -1,0 +1,30 @@
+# DocuSwarm Configuration File
+# This file provides optional configuration values that can be overridden by environment variables.
+# Priority: Environment Variables > This YAML File > Default Values
+
+# =============================================================================
+# Kimi API Configuration
+# =============================================================================
+# Note: KIMI_API_KEY must be set via environment variable for security
+base_url: https://api.kimi.com/coding/v1
+
+# =============================================================================
+# Database Configuration
+# =============================================================================
+db_path: docuswarm.db
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+output_dir: output
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+# Options: DEBUG, INFO, WARNING, ERROR
+log_level: INFO
+
+# =============================================================================
+# Pipeline Configuration
+# =============================================================================
+max_iterations: 100

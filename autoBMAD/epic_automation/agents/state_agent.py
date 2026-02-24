@@ -3,13 +3,15 @@ State Agent - 状态解析和管理 Agent
 增强后支持TaskGroup管理
 """
 from __future__ import annotations
+
 import logging
-from anyio.abc import TaskGroup
 import re
-from pathlib import Path
-from typing import Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
+from typing import Any, override
+
+from anyio.abc import TaskGroup
 
 from .base_agent import BaseAgent
 
@@ -141,7 +143,7 @@ class SimpleStoryParser:
     解析策略：AI优先，正则回退
     """
 
-    def __init__(self, sdk_wrapper: Optional[Any] = None):
+    def __init__(self, sdk_wrapper: Any | None = None):
         """
         初始化统一解析器
 
@@ -246,10 +248,7 @@ class SimpleStoryParser:
             for pattern in patterns:
                 match = re.search(pattern, status_section)
                 if match:
-                    logger.debug(
-                        f"Status matched: {status} "
-                        f"(pattern: {pattern}, search range: lines 1-10)"
-                    )
+                    logger.debug(f"Status matched: {status} (pattern: {pattern}, search range: lines 1-10)")
                     return status
 
         # 无匹配时返回默认值
@@ -274,7 +273,12 @@ class SimpleStoryParser:
 class StateAgent(BaseAgent):
     """状态解析和管理 Agent"""
 
-    def __init__(self, task_group: Optional[TaskGroup] = None):
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "state"
+
+    def __init__(self, task_group: TaskGroup | None = None):
         """
         初始化状态 Agent
 
@@ -285,7 +289,7 @@ class StateAgent(BaseAgent):
         self.status_parser = SimpleStoryParser()
         self._log_execution("StateAgent initialized")
 
-    async def parse_status(self, story_path: str) -> Optional[str]:
+    async def parse_status(self, story_path: str) -> str | None:
         """
         解析故事文件的状态
 
@@ -307,7 +311,7 @@ class StateAgent(BaseAgent):
             else:
                 # 传入的是字符串路径，尝试读取文件
                 try:
-                    with open(story_path, 'r', encoding='utf-8') as f:
+                    with open(story_path, encoding='utf-8') as f:
                         content = f.read()
                 except (FileNotFoundError, OSError):
                     # 如果不是文件路径，尝试作为内容处理
@@ -325,7 +329,7 @@ class StateAgent(BaseAgent):
             self.logger.error(f"Failed to parse status: {e}")
             return None
 
-    async def get_processing_status(self, story_path: str) -> Optional[str]:
+    async def get_processing_status(self, story_path: str) -> str | None:
         """
         获取处理状态值（数据库存储格式）
 
@@ -356,7 +360,8 @@ class StateAgent(BaseAgent):
         self.logger.info(f"Status update requested: {story_path} -> {status}")
         return True
 
-    async def execute(self, *args: Any, **kwargs: Any) -> Optional[str]:
+    @override
+    async def execute(self, *args: Any, **kwargs: Any) -> str | None:
         """
         执行状态解析
 
@@ -374,7 +379,7 @@ class StateAgent(BaseAgent):
                 return await self.parse_status(args[0])
             return None
 
-        async def _task_coro() -> Optional[str]:
+        async def _task_coro() -> str | None:
             """TaskGroup内的协程函数"""
             if len(args) > 0:
                 return await self.parse_status(args[0])

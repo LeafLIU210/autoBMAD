@@ -11,15 +11,16 @@
 5. 封装所有异常
 """
 
-import anyio
+import logging
 import time
 import uuid
-import logging
-from typing import Callable, Any, TYPE_CHECKING, Union, Awaitable
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
-from autoBMAD.epic_automation.core.sdk_result import SDKResult, SDKErrorType
+import anyio
+
 from autoBMAD.epic_automation.core.cancellation_manager import CancellationManager
+from autoBMAD.epic_automation.core.sdk_result import SDKErrorType, SDKResult
 
 if TYPE_CHECKING:
     from anyio.abc import TaskGroup
@@ -75,7 +76,7 @@ class SDKExecutor:
 
     async def execute(
         self,
-        sdk_func: Union[Callable[[], AsyncIterator[Any]], Callable[[], Awaitable[Any]]],
+        sdk_func: Callable[[], AsyncIterator[Any]] | Callable[[], Awaitable[Any]],
         target_predicate: Callable[[Any], bool],
         *,
         timeout: float | None = None,
@@ -121,22 +122,18 @@ class SDKExecutor:
             # SDK_CLI_EXIT_CODE_FIX: 检查是否是PostResultMessageError
             # 可能直接是PostResultMessageError，也可能在ExceptionGroup中
             post_result_error = None
-            captured_msgs = []
 
             if isinstance(e, PostResultMessageError):
                 post_result_error = e
-                captured_msgs = e.captured_messages
             elif isinstance(e, BaseExceptionGroup):
                 # 从ExceptionGroup中提取PostResultMessageError
                 for sub_exc in e.exceptions:
                     if isinstance(sub_exc, PostResultMessageError):
                         post_result_error = sub_exc
-                        captured_msgs = sub_exc.captured_messages
                         break
                     # 也检查__cause__链
                     if sub_exc.__cause__ and isinstance(sub_exc.__cause__, PostResultMessageError):
                         post_result_error = sub_exc.__cause__
-                        captured_msgs = sub_exc.__cause__.captured_messages
                         break
 
             if post_result_error is not None:
@@ -179,10 +176,7 @@ class SDKExecutor:
             )
 
             # 记录日志
-            logger.info(
-                f"[{agent_name}] SDK call finished: {session_id} "
-                f"({duration:.2f}s)"
-            )
+            logger.info(f"[{agent_name}] SDK call finished: {session_id} ({duration:.2f}s)")
 
             return SDKResult(
                 has_target_result=False,
@@ -197,10 +191,7 @@ class SDKExecutor:
 
         finally:
             duration = time.time() - start_time
-            logger.info(
-                f"[{agent_name}] SDK call finished: {session_id} "
-                f"({duration:.2f}s)"
-            )
+            logger.info(f"[{agent_name}] SDK call finished: {session_id} ({duration:.2f}s)")
 
         # 确保result不为None才返回
         if result is not None:
@@ -220,12 +211,12 @@ class SDKExecutor:
 
     async def _execute_in_taskgroup(
         self,
-        task_group: 'TaskGroup',
-        sdk_func: Union[Callable[[], AsyncIterator[Any]], Callable[[], Awaitable[Any]]],
+        _task_group: 'TaskGroup',
+        sdk_func: Callable[[], AsyncIterator[Any]] | Callable[[], Awaitable[Any]],
         target_predicate: Callable[[Any], bool],
         call_id: str,
         agent_name: str,
-        timeout: float | None
+        _timeout: float | None
     ) -> SDKResult:
         """
         在TaskGroup中执行SDK调用
@@ -241,8 +232,9 @@ class SDKExecutor:
         Returns:
             SDKResult: 执行结果
         """
-        import anyio
         import time
+
+        import anyio
 
         # 注册调用
         self.cancel_manager.register_call(call_id, agent_name)

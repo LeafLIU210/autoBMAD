@@ -7,9 +7,10 @@
 
 import logging
 from pathlib import Path
-from typing import Any, TypedDict, List, Tuple
+from typing import Any, TypedDict, override
 
 from anyio.abc import TaskGroup
+
 from .base_agent import BaseAgent
 from .sdk_helper import execute_sdk_call
 
@@ -20,7 +21,7 @@ class BatchUpdateResults(TypedDict):
     """批量更新结果类型"""
     success_count: int
     error_count: int
-    errors: List[str]
+    errors: list[str]
 
 
 class StatusUpdateAgent(BaseAgent):
@@ -31,6 +32,11 @@ class StatusUpdateAgent(BaseAgent):
     - 封装状态映射逻辑（数据库状态 → 文档状态）
     - 确保文档修改的统一性和可追溯性
     """
+
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "status_update_old"
 
     # 数据库处理状态 → 文档核心状态映射
     DATABASE_TO_MARKDOWN_MAPPING = {
@@ -129,7 +135,7 @@ Example format:
 
     async def batch_update_statuses(
         self,
-        status_mappings: List[Tuple[str, str]]
+        status_mappings: list[tuple[str, str]]
     ) -> BatchUpdateResults:
         """
         批量更新故事状态
@@ -154,7 +160,7 @@ Example format:
         # 并发执行更新任务
         if self.task_group:
             # 如果提供了task_group，使用它进行并发控制
-            tasks: List[Any] = []
+            tasks: list[Any] = []
             for story_path, target_status in status_mappings:
                 task = self.task_group.create_task(  # type: ignore[attr-defined, reportAttributeAccessIssue]
                     self._update_single_story(story_path, target_status, results)
@@ -174,11 +180,7 @@ Example format:
             for story_path, target_status in status_mappings:
                 await self._update_single_story(story_path, target_status, results)
 
-        logger.info(
-            f"Batch update completed: "
-            f"{results['success_count']} succeeded, "
-            f"{results['error_count']} failed"
-        )
+        logger.info(f"Batch update completed: {results['success_count']} succeeded, {results['error_count']} failed")
 
         return results
 
@@ -215,9 +217,9 @@ Example format:
     async def sync_from_database(
         self,
         state_manager: Any,
-        filter_statuses: List[str] | None = None,
+        filter_statuses: list[str] | None = None,
         epic_id: str | None = None,
-        story_ids: List[str] | None = None
+        story_ids: list[str] | None = None
     ) -> BatchUpdateResults:
         """
         从数据库同步状态到文档
@@ -245,15 +247,11 @@ Example format:
                 stories = await state_manager.get_stories_by_ids(epic_id, story_ids)
             else:
                 # 传统方式：全库同步（仅用于向后兼容）
-                logger.warning(
-                    "Using full database sync (no scope limit). "
-                    "This may be slow for large databases. "
-                    "Consider passing epic_id and story_ids for better performance."
-                )
+                logger.warning("Using full database sync (no scope limit). This may be slow for large databases. Consider passing epic_id and story_ids for better performance.")
                 stories = await state_manager.get_all_stories()
 
             # 构建状态映射列表
-            status_mappings: List[Tuple[str, str]] = []
+            status_mappings: list[tuple[str, str]] = []
             for story in stories:
                 story_path = story.get("story_path")
                 db_status = story.get("status")
@@ -294,6 +292,7 @@ Example format:
                 errors=[f"Database sync failed: {str(e)}"]
             )
 
+    @override
     async def execute(self, *args: Any, **kwargs: Any) -> Any:
         """
         执行Agent主逻辑

@@ -8,6 +8,7 @@ Reads epic markdown files and drives SM-Dev-QA cycle.
 import argparse
 import asyncio
 import logging
+import os
 import re
 import sys
 import time
@@ -15,7 +16,20 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip .env loading
+    pass
+
 # Import log manager
+# Import status system
+from autoBMAD.epic_automation.agents.state_agent import (
+    CORE_STATUS_DONE,
+    CORE_STATUS_READY_FOR_DONE,
+)
 from autoBMAD.epic_automation.log_manager import (
     LogManager,
     cleanup_logging,
@@ -25,13 +39,6 @@ from autoBMAD.epic_automation.log_manager import (
 
 # Import SafeClaudeSDK for StatusParser initialization
 from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
-
-# Import status system
-from autoBMAD.epic_automation.agents.state_agent import (
-    CORE_STATUS_DONE,
-    CORE_STATUS_READY_FOR_DONE,
-    core_status_to_processing,
-)
 
 # Import ClaudeAgentOptions for proper SDK configuration
 try:
@@ -54,40 +61,6 @@ SM_TIMEOUT = None  # 30分钟（SM阶段）
 
 
 
-def _convert_core_to_processing_status(core_status: str, phase: str) -> str:  # type: ignore[reportUnusedFunction]
-    """
-    将核心状态值转换为处理状态值，用于存储到 StateManager
-
-    Args:
-        core_status: 核心状态值
-        phase: 当前阶段（sm, dev, qa）
-
-    Returns:
-        对应的处理状态值
-
-    Note: This function is currently unused but kept for potential future use
-    in status conversion workflows. It can be safely removed if confirmed unnecessary.
-    """
-    # 基础转换
-    base_processing_status = core_status_to_processing(core_status)
-
-    # 根据阶段调整状态值
-    if phase == "sm":
-        # SM阶段：只要不是completed，都标记为completed
-        if base_processing_status != "completed":
-            return "completed"  # SM 完成
-    elif phase == "dev":
-        if base_processing_status == "pending":
-            return "in_progress"  # Dev 开始
-        elif base_processing_status == "review":
-            return "completed"  # Dev 完成
-    elif phase == "qa":
-        if base_processing_status == "review":
-            return "completed"  # QA 完成
-        elif base_processing_status == "completed":
-            return "completed"  # QA 已完成
-
-    return base_processing_status
 
 
 class QualityGateOrchestrator:
@@ -117,7 +90,11 @@ class QualityGateOrchestrator:
 
         # Initialize quality agents
         try:
-            from autoBMAD.epic_automation.agents.quality_agents import RuffAgent, BasedPyrightAgent, PytestAgent
+            from autoBMAD.epic_automation.agents.quality_agents import (
+                BasedPyrightAgent,
+                PytestAgent,
+                RuffAgent,
+            )
             self.ruff_agent = RuffAgent()
             self.basedpyright_agent = BasedPyrightAgent()
             self.pytest_agent = PytestAgent()
@@ -207,10 +184,7 @@ class QualityGateOrchestrator:
 
         # 添加诊断日志
         if has_remaining_errors:
-            self.logger.debug(
-                f"Max cycles exceeded: cycles={cycles}/{max_cycles}, "
-                f"remaining={len(remaining_files)} files"
-            )
+            self.logger.debug(f"Max cycles exceeded: cycles={cycles}/{max_cycles}, remaining={len(remaining_files)} files")
 
         return has_remaining_errors
 
@@ -227,8 +201,10 @@ class QualityGateOrchestrator:
 
         try:
             # 导入质量检查控制器
-            from autoBMAD.epic_automation.controllers.quality_check_controller import QualityCheckController
             from autoBMAD.epic_automation.agents.quality_agents import RuffAgent
+            from autoBMAD.epic_automation.controllers.quality_check_controller import (
+                QualityCheckController,
+            )
 
             # 创建 Agent 实例
             ruff_agent = RuffAgent()
@@ -250,15 +226,12 @@ class QualityGateOrchestrator:
             # 🆕 判定是否为超限场景
             if self._is_max_cycles_exceeded_with_errors(ruff_result):
                 # 超限场景：phase 状态为 completed，但记录警告
-                self.logger.warning(
-                    f"⚠ Ruff quality gate reached max cycles ({ruff_result['cycles']}) "
-                    f"with {len(ruff_result['final_error_files'])} remaining error(s)"
-                )
+                self.logger.warning(f"⚠ Ruff quality gate reached max cycles ({ruff_result['cycles']}) with {len(ruff_result['final_error_files'])} remaining error(s)")
                 self._update_progress("phase_1_ruff", "completed", end=True)
 
                 return {
                     "success": True,  # 🆕 流程成功，不阻断
-                    "warning": f"Max cycles exceeded with errors",
+                    "warning": "Max cycles exceeded with errors",
                     "duration": self._calculate_duration(start_time, end_time),
                     "result": ruff_result,
                 }
@@ -266,10 +239,7 @@ class QualityGateOrchestrator:
             # 原有逻辑：正常完成或中途失败
             success = ruff_result["status"] == "completed"
             if success:
-                self.logger.info(
-                    f"✓ Ruff quality gate PASSED after {ruff_result['cycles']} cycle(s) "
-                    f"in {self._calculate_duration(start_time, end_time)}s"
-                )
+                self.logger.info(f"✓ Ruff quality gate PASSED after {ruff_result['cycles']} cycle(s) in {self._calculate_duration(start_time, end_time)}s")
                 self._update_progress("phase_1_ruff", "completed", end=True)
                 return {
                     "success": True,
@@ -313,8 +283,10 @@ class QualityGateOrchestrator:
 
         try:
             # 导入质量检查控制器
-            from autoBMAD.epic_automation.controllers.quality_check_controller import QualityCheckController
             from autoBMAD.epic_automation.agents.quality_agents import BasedPyrightAgent
+            from autoBMAD.epic_automation.controllers.quality_check_controller import (
+                QualityCheckController,
+            )
 
             # 创建 Agent 实例
             basedpyright_agent = BasedPyrightAgent()
@@ -336,15 +308,12 @@ class QualityGateOrchestrator:
             # 🆕 判定是否为超限场景
             if self._is_max_cycles_exceeded_with_errors(basedpyright_result):
                 # 超限场景：phase 状态为 completed，但记录警告
-                self.logger.warning(
-                    f"⚠ BasedPyright quality gate reached max cycles ({basedpyright_result['cycles']}) "
-                    f"with {len(basedpyright_result['final_error_files'])} remaining error(s)"
-                )
+                self.logger.warning(f"⚠ BasedPyright quality gate reached max cycles ({basedpyright_result['cycles']}) with {len(basedpyright_result['final_error_files'])} remaining error(s)")
                 self._update_progress("phase_2_basedpyright", "completed", end=True)
 
                 return {
                     "success": True,  # 🆕 流程成功，不阻断
-                    "warning": f"Max cycles exceeded with errors",
+                    "warning": "Max cycles exceeded with errors",
                     "duration": self._calculate_duration(start_time, end_time),
                     "result": basedpyright_result,
                 }
@@ -352,10 +321,7 @@ class QualityGateOrchestrator:
             # 原有逻辑：正常完成或中途失败
             success = basedpyright_result["status"] == "completed"
             if success:
-                self.logger.info(
-                    f"✓ BasedPyright quality gate PASSED after {basedpyright_result['cycles']} cycle(s) "
-                    f"in {self._calculate_duration(start_time, end_time)}s"
-                )
+                self.logger.info(f"✓ BasedPyright quality gate PASSED after {basedpyright_result['cycles']} cycle(s) in {self._calculate_duration(start_time, end_time)}s")
                 self._update_progress("phase_2_basedpyright", "completed", end=True)
                 return {
                     "success": True,
@@ -401,8 +367,7 @@ class QualityGateOrchestrator:
 
             if format_result["formatted"]:
                 self.logger.info(
-                    f"✓ Code formatted successfully "
-                    f"in {self._calculate_duration(start_time, end_time)}s"
+                    f"✓ Code formatted successfully in {self._calculate_duration(start_time, end_time)}s"
                 )
                 self._update_progress("phase_final_format", "completed", end=True)
                 return {
@@ -547,7 +512,7 @@ class QualityGateOrchestrator:
 
                 return {
                     "success": True,  # 🆕 流程成功，不阻断
-                    "warning": f"Max cycles exceeded with errors",
+                    "warning": "Max cycles exceeded with errors",
                     "duration": self._calculate_duration(start_time, end_time),
                     "result": pytest_result,
                 }
@@ -817,7 +782,7 @@ class QualityGateOrchestrator:
             return None
 
         import json
-        from datetime import datetime, UTC
+        from datetime import UTC, datetime
         from pathlib import Path
 
         # 构建 JSON 内容
@@ -863,7 +828,7 @@ async def run_quality_gates_standalone(
     epic_id: str = "standalone-quality",
     skip_quality: bool = False,
     skip_tests: bool = False,
-    max_cycles: int = 5,
+    max_cycles: int = 5,  # type: ignore[reportUnusedParameter]
     verbose: bool = False,
     create_log_file: bool = False,
 ) -> dict[str, Any]:
@@ -1006,13 +971,12 @@ class EpicDriver:
             from autoBMAD.epic_automation.agents.dev_agent import DevAgent  # type: ignore
             from autoBMAD.epic_automation.agents.qa_agent import QAAgent  # type: ignore
             from autoBMAD.epic_automation.agents.sm_agent import SMAgent  # type: ignore
-            from autoBMAD.epic_automation.agents.status_update_agent import StatusUpdateAgent  # type: ignore
+            from autoBMAD.epic_automation.agents.status_update_agent import (
+                StatusUpdateAgent,  # type: ignore
+            )
             from autoBMAD.epic_automation.state_manager import (
                 StateManager,  # type: ignore
             )
-            from autoBMAD.epic_automation.controllers.sm_controller import SMController  # type: ignore
-            from autoBMAD.epic_automation.controllers.devqa_controller import DevQaController  # type: ignore
-            from autoBMAD.epic_automation.controllers.quality_controller import QualityController  # type: ignore
 
             # Create agents (for potential direct access)
             self.sm_agent = SMAgent()
@@ -1028,7 +992,9 @@ class EpicDriver:
 
             # Initialize StatusParser with SDK wrapper if available (optional module)
             try:
-                from autoBMAD.epic_automation.agents.state_agent import SimpleStoryParser as StatusParser
+                from autoBMAD.epic_automation.agents.state_agent import (
+                    SimpleStoryParser as StatusParser,
+                )
 
                 # Create proper options object for status parsing
                 options = None
@@ -1636,7 +1602,7 @@ class EpicDriver:
 
         return result
 
-    async def execute_qa_phase(self, story_path: str) -> bool:
+    async def execute_qa_phase(self, _story_path: str) -> bool:
         """
         Execute QA (Quality Assurance) phase for a story.
 
@@ -1650,8 +1616,8 @@ class EpicDriver:
             True if QA passes, False otherwise
         """
         logger.warning(
-            f"execute_qa_phase is deprecated. QA is now handled by DevQaController. "
-            f"Use execute_dev_phase which manages the complete Dev-QA cycle."
+            "execute_qa_phase is deprecated. QA is now handled by DevQaController. "
+            "Use execute_dev_phase which manages the complete Dev-QA cycle."
         )
         return True  # No-op - QA is handled in DevQaController
 
@@ -1722,25 +1688,25 @@ class EpicDriver:
             # 🆕 强制初始化数据库记录（最简方案）
             try:
                 current_status = story.get("status", "pending")
-                
+
                 await self.state_manager.update_story_status(
                     story_path=story_path,
                     status=current_status,
                     phase="initialization",
                     epic_path=self.epic_id
                 )
-                
+
                 logger.debug(f"[DB Init] Story {story_id} initialized with status: {current_status}")
-                
+
             except Exception as e:
                 logger.warning(f"DB init failed for {story_id}: {e}, continuing workflow")
-            
+
             # 🎯 关键修复：移除数据库状态检查，完全依赖故事文档核心状态
             # 旧逻辑（已废弃）：
             # existing_status = await self.state_manager.get_story_status(story_path)
             # if existing_status and existing_status.get("status") in ["completed", "qa_waived"]:
             #     return True
-            # 
+            #
             # 新逻辑：所有决策由核心状态值驱动，数据库仅用于持久化记录
 
             # 🎯 核心改动：循环由核心状态值驱动
@@ -1756,7 +1722,7 @@ class EpicDriver:
                     # 1️⃣ 读取当前核心状态值
                     current_status = await self._parse_story_status(story_path)
                     logger.info(f"[Cycle {iteration}] Current status: {current_status}")
-                    
+
                 except asyncio.CancelledError:
                     # 🎯 关键修复：SDK 内部取消后的延迟 CancelledError
                     # 完全封装，不影响工作流
@@ -1767,7 +1733,7 @@ class EpicDriver:
                     # 使用 fallback 解析状态
                     current_status = self._parse_story_status_fallback(story_path)
                     logger.info(f"[Cycle {iteration}] Fallback status: {current_status}")
-                
+
                 # 🎯 关键修复：状态解析后等待 SDK 清理完成，避免连续 SDK 调用
                 # 增加等待时间到 2 秒，确保 cancel scope 完全清理
                 # 将 sleep 单独放在 try-except 外面，吸收所有延迟的 CancelledError
@@ -2296,7 +2262,7 @@ class EpicDriver:
         return True
 
     async def _update_progress(
-        self, phase: str, status: str, details: dict[str, Any]
+        self, phase: str, status: str, _details: dict[str, Any]
     ) -> None:
         """
         Update progress tracking in state manager.
@@ -2348,8 +2314,8 @@ class EpicDriver:
         self.logger.info("=== Database Initialization ===")
         self.logger.info("Cleanup Rules:")
         self.logger.info(f"  1. Current Epic stories: {epic_id} {story_ids}")
-        self.logger.info(f"  2. TEMP path stories: %\\Temp\\%, %\\AppData\\Local\\Temp\\%")
-        self.logger.info(f"  3. Test-marked stories: *test*, test_*")
+        self.logger.info("  2. TEMP path stories: %\\Temp\\%, %\\AppData\\Local\\Temp\\%")
+        self.logger.info("  3. Test-marked stories: *test*, test_*")
         self.logger.info("")
         self.logger.info("Cleanup Results:")
         self.logger.info(f"  - Epic stories removed: {stats['epic_stories']}")
@@ -2654,17 +2620,17 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
     _ = epic_parser.add_argument(
         "--source-dir",
         type=str,
-        default="src",
+        default=os.getenv("EPIC_SOURCE_DIR", "src"),
         metavar="DIR",
-        help='Source code directory for QA checks (default: "src")',
+        help='Source code directory for QA checks (default: $EPIC_SOURCE_DIR or "src")',
     )
 
     _ = epic_parser.add_argument(
         "--test-dir",
         type=str,
-        default="tests",
+        default=os.getenv("EPIC_TEST_DIR", "tests"),
         metavar="DIR",
-        help='Test directory for QA checks (default: "tests")',
+        help='Test directory for QA checks (default: $EPIC_TEST_DIR or "tests")',
     )
 
     _ = epic_parser.add_argument(
@@ -2690,12 +2656,12 @@ For more information on quality gates, see docs/troubleshooting/quality-gates.md
     )
 
     quality_parser.add_argument(
-        '--source-dir', type=str, default='src',
-        help='Source code directory (default: src)'
+        '--source-dir', type=str, default=os.getenv('EPIC_SOURCE_DIR', 'src'),
+        help='Source code directory (default: $EPIC_SOURCE_DIR or "src")'
     )
     quality_parser.add_argument(
-        '--test-dir', type=str, default='tests',
-        help='Test directory (default: tests)'
+        '--test-dir', type=str, default=os.getenv('EPIC_TEST_DIR', 'tests'),
+        help='Test directory (default: $EPIC_TEST_DIR or "tests")'
     )
     quality_parser.add_argument(
         '--epic-id', type=str, default='standalone-quality',

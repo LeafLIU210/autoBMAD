@@ -1,0 +1,70 @@
+# UX (User Experience Designer) 节点文档模板配置
+version: "1.0"
+node_id: ux
+description: "Templates for UX (User Experience Designer) node deliverables"
+
+templates:
+  - template_id: user_personas
+    title: "User Personas"
+    filename_pattern: "user-personas.md"
+    description: "Detailed user persona definitions"
+    sections:
+      - heading: "Persona Overview"
+        required: true
+      - heading: "Primary Personas"
+        required: true
+      - heading: "Secondary Personas"
+        required: false
+      - heading: "User Goals"
+        required: true
+      - heading: "Pain Points"
+        required: true
+
+  - template_id: user_flows
+    title: "User Flows"
+    filename_pattern: "user-flows.md"
+    description: "User interaction flow diagrams"
+    sections:
+      - heading: "Flow Overview"
+        required: true
+      - heading: "Core User Flows"
+        required: true
+        note: "Use Mermaid flowchart"
+      - heading: "Edge Cases"
+        required: true
+      - heading: "Error States"
+        required: true
+
+  - template_id: wireframes
+    title: "Wireframes"
+    filename_pattern: "wireframes.md"
+    description: "UI wireframe specifications"
+    sections:
+      - heading: "Design Overview"
+        required: true
+      - heading: "Page Layouts"
+        required: true
+      - heading: "Component Specifications"
+        required: true
+      - heading: "Responsive Considerations"
+        required: true
+
+  - template_id: usability_testing
+    title: "Usability Testing Plan"
+    filename_pattern: "usability-testing-plan.md"
+    description: "Usability test strategy"
+    sections:
+      - heading: "Test Objectives"
+        required: true
+      - heading: "Test Scenarios"
+        required: true
+      - heading: "Success Metrics"
+        required: true
+      - heading: "Participant Criteria"
+        required: true
+
+standards:
+  style_guide: "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+  diagram_format: "mermaid"
+  no_time_estimates: true
+  commonmark_strict: true

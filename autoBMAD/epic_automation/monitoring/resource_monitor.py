@@ -11,7 +11,7 @@ import traceback
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -19,7 +19,7 @@ import psutil
 class ResourceEvent:
     """资源事件"""
 
-    def __init__(self, event_type: str, resource_type: str, resource_id: str, details: Dict[str, Any]):
+    def __init__(self, event_type: str, resource_type: str, resource_id: str, details: dict[str, Any]):
         self.event_type = event_type  # acquire, release, timeout, error
         self.resource_type = resource_type  # lock, session, task, memory
         self.resource_id = resource_id
@@ -27,7 +27,7 @@ class ResourceEvent:
         self.details = details.copy()
         self.stack_trace = traceback.format_stack()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "event_type": self.event_type,
             "resource_type": self.resource_type,
@@ -42,9 +42,9 @@ class LockMonitor:
     """锁监控器"""
 
     def __init__(self):
-        self.acquired_locks: Dict[str, Dict[str, Any]] = {}
-        self.lock_history: List[ResourceEvent] = []
-        self.lock_timeouts: List[ResourceEvent] = []
+        self.acquired_locks: dict[str, dict[str, Any]] = {}
+        self.lock_history: list[ResourceEvent] = []
+        self.lock_timeouts: list[ResourceEvent] = []
         self.max_lock_duration = 30.0  # 30秒超时
 
     def acquire_lock(self, lock_name: str, owner_task_id: int, owner_task_name: str):
@@ -85,7 +85,7 @@ class LockMonitor:
                 })
                 self.lock_timeouts.append(timeout_event)
 
-    def get_active_locks(self) -> List[Dict[str, Any]]:
+    def get_active_locks(self) -> list[dict[str, Any]]:
         """获取活动锁列表"""
         locks = []
         for lock_name, lock_info in self.acquired_locks.items():
@@ -100,7 +100,7 @@ class LockMonitor:
             })
         return locks
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """获取锁统计信息"""
         total_acquisitions = len([e for e in self.lock_history if e.event_type == "acquire"])
         total_releases = len([e for e in self.lock_history if e.event_type == "release"])
@@ -133,9 +133,9 @@ class SessionMonitor:
     """会话监控器"""
 
     def __init__(self):
-        self.active_sessions: Dict[str, Dict[str, Any]] = {}
-        self.session_history: List[ResourceEvent] = []
-        self.session_errors: List[ResourceEvent] = []
+        self.active_sessions: dict[str, dict[str, Any]] = {}
+        self.session_history: list[ResourceEvent] = []
+        self.session_errors: list[ResourceEvent] = []
 
     def create_session(self, session_id: str, session_type: str, owner_agent: str):
         """记录会话创建"""
@@ -152,7 +152,7 @@ class SessionMonitor:
         })
         self.session_history.append(event)
 
-    def update_session_status(self, session_id: str, status: str, error: Optional[str] = None):
+    def update_session_status(self, session_id: str, status: str, error: str | None = None):
         """更新会话状态"""
         if session_id not in self.active_sessions:
             return
@@ -185,7 +185,7 @@ class SessionMonitor:
         })
         self.session_history.append(event)
 
-    def get_active_sessions(self) -> List[Dict[str, Any]]:
+    def get_active_sessions(self) -> list[dict[str, Any]]:
         """获取活动会话"""
         sessions = []
         for session_id, info in self.active_sessions.items():
@@ -199,7 +199,7 @@ class SessionMonitor:
             })
         return sessions
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """获取会话统计信息"""
         total_sessions = len(self.session_history)
         created_sessions = len([e for e in self.session_history if e.event_type == "create"])
@@ -229,9 +229,9 @@ class TaskMonitor:
     """任务监控器"""
 
     def __init__(self):
-        self.tasks: Dict[int, Dict[str, Any]] = {}
-        self.task_history: List[ResourceEvent] = []
-        self.long_running_tasks: List[ResourceEvent] = []
+        self.tasks: dict[int, dict[str, Any]] = {}
+        self.task_history: list[ResourceEvent] = []
+        self.long_running_tasks: list[ResourceEvent] = []
 
     def track_task_creation(self, task_id: int, task_name: str, coro_info: str):
         """跟踪任务创建"""
@@ -271,7 +271,7 @@ class TaskMonitor:
             })
             self.long_running_tasks.append(long_task_event)
 
-    def get_active_tasks(self) -> List[Dict[str, Any]]:
+    def get_active_tasks(self) -> list[dict[str, Any]]:
         """获取活动任务"""
         tasks = []
         for task_id, info in self.tasks.items():
@@ -285,7 +285,7 @@ class TaskMonitor:
             })
         return tasks
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """获取任务统计信息"""
         total_tasks = len(self.task_history)
         completed_tasks = len([e for e in self.task_history if e.event_type == "complete"])
@@ -306,10 +306,9 @@ class SystemMonitor:
 
     def __init__(self):
         from collections import deque
-        from typing import Deque, Tuple
 
-        self.cpu_samples: Deque[Tuple[datetime, float]] = deque(maxlen=100)
-        self.memory_samples: Deque[Tuple[datetime, float]] = deque(maxlen=100)
+        self.cpu_samples: deque[tuple[datetime, float]] = deque(maxlen=100)
+        self.memory_samples: deque[tuple[datetime, float]] = deque(maxlen=100)
         self.monitor_start = datetime.now()
 
     def collect_system_stats(self):
@@ -322,7 +321,7 @@ class SystemMonitor:
         memory = psutil.virtual_memory()
         self.memory_samples.append((datetime.now(), memory.percent))
 
-    def get_system_stats(self) -> Dict[str, Any]:
+    def get_system_stats(self) -> dict[str, Any]:
         """获取系统统计信息"""
         if not self.cpu_samples or not self.memory_samples:
             return {}
@@ -357,7 +356,7 @@ class SystemMonitor:
 class ResourceMonitor:
     """资源监控器主类"""
 
-    def __init__(self, log_file: Optional[Path] = None):
+    def __init__(self, log_file: Path | None = None):
         self.log_file = log_file or Path("resource_monitor.log")
         self.lock_monitor = LockMonitor()
         self.session_monitor = SessionMonitor()
@@ -416,7 +415,7 @@ class ResourceMonitor:
             self.session_monitor.close_session(session_id)
             self.logger.debug(f"Session closed: {session_id}")
 
-    def get_comprehensive_statistics(self) -> Dict[str, Any]:
+    def get_comprehensive_statistics(self) -> dict[str, Any]:
         """获取综合统计信息"""
         # 收集系统统计
         self.system_monitor.collect_system_stats()
@@ -435,7 +434,7 @@ class ResourceMonitor:
             }
         }
 
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         """生成资源监控报告"""
         report = self.get_comprehensive_statistics()
 
@@ -458,7 +457,7 @@ class ResourceMonitor:
 
         # 锁统计
         lock_stats = stats["locks"]
-        print(f"锁统计:")
+        print("锁统计:")
         print(f"  活动锁: {lock_stats['active_locks']}")
         print(f"  总获取: {lock_stats['total_acquisitions']}")
         print(f"  平均持续时间: {lock_stats['avg_duration']:.2f}s")
@@ -466,15 +465,15 @@ class ResourceMonitor:
         print(f"  泄漏数量: {lock_stats['leak_count']}")
 
         if lock_stats['active_locks'] > 0:
-            print(f"\n活动锁详情:")
+            print("\n活动锁详情:")
             for lock in self.lock_monitor.get_active_locks():
                 print(f"  - {lock['lock_name']}: {lock['duration']:.1f}s ({lock['owner_task_name']})")
                 if lock['is_timeout']:
-                    print(f"    ⚠️  已超时!")
+                    print("    ⚠️  已超时!")
 
         # 会话统计
         session_stats = stats["sessions"]
-        print(f"\n会话统计:")
+        print("\n会话统计:")
         print(f"  活动会话: {session_stats['active_sessions']}")
         print(f"  总会话数: {session_stats['created_sessions']}")
         print(f"  成功率: {session_stats['success_rate']:.2%}")
@@ -485,7 +484,7 @@ class ResourceMonitor:
 
         # 任务统计
         task_stats = stats["tasks"]
-        print(f"\n任务统计:")
+        print("\n任务统计:")
         print(f"  活动任务: {task_stats['active_tasks']}")
         print(f"  总任务数: {task_stats['total_tasks']}")
         print(f"  长任务数: {task_stats['long_running_tasks']}")
@@ -494,7 +493,7 @@ class ResourceMonitor:
         # 系统统计
         if "system" in stats and stats["system"]:
             system = stats["system"]
-            print(f"\n系统资源:")
+            print("\n系统资源:")
             print(f"  CPU: {system['cpu']['current']:.1f}% (平均: {system['cpu']['average']:.1f}%)")
             print(f"  内存: {system['memory']['current_percent']:.1f}% (平均: {system['memory']['average_percent']:.1f}%)")
             print(f"  可用内存: {system['memory']['available_gb']:.1f}GB")
@@ -504,10 +503,10 @@ class ResourceMonitor:
 
 
 # 全局资源监控器实例
-_global_resource_monitor: Optional[ResourceMonitor] = None
+_global_resource_monitor: ResourceMonitor | None = None
 
 
-def get_resource_monitor(log_file: Optional[Path] = None) -> ResourceMonitor:
+def get_resource_monitor(log_file: Path | None = None) -> ResourceMonitor:
     """获取全局资源监控器实例"""
     global _global_resource_monitor
     if _global_resource_monitor is None:

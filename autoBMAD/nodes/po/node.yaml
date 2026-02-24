@@ -1,0 +1,39 @@
+# PO Node Configuration - Story 3.2, 3.8
+# This file contains the node-specific configuration for the PO pipeline node
+
+node_id: po
+name: PO
+description: Product Owner - drives product success through clear vision, prioritization, and stakeholder alignment
+sequence: 5
+deliverable_type: epics-stories
+deliverable:
+  required_sections:
+    - product_vision
+    - roadmap
+    - epic_list
+    - story_list
+    - prioritization_rationale
+    - dependencies
+    - release_plan
+agent:
+  type: independent
+  model: sonnet
+  temperature: 0.5
+questions:
+  - id: q1
+    text: "What is the long-term product vision and strategy?"
+    required: true
+  - id: q2
+    text: "What are the prioritized epics and features?"
+    required: true
+  - id: q3
+    text: "What are the story point estimates and dependencies?"
+    required: true
+  - id: q4
+    text: "What is the release schedule and milestones?"
+    required: true
+dependencies:
+  - analyst
+  - pm
+  - ux
+  - architect

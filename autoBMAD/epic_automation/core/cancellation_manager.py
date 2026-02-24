@@ -11,13 +11,13 @@
 4. 提供异步上下文管理器track_sdk_execution
 """
 
-import anyio
 import logging
 import time
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator
 
+import anyio
 
 logger = logging.getLogger(__name__)
 
@@ -129,10 +129,7 @@ class CancellationManager:
         """
         # 进入上下文：注册调用
         self.register_call(call_id, agent_name)
-        logger.debug(
-            f"[CancelManager] Entering context: {call_id} "
-            f"({agent_name}/{operation_name})"
-        )
+        logger.debug(f"[CancelManager] Entering context: {call_id} ({agent_name}/{operation_name})")
 
         try:
             yield  # 执行被包裹的代码块
@@ -144,8 +141,9 @@ class CancellationManager:
 
     async def confirm_safe_to_proceed(self, call_id: str, timeout: float = 30.0) -> bool:
         """Confirm safe to proceed"""
-        import anyio
         import time
+
+        import anyio
         start_time = time.time()
         while time.time() - start_time < timeout:
             if call_id in self._active_calls:

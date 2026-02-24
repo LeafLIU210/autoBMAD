@@ -8,7 +8,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast, override
 
 from anyio.abc import TaskGroup
 
@@ -23,11 +23,16 @@ logger = logging.getLogger(__name__)
 class DevAgent(BaseAgent):
     """Development agent for handling implementation tasks."""
 
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "dev"
+
     def __init__(
         self,
-        task_group: Optional[TaskGroup] = None,
+        task_group: TaskGroup | None = None,
         use_claude: bool = True,
-        log_manager: Optional[LogManager] = None,
+        log_manager: LogManager | None = None,
     ):
         """
         Initialize Dev agent.
@@ -84,11 +89,9 @@ class DevAgent(BaseAgent):
             self.status_parser = None
             self._log_execution(f"Failed to initialize status parser: {e}", "warning")
 
-        self._log_execution(
-            f"DevAgent initialized (claude_mode={use_claude}, "
-            f"claude_available={self._claude_available})"
-        )
+        self._log_execution(f"DevAgent initialized (claude_mode={use_claude}, claude_available={self._claude_available})")
 
+    @override
     async def execute(self, story_path: str) -> bool:
         """
         执行开发任务
@@ -116,7 +119,7 @@ class DevAgent(BaseAgent):
         """执行开发任务的核心逻辑"""
         try:
             self._log_execution(
-                f"Epic Driver has determined this story needs development"
+                "Epic Driver has determined this story needs development"
             )
 
             # 读取故事内容
@@ -132,7 +135,7 @@ class DevAgent(BaseAgent):
                 self._log_execution(
                     f"Development tasks executed (result={development_success})"
                 )
-                
+
                 # 返回实际的开发结果
                 if not development_success:
                     self._log_execution(
@@ -157,7 +160,7 @@ class DevAgent(BaseAgent):
             return False
 
     async def _execute_development_tasks(
-        self, requirements: dict[str, Any], story_path: str
+        self, _requirements: dict[str, Any], story_path: str
     ) -> bool:
         """执行开发任务 - 使用SDKExecutor"""
         try:
@@ -178,7 +181,7 @@ class DevAgent(BaseAgent):
 
             if self.sdk_executor:
                 sdk_result = await self._execute_sdk_call(self.sdk_executor, base_prompt)
-                
+
                 # 检查SDK调用结果
                 if sdk_result and hasattr(sdk_result, 'is_success'):
                     if not sdk_result.is_success():
@@ -190,7 +193,7 @@ class DevAgent(BaseAgent):
                 elif sdk_result and hasattr(sdk_result, 'has_target_result'):
                     if not sdk_result.has_target_result:
                         self._log_execution(
-                            f"SDK call did not produce target result",
+                            "SDK call did not produce target result",
                             "error"
                         )
                         return False
@@ -199,7 +202,7 @@ class DevAgent(BaseAgent):
                 return False
 
             self._log_execution(
-                f"Development execution completed successfully"
+                "Development execution completed successfully"
             )
             return True
 

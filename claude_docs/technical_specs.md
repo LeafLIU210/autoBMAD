@@ -1,7 +1,7 @@
 # 技术规范详细说明
 
-**版本**: 1.1
-**最后更新**: 2026-01-14
+**版本**: 1.2
+**最后更新**: 2026-02-24
 
 ---
 
@@ -26,12 +26,21 @@
 
 #### Claude Agent SDK
 - **版本**: >=0.1.0
-- **用途**: AI代理编排和执行
+- **用途**: AI代理编排和执行（Epic Automation使用）
 - **链接**: [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)
 - **特性**:
   - AI驱动的代理系统
   - 异步任务执行
   - 权限管理和安全控制
+
+#### Kimi Agent SDK
+- **版本**: >=0.1.0
+- **用途**: AI代理编排和执行（DocuSwarm使用）
+- **链接**: [Kimi Agent SDK](https://github.com/moonshot-ai/kimi-agent-sdk)
+- **特性**:
+  - Kimi K2.5模型集成
+  - 自动工具调度
+  - 结构化输出支持
 
 #### BMAD Method
 - **用途**: AI驱动的敏捷开发方法论
@@ -40,6 +49,14 @@
   - 结构化的开发流程
   - SM-Dev-QA循环
   - 质量门控集成
+
+#### LangGraph
+- **版本**: >=0.2.0
+- **用途**: DocuSwarm流水线状态机
+- **特性**:
+  - 基于图的工作流编排
+  - 状态持久化
+  - 检查点恢复机制
 
 ### 1.2 生产依赖
 
@@ -120,9 +137,17 @@ nuitka>=1.8.0
 black>=23.0.0
 ruff>=0.1.0
 basedpyright>=1.0.0
-
-# 开发工具
 pre-commit>=3.0.0
+
+# Epic Automation依赖
+claude-agent-sdk>=0.1.0
+anyio>=4.0.0
+debugpy>=1.6.0
+
+# DocuSwarm依赖
+kimi-agent-sdk>=0.1.0
+langgraph>=0.2.0
+langchain-core>=0.3.0
 ```
 
 ---
@@ -154,6 +179,7 @@ dependencies = [
     "PySide6>=6.5.0",
     "loguru>=0.7.0",
     "claude-agent-sdk>=0.1.0",
+    "kimi-agent-sdk>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -168,6 +194,10 @@ dev = [
     "ruff>=0.1.0",
     "basedpyright>=1.0.0",
     "pre-commit>=3.0.0",
+    "anyio>=4.0.0",
+    "debugpy>=1.6.0",
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
 ]
 
 [build-system]
@@ -956,4 +986,6 @@ message = "欢迎"  # 直接使用中文字符
 ---
 
 **版本历史**:
+- v1.2 (2026-02-24): 添加DocuSwarm依赖（Kimi Agent SDK、LangGraph等）
+- v1.1 (2026-01-14): 添加autoBMAD Epic Automation技术规范
 - v1.0 (2026-01-04): 初始版本，完整的技术规范说明

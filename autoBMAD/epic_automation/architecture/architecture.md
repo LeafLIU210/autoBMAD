@@ -1532,11 +1532,11 @@ debugpy>=1.6.0
 **Setup Commands**:
 ```bash
 # Create virtual environment
-python -m venv .venv
+python -m venv venv
 
 # Activate virtual environment
-.venv\Scripts\activate  # Windows
-source .venv/bin/activate  # Linux/macOS
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/macOS
 
 # Install dependencies
 pip install -r requirements.txt

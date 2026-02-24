@@ -1,0 +1,62 @@
+# Architect 节点文档模板配置
+version: "1.0"
+node_id: architect
+description: "Templates for Architect node deliverables"
+
+templates:
+  - template_id: system_architecture
+    title: "System Architecture Overview"
+    filename_pattern: "system-architecture.md"
+    description: "High-level system architecture"
+    sections:
+      - heading: "Architecture Vision"
+        required: true
+      - heading: "System Components"
+        required: true
+      - heading: "Data Flow"
+        required: true
+        note: "Use Mermaid flowchart"
+      - heading: "Technology Stack"
+        required: true
+      - heading: "Architecture Diagrams"
+        required: true
+        note: "Use Mermaid or C4 model"
+
+  - template_id: api_specification
+    title: "API Specification"
+    filename_pattern: "api-specification.md"
+    description: "RESTful API design and contracts"
+    sections:
+      - heading: "API Overview"
+        required: true
+      - heading: "Authentication"
+        required: true
+      - heading: "Endpoints"
+        required: true
+      - heading: "Data Models"
+        required: true
+      - heading: "Error Handling"
+        required: true
+
+  - template_id: database_schema
+    title: "Database Schema Design"
+    filename_pattern: "database-schema.md"
+    description: "Database structure and relationships"
+    sections:
+      - heading: "Schema Overview"
+        required: true
+      - heading: "Entity Definitions"
+        required: true
+      - heading: "Relationships"
+        required: true
+        note: "Use Mermaid erDiagram"
+      - heading: "Indexes and Constraints"
+        required: true
+      - heading: "Migration Strategy"
+        required: true
+
+standards:
+  style_guide: "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+  diagram_format: "mermaid"
+  no_time_estimates: true
+  commonmark_strict: true

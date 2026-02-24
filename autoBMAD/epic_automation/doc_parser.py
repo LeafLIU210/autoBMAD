@@ -1,6 +1,7 @@
 """Module for parsing and extracting structured information from documents."""
 
 from pathlib import Path
+from typing import Any
 
 
 class DocumentParser:
@@ -69,7 +70,7 @@ class DocumentParser:
             sections[current_heading] = "\n".join(current_section).strip()
         return sections
 
-    def parse(self) -> dict[str, list[dict[str, str]]]:
+    def parse(self) -> dict[str, Any]:
         """Parse the document and return its structure.
 
         Returns:

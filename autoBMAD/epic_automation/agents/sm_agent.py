@@ -7,7 +7,7 @@ SM Agent - Story Master Agent
 import logging
 import re
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, override
 
 from anyio.abc import TaskGroup
 
@@ -19,12 +19,17 @@ logger = logging.getLogger(__name__)
 class SMAgent(BaseAgent):
     """Story Master agent for handling story-related tasks."""
 
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "sm"
+
     def __init__(
         self,
-        task_group: Optional[TaskGroup] = None,
-        project_root: Optional[Path] = None,
-        tasks_path: Optional[Path] = None,
-        config: Optional[dict[str, Any]] = None,
+        task_group: TaskGroup | None = None,
+        project_root: Path | None = None,
+        tasks_path: Path | None = None,
+        config: dict[str, Any] | None = None,
     ):
         """
         Initialize SM agent.
@@ -61,11 +66,12 @@ class SMAgent(BaseAgent):
 
         self._log_execution("SMAgent initialized")
 
+    @override
     async def execute(
         self,
-        story_content: Optional[str] = None,
-        story_path: Optional[str] = None,
-        epic_path: Optional[str] = None,
+        story_content: str | None = None,
+        story_path: str | None = None,
+        epic_path: str | None = None,
     ) -> bool:
         """
         执行SM阶段任务
@@ -291,7 +297,7 @@ class SMAgent(BaseAgent):
             故事内容的字符串，如果没有找到则返回空字符串
         """
         # 🎯 已废弃：原方法直接生成完整故事文档，现改为SDK填充
-        logger.warning(f"_extract_story_from_epic is deprecated, use _extract_story_section_from_epic instead")
+        logger.warning("_extract_story_from_epic is deprecated, use _extract_story_section_from_epic instead")
         return self._extract_story_section_from_epic(epic_content, story_id)
 
     def _build_claude_prompt(self, epic_path: str, story_ids: list[str]) -> str:
@@ -715,7 +721,7 @@ Please complete the story file now."""
         story_id: str,
         epic_path: str,
         epic_content: str,
-        manager: Any | None
+        _manager: Any | None
     ) -> bool:
         """
         使用SDK填充故事内容（简化版）
@@ -767,11 +773,7 @@ Please complete the story file now."""
 
             # 检查结果
             if not result.is_success():
-                self._log_execution(
-                    f"[SDK] SDK execution failed for story {story_id}: "
-                    f"{result.error_type.value}",
-                    "warning"
-                )
+                self._log_execution(f"[SDK] SDK execution failed for story {story_id}: {result.error_type.value}", "warning")
                 return False
 
             self._log_execution(f"[SDK] SDK execution completed for story {story_id}")
@@ -787,7 +789,7 @@ Please complete the story file now."""
             self._log_execution(f"Traceback: {traceback.format_exc()}", "debug")
             return False
 
-    def _verify_single_story_file(self, story_file: Path, story_id: str) -> bool:
+    def _verify_single_story_file(self, story_file: Path, _story_id: str) -> bool:
         """
         验证单个故事文件的内容完整性
 
@@ -880,7 +882,7 @@ Please complete the story file now."""
             Dictionary of section names to content
         """
         sections = {}
-        current_section: Optional[str] = None
+        current_section: str | None = None
         current_content: list[str] = []
 
         for line in story_content.split('\n'):

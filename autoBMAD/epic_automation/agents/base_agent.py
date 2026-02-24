@@ -3,13 +3,16 @@ Base Agent - 所有 Agent 的基类
 支持TaskGroup管理和SDKExecutor集成
 """
 from __future__ import annotations
+
 import logging
-import anyio
 import uuid
+from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 from pathlib import Path
+from typing import Any, override
+
+import anyio
 from anyio.abc import TaskGroup
-from abc import ABC
-from typing import Any, Optional, Callable, Awaitable, Type
 
 from autoBMAD.epic_automation.agents.config import AgentConfig
 
@@ -25,11 +28,17 @@ logger = logging.getLogger(__name__)
 class BaseAgent(ABC):
     """Agent 基类，定义通用接口和行为"""
 
+    @property
+    @abstractmethod
+    def agent_type(self) -> str:
+        """返回 Agent 类型标识"""
+        ...
+
     def __init__(
         self,
-        config_or_name: Optional[AgentConfig | str] = None,
-        task_group: Optional[TaskGroup] = None,
-        log_manager: Optional[Any] = None,
+        config_or_name: AgentConfig | str | None = None,
+        task_group: TaskGroup | None = None,
+        log_manager: Any | None = None,
     ):
         """
         初始化 Agent
@@ -74,7 +83,7 @@ class BaseAgent(ABC):
                 self.client = Anthropic(api_key=self.config.api_key)
             except Exception as e:
                 self.client = None
-                raise RuntimeError(f"Failed to initialize client: {e}")
+                raise RuntimeError(f"Failed to initialize client: {e}") from e
         else:
             self.client = None
 
@@ -158,9 +167,9 @@ class BaseAgent(ABC):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
     ) -> bool:
         """上下文管理器出口"""
         if self.client is not None and hasattr(self.client, 'close'):
@@ -168,13 +177,15 @@ class BaseAgent(ABC):
         self.client = None
         return False
 
+    @override
     def __repr__(self) -> str:
         """字符串表示"""
         return f"BaseAgent(name='{self.name}', session_id='{self.session_id}')"
 
+    @abstractmethod
     async def execute(self, *args: Any, **kwargs: Any) -> Any:
         """
-        执行 Agent 主逻辑 (默认实现)
+        执行 Agent 主逻辑 (抽象方法)
 
         Returns:
             Any: 执行结果
@@ -208,8 +219,8 @@ class BaseAgent(ABC):
             raise RuntimeError(f"{self.name}: TaskGroup not set")
 
         # 检查是否是Mock对象（用于测试）
-        from unittest.mock import MagicMock, AsyncMock
-        if isinstance(self.task_group, (MagicMock, AsyncMock)):
+        from unittest.mock import AsyncMock, MagicMock
+        if isinstance(self.task_group, MagicMock | AsyncMock):
             # 对于Mock对象，直接执行协程，不使用TaskGroup
             return await coro()
 
@@ -231,7 +242,7 @@ class BaseAgent(ABC):
 
     async def _execute_sdk_call(
         self,
-        sdk_executor: Any,
+        _sdk_executor: Any,
         prompt: str,
         **kwargs: Any
     ) -> Any:
@@ -246,7 +257,7 @@ class BaseAgent(ABC):
         Returns:
             SDK调用结果
         """
-        self._log_execution(f"Executing SDK call via execute_sdk_call")
+        self._log_execution("Executing SDK call via execute_sdk_call")
 
         try:
             # 使用sdk_helper的execute_sdk_call统一接口
@@ -265,7 +276,7 @@ class BaseAgent(ABC):
         except ImportError as e:
             self._log_execution(f"Failed to import SDK helper: {e}", "error")
             # 返回一个失败的 SDKResult
-            from ..core.sdk_result import SDKResult, SDKErrorType
+            from ..core.sdk_result import SDKErrorType, SDKResult
             return SDKResult(
                 has_target_result=False,
                 cleanup_completed=False,
@@ -275,7 +286,7 @@ class BaseAgent(ABC):
             )
         except Exception as e:
             self._log_execution(f"SDK call error: {e}", "error")
-            from ..core.sdk_result import SDKResult, SDKErrorType
+            from ..core.sdk_result import SDKErrorType, SDKResult
             return SDKResult(
                 has_target_result=False,
                 cleanup_completed=False,

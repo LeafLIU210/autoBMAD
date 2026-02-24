@@ -569,7 +569,7 @@ reportOptionalSubscript = true
 reportPrivateImportUsage = true
 exclude = [
     "**/__pycache__",
-    "**/.venv",
+    "**/venv",
     "**/venv",
     "build/",
     "dist/"

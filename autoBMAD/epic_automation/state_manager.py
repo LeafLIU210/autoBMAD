@@ -19,13 +19,14 @@ import re
 import shutil
 import sqlite3
 import warnings
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, TypeVar, Union, cast, List, Dict
+from typing import Any, TypeVar, Union, cast
 
-from autoBMAD.epic_automation.agents.config import StoryStatus, QAResult
+from autoBMAD.epic_automation.agents.config import QAResult, StoryStatus
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ class DeadlockDetector:
     """死锁检测器"""
 
     def __init__(self):
-        self.lock_waiters: Dict[str, asyncio.Task[None]] = {}
+        self.lock_waiters: dict[str, asyncio.Task[None]] = {}
         self.lock_timeout: float = 30.0  # 30秒超时
         self.deadlock_detected: bool = False
 
@@ -97,7 +98,7 @@ class DatabaseConnectionPool:
         self.connections: asyncio.Queue[sqlite3.Connection] = asyncio.Queue(
             maxsize=max_connections
         )
-        self.connection_params: Dict[str, Any] = {}
+        self.connection_params: dict[str, Any] = {}
 
     async def initialize(self, db_path: Path):
         """初始化连接池"""
@@ -117,7 +118,7 @@ class DatabaseConnectionPool:
             )
             return conn
         except TimeoutError:
-            raise RuntimeError("Database connection pool exhausted")
+            raise RuntimeError("Database connection pool exhausted") from None
 
     async def return_connection(self, conn: sqlite3.Connection):
         """归还数据库连接"""
@@ -296,7 +297,7 @@ class StateManager:
 
         Returns:
             (success, current_version): (是否成功, 当前版本号)
-            
+
         Raises:
             ValueError: epic_path为None时报错
         """
@@ -749,7 +750,7 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return 0
 
-    async def cleanup_epic_stories(self, epic_id: str, story_ids: List[str]) -> int:
+    async def cleanup_epic_stories(self, epic_id: str, story_ids: list[str]) -> int:
         """
         清理当前 Epic 相关 Story 的历史记录
 
@@ -773,7 +774,7 @@ class StateManager:
                     query = f"""
                         DELETE FROM stories
                         WHERE epic_path LIKE ?
-                          AND ({' OR '.join([f'story_path LIKE ?' for _ in story_ids])})
+                          AND ({' OR '.join(['story_path LIKE ?' for _ in story_ids])})
                     """
                     # epic_id 作为匹配模式
                     epic_pattern = f"%{epic_id}%" if not epic_id.startswith('%') and not epic_id.endswith('%') else epic_id
@@ -862,7 +863,7 @@ class StateManager:
             logger.debug(f"Error details: {e}", exc_info=True)
             return 0
 
-    def _execute_delete(self, query: str, params: List[Any]) -> int:
+    def _execute_delete(self, _query: str, _params: list[Any]) -> int:
         """
         执行删除操作（内部方法）
 
@@ -877,7 +878,7 @@ class StateManager:
         # Keeping for potential future use
         raise NotImplementedError("Use async versions directly")
 
-    async def initialize_for_epic(self, epic_id: str, story_ids: List[str]) -> Dict[str, int]:
+    async def initialize_for_epic(self, epic_id: str, story_ids: list[str]) -> dict[str, int]:
         """
         为当前 Epic 运行初始化数据库
 
@@ -900,7 +901,7 @@ class StateManager:
         """
         logger.info(f"[Init] Starting database initialization for Epic '{epic_id}'")
 
-        stats: Dict[str, int] = {}
+        stats: dict[str, int] = {}
 
         # 清理 1：当前 Epic Story 旧记录
         stats['epic_stories'] = await self.cleanup_epic_stories(epic_id, story_ids)
@@ -924,7 +925,7 @@ class StateManager:
 
         return stats
 
-    async def get_stories_by_ids(self, epic_path: str, story_ids: List[str]) -> "list[dict[str, Any]]":
+    async def get_stories_by_ids(self, epic_path: str, story_ids: list[str]) -> "list[dict[str, Any]]":
         """
         根据 Epic 路径和 Story ID 列表查询处理状态。
 
@@ -1026,7 +1027,7 @@ class StateManager:
         processing_status: str,
         timestamp: datetime,
         epic_id: str,
-        metadata: Dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None
     ) -> bool:
         """
         更新故事的处理状态（方案2实现）
@@ -1093,7 +1094,7 @@ class StateManager:
             同步结果字典，包含成功和失败的故事数量
         """
         logger.info("开始同步故事状态到markdown文件")
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "success_count": 0,
             "error_count": 0,
             "errors": [],  # type: ignore[assignment]

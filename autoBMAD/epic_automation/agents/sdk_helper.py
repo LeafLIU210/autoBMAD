@@ -18,14 +18,12 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, TypedDict
-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypedDict
 
 if TYPE_CHECKING:
-    from autoBMAD.epic_automation.core.sdk_executor import SDKExecutor
+    pass
 
-from autoBMAD.epic_automation.core.sdk_result import SDKResult, SDKErrorType
+from autoBMAD.epic_automation.core.sdk_result import SDKErrorType, SDKResult
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +31,10 @@ logger = logging.getLogger(__name__)
 _sdk_available = False
 try:
     from autoBMAD.epic_automation.sdk_wrapper import SDK_AVAILABLE as _sdk_available
-    from autoBMAD.epic_automation.sdk_wrapper import ResultMessage
-    from autoBMAD.epic_automation.sdk_wrapper import query
+    from autoBMAD.epic_automation.sdk_wrapper import (  # type: ignore[attr-defined]
+        ResultMessage,
+        query,
+    )
 except ImportError:
     ResultMessage = None
     query = None  # type: ignore[assignment]
@@ -202,16 +202,9 @@ async def execute_sdk_call(
 
     # 日志记录
     if result.is_success():
-        logger.info(
-            f"[{agent_name}] SDK call succeeded "
-            f"(duration: {result.duration_seconds:.2f}s)"
-        )
+        logger.info(f"[{agent_name}] SDK call succeeded (duration: {result.duration_seconds:.2f}s)")
     else:
-        logger.warning(
-            f"[{agent_name}] SDK call failed "
-            f"(error_type: {result.error_type.value}, "
-            f"errors: {result.errors})"
-        )
+        logger.warning(f"[{agent_name}] SDK call failed (error_type: {result.error_type.value}, errors: {result.errors})")
 
     return result
 
@@ -234,10 +227,7 @@ def create_sdk_generator(
         SDKNotAvailableError: 当SDK不可用时
     """
     if not SDK_AVAILABLE or query is None:
-        raise SDKNotAvailableError(
-            "claude-agent-sdk not installed. "
-            "Install with: pip install claude-agent-sdk"
-        )
+        raise SDKNotAvailableError("claude-agent-sdk not installed. Install with: pip install claude-agent-sdk")
 
     if options is None:
         try:
@@ -247,7 +237,7 @@ def create_sdk_generator(
                 cwd=str(Path.cwd())
             )
         except ImportError:
-            raise SDKNotAvailableError("Could not import ClaudeAgentOptions")
+            raise SDKNotAvailableError("Could not import ClaudeAgentOptions") from None
 
     return query(prompt=prompt, options=options)
 
@@ -260,8 +250,9 @@ def get_claude_cli_path() -> str | None:
         str | None: CLI路径，如果未找到则返回None
     """
     try:
-        import claude_agent_sdk
         import os
+
+        import claude_agent_sdk
 
         sdk_path = os.path.dirname(claude_agent_sdk.__file__)
         possible_paths = [

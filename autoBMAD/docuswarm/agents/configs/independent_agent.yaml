@@ -1,0 +1,15 @@
+# Agent file for Independent Agent
+# This file configures the tools available to the Independent Agent
+# Format follows kimi-agent-sdk agent_file specification
+
+version: 1
+
+agent:
+  extend: default
+  tools:
+    - "autoBMAD.docuswarm.tools.create_deliverable:CreateDeliverableTool"
+    - "autoBMAD.docuswarm.tools.update_context:UpdateContextTool"
+    - "autoBMAD.docuswarm.tools.read_docs_file:ReadDocsFileTool"
+    - "autoBMAD.docuswarm.tools.update_docs_file:UpdateDocsFileTool"
+    - "autoBMAD.docuswarm.tools.list_docs_files:ListDocsFilesTool"
+    - "autoBMAD.docuswarm.tools.create_document_set:CreateDocumentSetTool"

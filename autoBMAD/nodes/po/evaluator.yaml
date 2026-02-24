@@ -1,0 +1,24 @@
+# PO Node Evaluation Criteria - Story 2.8
+# Universal criteria: completeness, clarity, consistency, actionability, evidence_quality
+# PO focus: completeness (0.40), actionability (0.30)
+
+criteria:
+  - name: completeness
+    description: "Extent to which all user stories and requirements are fully defined"
+    weight: 0.40
+  - name: actionability
+    description: "Degree to which stories can be directly implemented by development team"
+    weight: 0.30
+  - name: clarity
+    description: "Clear communication of user needs and acceptance criteria"
+    weight: 0.15
+  - name: consistency
+    description: "Consistent prioritization and alignment with product goals"
+    weight: 0.10
+  - name: evidence_quality
+    description: "Quality of user research and business justification"
+    weight: 0.05
+
+thresholds:
+  approval: 0.70
+  escalation: 0.50

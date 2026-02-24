@@ -91,10 +91,7 @@ class QualityCheckController:
         error_files = await self._run_check_phase()
         self.initial_error_files = list(error_files.keys())
 
-        self.logger.info(
-            f"{self.tool} initial check: "
-            f"{len(error_files)} files with errors"
-        )
+        self.logger.info(f"{self.tool} initial check: {len(error_files)} files with errors")
 
         # 2. 无错误则直接成功
         if not error_files:
@@ -102,10 +99,7 @@ class QualityCheckController:
 
         # 3. 进入修复循环（最多 3 轮）
         while error_files and self.current_cycle < self.max_cycles:
-            self.logger.info(
-                f"{self.tool} cycle {self.current_cycle}/{self.max_cycles}: "
-                f"Fixing {len(error_files)} files"
-            )
+            self.logger.info(f"{self.tool} cycle {self.current_cycle}/{self.max_cycles}: Fixing {len(error_files)} files")
 
             # SDK 修复阶段
             await self._run_sdk_fix_phase(error_files)
@@ -156,10 +150,7 @@ class QualityCheckController:
             # 4. 解析错误
             errors_by_file: dict[str, list[dict[str, object]]] = self.agent.parse_errors_by_file(issues)
 
-            self.logger.info(
-                f"{self.tool} found {len(issues)} errors "
-                f"in {len(errors_by_file)} files"
-            )
+            self.logger.info(f"{self.tool} found {len(issues)} errors in {len(errors_by_file)} files")
 
             return errors_by_file
 
@@ -188,10 +179,7 @@ class QualityCheckController:
         total_files: int = len(error_files)
 
         for idx, (file_path, errors) in enumerate(error_files.items(), 1):
-            self.logger.info(
-                f"[{idx}/{total_files}] Fixing {file_path} "
-                f"({len(errors)} errors) - Cycle {self.current_cycle}"
-            )
+            self.logger.info(f"[{idx}/{total_files}] Fixing {file_path} ({len(errors)} errors) - Cycle {self.current_cycle}")
 
             try:
                 # 移除文件读取逻辑，直接构造prompt
@@ -267,10 +255,7 @@ class QualityCheckController:
                     "duration": result.duration_seconds
                 }
             else:
-                self.logger.error(
-                    f"SDK fix failed for {file_path}: "
-                    f"{result.error_type.value} - {result.errors}"
-                )
+                self.logger.error(f"SDK fix failed for {file_path}: {result.error_type.value} - {result.errors}")
                 return {
                     "success": False,
                     "error": f"{result.error_type.value}: {', '.join(result.errors)}"

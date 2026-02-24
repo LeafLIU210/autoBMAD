@@ -498,7 +498,9 @@ class SafeClaudeSDK:
                 if "cancel scope" in error_msg.lower() and "different task" in error_msg.lower():
                     # 🎯 关键：检查是否已收到结果（通过管理器）
                     try:
-                        from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
+                        from autoBMAD.epic_automation.monitoring import (
+                            get_cancellation_manager,  # type: ignore[import-untyped]
+                        )
                         manager = get_cancellation_manager()  # type: ignore[func-call]
 
                         # 检查_active_calls中是否有结果
@@ -552,7 +554,9 @@ class SafeClaudeSDK:
 
         # 🎯 唯一入口：获取全局管理器
         try:
-            from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
+            from autoBMAD.epic_automation.monitoring import (
+                get_cancellation_manager,  # type: ignore[import-untyped]
+            )
             manager = get_cancellation_manager()  # type: ignore[func-call]
         except ImportError as e:
             logger.warning(f"Could not import cancellation manager: {e}")
@@ -778,7 +782,9 @@ class SafeClaudeSDK:
 
         # 2. 清理当前 Task 的 SDK 状态
         try:
-            from autoBMAD.epic_automation.monitoring import get_cancellation_manager  # type: ignore[import-untyped]
+            from autoBMAD.epic_automation.monitoring import (
+                get_cancellation_manager,  # type: ignore[import-untyped]
+            )
             manager = get_cancellation_manager()  # type: ignore[func-call]
 
             # 🎯 关键：确保所有活跃调用都已清理
@@ -805,7 +811,7 @@ class SafeClaudeSDK:
 
             logger.info(
                 "[SafeClaudeSDK] ✅ Execution context rebuilt successfully "
-                f"(active: 0, incomplete: 0)"
+                "(active: 0, incomplete: 0)"
             )
         except Exception as e:
             logger.error(f"[SafeClaudeSDK] Context rebuild failed: {e}")

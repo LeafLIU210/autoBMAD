@@ -1,8 +1,8 @@
 # Claude Code 指导文档
 
 **项目名称**: PyQt Windows 应用程序开发模板
-**版本**: 2.0
-**最后更新**: 2026-02-11
+**版本**: 2.1
+**最后更新**: 2026-02-24
 
 ---
 
@@ -44,8 +44,36 @@
 
 本项目的核心依赖：
 - **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** - AI代理编排和执行
+- **[Kimi Agent SDK](https://github.com/moonshot-ai/kimi-agent-sdk)** - Kimi AI代理SDK（DocuSwarm使用）
 - **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI驱动的敏捷开发方法论
-- **autoBMAD Epic Automation** - 完整的自动化工作流系统
+- **autoBMAD Epic Automation** - 完整的5阶段BMAD开发自动化系统
+- **autoBMAD DocuSwarm** - 多智能体文档编排系统（基于LangGraph的双Agent模式）
+
+### 1.4 测试驱动开发 (TDD)
+
+本项目采用 **严格的测试驱动开发方法**：
+
+#### TDD核心原则
+- **测试优先**: 先写测试，后写实现代码
+- **红-绿-重构循环**: 失败测试 → 最小实现 → 代码重构
+- **持续质量**: 测试覆盖所有核心业务逻辑
+
+#### TDD工作流程
+```
+1. 编写失败测试 (Red)
+   ↓
+2. 编写最小实现使测试通过 (Green)
+   ↓
+3. 重构代码消除重复 (Refactor)
+   ↓
+4. 回到步骤1
+```
+
+#### 测试要求
+- **单元测试**: 所有核心业务逻辑必须有单元测试
+- **集成测试**: 关键功能必须有集成测试
+- **回归测试**: Bug修复前必须先写测试用例
+- **测试覆盖率**: 核心模块覆盖率 >80%
 
 ---
 
@@ -61,7 +89,7 @@
 | **[bmad_methodology.md](claude_docs/bmad_methodology.md)** | BMAD开发方法论完整说明 | 团队协作、敏捷开发时 |
 | **[ai_workflow.md](claude_docs/ai_workflow.md)** | AI助手三阶段工作流程 | 任何开发任务的开始 |
 | **[development_rules.md](claude_docs/development_rules.md)** | 编码规范、代码风格 | 编写代码时 |
-| **[testing_guide.md](claude_docs/testing_guide.md)** | 测试规范和实践 | 编写和运行测试时 |
+| **[testing_guide.md](claude_docs/testing_guide.md)** | 测试规范和实践（含详细TDD指导） | 编写和运行测试时 |
 | **[quality_assurance.md](claude_docs/quality_assurance.md)** | 质量保证流程和工具 | QA审查、质量门控 |
 | **[technical_specs.md](claude_docs/technical_specs.md)** | 技术规范和配置 | 技术决策、配置管理 |
 | **[workflow_tools.md](claude_docs/workflow_tools.md)** | autoBMAD工作流详解 | 自动化任务时 |
@@ -79,7 +107,11 @@ project/
 ├── docs/                     # 项目文档
 ├── claude_docs/              # 详细说明文档 ⭐
 ├── autoBMAD/                 # autoBMAD工作流工具
-│   └── epic_automation/      # Epic自动化系统
+│   ├── epic_automation/      # Epic自动化系统（5阶段BMAD工作流）
+│   ├── docuswarm/            # 多智能体文档编排系统
+│   ├── nodes/                # BMAD节点配置（analyst/pm/ux/architect/po）
+│   ├── agentdocs/            # Claude Agent SDK文档
+│   └── Skill/                # Claude Code Skill文件
 └── 配置文件...
 ```
 
@@ -140,8 +172,9 @@ project/
 #### **阶段三：执行方案** `【执行方案】`
 
 **必须做的事**:
+- 严格按照TDD方式实现：先写测试，后写代码
 - 严格按照选定方案实现
-- 修改后运行类型检查
+- 修改后运行类型检查和测试验证
 
 **详细说明**: [ai_workflow.md](claude_docs/ai_workflow.md)
 
@@ -191,6 +224,17 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 
 **详细说明**: [workflow_tools.md](claude_docs/workflow_tools.md)
 
+#### DocuSwarm多智能体文档编排
+
+**autoBMAD DocuSwarm** - 基于LangGraph的双Agent文档生成系统
+- 双Agent协作模式（Independent Agent + Evaluator Agent）
+- 5节点顺序流水线（analyst → pm → ux → architect → po）
+- Kimi Agent SDK集成
+- 三层上下文隔离防御
+- 检查点恢复机制
+
+**详细说明**: [workflow_tools.md](claude_docs/workflow_tools.md#docuswarm文档编排系统)
+
 ### 5.3 Claude Code Skills集成
 
 autoBMAD系统可以作为Claude Code的Skill安装和使用：
@@ -234,17 +278,44 @@ pip install -r requirements.txt
 python -m my_qt_app
 ```
 
-### 6.2 测试
+### 6.2 测试 (TDD工作流)
 
+#### 基本测试命令
 ```bash
-# 运行测试
+# 运行所有测试
 pytest -v --tb=short
 
+# 运行并显示标准输出
+pytest -v --tb=short -s
+
+# 运行特定测试
+pytest -v --tb=short -k "test_name"
+
+# 首次失败后停止
+pytest -v --tb=short --maxfail=1
+
 # 生成覆盖率报告
-pytest --cov=src --cov-report=html
+pytest --cov=src --cov-report=html --cov-report=term
 
 # GUI测试
 pytest tests/gui/ -v
+```
+
+#### TDD开发循环
+```bash
+# 1. 编写失败测试 (Red)
+pytest tests/test_new_feature.py -v  # 预期失败
+
+# 2. 编写最小实现 (Green)
+# ... 编写代码 ...
+pytest tests/test_new_feature.py -v  # 预期通过
+
+# 3. 重构代码 (Refactor)
+# ... 消除重复，优化代码 ...
+pytest tests/test_new_feature.py -v  # 确保仍然通过
+
+# 4. 运行全部测试确保无回归
+pytest -v --tb=short
 ```
 
 ### 6.3 代码质量
@@ -287,7 +358,54 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-test
 
 ## 7. 质量保证
 
-### 7.1 QA命令参考
+### 7.1 测试驱动开发 (TDD) 实践
+
+#### TDD三大定律
+1. **定律一**: 在编写失败的单元测试前，不要编写任何生产代码
+2. **定律二**: 只编写刚好能够导致失败的单元测试（编译失败也算失败）
+3. **定律三**: 只编写刚好能够使失败的测试通过的生产代码
+
+#### 测试组织结构
+```
+tests/
+├── fixtures/              # 测试固件（TDD关键）
+│   ├── __init__.py
+│   └── mock_qt_objects.py # Mock的Qt组件
+├── unit/                  # 单元测试（无UI，快速）
+│   ├── test_models.py
+│   └── test_services.py
+├── integration/           # 集成测试（含DB、文件）
+│   └── test_config.py
+└── gui/                   # GUI测试（用pytest-qt）
+    └── test_main_window.py
+```
+
+#### AAA测试模式
+所有测试必须遵循AAA模式：
+```python
+def test_example():
+    # Arrange（准备）- 设置测试数据和环境
+    instance = MyClass()
+    expected_result = "expected"
+    
+    # Act（执行）- 调用被测试的方法
+    actual_result = instance.some_method()
+    
+    # Assert（断言）- 验证结果
+    assert actual_result == expected_result
+```
+
+#### 测试覆盖要求
+- **P0级别**: 核心业务逻辑，覆盖率必须100%
+- **P1级别**: 重要功能，覆盖率必须≥90%
+- **P2级别**: 辅助功能，覆盖率建议≥80%
+
+#### 回归测试策略
+- **Bug修复流程**: 必须先编写复现Bug的测试用例，再修复代码
+- **重构保护**: 重构前后测试必须持续通过
+
+
+### 7.2 QA命令参考
 
 | 阶段 | 命令 | 目的 | 优先级 |
 |------|------|------|--------|
@@ -298,7 +416,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-test
 | **开发后** | `*review` | 综合评估 | **必需** |
 | **审查后** | `*gate` | 更新质量决策 | 根据需要 |
 
-### 7.2 质量门控状态
+### 7.3 质量门控状态
 
 | 状态 | 含义 | 后续操作 | 是否可继续 |
 |------|------|----------|------------|
@@ -307,7 +425,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-test
 | **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
 | **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
 
-### 7.3 autoBMAD工作流集成
+### 7.4 autoBMAD工作流集成
 
 ```
 Epic处理
@@ -331,37 +449,6 @@ Epic处理
 
 | 日期 | 版本 | 提交信息 | 变更内容 |
 |------|------|----------|----------|
-| 2026-02-11 | 2.0 | 8ae2add5 - test: 最终监控测试 | test_final_monitor.txt |
-
-| 2026-02-06 | 2.0 | 347e0345 - 测试基础模式更新git hook | test_basic_mode.txt |
-
-| 2026-02-06 | 2.0 | test123 - 测试更新 | test_file.py |
-
-| 2026-02-06 | 2.0 | 34541b5c - Integration test commit | test_integration.txt |
-
-| 2026-02-06 | 2.0 | test123 - 测试更新 | test_file.py |
-
-| 2026-02-06 | 2.0 | 8c293ac9 - Integration test commit | test_integration.txt |
-
-| 2026-02-06 | 2.0 | test123 - 测试更新 | test_file.py |
-
-| 2026-02-06 | 2.0 | 05622924 - Integration test commit | test_integration.txt |
-
-| 2026-02-06 | 2.0 | test123 - 测试更新 | test_file.py |
-
-| 2026-02-06 | 2.0 | 13505469 - Integration test commit | test_integration.txt |
-
-| 2026-02-06 | 2.0 | 486d904f - 最终验证：Git commit触发CLAUDE.md自动更新系统完整测试 | final_verification_test.txt |
-
-| 2026-02-09 | 2.0 | 5708bb28 - feat: implement multi-document auto-update system with anti-loop protection | scripts/test_multi_doc_update.py, scripts/update_claude_md.py |
-
-| 2026-02-09 | 2.0 | 5708bb28 - feat: implement multi-document auto-update system with anti-loop protection | scripts/test_multi_doc_update.py, scripts/update_claude_md.py |
-
-| 2026-02-09 | 2.0 | 3d868fc1 - docs: add comprehensive implementation report for multi-document auto-update system | IMPLEMENTATION_REPORT.md |
-
-| 2026-02-09 | 2.0 | 4144725c - feat(scripts): implement multi-document auto-update system with anti-loop protection | .last_update.timestamp, CHANGES.md, CLAUDE.md, claude_docs/git-commit-trigger-update.md, scripts/test_multi_doc_update.py, scripts/update_claude_md.py, tests/test_install_post_commit_hook.py, tests/test_integration_complete.py, tests/test_update_claude_md.py, tests/test_update_claude_md_actual.py, tests/unit/test_models.py, tests/unit/test_services.py |
-
-| 2026-02-11 | 2.0 | 8ae2add5 - test: 最终监控测试 | test_final_monitor.txt |
 
 ---
 
@@ -389,6 +476,7 @@ Epic处理
 
 - **四大开发原则**: DRY、KISS、YAGNI、奥卡姆剃刀
 - **三阶段AI工作流**: 分析问题 → 制定方案 → 执行方案
+- **测试驱动开发 (TDD)**: 先写测试，后写代码，红-绿-重构循环
 - **BMAD开发方法论**: 通过专用AI代理实现敏捷开发
 - **严格的质量保证**: 测试驱动开发，QA门控流程
 
@@ -399,6 +487,7 @@ Epic处理
 - **KISS** 让代码更可靠
 - **YAGNI** 让代码更专注
 - **奥卡姆剃刀** 让代码更简洁
+- **TDD** 让代码更可靠，让质量更有保障
 
 让Claude Code成为您践行这些原则的得力助手，共同打造卓越的软件。
 

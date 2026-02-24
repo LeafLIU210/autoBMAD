@@ -7,7 +7,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, override
 
 
 class SDKErrorType(Enum):
@@ -140,6 +140,7 @@ class SDKResult:
 
         return f"{self.error_type.value} ({error_count} errors)"
 
+    @override
     def __str__(self) -> str:
         """字符串表示
 

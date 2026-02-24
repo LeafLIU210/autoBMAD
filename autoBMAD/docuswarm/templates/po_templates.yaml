@@ -1,0 +1,69 @@
+# PO (Product Owner) 节点文档模板配置
+version: "1.0"
+node_id: po
+description: "Templates for PO (Product Owner) node deliverables"
+
+templates:
+  - template_id: product_vision
+    title: "Product Vision"
+    filename_pattern: "product-vision.md"
+    description: "Product vision and strategy"
+    sections:
+      - heading: "Vision Statement"
+        required: true
+      - heading: "Target Market"
+        required: true
+      - heading: "Value Proposition"
+        required: true
+      - heading: "Success Metrics"
+        required: true
+
+  - template_id: roadmap
+    title: "Product Roadmap"
+    filename_pattern: "product-roadmap.md"
+    description: "Product development roadmap"
+    sections:
+      - heading: "Roadmap Overview"
+        required: true
+        note: "Use Mermaid gantt or timeline"
+      - heading: "Phase 1 Goals"
+        required: true
+      - heading: "Future Phases"
+        required: true
+      - heading: "Dependencies"
+        required: true
+
+  - template_id: epic_list
+    title: "Epic List"
+    filename_pattern: "epic-list.md"
+    description: "Product epics and features"
+    sections:
+      - heading: "Epic Overview"
+        required: true
+      - heading: "Epic Details"
+        required: true
+      - heading: "Prioritization Rationale"
+        required: true
+        note: "Use MoSCoW, RICE, or Kano"
+      - heading: "Dependencies"
+        required: true
+
+  - template_id: story_list
+    title: "Story Prioritization"
+    filename_pattern: "story-prioritization.md"
+    description: "User story breakdown and prioritization"
+    sections:
+      - heading: "Story Overview"
+        required: true
+      - heading: "Story List"
+        required: true
+      - heading: "Acceptance Criteria"
+        required: true
+      - heading: "Release Plan"
+        required: true
+
+standards:
+  style_guide: "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+  diagram_format: "mermaid"
+  no_time_estimates: true
+  commonmark_strict: true

@@ -3,15 +3,16 @@ SM Controller - Story Management Controller
 控制 SM 阶段的业务流程
 """
 from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, override
 
 from anyio.abc import TaskGroup
 
-from autoBMAD.epic_automation.controllers.base_controller import StateDrivenController
 from autoBMAD.epic_automation.agents.sm_agent import SMAgent
 from autoBMAD.epic_automation.agents.state_agent import StateAgent
+from autoBMAD.epic_automation.controllers.base_controller import StateDrivenController
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class SMController(StateDrivenController):
     """SM 阶段控制器"""
 
-    def __init__(self, task_group: TaskGroup, project_root: Optional[Path] = None):
+    def __init__(self, task_group: TaskGroup, project_root: Path | None = None):
         """
         初始化 SM 控制器
 
@@ -36,11 +37,12 @@ class SMController(StateDrivenController):
         self.state_agent = StateAgent(task_group=task_group)
         self._log_execution("SMController initialized")
 
+    @override
     async def execute(
         self,
         epic_content: str,
         story_id: str,
-        tasks_path: Optional[str] = None
+        tasks_path: str | None = None
     ) -> bool:
         """
         执行 SM 阶段流程
@@ -83,7 +85,7 @@ class SMController(StateDrivenController):
             self._log_execution(f"SM phase failed: {e}", "error")
             return False
 
-    def _build_sm_config(self, epic_content: str, story_id: str, tasks_path: Optional[str]) -> dict[str, Any]:
+    def _build_sm_config(self, epic_content: str, story_id: str, tasks_path: str | None) -> dict[str, Any]:
         """构造 SM 任务配置"""
         return {
             "epic_content": epic_content,
@@ -91,7 +93,7 @@ class SMController(StateDrivenController):
             "tasks_path": tasks_path or str(Path.cwd() / "tasks")
         }
 
-    def _find_story_file(self, story_id: str) -> Optional[Path]:
+    def _find_story_file(self, story_id: str) -> Path | None:
         """查找生成的故事文件"""
         if not self.project_root:
             return None
@@ -136,6 +138,7 @@ class SMController(StateDrivenController):
             self._log_execution(f"Validation error: {e}", "error")
             return False
 
+    @override
     async def _make_decision(self, current_state: str) -> str:
         """
         SM 阶段状态决策

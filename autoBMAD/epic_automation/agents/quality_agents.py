@@ -10,7 +10,7 @@ import logging
 import subprocess
 from abc import ABC
 from pathlib import Path
-from typing import Any, TypedDict, NotRequired, Literal, cast
+from typing import Any, Literal, NotRequired, TypedDict, cast, override
 
 from anyio.abc import TaskGroup
 
@@ -202,7 +202,7 @@ class BaseQualityAgent(BaseAgent, ABC):
                 except psutil.NoSuchProcess:
                     pass
 
-            gone, alive = psutil.wait_procs(children, timeout=GRACE_TIMEOUT)
+            _gone, alive = psutil.wait_procs(children, timeout=GRACE_TIMEOUT)
 
             # === 阶段2：强制杀死未退出的子进程 ===
             for p in alive:
@@ -247,9 +247,15 @@ class BaseQualityAgent(BaseAgent, ABC):
 class RuffAgent(BaseQualityAgent):
     """Ruff 代码风格检查 Agent（改造版 - 支持SDK自动修复）"""
 
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "ruff"
+
     def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("Ruff", task_group)
 
+    @override
     async def execute(
         self,
         source_dir: str,
@@ -437,9 +443,15 @@ class RuffAgent(BaseQualityAgent):
 class BasedPyrightAgent(BaseQualityAgent):
     """BasedPyright 类型检查 Agent（改造版 - 支持SDK自动修复）"""
 
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "basedpyright"
+
     def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("BasedPyright", task_group)
 
+    @override
     async def execute(self, source_dir: str, **kwargs: object) -> BasedPyrightResult:
         """
         执行 BasedPyright 检查
@@ -578,9 +590,15 @@ class BasedPyrightAgent(BaseQualityAgent):
 class PytestAgent(BaseQualityAgent):
     """Pytest 测试执行 Agent - 支持目录遍历批次执行和SDK修复"""
 
+    @property
+    @override
+    def agent_type(self) -> str:
+        return "pytest"
+
     def __init__(self, task_group: TaskGroup | None = None):
         super().__init__("Pytest", task_group)
 
+    @override
     async def execute(
         self,
         source_dir: str,
@@ -692,7 +710,7 @@ class PytestAgent(BaseQualityAgent):
             file_result = await self._run_pytest_single_file(
                 test_file=test_file,
                 timeout=timeout_per_file,
-                source_dir=source_dir,
+                _source_dir=source_dir,
             )
             results.append(file_result)
 
@@ -723,7 +741,7 @@ class PytestAgent(BaseQualityAgent):
         self,
         test_file: str,
         timeout: int,
-        source_dir: str | None = None,
+        _source_dir: str | None = None,
     ) -> PytestFileResult:
         """
         执行单个测试文件的 pytest
@@ -758,11 +776,9 @@ class PytestAgent(BaseQualityAgent):
             # 构建基础命令
             base_cmd = f'pytest {test_file} -v --tb=short --json-report --json-report-file={tmp_json_path}'
 
-            # 添加 typeguard 参数（如果提供了 source_dir）
-            if source_dir:
-                cmd = f'{base_cmd} --typeguard-packages={source_dir} -o addopts='
-            else:
-                cmd = f'{base_cmd} -o addopts='
+            # 注意：--typeguard-packages 参数已被移除，因为 pytest-typeguard 插件未安装
+            # 如需启用运行时类型检查，需安装 pytest-typeguard 插件
+            cmd = f'{base_cmd} -o addopts='
 
             # 2. 执行（复用 BaseQualityAgent._run_subprocess）
             result = await self._run_subprocess(cmd, timeout=timeout)
@@ -781,16 +797,13 @@ class PytestAgent(BaseQualityAgent):
                 if error_output:
                     # 提取关键错误信息（前500字符）
                     error_summary = error_output[:500]
-                    failures = [{
+                    failures = cast(list[PytestTestCase], [{
                         "nodeid": test_file,
                         "failure_type": "error",
                         "message": f"Pytest execution failed (no JSON report):\n{error_summary}",
                         "short_tb": "Check pytest output - no structured report available"
-                    }]
-                    self.logger.warning(
-                        f"No failures parsed from JSON but returncode={result['returncode']}, "
-                        f"using stderr/stdout as fallback"
-                    )
+                    }])
+                    self.logger.warning(f"No failures parsed from JSON but returncode={result['returncode']}, using stderr/stdout as fallback")
 
             # 4. 判断状态
             if result.get("status") == "failed" and "Timeout" in result.get("error", ""):
@@ -803,12 +816,12 @@ class PytestAgent(BaseQualityAgent):
                 # 🆕 最终后备：即使无输出也构造错误条目
                 status = "error"
                 if not failures:
-                    failures = [{
+                    failures = cast(list[PytestTestCase], [{
                         "nodeid": test_file,
                         "failure_type": "error",
                         "message": f"Test execution failed with returncode {result['returncode']}",
                         "short_tb": "Run pytest manually for details"
-                    }]
+                    }])
                     self.logger.info(f"Constructed minimal failure entry for {test_file}")
 
             return {
@@ -871,7 +884,7 @@ class PytestAgent(BaseQualityAgent):
             return []
 
         try:
-            with open(json_path, "r", encoding="utf-8") as f:
+            with open(json_path, encoding="utf-8") as f:
                 data = json.load(f)
         except (json.JSONDecodeError, Exception) as e:
             self.logger.error(f"Failed to parse JSON report: {e}")
@@ -916,10 +929,7 @@ class PytestAgent(BaseQualityAgent):
 
         # ✅ 新增：诊断日志
         if not failures and not tests and not collectors:
-            self.logger.warning(
-                f"JSON report for {test_file} is empty (no tests, no collectors). "
-                f"This may indicate a pytest execution failure."
-            )
+            self.logger.warning(f"JSON report for {test_file} is empty (no tests, no collectors). This may indicate a pytest execution failure.")
 
         return failures
 
@@ -946,7 +956,7 @@ class PytestAgent(BaseQualityAgent):
         source_dir: str,
         summary_json_path: str,
         round_index: int,
-    ) -> dict[str, bool | str]:
+    ) -> dict[str, bool | str | None]:
         """
         对单个测试文件发起 SDK 修复调用
 
@@ -981,7 +991,7 @@ class PytestAgent(BaseQualityAgent):
                 return {"success": False, "error": "No failure information available"}
 
             # 2. 读取测试文件内容
-            with open(test_file, "r", encoding="utf-8") as f:
+            with open(test_file, encoding="utf-8") as f:
                 test_content = f.read()
 
             # 3. 构造 Prompt
@@ -993,15 +1003,11 @@ class PytestAgent(BaseQualityAgent):
             )
 
             # 4. 调用 SDK（返回 SDKResult）
-            from ..core.sdk_result import SDKResult
             sdk_result: SDKResult = await self._execute_sdk_call_with_cancel(prompt)
 
             # 5. 使用 SDKResult 语义
             if sdk_result.is_success():
-                self.logger.info(
-                    f"SDK fix succeeded for {test_file} "
-                    f"(duration: {sdk_result.duration_seconds:.2f}s)"
-                )
+                self.logger.info(f"SDK fix succeeded for {test_file} (duration: {sdk_result.duration_seconds:.2f}s)")
                 return {
                     "success": True,
                     "error": None
@@ -1057,7 +1063,7 @@ class PytestAgent(BaseQualityAgent):
             return []
 
         try:
-            with open(summary_json_path, "r", encoding="utf-8") as f:
+            with open(summary_json_path, encoding="utf-8") as f:
                 data: dict[str, object] = json.load(f)
 
             # 从最后一轮中查找该文件的失败信息

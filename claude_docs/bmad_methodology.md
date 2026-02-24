@@ -1,7 +1,7 @@
 # BMAD 开发方法论详细说明
 
-**版本**: 1.0
-**最后更新**: 2026-01-04
+**版本**: 1.1
+**最后更新**: 2026-02-24
 
 ---
 
@@ -186,61 +186,102 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 
 ---
 
-## 6. BMAD-Workflow自动化系统
+## 6. autoBMAD Epic Automation系统
 
 ### 6.1 系统概述
 
-BMAD-Workflow位于`bmad-workflow/`目录，是实现BMAD方法论完全自动化的PowerShell工作流系统。它提供了完整的4阶段开发周期自动化、质量门控决策和并行执行能力。
+autoBMAD Epic Automation位于`autoBMAD/epic_automation/`目录，是实现BMAD方法论完全自动化的Python工作流系统。它通过Claude Agent SDK集成提供AI驱动的故事创建，并管理完整的5阶段开发周期。
 
 ### 6.2 核心架构
 
-#### 六大核心模块
+#### 五层架构
 
-| 模块 | 行数 | 主要职责 |
+```
+┌─────────────────────────────────────┐
+│   Epic Driver (编排层)              │  ← 入口点 + 工作流协调
+├─────────────────────────────────────┤
+│   Controllers (控制层)              │  ← 业务工作流编排
+├─────────────────────────────────────┤
+│   Agents (业务逻辑层)               │  ← 核心业务操作
+├─────────────────────────────────────┤
+│   Core (基础设施层)                 │  ← SDK执行器、取消管理器
+├─────────────────────────────────────┤
+│   State & Logging (状态与日志层)     │  ← StateManager、LogManager
+└─────────────────────────────────────┘
+```
+
+#### 核心组件
+
+| 组件 | 文件 | 主要职责 |
 |------|------|----------|
-| `BMAD-Workflow.ps1` | 420行 | CLI接口、命令解析、日志系统 |
-| `BMAD.Workflow.Core.ps1` | 1200行 | 工作流引擎、阶段编排、计时器管理 |
-| `BMAD.Claude.Interface.ps1` | 600+行 | Claude CLI集成、进程管理、会话控制 |
-| `BMAD.Job.Manager.ps1` | 550+行 | 并发调度、作业池管理、资源分配 |
-| `BMAD.State.Manager.ps1` | 250+行 | 状态持久化、检查点、恢复机制 |
-| `BMAD.Hooks.Handler.ps1` | 475行 | 事件钩子系统、扩展处理器 |
+| `EpicDriver` | `epic_driver.py` | 主编排器和CLI接口 |
+| `SMController` | `controllers/sm_controller.py` | Story管理协调 |
+| `DevQaController` | `controllers/devqa_controller.py` | Dev-QA循环协调 |
+| `QualityCheckController` | `controllers/quality_check_controller.py` | 质量门控控制器 |
+| `PytestController` | `controllers/pytest_controller.py` | 测试自动化控制器 |
+| `SMAgent` | `agents/sm_agent.py` | Story创建（Claude SDK集成） |
+| `DevAgent` | `agents/dev_agent.py` | 开发实现 |
+| `QAAgent` | `agents/qa_agent.py` | 质量保证验证 |
+| `StateManager` | `state_manager.py` | SQLite状态持久化 |
+| `LogManager` | `log_manager.py` | 双写日志系统 |
 
-### 6.3 四阶段自动化周期
+### 6.3 五阶段自动化周期
 
 #### 执行流程
 ```
-开始 → Phase A (3x Dev, 15分钟) → Phase B (QA, 30分钟) →
-├─ PASS → Phase D → 完成
-└─ CONCERNS/FAIL → Phase C (3x Dev修复) → Phase B → [循环]
+┌─────────────────────────────────────────────────────────────┐
+│                    EPIC处理流程                              │
+└─────────────────────────────────────────────────────────────┘
+
+Phase 1: SM-Dev-QA循环
+├── Story创建 (SM Agent + Claude SDK)
+├── 实现开发 (Dev Agent)
+└── 验证审查 (QA Agent)
+         ↓
+Phase 2: 质量门控
+├── Basedpyright类型检查
+├── Ruff代码风格检查与自动修复
+└── 最多3次重试机会
+         ↓
+Phase 3: 测试自动化
+├── Pytest测试执行
+└── 最多5次重试机会
+         ↓
+Phase 4: 编排管理
+├── Epic Driver管理完整工作流
+├── 阶段门控执行
+└── 进度跟踪
+         ↓
+Phase 5: 文档与测试
+├── 全面文档编写
+├── 集成测试
+└── 用户指导
 ```
 
 #### 阶段详情
 
-##### Phase A: 初始开发
-- **持续时间**: 15分钟（基于计时器）
-- **执行方式**: 3个并行Dev代理
-- **执行命令**: `*develop-story`
-- **功能**: 实现故事需求、创建测试、运行验证
-- **并发特性**: 3个实例，2秒错开启动
+##### Phase 1: SM-Dev-QA循环
+- **Story Master (SM) Agent**: 使用Claude SDK生成故事
+- **Development (Dev) Agent**: 根据规范实现故事
+- **Quality Assurance (QA) Agent**: 验证实现质量
+- **状态驱动**: Story状态从markdown驱动执行决策
 
-##### Phase B: QA审查与门控决策
-- **持续时间**: 30分钟
-- **执行方式**: 1个QA代理
-- **执行命令**: `*review`
-- **功能**: 全面的代码审查、质量评估、门控决策
-- **输出**: QA结果更新、质量门控文件、风险评估、NFR验证
+##### Phase 2: 质量门控
+- **Basedpyright类型检查**: 静态类型分析
+- **Ruff代码风格检查**: 快速linting与自动修复
+- **重试逻辑**: 最多3次自动重试
+- **状态**: PASS/CONCERNS/FAIL/WAIVED
 
-##### Phase C: 修复模式开发（条件触发）
-- **触发条件**: QA结果 = CONCERNS 或 FAIL
-- **执行方式**: 3个并行Dev代理
-- **执行命令**: `*review-qa`
-- **功能**: 解决QA发现、实施修复、改善覆盖率
+##### Phase 3: 测试自动化
+- **Pytest执行**: 运行测试套件中的所有测试
+- **批量处理**: 高效的并行测试执行
+- **重试逻辑**: 最多5次重试
+- **Debugpy集成**: 持久失败的调试支持
 
-##### Phase D: 最终开发（条件触发）
-- **触发条件**: QA结果 = PASS
-- **执行方式**: 1个Dev代理
-- **执行命令**: `*develop-story`
-- **功能**: 最终完善、文档编写、完成
+##### Phase 4 & 5: 编排与文档
+- **Epic Driver**: 管理工作流执行
+- **状态持久化**: SQLite WAL模式
+- **报告生成**: 详细执行报告
 
 ### 6.4 质量门控系统
 
@@ -249,117 +290,144 @@ BMAD-Workflow位于`bmad-workflow/`目录，是实现BMAD方法论完全自动�
 | 状态 | 含义 | 后续操作 | 是否可继续 |
 |------|------|----------|------------|
 | **PASS** | 所有关键要求满足 | 无 | ✅ 是 |
-| **CONCERNS** | 发现非关键问题 | 进入Phase C修复 | ⚠️ 谨慎进行 |
+| **CONCERNS** | 发现非关键问题 | 建议修复 | ⚠️ 谨慎进行 |
 | **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
 | **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
 
 #### 门控决策因素
 1. **测试覆盖率**: P0测试必须100%通过
-2. **代码质量**: 基于pyright类型检查无ERROR
+2. **代码质量**: Basedpyright类型检查无ERROR
 3. **代码风格**: Ruff检查无严重违规
 4. **安全性**: 无安全漏洞或已处理
 5. **性能**: NFR评估满足要求
 
 ### 6.5 配置管理
 
-#### workflow.config.yaml (243行)
-- 全局超时和并发设置
-- Claude CLI配置参数
-- 环境特定覆盖（dev/test/prod）
-- 安全和通知配置
+#### pyproject.toml配置
+```toml
+[tool.basedpyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
 
-#### 阶段配置文件 (workflow.execution.phase-*.yaml)
-- `phase-a.yaml`: 3个并行开发流，15分钟计时器
-- `phase-b.yaml`: 1个QA流，门控决策逻辑
-- `phase-c.yaml`: 3个并行修复流
-- `phase-d.yaml`: 1个最终开发流
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+```
+
+#### 环境变量
+```bash
+# Windows PowerShell
+$env:ANTHROPIC_API_KEY="your_api_key_here"
+
+# Linux/macOS
+export ANTHROPIC_API_KEY="your_api_key_here"
+```
 
 ### 6.6 状态管理
 
-#### BMADWorkflowState类
-```powershell
-class BMADWorkflowState {
-    [GUID] WorkflowId
-    [string] StoryPath
-    [WorkflowStatus] Status
-    [List[WorkflowJob]] Jobs
-    [int] IterationCount
-    [DateTime] StartTime
-    [DateTime] EndTime
-}
-```
+#### SQLite持久化
 
-#### 持久化特性
-- JSON序列化存储
-- 阶段转换自动保存
-- 中断后恢复能力
-- 失败状态自动恢复
+**state_manager.py** 提供:
+- 基于SQLite的状态存储（WAL模式）
+- 故事状态跟踪
+- 迭代计数
+- QA结果记录
+- 错误消息存储
+- 断点恢复能力
+
+#### 状态转换
+
+```
+PENDING → IN_PROGRESS → QA_REVIEW → 
+├─ PASS → COMPLETED
+└─ FAIL → IN_PROGRESS (重试) → ...
+```
 
 ### 6.7 使用指南
 
 #### 基本执行
-```powershell
-cd bmad-workflow
-.\BMAD-Workflow.ps1 -StoryPath "docs/stories/my-story.md"
+```bash
+# 完整5阶段工作流
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
+
+# 跳过质量门控（快速开发）
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-quality
+
+# 跳过测试自动化（快速验证）
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-tests
+
+# 独立质量门控
+python -m autoBMAD.epic_automation.epic_driver run-quality --verbose
 ```
 
 #### 高级选项
-```powershell
-# 运行系统测试
-.\BMAD-Workflow.ps1 -Test
+```bash
+# 使用venv包装脚本（推荐）
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/my-epic.md --verbose
 
-# 检查工作流状态
-.\BMAD-Workflow.ps1 -Status
-
-# 清理临时文件
-.\BMAD-Workflow.ps1 -Cleanup
-
-# 静默模式执行
-.\BMAD-Workflow.ps1 -StoryPath "story.md" -Silent
+# 自定义目录和选项
+python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md \
+  --source-dir src \
+  --test-dir tests \
+  --max-iterations 5 \
+  --verbose
 ```
 
 ### 6.8 日志系统
 
 #### 日志结构
 ```
-logs/
-├── bmad-workflow-20260104-143022.log (主日志)
-├── workflow/ (执行详情)
-├── debug/ (调试信息)
-└── prompts/ (Claude交互存档)
+autoBMAD/epic_automation/logs/
+├── epic_run_*.log (Epic执行日志)
+├── quality_run.log (质量门控日志)
+└── monitoring/ (监控日志)
 ```
 
 #### 日志特性
-- 5级日志系统 (Debug/Info/Warning/Error/Success)
-- 结构化JSON日志支持
-- 30天轮转，1GB大小限制
-- 彩色控制台输出
-- 实时监控能力
+- 双写模式（文件+控制台）
+- 结构化日志输出
+- 按阶段和代理分类
+- 详细的执行跟踪
+- 错误和警告高亮
 
 ### 6.9 测试框架
 
 系统包含全面的测试套件：
-- **298个测试用例** 用于Claude接口
-- **16个核心功能测试**（100%通过率）
-- **模拟框架** 用于Claude CLI模拟
-- **集成测试** 用于端到端工作流
-- **Pester 3.4+兼容性**
+- **单元测试**: 核心功能测试
+- **集成测试**: 端到端工作流测试
+- **CLI测试**: 命令行接口测试
+- **Pytest兼容性**: 完整支持pytest特性
 
 ### 6.10 当前状态
 
-**版本**: 1.0.1 (截至2025-11-14)
+**版本**: 3.0 (截至2026-01-14)
 
 **实现状态**:
-- ✅ 核心工作流引擎（100%完成）
-- ✅ Claude CLI集成（100%完成）
-- ✅ Phase A/B/C/D编排（100%完成）
+- ✅ Epic Driver编排层（100%完成）
+- ✅ Controllers控制层（100%完成）
+- ✅ Agents业务逻辑层（100%完成）
+- ✅ Core基础设施层（100%完成）
+- ✅ State & Logging层（100%完成）
+- ✅ Claude Agent SDK集成（100%完成）
 - ✅ 质量门控系统（100%完成）
-- ✅ 状态管理（100%完成）
-- ✅ 综合日志（100%完成）
-- ✅ 测试框架（100%完成）
-- 🔄 cctrace集成（就绪，等待生产工具）
+- ✅ 测试自动化（100%完成）
+- ✅ SQLite状态管理（100%完成）
 
 **生产就绪性**: ✅ 已准备好投入生产使用
+
+### 6.11 与旧BMAD-Workflow的关系
+
+> **注意**: 旧的PowerShell-based BMAD-Workflow (位于`bmad-workflow/`目录)已被弃用，由Python实现的autoBMAD Epic Automation取代。
+>
+> 主要改进:
+> - 从PowerShell迁移到Python，更好的跨平台支持
+> - 集成Claude Agent SDK进行AI驱动的故事创建
+> - 使用SQLite替代JSON文件进行状态持久化
+> - 添加独立的Quality Gates命令 (`run-quality`)
+> - 更灵活的CLI接口和配置选项
 
 ---
 
@@ -482,4 +550,5 @@ NotStarted → RunningDevFlows → QA_Pass → QA_Concerns → QA_Fail → WAIVE
 ---
 
 **版本历史**:
+- v1.1 (2026-02-24): 更新第6章为autoBMAD Epic Automation Python系统（取代旧PowerShell BMAD-Workflow）
 - v1.0 (2026-01-04): 初始版本，完整的BMAD方法论说明

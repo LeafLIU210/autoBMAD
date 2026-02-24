@@ -1,21 +1,23 @@
 """
 Quality Controller - 质量门控控制器
-控制代码质量检查流程（Ruff、BasedPyright、Pytest）
+控制代码质量检查流程(Ruff、BasedPyright、Pytest)
 """
 from __future__ import annotations
+
 import logging
+import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, override
 
 from anyio.abc import TaskGroup
 
-from autoBMAD.epic_automation.controllers.base_controller import BaseController
 from autoBMAD.epic_automation.agents.quality_agents import (
-    RuffAgent,
     BasedPyrightAgent,
     PytestAgent,
+    RuffAgent,
 )
+from autoBMAD.epic_automation.controllers.base_controller import BaseController
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class QualityController(BaseController):
     def __init__(
         self,
         task_group: TaskGroup,
-        project_root: Optional[Path] = None
+        project_root: Path | None = None
     ):
         """
         初始化质量控制器
@@ -42,11 +44,12 @@ class QualityController(BaseController):
         self.pytest_agent = PytestAgent()
         self._log_execution("QualityController initialized")
 
-    async def execute(  # type: ignore[override, reportIncompatibleMethodOverride]
+    @override
+    async def execute(
         self,
-        source_dir: Optional[str] = None,
-        test_dir: Optional[str] = None
-    ) -> Dict[str, Any]:
+        source_dir: str | None = None,
+        test_dir: str | None = None
+    ) -> dict[str, Any]:  # type: ignore[reportIncompatibleMethodOverride]
         """
         执行质量门控
 
@@ -60,13 +63,14 @@ class QualityController(BaseController):
 
         self._log_execution("Starting quality gate process")
 
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "overall_status": "pending",
             "checks": {}
         }
 
         try:
             # 计算默认目录
+            # 优先级: 传入参数 > 环境变量 > project_root > 回退默认值
             if not source_dir and not self.project_root:
                 # 使用临时目录作为默认值
                 temp_dir = Path(tempfile.mkdtemp(prefix="quality_check_"))
@@ -77,8 +81,16 @@ class QualityController(BaseController):
                 Path(effective_source_dir).mkdir(parents=True, exist_ok=True)
                 Path(effective_test_dir).mkdir(parents=True, exist_ok=True)
             else:
-                effective_source_dir = source_dir or (str(self.project_root / "src") if self.project_root is not None else "")
-                effective_test_dir = test_dir or (str(self.project_root / "tests") if self.project_root is not None else None)
+                # 优先使用传入参数, 然后尝试环境变量, 最后使用 project_root 或回退默认值
+                default_source = os.getenv("EPIC_SOURCE_DIR", "src")
+                default_test = os.getenv("EPIC_TEST_DIR", "tests")
+
+                effective_source_dir = source_dir or (
+                    str(self.project_root / default_source) if self.project_root is not None else default_source
+                )
+                effective_test_dir = test_dir or (
+                    str(self.project_root / default_test) if self.project_root is not None else default_test
+                )
                 effective_project_root = str(self.project_root) if self.project_root is not None else None
 
             # Step 1: Ruff 代码风格检查
@@ -110,7 +122,7 @@ class QualityController(BaseController):
 
             # Step 3: Pytest 测试执行
             self._log_execution("Running Pytest")
-            if effective_test_dir is not None:
+            if effective_test_dir:
                 async def call_pytest():
                     return await self.pytest_agent.execute(
                         source_dir=effective_source_dir,
@@ -135,7 +147,7 @@ class QualityController(BaseController):
             results["error"] = str(e)
             return results
 
-    def _evaluate_overall_status(self, checks: Dict[str, Any]) -> str:
+    def _evaluate_overall_status(self, checks: dict[str, Any]) -> str:
         """
         评估整体质量状态
 

@@ -50,9 +50,16 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # Install all dependencies including quality gate tools
-pip install claude-agent-sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0 loguru anyio
+pip install claude-agent-sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0 loguru anyio python-dotenv
 
-# Configure environment variables
+# Configure environment variables via .env file (recommended)
+cp .env.example .env
+# Edit .env and set:
+#   ANTHROPIC_API_KEY=your_api_key_here
+#   EPIC_SOURCE_DIR=docuswarm  # For DocuSwarm, or "src" for standard projects
+#   EPIC_TEST_DIR=tests
+
+# Or configure via shell environment (alternative)
 # Windows PowerShell:
 $env:ANTHROPIC_API_KEY="your_api_key_here"
 
@@ -78,7 +85,20 @@ autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbos
 
 # With log file output
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-01-CORE-INFRASTRUCTURE.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-01.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-02-AGENT-SYSTEM.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-02.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-03-PIPELINE-ORCHESTRATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-03.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-04-CONTEXT-ISOLATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-04.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-05-QUALITY-CONTROL.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-05.log
 
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-06-SDK-PREPARATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-06.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-07-CORE-LAYER-TRANSFORMATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-07.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-08-TOOL-MIGRATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-08.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-09-SESSION-AND-CANCELLATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-09.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-10-CLEANUP-AND-OPTIMIZATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-10.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-11-NODE-EXECUTOR-INTEGRATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-11.log
+
+docs\epics\EPIC-11-NODE-EXECUTOR-INTEGRATION.md
 # Skip quality gates for faster development
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --skip-quality --verbose
 
@@ -111,7 +131,6 @@ PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/
 PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-04-input-system-script-execution.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-04.log
 
 # Using the venv wrapper script (automatically handles dependencies)
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-01-foundation-data-layer.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic1.log
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
 
 # Skip quality gates (for faster development)
@@ -129,6 +148,7 @@ PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/
 ```bash
 # Run quality gates only (Ruff + BasedPyright + Pytest)
 PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality
+PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --verbose 2>&1 | tee autoBMAD/epic_automation/logs/quality_run.log
 
 # Skip tests, run only code quality checks
 PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --skip-tests
@@ -334,11 +354,59 @@ pytest tests/ --pdb
 
 ### Configuration
 
-No additional configuration required! The tool automatically:
+#### Environment Variables (.env)
+
+The tool supports configuration via environment variables using a `.env` file. This is the **recommended** way to configure directory paths for your project.
+
+**Setup Steps:**
+
+1. **Copy the example file**:
+   ```bash
+   cp autoBMAD/epic_automation/.env.example autoBMAD/epic_automation/.env
+   # Or for project-wide configuration:
+   cp .env.example .env
+   ```
+
+2. **Edit the `.env` file** with your project settings:
+   ```bash
+   # For DocuSwarm project
+   EPIC_SOURCE_DIR=docuswarm
+   EPIC_TEST_DIR=tests
+   ANTHROPIC_API_KEY=your_api_key_here
+   
+   # For standard Python projects
+   EPIC_SOURCE_DIR=src
+   EPIC_TEST_DIR=tests
+   ANTHROPIC_API_KEY=your_api_key_here
+   ```
+
+3. **Run without specifying directories**:
+   ```bash
+   # Directories are automatically loaded from .env
+   python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/my-epic.md --verbose
+   ```
+
+**Supported Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `EPIC_SOURCE_DIR` | `"src"` | Source code directory for quality checks (Ruff, BasedPyright) |
+| `EPIC_TEST_DIR` | `"tests"` | Test directory for pytest execution |
+| `ANTHROPIC_API_KEY` | required | Claude Agent SDK API key for SM, Dev, QA agents |
+
+**Priority Order:**
+1. Command-line arguments (highest priority)
+2. Environment variables from `.env` file
+3. Default values (lowest priority)
+
+#### Automatic Configuration
+
+The tool automatically:
 - Locates task guidance files in `.bmad-core/tasks/`
 - Parses epic markdown files
 - Manages state between runs
 - Handles logging and error reporting
+- Loads `.env` file if present (requires `python-dotenv`)
 
 ### Task Guidance Files
 

@@ -1,0 +1,37 @@
+# PM Node Configuration - Story 3.2, 3.8
+# This file contains the node-specific configuration for the PM pipeline node
+
+node_id: pm
+name: PM
+description: Project Manager - skilled in planning, executing, and delivering projects on time and within budget
+sequence: 2
+deliverable_type: prd
+deliverable:
+  required_sections:
+    - product_overview
+    - problem_statement
+    - user_stories
+    - functional_requirements
+    - non_functional_requirements
+    - acceptance_criteria
+    - timeline
+    - risks
+agent:
+  type: independent
+  model: sonnet
+  temperature: 0.7
+questions:
+  - id: q1
+    text: "What problem are we solving and for whom?"
+    required: true
+  - id: q2
+    text: "What are the key features and functionalities required?"
+    required: true
+  - id: q3
+    text: "What are the success metrics for this product?"
+    required: true
+  - id: q4
+    text: "What is the target timeline and budget?"
+    required: false
+dependencies:
+  - analyst

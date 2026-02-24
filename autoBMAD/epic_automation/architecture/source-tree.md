@@ -358,7 +358,7 @@ anthropic>=0.7.0
 [tool.basedpyright]
 pythonVersion = "3.8"
 typeCheckingMode = "strict"
-exclude = ["**/__pycache__", "**/.venv"]
+exclude = ["**/__pycache__", "**/venv"]
 
 [tool.ruff]
 target-version = "py38"

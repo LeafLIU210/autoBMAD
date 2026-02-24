@@ -75,7 +75,7 @@ Use the Agent SDK to build an AI agent that reads your code, finds bugs, and fix
       <Tab title="Python (pip)">
         Create a virtual environment first, then install:
         ```bash
-        python3 -m venv .venv && source .venv/bin/activate
+        python3 -m venv venv && source venv/bin/activate
         pip3 install claude-agent-sdk
         ```
       </Tab>

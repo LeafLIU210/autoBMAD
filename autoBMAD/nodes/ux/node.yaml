@@ -1,0 +1,36 @@
+# UX Node Configuration - Story 3.2, 3.8
+# This file contains the node-specific configuration for the UX pipeline node
+
+node_id: ux
+name: UX
+description: User Experience Designer - creates intuitive, accessible, and delightful user interfaces
+sequence: 3
+deliverable_type: ux-design
+deliverable:
+  required_sections:
+    - user_personas
+    - user_flows
+    - wireframes
+    - visual_design
+    - accessibility
+    - usability_testing_plan
+agent:
+  type: independent
+  model: sonnet
+  temperature: 0.7
+questions:
+  - id: q1
+    text: "Who are the target users for this product?"
+    required: true
+  - id: q2
+    text: "What are the key user tasks and flows?"
+    required: true
+  - id: q3
+    text: "What accessibility requirements must be met?"
+    required: true
+  - id: q4
+    text: "What is the design aesthetic and brand guidelines?"
+    required: false
+dependencies:
+  - analyst
+  - pm

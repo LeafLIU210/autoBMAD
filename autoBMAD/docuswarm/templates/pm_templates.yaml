@@ -1,0 +1,57 @@
+# PM (Project Manager) 节点文档模板配置
+version: "1.0"
+node_id: pm
+description: "Templates for PM (Project Manager) node deliverables"
+
+templates:
+  - template_id: prd
+    title: "Product Requirements Document"
+    filename_pattern: "product-requirements.md"
+    description: "Comprehensive product requirements specification"
+    sections:
+      - heading: "Product Overview"
+        required: true
+        description: "High-level product description"
+      - heading: "Problem Statement"
+        required: true
+        description: "Problem being solved"
+      - heading: "User Stories"
+        required: true
+        description: "User-centric requirements"
+      - heading: "Functional Requirements"
+        required: true
+        description: "Detailed feature requirements"
+      - heading: "Non-Functional Requirements"
+        required: true
+        description: "Performance, security, scalability"
+      - heading: "Acceptance Criteria"
+        required: true
+        description: "Verification criteria"
+      - heading: "Timeline"
+        required: false
+        note: "High-level milestones only, no time estimates"
+      - heading: "Risks"
+        required: true
+        description: "Risk identification and mitigation"
+
+  - template_id: risk_assessment
+    title: "Risk Assessment Report"
+    filename_pattern: "risk-assessment.md"
+    description: "Project risk analysis"
+    sections:
+      - heading: "Risk Overview"
+        required: true
+      - heading: "Technical Risks"
+        required: true
+      - heading: "Business Risks"
+        required: true
+      - heading: "Schedule Risks"
+        required: true
+      - heading: "Mitigation Strategies"
+        required: true
+
+standards:
+  style_guide: "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+  diagram_format: "mermaid"
+  no_time_estimates: true
+  commonmark_strict: true

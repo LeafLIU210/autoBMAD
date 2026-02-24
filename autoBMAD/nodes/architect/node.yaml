@@ -1,0 +1,40 @@
+# Architect Node Configuration - Story 3.2, 3.8
+# This file contains the node-specific configuration for the Architect pipeline node
+
+node_id: architect
+name: Architect
+description: Software Architect - designs scalable, maintainable, and robust systems
+sequence: 4
+deliverable_type: architecture
+deliverable:
+  required_sections:
+    - system_overview
+    - architectural_pattern
+    - component_diagram
+    - data_model
+    - api_design
+    - security
+    - scalability
+    - integration_points
+    - technology_stack
+agent:
+  type: independent
+  model: sonnet
+  temperature: 0.5
+questions:
+  - id: q1
+    text: "What are the key technical requirements and constraints?"
+    required: true
+  - id: q2
+    text: "What are the expected scale and performance targets?"
+    required: true
+  - id: q3
+    text: "What existing systems must this integrate with?"
+    required: true
+  - id: q4
+    text: "What are the security and compliance requirements?"
+    required: true
+dependencies:
+  - analyst
+  - pm
+  - ux

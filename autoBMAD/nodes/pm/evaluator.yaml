@@ -1,0 +1,24 @@
+# PM Node Evaluation Criteria - Story 2.8
+# Universal criteria: completeness, clarity, consistency, actionability, evidence_quality
+# PM focus: completeness (0.40), clarity (0.30)
+
+criteria:
+  - name: completeness
+    description: "Extent to which all required components and details are present"
+    weight: 0.40
+  - name: clarity
+    description: "Clear and unambiguous communication of requirements and plans"
+    weight: 0.30
+  - name: actionability
+    description: "Degree to which plans can be directly executed"
+    weight: 0.15
+  - name: consistency
+    description: "Logical coherence and alignment across all planning elements"
+    weight: 0.10
+  - name: evidence_quality
+    description: "Quality of rationale and justification for decisions"
+    weight: 0.05
+
+thresholds:
+  approval: 0.70
+  escalation: 0.50

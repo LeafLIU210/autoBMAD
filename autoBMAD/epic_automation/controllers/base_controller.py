@@ -8,10 +8,10 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from typing import Any
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
-from anyio.abc import TaskGroup
 import anyio
+from anyio.abc import TaskGroup
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +30,12 @@ class BaseController(ABC):
         self.logger = logging.getLogger(f"{self.__class__.__module__}")
 
     @abstractmethod
-    async def execute(self, *args: Any, **kwargs: Any) -> bool:
+    async def execute(self, *args: Any, **kwargs: Any) -> bool | dict[str, Any]:
         """
         执行控制器主逻辑
 
         Returns:
-            bool: 执行是否成功
+            bool | dict[str, Any]: 执行结果
         """
         pass
 
@@ -59,7 +59,7 @@ class BaseController(ABC):
             raise RuntimeError(f"{self.__class__.__name__}: TaskGroup not set")
 
         # 检查是否是Mock对象（用于测试）
-        if isinstance(self.task_group, (MagicMock, AsyncMock)):
+        if isinstance(self.task_group, MagicMock | AsyncMock):
             # 对于Mock对象，直接执行协程，不使用TaskGroup
             return await coro()
 

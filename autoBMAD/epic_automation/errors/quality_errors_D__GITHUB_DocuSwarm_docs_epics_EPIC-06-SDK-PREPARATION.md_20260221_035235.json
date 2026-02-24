@@ -1,0 +1,38 @@
+{
+  "epic_id": "D:\\GITHUB\\DocuSwarm\\docs\\epics\\EPIC-06-SDK-PREPARATION.md",
+  "timestamp": "2026-02-20T19:52:35.666034Z",
+  "source_dir": "D:\\GITHUB\\DocuSwarm\\src",
+  "test_dir": "D:\\GITHUB\\DocuSwarm\\tests",
+  "tools": [
+    {
+      "tool": "ruff",
+      "phase": "phase_ruff",
+      "status": "failed",
+      "cycles": 5,
+      "max_cycles": 5,
+      "remaining_files": [
+        "D:\\GITHUB\\DocuSwarm\\src"
+      ],
+      "detailed_errors": {
+        "tool": "ruff",
+        "status": "failed",
+        "summary": "",
+        "errors": []
+      },
+      "error_details": {
+        "total_errors": 1,
+        "by_file": {
+          "D:\\GITHUB\\DocuSwarm\\src": [
+            {
+              "line": 1,
+              "column": 1,
+              "error_code": "E902",
+              "message": "系统找不到指定的文件。 (os error 2)",
+              "rule": "E902"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
