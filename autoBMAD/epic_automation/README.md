@@ -50,7 +50,7 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # Install all dependencies including quality gate tools
-pip install claude-agent-sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0 debugpy>=1.6.0 loguru anyio python-dotenv
+pip install claude-agent-sdk>=0.1.0 basedpyright>=1.1.0 ruff>=0.1.0 pytest>=7.0.0  loguru anyio python-dotenv
 
 # Configure environment variables via .env file (recommended)
 cp .env.example .env
@@ -86,19 +86,10 @@ autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbos
 # With log file output
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-01-CORE-INFRASTRUCTURE.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-01.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-02-AGENT-SYSTEM.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-02.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-03-PIPELINE-ORCHESTRATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-03.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-04-CONTEXT-ISOLATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-04.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-05-QUALITY-CONTROL.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-05.log
+autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-025-etl-phase4-data-migration.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-25.log
 
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-06-SDK-PREPARATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-06.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-07-CORE-LAYER-TRANSFORMATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-07.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-08-TOOL-MIGRATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-08.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-09-SESSION-AND-CANCELLATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-09.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-10-CLEANUP-AND-OPTIMIZATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-10.log
-autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/EPIC-11-NODE-EXECUTOR-INTEGRATION.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-11.log
 
-docs\epics\EPIC-11-NODE-EXECUTOR-INTEGRATION.md
+docs/epics/epic-025-etl-phase4-data-migration.md
 # Skip quality gates for faster development
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --skip-quality --verbose
 
@@ -128,7 +119,7 @@ source venv/bin/activate  # On Linux/macOS
 
 # Full workflow with all phases (SM-Dev-QA + Quality Gates + Tests)
 PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
-PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-04-input-system-script-execution.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-04.log
+PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/epic-020-validation-regression-testing.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-020.log
 
 # Using the venv wrapper script (automatically handles dependencies)
 autoBMAD/epic_automation/run_epic_with_venv.sh docs/epics/epic-{num}.md --verbose 2>&1 | tee autoBMAD/epic_automation/logs/epic_run_epic-{num}.log
@@ -148,6 +139,7 @@ PYTHONPATH=. python autoBMAD/epic_automation/epic_driver.py run-epic docs/epics/
 ```bash
 # Run quality gates only (Ruff + BasedPyright + Pytest)
 PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality
+
 PYTHONPATH=. python -m autoBMAD.epic_automation.epic_driver run-quality --verbose 2>&1 | tee autoBMAD/epic_automation/logs/quality_run.log
 
 # Skip tests, run only code quality checks

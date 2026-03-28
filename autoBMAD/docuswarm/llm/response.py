@@ -142,9 +142,11 @@ def validate_independent_output(data: dict[str, Any]) -> None:
     Validate Independent Agent output against schema.
 
     Schema:
-        - deliverable: {title: str, content: str, metadata: dict}
+        - deliverable: {title: str, content: str, file_path: str, sha256: str, metadata: dict}
         - questions: List[{priority: str, question: str, context: str}]
         - private_reasoning: Optional[str]
+
+    P0 Single Truth: file_path and sha256 are now included in deliverable.
 
     Args:
         data: Output from Independent Agent
@@ -164,10 +166,24 @@ def validate_independent_output(data: dict[str, Any]) -> None:
     if not isinstance(deliverable["title"], str):
         raise ValidationError("deliverable.title: must be a string")
 
-    # Validate deliverable.content (required, must be string)
-    if "content" not in deliverable:
-        raise ValidationError("deliverable.content: required field missing")
-    if not isinstance(deliverable["content"], str):
+    # P0-3: Validate file_path (now REQUIRED)
+    if "file_path" not in deliverable:
+        raise ValidationError("deliverable.file_path: required field missing")
+    if not isinstance(deliverable["file_path"], str):
+        raise ValidationError("deliverable.file_path: must be a string")
+
+    # P0-3: Validate sha256 (now REQUIRED)
+    if "sha256" not in deliverable:
+        raise ValidationError("deliverable.sha256: required field missing")
+    if not isinstance(deliverable["sha256"], str):
+        raise ValidationError("deliverable.sha256: must be a string")
+
+    # P0-3: Validate summary (preferred over content)
+    if "summary" in deliverable and not isinstance(deliverable["summary"], str):
+        raise ValidationError("deliverable.summary: must be a string")
+
+    # P0-3: content is now optional (deprecated, use summary instead)
+    if "content" in deliverable and not isinstance(deliverable["content"], str):
         raise ValidationError("deliverable.content: must be a string")
 
     # Validate deliverable.metadata (optional, but if present must be dict)

@@ -15,7 +15,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Kimi Code API base URL
-API_BASE = "https://api.kimi.com/coding/v1"
+API_BASE = "https://api.kimi.com/coding/"
 
 # Rate limiting constants
 RATE_LIMIT_RPM = 200  # Requests per minute

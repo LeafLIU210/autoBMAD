@@ -54,6 +54,24 @@ class PostResultMessageError(Exception):
         self.captured_messages = captured_messages or []
 
 
+def extract_post_result_error(exc: BaseException) -> PostResultMessageError | None:
+    """递归提取嵌套异常中的 PostResultMessageError。"""
+    if isinstance(exc, PostResultMessageError):
+        return exc
+
+    if isinstance(exc, BaseExceptionGroup):
+        for sub_exc in exc.exceptions:
+            extracted = extract_post_result_error(sub_exc)
+            if extracted is not None:
+                return extracted
+
+    cause = exc.__cause__
+    if cause is not None:
+        return extract_post_result_error(cause)
+
+    return None
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -121,20 +139,7 @@ class SDKExecutor:
         except Exception as e:
             # SDK_CLI_EXIT_CODE_FIX: 检查是否是PostResultMessageError
             # 可能直接是PostResultMessageError，也可能在ExceptionGroup中
-            post_result_error = None
-
-            if isinstance(e, PostResultMessageError):
-                post_result_error = e
-            elif isinstance(e, BaseExceptionGroup):
-                # 从ExceptionGroup中提取PostResultMessageError
-                for sub_exc in e.exceptions:
-                    if isinstance(sub_exc, PostResultMessageError):
-                        post_result_error = sub_exc
-                        break
-                    # 也检查__cause__链
-                    if sub_exc.__cause__ and isinstance(sub_exc.__cause__, PostResultMessageError):
-                        post_result_error = sub_exc.__cause__
-                        break
+            post_result_error = extract_post_result_error(e)
 
             if post_result_error is not None:
                 last_msg = post_result_error.last_result_message
@@ -168,15 +173,25 @@ class SDKExecutor:
                             errors=[f"Post-completion error (ignored): {str(post_result_error)[:200]}"]
                         )
 
+                duration = time.time() - start_time
+                return SDKResult(
+                    has_target_result=False,
+                    cleanup_completed=False,
+                    duration_seconds=duration,
+                    session_id=session_id,
+                    agent_name=agent_name,
+                    messages=captured_messages,
+                    error_type=SDKErrorType.SDK_ERROR,
+                    errors=[str(post_result_error)],
+                    last_exception=post_result_error,
+                )
+
             # 所有其他异常都封装在结果中
             duration = time.time() - start_time
             logger.error(
                 f"[{agent_name}] SDK call failed: {e}",
                 exc_info=True
             )
-
-            # 记录日志
-            logger.info(f"[{agent_name}] SDK call finished: {session_id} ({duration:.2f}s)")
 
             return SDKResult(
                 has_target_result=False,

@@ -299,22 +299,25 @@ Requirements:
         state_manager: Any,
         filter_statuses: list[str] | None = None,
         epic_id: str | None = None,
-        story_ids: list[str] | None = None
+        story_ids: list[str] | None = None,
+        prevent_downgrade: bool = True,
     ) -> BatchUpdateResults:
         """
-        从数据库同步状态到文档（方案3实现）
+        从数据库同步状态到文档（方案3实现 + 防降级保护）
 
         核心流程：
         1. 从数据库查询最新处理状态（processing_status）
         2. 通过映射表转换为核心状态
-        3. 生成 Markdown Status 文本
-        4. 调用 SDK 更新 Story 文档
+        3. 【新增】防降级检查
+        4. 生成 Markdown Status 文本
+        5. 调用 SDK 更新 Story 文档
 
         Args:
             state_manager: StateManager实例，用于获取数据库状态
             filter_statuses: 可选，要同步的状态列表，如果为None则同步所有状态
             epic_id: 可选，Epic标识，用于限制同步范围
             story_ids: 可选，Story ID 列表，用于限制同步范围
+            prevent_downgrade: 【新增】如果为 True，禁止将终态降级为非终态
 
         Returns:
             同步结果统计字典
@@ -322,6 +325,8 @@ Requirements:
         Note:
             如果提供了 epic_id 和 story_ids，则只同步指定 Epic 的指定 Story，
             这显著提高了性能，避免同步全库记录。
+            
+            🆕 Fix for EPIC-012: Added downgrade prevention to protect terminal states
         """
         try:
             # Step 1: 查询数据库（方案1 保证范围限制）
@@ -344,8 +349,10 @@ Requirements:
                 if invalid:
                     logger.warning(f"Proceeding with {valid_count} valid stories")
 
-            # Step 2-4: 逐个处理
+            # Step 2-5: 逐个处理
             status_mappings: list[tuple[str, str]] = []
+            downgrade_prevented: list[tuple[str, str, str]] = []  # 【新增】记录被阻止的降级
+            
             for record in stories:
                 try:
                     story_path = record.get("story_path")
@@ -361,10 +368,19 @@ Requirements:
                     # Step 2: 映射处理状态 → 核心状态
                     core_status = self._map_to_core_status(processing_status)
 
-                    # Step 3: 生成 Markdown 文本（通过 SDK 提示词）
-                    # Note: 实际文本生成在 update_story_status_via_sdk 中完成
+                    # Step 3: 【新增】防降级检查
+                    if prevent_downgrade:
+                        current_markdown_status = await self._get_current_markdown_status(story_path)
+                        
+                        if self._is_downgrade(current_markdown_status, core_status):
+                            logger.warning(
+                                f"[Downgrade Prevention] Blocked: {story_path} "
+                                f"({current_markdown_status} -> {core_status})"
+                            )
+                            downgrade_prevented.append((story_path, current_markdown_status, core_status))
+                            continue  # 跳过这个更新
 
-                    # 记录映射日志
+                    # Step 4: 记录映射日志
                     logger.info(f"[StatusUpdate] {record.get('story_path')}: {processing_status} → {core_status}")
 
                     status_mappings.append((story_path, core_status))
@@ -376,11 +392,18 @@ Requirements:
                     # 单条失败不中断整个同步流程
                     continue
 
+            # 【新增】输出防降级统计
+            if downgrade_prevented:
+                logger.warning(f"[Downgrade Prevention] Total blocked: {len(downgrade_prevented)}")
+                for story_path, current, new in downgrade_prevented:
+                    logger.warning(f"  - {story_path}: {current} -> {new}")
+
             logger.info(
-                f"Found {len(status_mappings)} stories to sync from database"
+                f"Found {len(status_mappings)} stories to sync from database "
+                f"({len(downgrade_prevented)} downgrade(s) prevented)"
             )
 
-            # Step 4: 批量更新
+            # Step 5: 批量更新
             if status_mappings:
                 return await self.batch_update_statuses(status_mappings)
             else:
@@ -397,6 +420,59 @@ Requirements:
                 error_count=1,
                 errors=[f"Database sync failed: {str(e)}"]
             )
+    
+    def _is_downgrade(self, current_status: str, new_status: str) -> bool:
+        """
+        检查是否为降级操作
+        
+        终态列表：Ready for Done, Done
+        如果当前是终态，新状态不是终态，则为降级
+        
+        Args:
+            current_status: 当前 Markdown 中的状态
+            new_status: 数据库准备同步的新状态
+            
+        Returns:
+            True 如果是降级操作，否则 False
+        """
+        terminal_states = ["Ready for Done", "Done"]
+        return current_status in terminal_states and new_status not in terminal_states
+    
+    async def _get_current_markdown_status(self, story_path: str) -> str:
+        """
+        读取当前 Markdown 文档中的状态
+        
+        Args:
+            story_path: 故事文件路径
+            
+        Returns:
+            当前 Markdown 中的状态值，如果读取失败返回 "Unknown"
+        """
+        try:
+            from pathlib import Path
+            content = Path(story_path).read_text(encoding='utf-8')
+            
+            # 使用正则提取状态（与 epic_driver 中的解析逻辑一致）
+            patterns = [
+                r'\*\*Status\*\*:\s*\*\*([^*]+)\*\*',      # **Status**: **Value**
+                r'\*\*Status\*\*:\s*([^\n*]+?)(?:\s*$|\s*\n)',  # **Status**: Value
+                r'Status:\s*(.+?)(?:\s*$|\s*\n)',             # Status: Value
+            ]
+            
+            # 只解析前20行
+            lines = content.split('\n')[:20]
+            status_section = '\n'.join(lines)
+            
+            for pattern in patterns:
+                import re
+                match = re.search(pattern, status_section, re.IGNORECASE | re.MULTILINE)
+                if match:
+                    return match.group(1).strip()
+            
+            return "Unknown"
+        except Exception as e:
+            logger.error(f"Failed to read current status from {story_path}: {e}")
+            return "Unknown"
 
     @override
     async def execute(self, *args: Any, **kwargs: Any) -> Any:

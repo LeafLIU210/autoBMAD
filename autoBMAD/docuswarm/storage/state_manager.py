@@ -112,8 +112,12 @@ class StateManager:
         Raises:
             StorageError: If pipeline creation fails.
         """
+        from autoBMAD.docuswarm.pipeline.state import create_initial_state
+
         pipeline_id = self._generate_pipeline_id()
-        state_json = json.dumps(subject_context or {})
+        # Create complete PipelineState (F1: state_json as single source of truth)
+        initial_state = create_initial_state(pipeline_id, subject_context or {})
+        state_json = json.dumps(initial_state)
 
         try:
             with self._db.acquire() as conn:
@@ -476,6 +480,255 @@ class StateManager:
                 operation_type="update",
                 pipeline_id=pipeline_id,
             ) from e
+
+    async def update_shared_context(
+        self,
+        pipeline_id: str,
+        update: Any,
+        operation: str = "set",
+        key_path: str | None = None,
+    ) -> bool:
+        """Update shared_context within state_json.
+
+        Updates the shared_context namespace in the pipeline's state_json.
+        Supports set, append, and remove operations on nested keys.
+
+        Args:
+            pipeline_id: The pipeline to update.
+            update: The value to set/append/remove.
+            operation: One of "set", "append", "remove".
+            key_path: Dot-separated path like "facts.market_scope" or "open_questions".
+
+        Returns:
+            True if successful.
+
+        Raises:
+            StorageError: If pipeline not found or update fails.
+        """
+        # Check if pipeline exists
+        if not self._pipeline_exists(pipeline_id):
+            raise StorageError(
+                f"Pipeline not found: {pipeline_id}",
+                operation_type="update",
+                pipeline_id=pipeline_id,
+            )
+
+        try:
+            with self._db.acquire() as conn:
+                # Get current state
+                cursor = conn.execute(
+                    "SELECT state_json FROM pipelines WHERE pipeline_id = ?",
+                    (pipeline_id,),
+                )
+                row: Row | None = cast(Row | None, cursor.fetchone())
+
+                if row is None:
+                    raise StorageError(
+                        f"Pipeline not found: {pipeline_id}",
+                        operation_type="update",
+                        pipeline_id=pipeline_id,
+                    )
+
+                # Parse current state
+                current_state: dict[str, Any] = {}
+                if row["state_json"]:
+                    current_state = json.loads(cast(str, row["state_json"]))
+
+                # Ensure shared_context exists
+                if "shared_context" not in current_state:
+                    current_state["shared_context"] = {}
+
+                shared_context: dict[str, Any] = current_state["shared_context"]
+
+                # Apply operation
+                if operation == "set":
+                    if key_path:
+                        # Set at specific key path
+                        keys = key_path.split(".")
+                        target: dict[str, Any] = shared_context
+                        for key in keys[:-1]:
+                            if key not in target:
+                                target[key] = {}
+                            target = target[key]
+
+                        final_key = keys[-1]
+                        # If both existing and new values are dicts, merge them
+                        if (
+                            final_key in target
+                            and isinstance(target[final_key], dict)
+                            and isinstance(update, dict)
+                        ):
+                            update_dict: dict[str, Any] = update
+                            self._deep_merge(target[final_key], update_dict)
+                        else:
+                            target[final_key] = update
+                    else:
+                        # Merge update into shared_context
+                        if isinstance(update, dict):
+                            update_dict_shared: dict[str, Any] = update
+                            self._deep_merge(shared_context, update_dict_shared)
+                        else:
+                            raise StorageError(
+                                "update must be a dict when merging into shared_context",
+                                operation_type="update",
+                                pipeline_id=pipeline_id,
+                            )
+
+                elif operation == "append":
+                    if not key_path:
+                        raise StorageError(
+                            "key_path is required for append operation",
+                            operation_type="update",
+                            pipeline_id=pipeline_id,
+                        )
+
+                    keys = key_path.split(".")
+                    append_target: dict[str, Any] = shared_context
+                    for key in keys[:-1]:
+                        if key not in append_target:
+                            append_target[key] = {}
+                        append_target = append_target[key]
+
+                    final_key = keys[-1]
+                    if final_key not in append_target:
+                        append_target[final_key] = []
+
+                    if not isinstance(append_target[final_key], list):
+                        raise StorageError(
+                            f"Cannot append to non-list at {key_path}",
+                            operation_type="update",
+                            pipeline_id=pipeline_id,
+                        )
+
+                    append_target[final_key].append(update)
+
+                elif operation == "remove":
+                    if not key_path:
+                        raise StorageError(
+                            "key_path is required for remove operation",
+                            operation_type="update",
+                            pipeline_id=pipeline_id,
+                        )
+
+                    keys = key_path.split(".")
+                    target = shared_context
+                    for key in keys[:-1]:
+                        if key not in target:
+                            return True  # Key doesn't exist, nothing to remove
+                        target = target[key]
+
+                    final_key = keys[-1]
+                    if final_key in target:
+                        del target[final_key]
+
+                else:
+                    raise StorageError(
+                        f"Invalid operation: {operation}",
+                        operation_type="update",
+                        pipeline_id=pipeline_id,
+                    )
+
+                # Update the pipeline
+                updated_state_json = json.dumps(current_state)
+                conn.execute(
+                    "UPDATE pipelines SET state_json = ?, "
+                    + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
+                    (updated_state_json, pipeline_id),
+                )
+
+            return True
+        except StorageError:
+            raise
+        except Exception as e:
+            raise StorageError(
+                f"Failed to update shared context: {e}",
+                operation_type="update",
+                pipeline_id=pipeline_id,
+            ) from e
+
+    async def update_pipeline_state(
+        self,
+        pipeline_id: str,
+        state_update: dict[str, Any],
+    ) -> bool:
+        """Update complete PipelineState in state_json.
+
+        This method implements F1 requirement: state_json as single source of truth.
+        It performs a deep merge of the update into the existing PipelineState.
+
+        Args:
+            pipeline_id: The pipeline ID to update.
+            state_update: Dictionary of state fields to update.
+
+        Returns:
+            True if update was successful.
+
+        Raises:
+            StorageError: If pipeline not found or update fails.
+        """
+        # Check if pipeline exists
+        if not self._pipeline_exists(pipeline_id):
+            raise StorageError(
+                f"Pipeline not found: {pipeline_id}",
+                operation_type="update",
+                pipeline_id=pipeline_id,
+            )
+
+        try:
+            with self._db.acquire() as conn:
+                # Get current state
+                cursor = conn.execute(
+                    "SELECT state_json FROM pipelines WHERE pipeline_id = ?",
+                    (pipeline_id,),
+                )
+                row = cursor.fetchone()
+
+                if row is None:
+                    raise StorageError(
+                        f"Pipeline not found: {pipeline_id}",
+                        operation_type="update",
+                        pipeline_id=pipeline_id,
+                    )
+
+                # Parse current state
+                current_state: dict[str, Any] = {}
+                if row["state_json"]:
+                    current_state = json.loads(cast(str, row["state_json"]))
+
+                # Deep merge the update
+                self._deep_merge(current_state, state_update)
+
+                # Write back to database
+                updated_state_json = json.dumps(current_state)
+                conn.execute(
+                    "UPDATE pipelines SET state_json = ?, "
+                    + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
+                    (updated_state_json, pipeline_id),
+                )
+
+            return True
+        except StorageError:
+            raise
+        except Exception as e:
+            raise StorageError(
+                f"Failed to update pipeline state: {e}",
+                operation_type="update",
+                pipeline_id=pipeline_id,
+            ) from e
+
+    def _deep_merge(self, target: dict[str, Any], source: dict[str, Any]) -> None:
+        """Deep merge source dict into target dict.
+
+        Args:
+            target: The dictionary to merge into (modified in place).
+            source: The dictionary to merge from.
+        """
+        for key, value in source.items():
+            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+                value_dict: dict[str, Any] = value
+                self._deep_merge(target[key], value_dict)
+            else:
+                target[key] = value
 
     def get_latest_successful_run(
         self,

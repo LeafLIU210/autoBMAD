@@ -30,10 +30,10 @@ work_dir=D:\GITHUB\pptx-video
 
 | 文件 | 配置项 | 错误值 | 正确值 |
 |------|--------|--------|--------|
-| `session_manager.py:100` | `base_url` 默认值 | `https://api.kimi.com/coding/` | `https://api.kimi.com/coding/v1` |
+| `session_manager.py:100` | `base_url` 默认值 | `https://api.kimi.com/coding/` | `https://api.kimi.com/coding/` |
 | `session_manager.py:112` | `model` 名称 | `kimi-k2.5` | `kimi-for-coding` |
 | `session_manager.py:181` | `model` 变量 | `kimi-k2.5` | `kimi-for-coding` |
-| `config.py:18` | `API_BASE` | `https://api.moonshot.cn/v1` | `https://api.kimi.com/coding/v1` |
+| `config.py:18` | `API_BASE` | `https://api.moonshot.cn/v1` | `https://api.kimi.com/coding/` |
 | `config.py:28-41` | 模型名称 | `kimi-k2.5-*` | `kimi-for-coding` |
 
 **根因**: `base_url` 缺少 `/v1` 后缀，且模型名称与 Kimi Code 平台不匹配。
@@ -190,7 +190,7 @@ def __init__(
         # 修复: base_url 必须包含 /v1
         effective_base_url = base_url or os.environ.get(
             "KIMI_BASE_URL", 
-            "https://api.kimi.com/coding/v1"  # ← 修复: 添加 /v1
+            "https://api.kimi.com/coding/"  # ← 修复: 添加 /v1
         )
         # 修复: 使用正确的模型名称
         effective_model = os.environ.get("KIMI_MODEL_NAME", "kimi-for-coding")
@@ -229,7 +229,7 @@ async def create_session(self, ...):
 # 文件: autoBMAD/docuswarm/llm/config.py
 
 # 修复: 使用 Kimi Code 平台 URL
-API_BASE = "https://api.kimi.com/coding/v1"  # ← 修复
+API_BASE = "https://api.kimi.com/coding/"  # ← 修复
 
 # 修复: 使用正确的模型名称
 MODELS = {
@@ -320,7 +320,7 @@ tail -50 ~/.kimi/logs/kimi.log
 
 | 优先级 | 来源 | 示例 |
 |--------|------|------|
-| 1 (最高) | 环境变量 | `KIMI_API_KEY=sk-xxx KIMI_MODEL_NAME=kimi-k2-thinking-turbo kimi` |
+| 1 (最高) | 环境变量 | `KIMI_API_KEY=sk-xxx  kimi` |
 | 2 | CLI flags | `kimi --model kimi-for-coding --yolo` |
 | 3 (最低) | 配置文件 | `~/.kimi/config.toml` |
 
@@ -345,7 +345,7 @@ tail -50 ~/.kimi/logs/kimi.log
 
 | 配置项 | 错误配置 | 正确配置 |
 |--------|----------|----------|
-| `base_url` | `https://api.kimi.com/coding/` | `https://api.kimi.com/coding/v1` |
+| `base_url` | `https://api.kimi.com/coding/` | `https://api.kimi.com/coding/` |
 | `model` | `kimi-k2.5` | `kimi-for-coding` |
 | `max_context_size` | `128000` | `262144` |
 

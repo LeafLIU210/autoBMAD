@@ -25,7 +25,6 @@ from autoBMAD.docuswarm.node_execution.state import (
     NodeRunState,
 )
 from autoBMAD.docuswarm.nodes.dual_agent import create_dual_agent_node
-from autoBMAD.docuswarm.nodes.loader import NodeLoader
 
 # Configure module logger
 logger = structlog.get_logger(__name__)
@@ -41,8 +40,9 @@ def create_node_executor(
     1. Loads node configuration via NodeLoader.load(node_id)
     2. Creates a DualAgentNode instance with the node_id
     3. Executes the node with the current state
-    4. Updates NodeRunState with deliverable, questions, evaluation, iteration
-    5. Handles status transitions based on evaluation verdict
+    4. Updates NodeRunState with deliverable, questions, evaluations
+    5. Tracks iteration count
+    6. Adds node to completed_nodes on APPROVED verdict
 
     Args:
         node_id: The node identifier (e.g., 'analyst', 'pm', 'ux', 'architect', 'po')
@@ -89,6 +89,7 @@ async def _execute_node(
         Updated NodeRunState with execution results
     """
     run_id = state.get("run_id", "unknown")
+    pipeline_id = state.get("pipeline_id", "")
 
     logger.info(
         "node_execution_started",
@@ -104,18 +105,30 @@ async def _execute_node(
     new_state["status"] = RUNNING
 
     try:
-        # Step 1: Load node configuration via NodeLoader
-        loader = NodeLoader()
-        node_config = loader.load(node_id)
+        # ==== Single Context Protocol: 构建 NodeExecutionContext ====
+        from .context_builder import create_context_builder
 
-        logger.debug(
-            "node_config_loaded",
+        context_builder = create_context_builder()
+
+        # 解析原始上下文
+        original_context = _parse_original_context(state.get("context_file", ""))
+
+        # 构建统一的执行上下文
+        execution_context = context_builder.build(
+            pipeline_id=pipeline_id,
             node_id=node_id,
-            config_keys=[node_config.node_id] if node_config else [],
+            original_context=original_context,
+            chained_deliverables=_extract_chained_deliverables(state),
+            shared_context=state.get("shared_context", {}),
         )
 
-        # Step 2: Create DualAgentNode instance
-        # Create default config (in production, this would be injected)
+        logger.debug(
+            "execution_context_built",
+            node_id=node_id,
+            task_name=execution_context["task_name"],
+        )
+
+        # Create DualAgentNode instance
         config = _get_config()
 
         # Get project_root from the location of this module
@@ -130,19 +143,8 @@ async def _execute_node(
             project_root=project_root,
         )
 
-        # Step 3: Execute the node
-        # Get subject_context, task, and pipeline_id from state
-        subject_context = state.get("context_file", "")
-        # The task comes from chained_context or we use a default
-        task = _extract_task_from_state(state)
-        # Get pipeline_id from state for IndependentAgent
-        pipeline_id = state.get("pipeline_id", "")
-
-        result = await node.execute(
-            subject_context=str(subject_context),
-            task=task,
-            pipeline_id=pipeline_id,
-        )
+        # ==== Single Context Protocol: 直接传入 execution_context ====
+        result = await node.execute_with_context(execution_context)
 
         # Step 4: Update state with results
         new_state["deliverable"] = result.deliverable
@@ -214,53 +216,98 @@ async def _execute_node(
     return new_state
 
 
-def _extract_task_from_state(state: NodeRunState) -> str:
-    """Extract task from the node run state.
+def _parse_original_context(context_file: str) -> dict[str, Any]:
+    """解析原始上下文文件内容。
 
     Args:
-        state: The current NodeRunState
+        context_file: JSON 字符串、context 文件路径，或原始内容
 
     Returns:
-        The task string
+        解析后的字典
     """
     import json
 
-    # First, try to get task from context_file (contains subject_context for first node)
-    context_file = state.get("context_file", "")
-    if context_file:
-        try:
-            context_data: Any = json.loads(context_file)
-            # Check for subject_context which contains the initial task
-            if isinstance(context_data, dict) and "subject_context" in context_data:
-                subject: Any = context_data["subject_context"]
-                # Extract content from subject
-                if isinstance(subject, dict):
-                    subject_dict: dict[str, Any] = subject
-                    # Use content field as the task
-                    if "content" in subject_dict:
-                        return str(subject_dict["content"])
-                    # Or use the whole subject as task
-                    return str(subject_dict)
-                elif isinstance(subject, str):
-                    return subject
-        except (json.JSONDecodeError, TypeError):
-            # If context_file is not JSON, use it directly as task
-            if context_file:
-                return context_file
+    if not context_file:
+        return {}
 
-    # Try to get task from chained_context (previous node outputs)
-    chained_context: dict[str, dict[str, Any]] = state.get("chained_context", {})
+    raw_text = context_file
+    context_path = Path(context_file)
 
-    # Look for task in any previous node's context
-    for _node_id, context_data in chained_context.items():
-        # context_data is dict[str, Any] per NodeRunState type definition
-        if "task" in context_data:
-            return context_data["task"]
-        if "deliverable" in context_data:
-            # Use deliverable as context
-            return str(context_data["deliverable"])
+    if context_path.exists() and context_path.is_file():
+        raw_text = context_path.read_text(encoding="utf-8")
 
-    # Default empty task if not found
+    try:
+        data = json.loads(raw_text)
+    except json.JSONDecodeError:
+        return {"content": raw_text}
+
+    return _normalize_original_context(data, fallback_text=raw_text)
+
+
+def _extract_chained_deliverables(state: NodeRunState) -> list[dict[str, Any]]:
+    """提取链式上游交付物。
+
+    Args:
+        state: 当前节点运行状态
+
+    Returns:
+        上游交付物列表
+    """
+    chained: dict[str, Any] = state.get("chained_context", {})
+    deliverables = []
+
+    for node_id, ctx in chained.items():
+        context: Any = ctx
+        if isinstance(context, dict) and "deliverable" in context:
+            deliverables.append(
+                {
+                    "node_id": node_id,
+                    "deliverable": context["deliverable"],
+                }
+            )
+
+    return deliverables
+
+
+def _normalize_original_context(data: Any, fallback_text: str = "") -> dict[str, Any]:
+    """Normalize original context from pipeline JSON, file contents, or plain text."""
+    import json
+
+    if isinstance(data, dict):
+        data_dict: dict[str, Any] = data
+        normalized = dict(data_dict)
+        content = _extract_original_context_content(data_dict)
+        if not content and fallback_text:
+            content = fallback_text
+        if content:
+            normalized["content"] = content
+        return normalized
+
+    if isinstance(data, list):
+        if fallback_text:
+            return {"content": fallback_text}
+        return {"content": json.dumps(data, ensure_ascii=False)}
+
+    return {"content": fallback_text or str(data)}
+
+
+def _extract_original_context_content(data: dict[str, Any]) -> str:
+    """Extract user-visible content from raw original context payloads."""
+    import json
+
+    content = data.get("content")
+    if isinstance(content, str) and content:
+        return content
+
+    subject_context = data.get("subject_context")
+    if isinstance(subject_context, dict):
+        nested_content = subject_context.get("content")
+        if isinstance(nested_content, str) and nested_content:
+            return nested_content
+
+    if "project_description" in data or "requirements" in data:
+        return json.dumps(data, ensure_ascii=False, indent=2)
+
     return ""
 
 

@@ -15,7 +15,7 @@ This module provides the IndependentAgent class which:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 import structlog
 
@@ -26,7 +26,6 @@ from kimi_agent_sdk._aggregator import MessageAggregator
 from autoBMAD.docuswarm.agents.base import BaseAgent
 from autoBMAD.docuswarm.agents.persona import PersonaLoader
 from autoBMAD.docuswarm.config import Config as AgentConfig
-from autoBMAD.docuswarm.exceptions import LLMError
 from autoBMAD.docuswarm.llm.response import (
     ResponseParseError,
     ValidationError,
@@ -34,6 +33,11 @@ from autoBMAD.docuswarm.llm.response import (
     validate_independent_output,
 )
 from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+from autoBMAD.docuswarm.prompts.contract_builder import create_contract_builder
+
+if TYPE_CHECKING:
+    from autoBMAD.docuswarm.node_execution.contracts import IndependentAgentInput
+    from autoBMAD.docuswarm.prompts.contract_builder import IndependentPromptContract
 
 # Type alias for independent agent output
 IndependentOutput = dict[str, Any]
@@ -105,6 +109,9 @@ class IndependentAgent(BaseAgent):
         self._agent_file: Path | None = None
         self._work_dir: Path | None = None
 
+        # Initialize contract builder (P0: Node Prompt Contract Builder)
+        self.contract_builder = create_contract_builder()
+
         # Load persona
         try:
             self.persona = PersonaLoader.load(
@@ -134,6 +141,7 @@ class IndependentAgent(BaseAgent):
 
         # Build complete system prompt with agent instructions
         # Story 11.2: Modified to use create_deliverable tool instead of inline JSON
+        # P0 Single Truth: Include file_path and sha256 from tool output
         instructions = """## Agent Instructions
 
 You are an Independent Agent that creates deliverables and generates questions.
@@ -143,6 +151,7 @@ You are an Independent Agent that creates deliverables and generates questions.
 1. **Create Deliverable**: Use the 'create_deliverable' tool to save your document
    - The tool accepts: title (string) and content (Markdown string)
    - This writes the deliverable to a .md file
+   - The tool returns metadata including: file_path, sha256, word_count, section_index
 
 2. **Generate Questions**: Formulate follow-up questions with priorities
 
@@ -156,7 +165,9 @@ After executing tools, you MUST respond with ONLY this exact JSON structure:
 {
   "deliverable": {
     "title": "Brief title of what you created",
-    "content": "Brief summary (1-2 sentences, NOT the full document)"
+    "content": "Brief summary (1-2 sentences, NOT the full document)",
+    "file_path": "path from tool output",
+    "sha256": "hash from tool output"
   },
   "questions": [
     {
@@ -174,6 +185,7 @@ After executing tools, you MUST respond with ONLY this exact JSON structure:
 - Do NOT include markdown formatting outside the JSON
 - The "deliverable.content" field is just a SUMMARY, not the full document
 - The full document was already saved via the tool
+- You MUST include "file_path" and "sha256" from the create_deliverable tool output
 
 ## Question Priorities
 
@@ -188,7 +200,9 @@ Correct response after creating a document:
 {
   "deliverable": {
     "title": "Project Analysis Report",
-    "content": "Created comprehensive analysis covering architecture and requirements."
+    "content": "Created comprehensive analysis covering architecture and requirements.",
+    "file_path": "output/pipeline-123/project-analysis-report.md",
+    "sha256": "a3f5c8e9d2b1..."
   },
   "questions": [
     {
@@ -210,6 +224,22 @@ I have created a Project Analysis Report...
 """
         return f"{persona_prompt}\n\n{instructions}"
 
+    def _format_system_prompt_with_contract(
+        self,
+        contract: IndependentPromptContract,
+    ) -> str:
+        """Format system prompt using contract.
+
+        P0: Node Prompt Contract Builder - 使用 contract 渲染 system prompt。
+
+        Args:
+            contract: Pre-built IndependentPromptContract.
+
+        Returns:
+            Formatted system prompt string.
+        """
+        return self.contract_builder.render_independent_system_prompt(contract)
+
     async def _call_llm(self, user_message: str) -> list[Message]:
         """Call the LLM using Session API (Story 7.4, 8.4).
 
@@ -229,15 +259,24 @@ I have created a Project Analysis Report...
         """
         return await self._call_llm_via_session(user_message)
 
-    async def _call_llm_via_session(self, user_message: str) -> list[Message]:
-        """Call LLM via Session API with Wire message processing (Story 7.4).
+    async def _call_llm_with_prompts(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> list[Message]:
+        """Call LLM with pre-built system and user prompts (P0: Contract Builder).
 
         Creates a session with mode="agent" and yolo=True for auto-approval.
         Uses MessageAggregator to collect streaming Wire messages into
         complete Message objects.
 
+        P0: This method receives pre-built prompts from NodePromptContractBuilder,
+        enabling structured prompt contracts with node-specific task and deliverable
+        requirements.
+
         Args:
-            user_message: The user message to send.
+            system_prompt: The system prompt (from contract).
+            user_prompt: The user prompt (from contract).
 
         Returns:
             list[Message] from the LLM.
@@ -250,17 +289,14 @@ I have created a Project Analysis Report...
         from kimi_agent_sdk._aggregator import MessageAggregator
         from kimi_cli.wire.types import ApprovalRequest
 
-        system_prompt = self._format_system_prompt()
-
-        # Build full prompt with system instructions
-        full_prompt = f"{system_prompt}\n\nUser request: {user_message}"
+        # P0: Use pre-built prompts from contract
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
 
         session = None
         messages: list[Any] = []
         try:
             # Create session with mode="agent" and yolo=True for auto-approval (Story 7.4)
             # Story 11.1: Also pass agent_file for tool registration
-            # session_manager is guaranteed non-None by caller (_call_llm checks)
             sm = self.session_manager
             assert sm is not None
 
@@ -303,27 +339,38 @@ I have created a Project Analysis Report...
             if messages:
                 return messages
             raise LLMCallError(f"Max steps reached: {e}") from e
-
         except RunCancelled as e:
-            # Handle RunCancelled gracefully - return gracefully (Story 7.4)
-            self.logger.info("run_cancelled", error=str(e))
-            # Return partial messages if available
+            # Handle RunCancelled gracefully (Story 7.4)
+            self.logger.warning("run_cancelled", error=str(e))
             if messages:
                 return messages
             raise LLMCallError(f"Run cancelled: {e}") from e
 
-        except LLMError:
-            # Re-raise DocuSwarm LLM errors as-is
-            raise
+    async def _call_llm_via_session(self, user_message: str) -> list[Message]:
+        """Call LLM via Session API with Wire message processing (Story 7.4).
 
-        except Exception as e:
-            self.logger.error("session_call_failed", error=str(e))
-            raise SessionError(f"Session call failed: {e}") from e
+        Creates a session with mode="agent" and yolo=True for auto-approval.
+        Uses MessageAggregator to collect streaming Wire messages into
+        complete Message objects.
 
-        finally:
-            # Clean up session
-            if session is not None:
-                await session.close()
+        Args:
+            user_message: The user message to send.
+
+        Returns:
+            list[Message] from the LLM.
+
+        Raises:
+            SessionError: If session creation or message processing fails.
+            LLMCallError: On SDK exceptions like MaxStepsReached, RunCancelled.
+        """
+        # Use legacy system prompt
+        system_prompt = self._format_system_prompt()
+
+        # Call the new method with legacy prompts
+        return await self._call_llm_with_prompts(
+            system_prompt=system_prompt,
+            user_prompt=f"User request: {user_message}",
+        )
 
     def _extract_content_from_messages(self, messages: list[Message]) -> str:
         """Extract text content from aggregated messages.
@@ -562,6 +609,182 @@ Please create the deliverable based on the original context above. Reference spe
         )
 
         return output
+
+    async def execute_with_input(
+        self,
+        agent_input: IndependentAgentInput,
+        pipeline_id: str,
+    ) -> IndependentOutput:
+        """Execute the Independent Agent with structured input (Single Context Protocol).
+
+        This method receives a structured IndependentAgentInput instead of a raw context dict,
+        eliminating the need for guessing and parsing.
+
+        P0: Uses NodePromptContractBuilder to build structured prompts from node contract.
+
+        Args:
+            agent_input: Structured input containing task_name, task_description,
+                deliverable_requirements, original_context_summary, etc.
+            pipeline_id: The pipeline identifier for file output.
+
+        Returns:
+            Dict containing:
+                - deliverable: {title, content, metadata}
+                - questions: List of {priority, question, context}
+                - private_reasoning: Optional[str]
+
+        Raises:
+            IndependentAgentError: If execution fails.
+        """
+        # Single Context Protocol: 直接从结构化输入读取字段
+        # 使用 .get() 安全访问 TypedDict 的可选字段 (基于类型安全修复)
+        task_name = agent_input.get("task_name", "")
+        task_description = agent_input.get("task_description", "")
+        role_supplement = agent_input.get("role_supplement", "")
+        deliverable_reqs = agent_input.get("deliverable_requirements", {})
+        original_context = agent_input.get("original_context_summary", "")
+        chained_deliverables = agent_input.get("chained_deliverables_summary", [])
+        iteration_feedback = agent_input.get("iteration_feedback")
+        shared_context = agent_input.get("shared_context", {})
+
+        # Compute output directory: project_root / output / pipeline_id
+        output_dir = self.project_root / "output" / pipeline_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Set instance variables for session creation
+        self._agent_file = (
+            self.project_root / "docuswarm" / "agents" / "configs" / "independent_agent.yaml"
+        )
+        self._work_dir = output_dir
+
+        self.logger.info(
+            "executing_independent_agent_with_input",
+            node_id=self.node_id,
+            task_name=task_name,
+            pipeline_id=pipeline_id,
+        )
+
+        # P0: Build NodeExecutionContext from agent_input
+        from autoBMAD.docuswarm.node_execution.contracts import NodeExecutionContext
+
+        context = NodeExecutionContext(
+            pipeline_id=pipeline_id,
+            node_id=self.node_id,
+            node_name=task_name,  # Fallback to task_name if node_name not in agent_input
+            node_order=0,
+            task_name=task_name,
+            task_description=task_description,
+            role_supplement=role_supplement,
+            deliverable_type="",
+            deliverable_requirements=deliverable_reqs,
+            original_context={"content": original_context},
+            chained_deliverables=chained_deliverables,
+            shared_context=shared_context,
+            iteration_feedback=iteration_feedback,
+            docs_context=[],
+        )
+
+        # P0: Build contract from context using NodePromptContractBuilder
+        contract = self.contract_builder.build_independent_contract(context)
+
+        # P0: Render system and user prompts from contract
+        system_prompt = self._format_system_prompt_with_contract(contract)
+        user_prompt = self.contract_builder.render_independent_user_prompt(contract)
+
+        # Create new session manager with work_dir for this pipeline execution
+        from kaos.path import KaosPath
+
+        from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+
+        pipeline_session_manager = KimiSessionManager(
+            work_dir=KaosPath(str(output_dir)),
+            agent_file=self._agent_file,
+            config=self.session_manager.config if self.session_manager else None,
+        )
+
+        # Temporarily replace session_manager for this execution
+        original_session_manager = self.session_manager
+        self.session_manager = pipeline_session_manager
+
+        try:
+            # P0: Call LLM with contract-based prompts
+            response = await self._call_llm_with_prompts(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+            )
+        finally:
+            # Restore original session_manager
+            self.session_manager = original_session_manager
+
+        # Parse and validate response
+        output = self._parse_response(response)
+
+        self.logger.info(
+            "independent_agent_completed",
+            deliverable_title=output.get("deliverable", {}).get("title", "unknown"),
+            questions_count=len(output.get("questions", [])),
+        )
+
+        return output
+
+    def _build_user_message(
+        self,
+        task_name: str,
+        task_description: str,
+        role_supplement: str,
+        deliverable_reqs: dict[str, Any],
+        original_context: str,
+        chained_deliverables: list[dict[str, Any]],
+        iteration_feedback: dict[str, Any] | None,
+    ) -> str:
+        """Build user message from structured fields (Single Context Protocol).
+
+        Args:
+            task_name: Task name from node config
+            task_description: Task description from node config
+            role_supplement: Role supplement from node config
+            deliverable_reqs: Deliverable requirements dict
+            original_context: Original context content
+            chained_deliverables: List of upstream deliverable summaries
+            iteration_feedback: Optional iteration feedback
+
+        Returns:
+            Formatted user message string
+        """
+        sections: list[str] = []
+
+        # 任务契约
+        sections.append(f"## 任务: {task_name}")
+        sections.append(task_description)
+        if role_supplement:
+            sections.append(f"\n**角色补充**: {role_supplement}")
+
+        # 交付物要求
+        sections.append("\n## 交付物要求")
+        if "required_sections" in deliverable_reqs:
+            sections.append("必须包含以下章节:")
+            for section in deliverable_reqs["required_sections"]:
+                sections.append(f"- {section}")
+
+        # 原始上下文
+        if original_context:
+            sections.append(f"\n## 原始上下文\n{original_context}")
+
+        # 上游交付物
+        if chained_deliverables:
+            sections.append("\n## 上游交付物摘要")
+            for item in chained_deliverables:
+                sections.append(f"- **{item['node_id']}**: {item['title']}")
+
+        # 迭代反馈
+        if iteration_feedback:
+            sections.append("\n## 迭代反馈")
+            sections.append(f"上一轮评分: {iteration_feedback.get('alignment_score', 0)}")
+            sections.append("需要改进的问题:")
+            for issue in iteration_feedback.get("issues_found", []):
+                sections.append(f"- {issue}")
+
+        return "\n".join(sections)
 
 
 # Convenience function for creating IndependentAgent

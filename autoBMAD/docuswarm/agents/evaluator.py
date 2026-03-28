@@ -28,9 +28,11 @@ from autoBMAD.docuswarm.llm.response import (
     validate_evaluator_output,
 )
 from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+from autoBMAD.docuswarm.prompts.contract_builder import create_contract_builder
 
 if TYPE_CHECKING:
     from autoBMAD.docuswarm.config import Config as AgentConfig
+    from autoBMAD.docuswarm.node_execution.contracts import EvaluatorAgentInput
 
 # Type alias for evaluator agent output
 EvaluatorOutput = dict[str, Any]
@@ -90,6 +92,9 @@ class EvaluatorAgent(BaseAgent):
         super().__init__(config, session_manager=session_manager)
         self.node_id = node_id
         self.project_root = project_root or Path.cwd()
+
+        # Initialize contract builder (P0: Node Prompt Contract Builder)
+        self.contract_builder = create_contract_builder()
 
         # Load criteria
         self.criteria = self._load_criteria()
@@ -280,6 +285,48 @@ Do not include any other text in your response.
         else:
             return "NEEDS_REVISION"
 
+    async def _call_llm_with_prompt(
+        self,
+        prompt: str,
+    ) -> list[Message]:
+        """Call LLM with pre-built prompt (P0: Contract Builder).
+
+        Uses session_manager.single_prompt() (SDK API - Story 7.5).
+
+        P0: This method receives a pre-built prompt from NodePromptContractBuilder,
+        enabling structured prompt contracts with explicit criteria and deliverable
+        requirements.
+
+        Args:
+            prompt: The complete prompt (from contract).
+
+        Returns:
+            list[Message] from the LLM.
+
+        Raises:
+            EvaluationError: If the LLM call fails.
+        """
+        try:
+            # Use session_manager (SDK API - Story 7.5)
+            # session_manager is guaranteed non-None by BaseAgent __init__
+            assert self.session_manager is not None
+
+            # Use session_manager.single_prompt() with:
+            # - mode="thinking" for Kimi K2.5 thinking mode
+            # - yolo=True for evaluator (no tools to approve, read-only agent)
+            sdk_response: list[Message] = await self.session_manager.single_prompt(
+                prompt=prompt,
+                mode="thinking",
+                yolo=True,
+            )
+            return sdk_response
+        except EvaluationError:
+            # Re-raise EvaluationError as-is
+            raise
+        except Exception as e:
+            self.logger.error("llm_call_failed", error=str(e))
+            raise EvaluationError(f"LLM call failed: {e}") from e
+
     async def _call_llm(
         self,
         subject_context: str,
@@ -306,29 +353,9 @@ valid JSON in the specified format."""
 
         user_prompt = self._format_evaluation_prompt(subject_context, deliverable)
 
-        try:
-            # Use session_manager (SDK API - Story 7.5)
-            # session_manager is guaranteed non-None by BaseAgent __init__
-            assert self.session_manager is not None
-
-            # Combine system and user prompts for single_prompt API
-            full_prompt = f"{system_prompt}\n\n{user_prompt}"
-
-            # Use session_manager.single_prompt() with:
-            # - mode="thinking" for Kimi K2.5 thinking mode
-            # - yolo=True for evaluator (no tools to approve, read-only agent)
-            sdk_response: list[Message] = await self.session_manager.single_prompt(
-                prompt=full_prompt,
-                mode="thinking",
-                yolo=True,
-            )
-            return sdk_response
-        except EvaluationError:
-            # Re-raise EvaluationError as-is
-            raise
-        except Exception as e:
-            self.logger.error("llm_call_failed", error=str(e))
-            raise EvaluationError(f"LLM call failed: {e}") from e
+        # P0: Use contract builder for legacy calls too
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        return await self._call_llm_with_prompt(full_prompt)
 
     def _parse_response(self, response: list[Message]) -> dict[str, Any]:
         """Parse and validate LLM response against EvaluatorOutput schema.
@@ -477,6 +504,98 @@ valid JSON in the specified format."""
 
         # Call LLM for evaluation
         response = await self._call_llm(subject_context, deliverable)
+
+        # Parse and validate response
+        output = self._parse_response(response)
+
+        self.logger.info(
+            "evaluator_agent_completed",
+            verdict=output["verdict"],
+            alignment_score=output["alignment_score"],
+        )
+
+        return output
+
+    async def execute_with_input(self, agent_input: EvaluatorAgentInput) -> EvaluatorOutput:
+        """Execute the Evaluator Agent with structured input (Single Context Protocol).
+
+        This method receives a structured EvaluatorAgentInput instead of a raw context dict,
+        eliminating the need for guessing and parsing.
+
+        P0: Uses NodePromptContractBuilder to build structured prompts with criteria
+        and deliverable requirements explicitly injected.
+
+        F3: 修复 Evaluator 输入契约 - 确保 original_context_summary 被正确传递到 prompt.
+
+        Args:
+            agent_input: Structured input containing task_name, task_description,
+                original_context_summary, deliverable_artifact, deliverable_body, and criteria.
+
+        Returns:
+            Dict containing:
+                - criterion_scores: Dict[str, float] - scores per criterion
+                - alignment_score: float - weighted alignment score
+                - verdict: str - APPROVED | NEEDS_REVISION | BLOCKED
+                - issues_found: List[str]
+                - suggestions: List[str]
+
+        Raises:
+            EvaluatorAgentError: If execution fails.
+        """
+        # Single Context Protocol: 直接从结构化输入读取字段
+        # 使用 .get() 安全访问 TypedDict 的可选字段 (基于类型安全修复)
+        task_name = agent_input.get("task_name", "")
+        task_description = agent_input.get("task_description", "")
+        # deliverable_artifact reserved for future use
+        _ = agent_input.get("deliverable_artifact", {})
+        deliverable_body = agent_input.get("deliverable_body", "")
+        criteria = agent_input.get("criteria") or self.criteria
+
+        # F3: 修复 - 读取原始上下文摘要（关键修复）
+        original_context_summary = agent_input.get("original_context_summary", "")
+
+        self.logger.info(
+            "executing_evaluator_agent_with_input",
+            node_id=self.node_id,
+            task_name=task_name,
+            has_original_context=bool(original_context_summary),  # F3: 日志记录是否有原始上下文
+        )
+
+        # P0: Build NodeExecutionContext from agent_input
+        from autoBMAD.docuswarm.node_execution.contracts import NodeExecutionContext
+
+        context = NodeExecutionContext(
+            pipeline_id="",
+            node_id=self.node_id,
+            node_name=task_name,  # Fallback to task_name
+            node_order=0,
+            task_name=task_name,
+            task_description=task_description,
+            role_supplement="",
+            deliverable_type="",
+            deliverable_requirements={},
+            # F3: 修复 - 传递原始上下文摘要到 context
+            original_context={"content": original_context_summary}
+            if original_context_summary
+            else {},
+            chained_deliverables=[],
+            shared_context={},
+            iteration_feedback=None,
+            docs_context=[],
+            evaluator_criteria=criteria,
+        )
+
+        # P0: Build contract from context using NodePromptContractBuilder
+        contract = self.contract_builder.build_evaluator_contract(
+            context,
+            deliverable_body=deliverable_body,
+        )
+
+        # P0: Render full prompt from contract
+        prompt = self.contract_builder.render_evaluator_prompt(contract)
+
+        # P0: Call LLM with contract-based prompt
+        response = await self._call_llm_with_prompt(prompt)
 
         # Parse and validate response
         output = self._parse_response(response)

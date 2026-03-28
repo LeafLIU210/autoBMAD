@@ -6,7 +6,7 @@
 # Kimi API Configuration
 # =============================================================================
 # Note: KIMI_API_KEY must be set via environment variable for security
-base_url: https://api.kimi.com/coding/v1
+base_url: https://api.kimi.com/coding/
 
 # =============================================================================
 # Database Configuration

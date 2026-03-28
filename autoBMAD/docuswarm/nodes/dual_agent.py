@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from structlog import BoundLogger as StructlogBoundLogger
 
     from autoBMAD.docuswarm.config import Config as AgentConfig
+    from autoBMAD.docuswarm.node_execution.contracts import NodeExecutionContext
     from autoBMAD.docuswarm.pipeline.state import PipelineState
 
 from autoBMAD.docuswarm.agents.evaluator import EvaluatorAgent
@@ -200,6 +201,53 @@ class DualAgentNode:
 
         return filtered
 
+    def _normalize_legacy_subject_context(self, subject_context: Any) -> dict[str, Any]:
+        """Normalize legacy subject_context payloads into original_context shape."""
+        import json
+
+        if isinstance(subject_context, dict):
+            normalized: dict[str, Any] = dict(cast(dict[str, Any], subject_context))
+        elif isinstance(subject_context, str):
+            try:
+                parsed = json.loads(subject_context)
+            except json.JSONDecodeError:
+                return {"content": subject_context}
+            normalized = parsed if isinstance(parsed, dict) else {"content": str(parsed)}
+        else:
+            return {"content": str(subject_context)}
+
+        if "content" not in normalized:
+            nested_subject = normalized.get("subject_context")
+            if isinstance(nested_subject, dict) and isinstance(nested_subject.get("content"), str):
+                normalized["content"] = nested_subject["content"]
+            elif normalized:
+                normalized["content"] = json.dumps(normalized, ensure_ascii=False)
+
+        return normalized
+
+    def _build_execution_context_from_legacy(
+        self,
+        *,
+        subject_context: Any,
+        task: str = "",
+        pipeline_id: str,
+        iteration_feedback: dict[str, Any] | None = None,
+    ) -> NodeExecutionContext:
+        """Build NodeExecutionContext from legacy execute() arguments."""
+        from autoBMAD.docuswarm.node_execution.context_builder import create_context_builder
+
+        original_context = self._normalize_legacy_subject_context(subject_context)
+        if task:
+            original_context.setdefault("task", task)
+            original_context.setdefault("content", task)
+
+        return create_context_builder().build(
+            pipeline_id=pipeline_id,
+            node_id=self.node_id,
+            original_context=original_context,
+            iteration_feedback=iteration_feedback,
+        )
+
     def _build_independent_context(
         self,
         subject_context: str,
@@ -277,10 +325,47 @@ Please address these issues in your revised deliverable.
             DualAgentNodeError: If execution fails.
             ContextIsolationError: If private fields leak to Evaluator.
         """
+        if not pipeline_id:
+            pipeline_id = f"{self.node_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        execution_context = self._build_execution_context_from_legacy(
+            subject_context=subject_context,
+            task=task,
+            pipeline_id=pipeline_id,
+        )
+        return await self.execute_with_context(execution_context)
+
+    async def execute_with_context(
+        self,
+        execution_context: NodeExecutionContext,
+    ) -> NodeResult:
+        """Execute the dual-agent pattern using NodeExecutionContext (Single Context Protocol).
+
+        This method implements the dual-agent pattern with the unified context protocol:
+        1. Build Independent Agent input from NodeExecutionContext using ContextManager
+        2. Execute Independent Agent to generate deliverable and questions
+        3. Filter private fields using ContextFilter
+        4. Build Evaluator Agent input from NodeExecutionContext
+        5. Execute Evaluator Agent to score the deliverable
+        6. If NEEDS_REVISION, iterate with feedback (up to max_iterations)
+        7. Return combined result with audit logging
+
+        Args:
+            execution_context: The unified NodeExecutionContext containing all
+                node configuration and runtime state.
+
+        Returns:
+            NodeResult containing deliverable, questions, evaluation, iteration, and timestamp.
+
+        Raises:
+            DualAgentNodeError: If execution fails.
+            ContextIsolationError: If private fields leak to Evaluator.
+        """
+        pipeline_id = execution_context["pipeline_id"]
+
         self.logger.info(
-            "starting_dual_agent_execution",
+            "starting_dual_agent_execution_with_context",
             node_id=self.node_id,
-            task=task[:100],
+            task_name=execution_context["task_name"],
         )
 
         iteration = 0
@@ -289,11 +374,6 @@ Please address these issues in your revised deliverable.
         final_questions: list[dict[str, Any]] = []
         final_evaluation: dict[str, Any] = {}
         final_force_completion: ForceCompletion | None = None
-
-        # Use provided pipeline_id or generate one for audit logging
-        # If pipeline_id is provided from outside (e.g., from node executor), use it
-        if not pipeline_id:
-            pipeline_id = f"{self.node_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         while iteration < self.max_iterations:
             iteration += 1
@@ -304,7 +384,7 @@ Please address these issues in your revised deliverable.
                 max_iterations=self.max_iterations,
             )
 
-            # Step 1: Build Independent Agent context and execute
+            # Step 1: Build Independent Agent input and execute
             try:
                 # Log context build for Independent Agent
                 self.audit_logger.log_context_build(
@@ -312,21 +392,22 @@ Please address these issues in your revised deliverable.
                     pipeline_id=pipeline_id,
                     node_id=self.node_id,
                     details={
-                        "subject_context": subject_context,
+                        "task_name": execution_context["task_name"],
                         "has_feedback": previous_feedback is not None,
                     },
                 )
 
-                # Build context using ContextManager
-                # Include pipeline_id at top level for IndependentAgent (Story 11.1)
-                independent_context = self.context_manager.build_independent_context(
-                    subject_context={"subject": subject_context, "task": task},
+                # Build IndependentAgentInput using ContextManager (Single Context Protocol)
+                independent_input = self.context_manager.build_independent_input(
+                    execution_context=execution_context,
                     iteration_feedback=previous_feedback,
                 )
-                # Add pipeline_id at top level (IndependentAgent expects it there)
-                independent_context["pipeline_id"] = pipeline_id
 
-                independent_output = await self.independent_agent.execute(independent_context)
+                # Execute Independent Agent with structured input
+                independent_output = await self.independent_agent.execute_with_input(
+                    agent_input=independent_input,
+                    pipeline_id=pipeline_id,
+                )
 
                 # Handle potentially malformed output with defaults
                 independent_deliverable = independent_output.get("deliverable")
@@ -377,7 +458,7 @@ Please address these issues in your revised deliverable.
                 )
                 raise
 
-            # Step 3: Build Evaluator context and execute
+            # Step 3: Build Evaluator input and execute
             try:
                 # Log context build for Evaluator Agent
                 self.audit_logger.log_context_build(
@@ -389,13 +470,14 @@ Please address these issues in your revised deliverable.
                     },
                 )
 
-                # Build evaluator context using ContextManager (validates no private fields)
-                evaluator_context = self.context_manager.build_evaluator_context(
-                    subject_context={"subject": subject_context},
+                # Build EvaluatorAgentInput using ContextManager (Single Context Protocol)
+                evaluator_input = self.context_manager.build_evaluator_input(
+                    execution_context=execution_context,
                     deliverable=filtered_output.get("deliverable"),
                 )
 
-                evaluation = await self.evaluator_agent.execute(evaluator_context)
+                # Execute Evaluator Agent with structured input
+                evaluation = await self.evaluator_agent.execute_with_input(evaluator_input)
                 final_evaluation = evaluation
 
             except ContextIsolationError as e:
@@ -426,7 +508,7 @@ Please address these issues in your revised deliverable.
                 "evaluation_complete",
                 iteration=iteration,
                 verdict=verdict,
-                alignment_score=evaluation.get("alignment_score", 0.0),  # type: ignore[arg-type]
+                alignment_score=evaluation.get("alignment_score", 0.0),
             )
 
             if verdict == "APPROVED":
@@ -438,8 +520,8 @@ Please address these issues in your revised deliverable.
                 break
             elif verdict == "FORCE_APPROVED":
                 # Force complete - exit the loop with warning
-                alignment_score: float = evaluation.get("alignment_score", 0.0)  # type: ignore[assignment]
-                issues_list: list[Any] = evaluation.get("issues_found", [])  # type: ignore[assignment]
+                alignment_score: float = evaluation.get("alignment_score", 0.0)
+                issues_list: list[Any] = evaluation.get("issues_found", [])
 
                 # Create force completion record
                 final_force_completion = create_force_completion(
@@ -559,15 +641,23 @@ Please address these issues in your revised deliverable.
 
             # Get accumulated feedback
             accumulated_feedback = self.iteration_controller.get_accumulated_feedback(self.node_id)
+            execution_context = self._build_execution_context_from_legacy(
+                subject_context=subject_context,
+                task=task,
+                pipeline_id=pipeline_id,
+                iteration_feedback=accumulated_feedback,
+            )
 
             # Step 1: Execute Independent Agent
             try:
-                independent_context = self.context_manager.build_independent_context(
-                    subject_context={"subject": subject_context, "task": task},
+                independent_input = self.context_manager.build_independent_input(
+                    execution_context=execution_context,
                     iteration_feedback=accumulated_feedback,
                 )
-
-                independent_output = await self.independent_agent.execute(independent_context)
+                independent_output = await self.independent_agent.execute_with_input(
+                    agent_input=independent_input,
+                    pipeline_id=pipeline_id,
+                )
 
                 # Handle potentially malformed output with defaults
                 independent_deliverable = independent_output.get("deliverable")
@@ -590,12 +680,12 @@ Please address these issues in your revised deliverable.
             try:
                 filtered_output = self.context_filter.filter_for_evaluator(independent_output)
 
-                evaluator_context = self.context_manager.build_evaluator_context(
-                    subject_context={"subject": subject_context},
+                evaluator_input = self.context_manager.build_evaluator_input(
+                    execution_context=execution_context,
                     deliverable=filtered_output.get("deliverable"),
                 )
 
-                evaluation = await self.evaluator_agent.execute(evaluator_context)
+                evaluation = await self.evaluator_agent.execute_with_input(evaluator_input)
                 final_evaluation = evaluation
 
             except ContextIsolationError as e:

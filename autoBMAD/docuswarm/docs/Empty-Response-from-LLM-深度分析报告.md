@@ -241,12 +241,12 @@ capabilities = ["image_in", "video_in", "thinking"]
 
 [providers.kimi-for-coding]
 type = "kimi"
-base_url = "https://api.kimi.com/coding/v1"
+base_url = "https://api.kimi.com/coding/"
 api_key = "sk-kimi-..."
 
 [providers."managed:kimi-code"]
 type = "kimi"
-base_url = "https://api.kimi.com/coding/v1"
+base_url = "https://api.kimi.com/coding/"
 api_key = "sk-kimi-..."
 ```
 

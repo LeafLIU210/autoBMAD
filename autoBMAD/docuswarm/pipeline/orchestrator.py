@@ -219,6 +219,46 @@ class HybridOrchestrator:
             logger.error("failed_to_create_session_manager", error=str(e))
             raise OrchestratorError(f"Failed to create session manager: {e}") from e
 
+    def _patch_aiosqlite_connection(self, conn: Any) -> None:
+        """Add is_alive method for LangGraph compatibility (TD-002).
+
+        LangGraph's AsyncSqliteSaver expects connection to have is_alive()
+        method, but aiosqlite doesn't provide it. This method patches
+        the connection with a simple implementation.
+
+        FIXME: Track https://github.com/langchain-ai/langgraph/issues/XXX
+        Remove this patch when LangGraph adds native aiosqlite support.
+
+        Args:
+            conn: The aiosqlite connection to patch.
+        """
+        if not hasattr(conn, "is_alive"):
+            conn.is_alive = lambda: True  # type: ignore[attr-defined]
+
+    async def _create_checkpointer(self) -> Any:
+        """Create an AsyncSqliteSaver checkpointer with proper configuration (TD-001).
+
+        Centralizes checkpointer creation to eliminate duplication.
+        Includes monkey-patch for LangGraph compatibility.
+
+        Returns:
+            Configured AsyncSqliteSaver instance.
+        """
+        import aiosqlite
+        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+        # Create async connection
+        aconn = await aiosqlite.connect(self._db_path)
+
+        # Enable WAL mode for better concurrent access
+        await aconn.execute("PRAGMA journal_mode=WAL")
+        await aconn.execute("PRAGMA synchronous=NORMAL")
+
+        # Apply monkey-patch for LangGraph compatibility (TD-002)
+        self._patch_aiosqlite_connection(aconn)
+
+        return AsyncSqliteSaver(conn=aconn)
+
     async def _validate_context(
         self,
         subject_context: dict[str, Any],
@@ -436,25 +476,7 @@ class HybridOrchestrator:
             # Create pipeline graph with checkpointer
             checkpointer = self._checkpointer
             if checkpointer is None:
-                import aiosqlite
-                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-
-                # Create async connection for the checkpointer
-                aconn = await aiosqlite.connect(self._db_path)
-
-                # Enable WAL mode
-                await aconn.execute("PRAGMA journal_mode=WAL")
-                await aconn.execute("PRAGMA synchronous=NORMAL")
-
-                # Add is_alive method for langgraph compatibility
-                if not hasattr(aconn, "is_alive"):
-
-                    def _is_alive() -> bool:
-                        return True
-
-                    aconn.is_alive = _is_alive  # type: ignore[attr-defined]
-
-                checkpointer = AsyncSqliteSaver(conn=aconn)
+                checkpointer = await self._create_checkpointer()
 
             # Get session_manager for integrated node execution (Story 11.4)
             session_manager = self._get_or_create_session_manager()
@@ -560,25 +582,7 @@ class HybridOrchestrator:
             # Create checkpointer
             checkpointer = self._checkpointer
             if checkpointer is None:
-                import aiosqlite
-                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-
-                # Create async connection for the checkpointer
-                aconn = await aiosqlite.connect(self._db_path)
-
-                # Enable WAL mode
-                await aconn.execute("PRAGMA journal_mode=WAL")
-                await aconn.execute("PRAGMA synchronous=NORMAL")
-
-                # Add is_alive method for langgraph compatibility
-                if not hasattr(aconn, "is_alive"):
-
-                    def _is_alive() -> bool:
-                        return True
-
-                    aconn.is_alive = _is_alive  # type: ignore[attr-defined]
-
-                checkpointer = AsyncSqliteSaver(conn=aconn)
+                checkpointer = await self._create_checkpointer()
 
             # Create pipeline graph
             # Get session_manager for integrated node execution (Story 11.4)
@@ -725,25 +729,7 @@ class HybridOrchestrator:
             # Create checkpointer
             checkpointer = self._checkpointer
             if checkpointer is None:
-                import aiosqlite
-                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-
-                # Create async connection for the checkpointer
-                aconn = await aiosqlite.connect(self._db_path)
-
-                # Enable WAL mode
-                await aconn.execute("PRAGMA journal_mode=WAL")
-                await aconn.execute("PRAGMA synchronous=NORMAL")
-
-                # Add is_alive method for langgraph compatibility
-                if not hasattr(aconn, "is_alive"):
-
-                    def _is_alive() -> bool:
-                        return True
-
-                    aconn.is_alive = _is_alive  # type: ignore[attr-defined]
-
-                checkpointer = AsyncSqliteSaver(conn=aconn)
+                checkpointer = await self._create_checkpointer()
 
             # Create pipeline graph
             # Get session_manager for integrated node execution (Story 11.4)
@@ -891,25 +877,7 @@ class HybridOrchestrator:
         # Create checkpointer
         checkpointer = self._checkpointer
         if checkpointer is None:
-            import aiosqlite
-            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-
-            # Create async connection for the checkpointer
-            aconn = await aiosqlite.connect(self._db_path)
-
-            # Enable WAL mode
-            await aconn.execute("PRAGMA journal_mode=WAL")
-            await aconn.execute("PRAGMA synchronous=NORMAL")
-
-            # Add is_alive method for langgraph compatibility
-            if not hasattr(aconn, "is_alive"):
-
-                def _is_alive() -> bool:
-                    return True
-
-                aconn.is_alive = _is_alive  # type: ignore[attr-defined]
-
-            checkpointer = AsyncSqliteSaver(conn=aconn)
+            checkpointer = await self._create_checkpointer()
 
         # Create pipeline graph
         # Get session_manager for integrated node execution (Story 11.4)

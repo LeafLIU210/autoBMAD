@@ -227,3 +227,54 @@ class FileStorage:
             ) from e
 
         return metadata_file
+
+    async def read_deliverable_body(
+        self,
+        file_path: Path | str,
+        expected_hash: str | None = None,
+    ) -> str:
+        """Read deliverable body from file.
+
+        P0 Single Truth: Read full content from disk when needed.
+        Optionally verifies SHA256 hash if provided.
+
+        Args:
+            file_path: Path to the deliverable file.
+            expected_hash: Optional SHA256 hash to verify against.
+
+        Returns:
+            File content as string.
+
+        Raises:
+            StorageError: If file cannot be read or hash mismatch.
+        """
+        file_path_obj = Path(file_path) if isinstance(file_path, str) else file_path
+
+        try:
+            async with aiofiles.open(file_path_obj, "r", encoding="utf-8") as f:
+                content = await f.read()
+        except FileNotFoundError as e:
+            raise StorageError(
+                f"Deliverable file not found: {file_path}",
+                file_path=str(file_path),
+            ) from e
+        except Exception as e:
+            raise StorageError(
+                f"Failed to read deliverable: {e}",
+                file_path=str(file_path),
+            ) from e
+
+        # Optional hash verification
+        if expected_hash is not None:
+            import hashlib
+
+            actual_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+            if actual_hash != expected_hash:
+                raise StorageError(
+                    f"Hash mismatch: expected {expected_hash[:16]}..., got {actual_hash[:16]}...",
+                    file_path=str(file_path),
+                    expected_hash=expected_hash,
+                    actual_hash=actual_hash,
+                )
+
+        return content

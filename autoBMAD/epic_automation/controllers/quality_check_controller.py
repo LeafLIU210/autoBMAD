@@ -68,6 +68,7 @@ class QualityCheckController:
         self.final_error_files: list[str] = []
         self.final_detailed_errors: dict[str, list[dict[str, object]]] = {}
         self.sdk_fix_errors: list[dict[str, object]] = []
+        self.infrastructure_failure: dict[str, object] | None = None
 
         self.logger: logging.Logger = logging.getLogger(f"{__name__}.{tool}_controller")
 
@@ -103,6 +104,11 @@ class QualityCheckController:
 
             # SDK 修复阶段
             await self._run_sdk_fix_phase(error_files)
+
+            if self.infrastructure_failure is not None:
+                self.final_error_files = list(error_files.keys())
+                self.final_detailed_errors = error_files
+                return self._build_final_result()
 
             # 回归检查阶段
             error_files = await self._run_check_phase()
@@ -201,6 +207,16 @@ class QualityCheckController:
                         "error": sdk_result.get("error"),
                         "cycle": self.current_cycle,
                     })
+                    if sdk_result.get("infrastructure_error"):
+                        self.infrastructure_failure = {
+                            "file": file_path,
+                            "error": sdk_result.get("error"),
+                            "cycle": self.current_cycle,
+                        }
+                        self.logger.error(
+                            f"Stopping {self.tool} fix loop due to SDK infrastructure failure: {sdk_result.get('error')}"
+                        )
+                        break
 
                 # 4. 延时 10 s（除最后一个文件）
                 if idx < total_files:
@@ -258,7 +274,9 @@ class QualityCheckController:
                 self.logger.error(f"SDK fix failed for {file_path}: {result.error_type.value} - {result.errors}")
                 return {
                     "success": False,
-                    "error": f"{result.error_type.value}: {', '.join(result.errors)}"
+                    "error": f"{result.error_type.value}: {', '.join(result.errors)}",
+                    "error_type": result.error_type.value,
+                    "infrastructure_error": result.has_sdk_error(),
                 }
 
         except Exception as e:
@@ -311,5 +329,6 @@ class QualityCheckController:
             "final_error_files": self.final_error_files,
             "sdk_fix_attempted": True,
             "sdk_fix_errors": self.sdk_fix_errors,
+            "infrastructure_failure": self.infrastructure_failure,
             "detailed_errors": detailed_errors,
         }

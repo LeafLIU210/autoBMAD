@@ -74,6 +74,7 @@ class PipelineState(TypedDict):
     current_node_session_id: str | None  # Story 9.3: For pipeline resume recovery
     status: str
     error: dict[str, Any] | None
+    shared_context: dict[str, Any]  # P1-1: Cross-node shared context
 
 
 def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> PipelineState:
@@ -105,6 +106,7 @@ def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> P
         current_node_session_id=None,  # Story 9.3: No interrupted session initially
         status=PENDING,
         error=None,
+        shared_context={},  # P1-1: Initialize shared_context
     )
 
 

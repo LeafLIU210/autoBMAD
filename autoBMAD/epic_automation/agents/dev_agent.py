@@ -64,7 +64,9 @@ class DevAgent(BaseAgent):
             # Check for pytest cache or PYTEST_CURRENT_TEST
             if not (Path(".pytest_cache").exists() or os.environ.get("PYTEST_CURRENT_TEST")):
                 try:
-                    from autoBMAD.epic_automation.agents.state_agent import SimpleStoryParser
+                    from autoBMAD.epic_automation.agents.state_agent import (
+                        SimpleStoryParser,
+                    )
                     from autoBMAD.epic_automation.sdk_wrapper import SafeClaudeSDK
 
                     if SafeClaudeSDK:

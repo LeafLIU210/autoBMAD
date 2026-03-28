@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 # Type definitions for nested configuration objects
 
 
@@ -20,6 +19,14 @@ class NodeAgentConfig:
     model: str
     temperature: float
     persona_file: str = "persona.json"
+
+
+@dataclass
+class NodeTaskConfig:
+    """Configuration for the node's task (new schema)."""
+    name: str
+    description: str = ""
+    role_supplement: str = ""
 
 
 @dataclass
@@ -148,7 +155,7 @@ class NodeLoader:
         import yaml
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 return yaml.safe_load(f) or {}
         except FileNotFoundError:
             raise FileNotFoundError(f"Configuration file not found: {file_path}")
@@ -170,7 +177,7 @@ class NodeLoader:
             ValueError: If JSON parsing fails
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 return json.load(f)
         except FileNotFoundError:
             raise FileNotFoundError(f"Configuration file not found: {file_path}")

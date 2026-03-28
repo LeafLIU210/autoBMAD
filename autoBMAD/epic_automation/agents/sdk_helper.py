@@ -231,7 +231,9 @@ def create_sdk_generator(
 
     if options is None:
         try:
-            from claude_agent_sdk import ClaudeAgentOptions  # type: ignore[import-untyped]
+            from claude_agent_sdk import (
+                ClaudeAgentOptions,  # type: ignore[import-untyped]
+            )
             options = ClaudeAgentOptions(
                 permission_mode="bypassPermissions",  # type: ignore[arg-type, reportArgumentType]
                 cwd=str(Path.cwd())

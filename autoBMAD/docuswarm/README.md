@@ -111,8 +111,8 @@ pip install -r requirements.txt
 # 必需：Kimi API Key
 KIMI_API_KEY=your_kimi_api_key_here
 
-# 可选：Kimi API Base URL (默认: https://api.kimi.com/coding/v1)
-KIMI_BASE_URL=https://api.kimi.com/coding/v1
+# 可选：Kimi API Base URL (默认: https://api.kimi.com/coding/)
+KIMI_BASE_URL=https://api.kimi.com/coding/
 
 # 可选配置
 DOCUSWARM_DB_PATH=docuswarm.db
@@ -494,7 +494,7 @@ DocuSwarm 使用多层配置系统：
 | 环境变量 | 必需 | 默认值 | 说明 |
 |---------|------|--------|------|
 | `KIMI_API_KEY` | ✅ | 无 | Kimi API 密钥（必须设置） |
-| `KIMI_BASE_URL` | ❌ | `https://api.kimi.com/coding/v1` | Kimi API Base URL |
+| `KIMI_BASE_URL` | ❌ | `https://api.kimi.com/coding/` | Kimi API Base URL |
 | `DOCUSWARM_DB_PATH` | ❌ | `docuswarm.db` | SQLite 数据库路径 |
 | `DOCUSWARM_OUTPUT_DIR` | ❌ | `output` | 交付物输出目录 |
 | `DOCUSWARM_LOG_LEVEL` | ❌ | `INFO` | 日志级别（DEBUG/INFO/WARNING/ERROR） |
@@ -507,7 +507,7 @@ DocuSwarm 使用多层配置系统：
 ```yaml
 # Kimi API 配置
 # 注意：KIMI_API_KEY 必须通过环境变量设置，不应写入此文件
-base_url: https://api.kimi.com/coding/v1
+base_url: https://api.kimi.com/coding/
 
 # 数据库配置
 db_path: docuswarm.db

@@ -100,7 +100,7 @@ class KimiSessionManager:
             effective_api_key = api_key or os.environ.get("KIMI_API_KEY", "")
             # Fix: base_url must include /v1
             effective_base_url = base_url or os.environ.get(
-                "KIMI_BASE_URL", "https://api.kimi.com/coding/v1"
+                "KIMI_BASE_URL", "https://api.kimi.com/coding/"
             )
             # Fix: use correct model name from environment or default
             effective_model = os.environ.get("KIMI_MODEL_NAME", "kimi-for-coding")

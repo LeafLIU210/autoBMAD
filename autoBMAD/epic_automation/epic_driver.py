@@ -70,6 +70,7 @@ class QualityGateOrchestrator:
         self,
         source_dir: str,
         test_dir: str,
+        max_cycles: int = 5,
         skip_quality: bool = False,
         skip_tests: bool = False,
     ):
@@ -79,11 +80,13 @@ class QualityGateOrchestrator:
         Args:
             source_dir: Source code directory
             test_dir: Test directory
+            max_cycles: Maximum fix cycles for each quality gate
             skip_quality: Skip ruff and basedpyright quality checks
             skip_tests: Skip pytest execution
         """
         self.source_dir = source_dir
         self.test_dir = test_dir
+        self.max_cycles = max_cycles
         self.skip_quality = skip_quality
         self.skip_tests = skip_tests
         self.logger = logging.getLogger(f"{__name__}.quality_gates")
@@ -214,7 +217,7 @@ class QualityGateOrchestrator:
                 tool="ruff",
                 agent=ruff_agent,
                 source_dir=source_dir,
-                max_cycles=5,
+                max_cycles=self.max_cycles,
                 sdk_call_delay=10,
                 sdk_timeout=600,
             )
@@ -296,7 +299,7 @@ class QualityGateOrchestrator:
                 tool="basedpyright",
                 agent=basedpyright_agent,
                 source_dir=source_dir,
-                max_cycles=5,
+                max_cycles=self.max_cycles,
                 sdk_call_delay=10,
                 sdk_timeout=600,
             )
@@ -482,7 +485,9 @@ class QualityGateOrchestrator:
 
             # 使用 PytestController 执行完整流程
             try:
-                from autoBMAD.epic_automation.controllers.pytest_controller import PytestController
+                from autoBMAD.epic_automation.controllers.pytest_controller import (
+                    PytestController,
+                )
             except ImportError:
                 logger.error("PytestController not available - pytest quality gate cannot execute")
                 return {
@@ -494,7 +499,7 @@ class QualityGateOrchestrator:
             controller = PytestController(
                 source_dir=self.source_dir,
                 test_dir=test_dir,
-                max_cycles=5,
+                max_cycles=self.max_cycles,
             )
 
             start_time = time.time()
@@ -869,6 +874,7 @@ async def run_quality_gates_standalone(
         orchestrator = QualityGateOrchestrator(
             source_dir=str(source_path),
             test_dir=str(test_dir),
+            max_cycles=max_cycles,
             skip_quality=skip_quality,
             skip_tests=skip_tests,
         )
@@ -968,7 +974,9 @@ class EpicDriver:
 
         # Import agent classes
         try:
-            from autoBMAD.epic_automation.agents.dev_agent import DevAgent  # type: ignore
+            from autoBMAD.epic_automation.agents.dev_agent import (
+                DevAgent,  # type: ignore
+            )
             from autoBMAD.epic_automation.agents.qa_agent import QAAgent  # type: ignore
             from autoBMAD.epic_automation.agents.sm_agent import SMAgent  # type: ignore
             from autoBMAD.epic_automation.agents.status_update_agent import (
@@ -1497,7 +1505,9 @@ class EpicDriver:
                     story_content = f.read()
 
                 # Create SMController with task group
-                from autoBMAD.epic_automation.controllers.sm_controller import SMController
+                from autoBMAD.epic_automation.controllers.sm_controller import (
+                    SMController,
+                )
                 sm_controller = SMController(tg, project_root=Path.cwd())
                 self.sm_controller = sm_controller
 
@@ -1570,7 +1580,9 @@ class EpicDriver:
                 # (handled within DevQaController)
 
                 # Create DevQaController with task group
-                from autoBMAD.epic_automation.controllers.devqa_controller import DevQaController
+                from autoBMAD.epic_automation.controllers.devqa_controller import (
+                    DevQaController,
+                )
                 devqa_controller = DevQaController(
                     tg,
                     use_claude=self.use_claude,
@@ -1680,34 +1692,53 @@ class EpicDriver:
         Core story processing logic - driven purely by core status values.
 
         Dev-QA 循环完全由核心状态值驱动，不依赖 SDK 返回值。
+        
+        🆕 Fix for EPIC-012: Terminal state stories are now properly synced to database
+        before skipping development, preventing status rollback on sync.
         """
         story_path = story["path"]
         story_id = story["id"]
 
         try:
-            # 🆕 强制初始化数据库记录（最简方案）
+            # 🆕 【修复】首先检查故事当前真实状态（从 Markdown 读取）
+            try:
+                current_core_status = await self._parse_story_status(story_path)
+                logger.info(f"[Story {story_id}] Current core status from document: {current_core_status}")
+                
+                # 🆕 【修复】如果故事已经是终态，立即同步数据库并返回成功
+                if current_core_status in ["Done", "Ready for Done"]:
+                    logger.info(f"[Story {story_id}] Story is already in terminal state ({current_core_status}), skipping Dev-QA")
+                    
+                    # 【关键修复】同步数据库状态为 completed
+                    await self.state_manager.update_story_status(
+                        story_path=story_path,
+                        status="completed",  # processing_status
+                        phase="completed",
+                        epic_path=self.epic_id
+                    )
+                    logger.info(f"[Story {story_id}] Database synced to 'completed' for terminal state")
+                    return True
+                    
+            except Exception as e:
+                logger.warning(f"[Story {story_id}] Failed to check initial status: {e}, continuing with normal flow")
+
+            # 🆕 【修复】对于非终态故事，初始化数据库记录
             try:
                 current_status = story.get("status", "pending")
+                # 如果 current_status 是内部状态值，转换为 processing_status
+                processing_status = self._status_to_processing_status(current_status)
 
                 await self.state_manager.update_story_status(
                     story_path=story_path,
-                    status=current_status,
+                    status=processing_status,
                     phase="initialization",
                     epic_path=self.epic_id
                 )
 
-                logger.debug(f"[DB Init] Story {story_id} initialized with status: {current_status}")
+                logger.debug(f"[DB Init] Story {story_id} initialized with status: {processing_status}")
 
             except Exception as e:
                 logger.warning(f"DB init failed for {story_id}: {e}, continuing workflow")
-
-            # 🎯 关键修复：移除数据库状态检查，完全依赖故事文档核心状态
-            # 旧逻辑（已废弃）：
-            # existing_status = await self.state_manager.get_story_status(story_path)
-            # if existing_status and existing_status.get("status") in ["completed", "qa_waived"]:
-            #     return True
-            #
-            # 新逻辑：所有决策由核心状态值驱动，数据库仅用于持久化记录
 
             # 🎯 核心改动：循环由核心状态值驱动
             iteration = 1
@@ -1843,48 +1874,154 @@ class EpicDriver:
             Standard core status string (e.g., 'Draft', 'Ready for Development', 'In Progress', 'Ready for Review', 'Ready for Done', 'Done', 'Failed')
         """
         try:
-            # 🎯 关键修复：移除异步上下文检测，直接使用同步解析
+            # 🎯 关键修复：使用改进后的 fallback 解析
             logger.info(f"Using synchronous status parsing for: {story_path}")
-            return self._parse_story_status_fallback(story_path)
+            internal_status = self._parse_story_status_fallback(story_path)
+            # Convert internal status to core status for external use
+            return self._internal_to_core_status(internal_status)
 
         except Exception as e:
             logger.error(f"Failed to parse story status (sync): {e}")
             return "Draft"  # Return standard status instead of legacy format
+    
+    def _internal_to_core_status(self, internal_status: str) -> str:
+        """
+        Convert internal status to core status string.
+        
+        Args:
+            internal_status: Internal status (e.g., 'ready_for_done')
+            
+        Returns:
+            Core status string (e.g., 'Ready for Done')
+        """
+        mapping = {
+            'ready_for_done': 'Ready for Done',
+            'ready_for_review': 'Ready for Review',
+            'ready_for_development': 'Ready for Development',
+            'draft': 'Draft',
+            'failed': 'Failed',
+        }
+        return mapping.get(internal_status, 'Draft')
+    
+    def _status_to_processing_status(self, status: str) -> str:
+        """
+        Convert any status format to processing_status for database storage.
+        
+        Args:
+            status: Status string (could be core status, internal status, etc.)
+            
+        Returns:
+            Processing status string for database
+        """
+        status_lower = status.lower().strip()
+        
+        # Terminal states -> completed
+        if any(s in status_lower for s in ['ready_for_done', 'done', 'completed', 'ready for done']):
+            return 'completed'
+        # Review states -> review
+        elif any(s in status_lower for s in ['ready_for_review', 'review', 'ready for review']):
+            return 'review'
+        # In progress states -> in_progress
+        elif any(s in status_lower for s in ['in_progress', 'in progress']):
+            return 'in_progress'
+        # Failed states -> error
+        elif any(s in status_lower for s in ['failed', 'error']):
+            return 'error'
+        # Pending/Draft/Ready for Development -> ready_for_development
+        elif any(s in status_lower for s in ['pending', 'draft', 'ready_for_development', 'ready for development']):
+            return 'ready_for_development'
+        
+        logger.warning(f"[StatusConvert] Unknown status '{status}', defaulting to 'ready_for_development'")
+        return 'ready_for_development'
 
     def _parse_story_status_fallback(self, story_path: str) -> str:
         """
-        Fallback parsing method using original regex patterns.
-
+        Fallback parsing method with enhanced regex patterns.
+        
+        Supports formats:
+        - **Status**: Ready for Done (status label bold only)
+        - **Status**: **Ready for Done** (both bold)
+        - Status: Ready for Done (no bold)
+        
         Args:
             story_path: Path to the story markdown file
 
         Returns:
-            Status string using original parsing logic
+            Normalized status string (e.g., 'ready_for_done', 'ready_for_development')
         """
         try:
             with open(story_path, encoding="utf-8") as f:
-                lines = f.readlines()
-
-            # Look for lines containing "Status:" and extract the value
-            for _, line in enumerate(lines):
-                if "Status:" in line:
-                    # Try to extract status from bold format: **Status**: Ready for Development
-                    match = re.search(
-                        r"\*\*Status\*\*:\s*\*\*([^*]+)\*\*", line, re.IGNORECASE
+                content = f.read()
+            
+            # Extract Status section (first 20 lines for performance)
+            lines = content.split('\n')[:20]
+            status_section = '\n'.join(lines)
+            
+            # Enhanced regex patterns (in priority order)
+            # Pattern 1: **Status**: Ready for Done (status label bold, value not bold)
+            # Pattern 2: **Status**: **Ready for Done** (both bold)
+            # Pattern 3: Status: Ready for Done (no bold)
+            patterns = [
+                (r'\*\*Status\*\*:\s*\*\*([^*]+)\*\*', 'bold_both'),      # **Status**: **Value**
+                (r'\*\*Status\*\*:\s*([^\n*]+?)(?:\s*$|\s*\n)', 'bold_label'),  # **Status**: Value
+                (r'Status:\s*(.+?)(?:\s*$|\s*\n)', 'plain'),             # Status: Value
+            ]
+            
+            for pattern, pattern_name in patterns:
+                match = re.search(pattern, status_section, re.IGNORECASE | re.MULTILINE)
+                if match:
+                    status = match.group(1).strip()
+                    normalized = self._normalize_status(status)
+                    logger.debug(
+                        f"[StatusParse] Matched pattern '{pattern_name}': "
+                        f"'{status}' -> '{normalized}'"
                     )
-                    if match:
-                        status = match.group(1).strip().lower()
-                        return status
-                    # Try to extract from regular format: Status: Ready for Development
-                    match = re.search(r"Status:\s*(.+)", line, re.IGNORECASE)
-                    if match:
-                        status = match.group(1).strip().lower()
-                        return status
-
-            return "ready_for_development"  # Default to ready_for_development instead of unknown
-        except Exception as e:
-            logger.error(f"Fallback parsing failed: {e}")
+                    return normalized
+            
+            logger.debug(f"[StatusParse] No status pattern matched in {story_path}, defaulting")
             return "ready_for_development"
+        except Exception as e:
+            logger.error(f"[StatusParse] Fallback parsing failed for {story_path}: {e}")
+            return "ready_for_development"
+    
+    def _normalize_status(self, status: str) -> str:
+        """
+        Normalize status value to internal format.
+        
+        Args:
+            status: Raw status string from document
+            
+        Returns:
+            Normalized status string:
+            - 'ready_for_done' (for Ready for Done, Done, Completed)
+            - 'ready_for_review' (for Ready for Review, Review)
+            - 'ready_for_development' (for Ready for Development, In Progress)
+            - 'draft' (for Draft)
+            - 'failed' (for Failed, Error)
+        """
+        if not status:
+            return "ready_for_development"
+            
+        status_lower = status.lower().strip()
+        
+        # Terminal states (highest priority)
+        if any(s in status_lower for s in ['ready for done', 'completed', 'done']):
+            return 'ready_for_done'
+        # Review states
+        elif any(s in status_lower for s in ['ready for review', 'review']):
+            return 'ready_for_review'
+        # Development states
+        elif any(s in status_lower for s in ['ready for development', 'in progress']):
+            return 'ready_for_development'
+        # Draft state
+        elif 'draft' in status_lower:
+            return 'draft'
+        # Failed states
+        elif any(s in status_lower for s in ['failed', 'error']):
+            return 'failed'
+        
+        logger.warning(f"[StatusParse] Unknown status '{status}', defaulting to 'ready_for_development'")
+        return 'ready_for_development'
 
     async def _is_story_ready_for_done(self, story_path: str) -> bool:
         """Check if story is ready for done based on status."""

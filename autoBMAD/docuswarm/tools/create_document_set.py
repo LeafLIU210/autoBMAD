@@ -2,18 +2,23 @@
 
 This module provides a tool for creating multiple documents based on
 node templates with structure validation.
+
+This tool uses ToolResult internally and adapts to SDK format at boundary.
 """
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, override
+from typing import Any
+from typing import override
 
 import aiofiles
 import yaml
-from kimi_agent_sdk import CallableTool2, ToolError, ToolOk, ToolReturnValue
 from pydantic import BaseModel, Field
+
+from autoBMAD.docuswarm.tools.callable_tool_wrapper import ToolResultCallableTool
+from autoBMAD.docuswarm.tools.tool_result import ToolResult
 
 
 class DocumentSpec(BaseModel):
@@ -66,7 +71,7 @@ def _slugify_filename(title: str) -> str:
     return f"{slug}.md" if slug else "document.md"
 
 
-class CreateDocumentSetTool(CallableTool2[CreateDocumentSetParams]):
+class CreateDocumentSetTool(ToolResultCallableTool[CreateDocumentSetParams]):
     """Tool for creating multiple structured documents based on templates.
 
     This tool extends create_deliverable to support:
@@ -86,11 +91,16 @@ class CreateDocumentSetTool(CallableTool2[CreateDocumentSetParams]):
     description: str = "Create multiple structured documents based on node templates"
     params: type[CreateDocumentSetParams] = CreateDocumentSetParams
 
-    def __init__(self) -> None:
-        """Initialize the tool with template loading."""
+    def __init__(self, output_dir: Path | None = None) -> None:
+        """Initialize the tool with template loading.
+
+        Args:
+            output_dir: Directory for output files. Defaults to Path.cwd() for backward compatibility.
+        """
         super().__init__()
         self.templates_cache: dict[str, Any] = {}
         self._load_templates()
+        self.output_dir = output_dir or Path.cwd()
 
     def _load_templates(self) -> None:
         """Load all node template configurations."""
@@ -133,7 +143,7 @@ class CreateDocumentSetTool(CallableTool2[CreateDocumentSetParams]):
         return None
 
     def _validate_content_structure(
-        self, content: str, template: dict[str, Any]
+        self, content: str, template: dict[str, Any] | None
     ) -> tuple[bool, list[str]]:
         """Validate document content against template structure.
 
@@ -145,6 +155,10 @@ class CreateDocumentSetTool(CallableTool2[CreateDocumentSetParams]):
             Tuple of (is_valid, list of missing sections).
         """
         missing_sections: list[str] = []
+
+        # Handle None template
+        if template is None:
+            return True, missing_sections
 
         required_sections = [
             section["heading"]
@@ -200,21 +214,21 @@ class CreateDocumentSetTool(CallableTool2[CreateDocumentSetParams]):
         return len(errors) == 0, errors
 
     @override
-    async def __call__(self, params: CreateDocumentSetParams) -> ToolReturnValue:
+    async def _execute(self, params: CreateDocumentSetParams) -> ToolResult:
         """Create multiple documents with validation.
 
         Args:
             params: Validated parameters.
 
         Returns:
-            ToolOk on success, ToolError on failure.
+            ToolResult with created files metadata on success.
         """
         try:
-            created_files: list[str] = []
+            created_files: list[dict[str, Any]] = []
             validation_warnings: list[str] = []
 
-            # Get current working directory (should be pipeline output dir)
-            output_dir = Path.cwd()
+            # Use instance output_dir instead of Path.cwd()
+            output_dir = self.output_dir
 
             for doc_spec in params.documents:
                 # Get template
@@ -248,21 +262,61 @@ class CreateDocumentSetTool(CallableTool2[CreateDocumentSetParams]):
                 async with aiofiles.open(file_path, "w", encoding="utf-8") as f:
                     await f.write(doc_spec.content)
 
-                created_files.append(filename)
+                created_files.append(
+                    {
+                        "filename": filename,
+                        "path": str(file_path),
+                        "template_id": doc_spec.template_id,
+                        "title": doc_spec.title or doc_spec.template_id,
+                    }
+                )
 
-            # Build result message
-            result_msg = f"Created {len(created_files)} document(s):\n"
-            result_msg += "\n".join(f"  - {f}" for f in created_files)
+            # ✅ 返回结构化 ToolResult（不再使用文本消息）
+            result_data: dict[str, Any] = {
+                "created_count": len(created_files),
+                "files": created_files,
+            }
 
             if validation_warnings:
-                result_msg += "\n\nValidation Warnings:\n"
-                result_msg += "\n".join(f"  - {w}" for w in validation_warnings)
+                result_data["warnings"] = validation_warnings
 
-            return ToolOk(output=result_msg)
+            return ToolResult(
+                success=True,
+                result=result_data,
+            )
 
         except PermissionError as e:
-            return ToolError(
-                output="", message=f"Permission denied: {e}", brief="Permission denied"
+            return ToolResult(
+                success=False,
+                error=f"Permission denied: {e}",
             )
         except Exception as exc:
-            return ToolError(output="", message=str(exc), brief="Failed to create document set")
+            return ToolResult(
+                success=False,
+                error=f"Failed to create document set: {exc}",
+            )
+
+    async def run(self, params: CreateDocumentSetParams) -> ToolResult:
+        """Public method to execute the tool.
+
+        Args:
+            params: Validated parameters.
+
+        Returns:
+            ToolResult with execution result.
+        """
+        return await self._execute(params)
+
+
+# Backward compatibility: function-style API
+async def create_document_set(params: CreateDocumentSetParams) -> ToolResult:
+    """Backward-compatible function API for creating document sets.
+
+    Args:
+        params: Parameters for creating the document set.
+
+    Returns:
+        ToolResult with success status and file list.
+    """
+    tool = CreateDocumentSetTool()
+    return await tool.run(params)

@@ -333,13 +333,13 @@ class RuffAgent(BaseQualityAgent):
         issues: list[dict[str, object]]
     ) -> dict[str, list[dict[str, object]]]:
         """
-        按文件路径分组错误
+        按文件路径分组错误，只返回 severity="error" 的问题
 
         Args:
             issues: ruff JSON 输出的 issues 列表
 
         Returns:
-            {"src/a.py": [error1, error2], ...}
+            {"src/a.py": [error1, error2], ...}  # 只包含 severity="error" 的问题
         """
         errors_by_file: dict[str, list[dict[str, object]]] = {}
 
@@ -347,6 +347,11 @@ class RuffAgent(BaseQualityAgent):
             issue_dict = cast(dict[str, Any], issue)
             file_path = issue_dict.get("filename", "")
             if not file_path:
+                continue
+
+            # TDD FIX: 只处理 severity="error" 的问题
+            severity = issue_dict.get("severity", "error")
+            if severity != "error":
                 continue
 
             if file_path not in errors_by_file:
@@ -359,7 +364,7 @@ class RuffAgent(BaseQualityAgent):
                 "column": location.get("column"),
                 "code": issue_dict.get("code"),
                 "message": issue_dict.get("message"),
-                "severity": issue_dict.get("severity", "error"),
+                "severity": severity,
             })
 
         return errors_by_file
@@ -524,13 +529,13 @@ class BasedPyrightAgent(BaseQualityAgent):
         issues: list[dict[str, object]]
     ) -> dict[str, list[dict[str, object]]]:
         """
-        按文件路径分组错误
+        按文件路径分组错误，只返回 severity="error" 的问题
 
         Args:
             issues: basedpyright JSON 输出的 generalDiagnostics
 
         Returns:
-            {"src/x.py": [error1], ...}
+            {"src/x.py": [error1], ...}  # 只包含 severity="error" 的问题
         """
         errors_by_file: dict[str, list[dict[str, object]]] = {}
 
@@ -538,6 +543,11 @@ class BasedPyrightAgent(BaseQualityAgent):
             issue_dict = cast(dict[str, Any], issue)
             file_path = issue_dict.get("file", "")
             if not file_path:
+                continue
+
+            # TDD FIX: 只处理 severity="error" 的问题
+            severity = issue_dict.get("severity", "error")
+            if severity != "error":
                 continue
 
             if file_path not in errors_by_file:
@@ -552,7 +562,7 @@ class BasedPyrightAgent(BaseQualityAgent):
                 "column": start_info.get("character"),
                 "rule": issue_dict.get("rule"),
                 "message": issue_dict.get("message"),
-                "severity": issue_dict.get("severity", "error"),
+                "severity": severity,
             })
 
         return errors_by_file
@@ -1152,24 +1162,37 @@ PROMPT_TEMPLATE = """
 <system>
 You are a senior Python testing and code fixing expert.
 
-**Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
-
 Objective:
 - Detect test hangs or stalls, and fix them if present.
-- Based on the given test file path and failure/error information, deeply inspect and analyze the root causes of failures.
-- After thorough analysis and deep thinking, provide a complete and detailed fix solution.
+- Deep Root Cause Analysis: Before making any fix, you MUST deeply analyze the root cause of each failure:
+  1. Read and understand the full traceback and error message.
+  2. Identify whether the failure originates from the TEST file (wrong assertion, incorrect mock, outdated fixture, missing setup) or the SOURCE code (logic bug, incorrect return value, missing error handling, API contract change).
+  3. Trace the call chain from the failure point back to the root cause.
+  4. Determine the minimal, correct fix location: fix the test if the test expectation is wrong; fix the source code if the implementation is buggy.
+- After thorough root cause analysis, provide a complete and detailed fix solution.
 - Execute the fix immediately to ensure all tests pass.
 - Maintain correct business logic and avoid unrelated refactoring.
+
+Root Cause Decision Tree:
+- If the test assertion expects outdated/incorrect behavior -> Fix the TEST file
+- If the source code has a logic bug or regression -> Fix the SOURCE code
+- If the test setup/fixture is misconfigured -> Fix the TEST file
+- If both test and source need changes -> Fix BOTH, clearly explaining each change
+- NEVER blindly weaken test assertions to make tests pass - always understand WHY the test fails first
 
 Constraints:
 - Only modify necessary code (test files and related source code).
 - Keep test names, semantics, and acceptance intent unchanged.
-- Output format: first provide a summary of changes, then provide the complete new version of each file.
+- Output format: first provide a root cause analysis, then a summary of changes, then the complete new version of each file.
 
 输出格式示例：
+## Root Cause Analysis
+- 失败用例 1: 根因分析...（来自测试文件 / 来自源码）
+- 失败用例 2: 根因分析...（来自测试文件 / 来自源码）
+
 ## Summary of Changes
-- 修复点 1
-- 修复点 2
+- 修复点 1（修改测试文件 / 修改源码，原因：...）
+- 修复点 2（修改测试文件 / 修改源码，原因：...）
 
 ## Patched Files
 ### File: tests/unit/test_x.py
@@ -1208,8 +1231,6 @@ Constraints:
 RUFF_FIX_PROMPT = """
 <system>
 You are a senior Python code quality expert specializing in Ruff code style fixes.
-
-**Skill Activation**: Use skill "/claude-plan" for complex analysis and execution.
 
 Objective:
 - Read the file at the given path and fix all Ruff errors listed below.

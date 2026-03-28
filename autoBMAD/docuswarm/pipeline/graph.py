@@ -16,7 +16,6 @@ import copy
 import json
 import warnings
 from collections.abc import Awaitable, Callable, Mapping
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import structlog
@@ -378,30 +377,11 @@ def _create_integrated_node_executor(
             # Convert back to PipelineState
             new_state = _convert_node_to_pipeline_state(executed_node_state, new_state)
 
-            # Save deliverable to file storage if execution was successful
-            status = executed_node_state.get("status")
-            if status in ("completed", "approved") and executed_node_state.get("deliverable"):
-                pipeline_id = new_state.get("pipeline_id", "unknown")
-                # Determine output root from session_manager work_dir
-                output_root = str(session_manager.work_dir) if session_manager else None
-                # Save deliverable synchronously to avoid event loop issues
-                try:
-                    _run_async(
-                        _save_deliverable_async(
-                            pipeline_id,
-                            node_id,
-                            executed_node_state["deliverable"],
-                            output_root=output_root,
-                        )
-                    )
-                except Exception as e:
-                    # Log but don't fail the execution
-                    logger.warning(
-                        "failed_to_save_deliverable",
-                        pipeline_id=pipeline_id,
-                        node_id=node_id,
-                        error=str(e),
-                    )
+            # P0 Single Truth: File is already saved by create_deliverable tool
+            # No need to save again here. The deliverable in executed_node_state
+            # should already be metadata-only (DeliverableArtifact format).
+            # If additional file operations are needed, they should be handled
+            # by the tool or node executor, not here.
 
         except Exception as e:
             logger.error(
@@ -423,51 +403,6 @@ def _create_integrated_node_executor(
         return new_state
 
     return executor
-
-
-async def _save_deliverable_async(
-    pipeline_id: str,
-    node_id: str,
-    deliverable: dict[str, Any] | str,
-    output_root: Path | str | None = None,
-) -> None:
-    """Save deliverable to file storage asynchronously.
-
-    Args:
-        pipeline_id: The pipeline identifier.
-        node_id: The node identifier.
-        deliverable: The deliverable to save (can be dict or string).
-        output_root: Root directory for file output. Defaults to "output".
-    """
-    # Import here to avoid scope issues
-    from autoBMAD.docuswarm.storage.files import FileStorage
-
-    try:
-        storage = FileStorage(output_root=output_root)
-        # Handle both dict and string deliverables
-        # For strings, use directly as content
-        # For dicts, try to extract content or markdown key, otherwise serialize as string
-        if isinstance(deliverable, str):
-            content = deliverable
-        else:
-            content = deliverable.get("content") or deliverable.get("markdown") or str(deliverable)
-        await storage.save_deliverable(
-            pipeline_id=pipeline_id,
-            node_type=node_id,
-            content=content,
-        )
-        logger.info(
-            "deliverable_saved",
-            pipeline_id=pipeline_id,
-            node_id=node_id,
-        )
-    except Exception as e:
-        logger.warning(
-            "failed_to_save_deliverable_async",
-            pipeline_id=pipeline_id,
-            node_id=node_id,
-            error=str(e),
-        )
 
 
 def create_enhanced_node_executor(

@@ -10,7 +10,7 @@ Each node has:
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +34,9 @@ class NodeConfig:
         deliverable_type: Type of deliverable this node produces
         persona: Persona configuration for the Independent Agent
         evaluator: Evaluation criteria configuration for the Evaluator Agent
+        description: Task description from node.yaml (optional, for Single Context Protocol)
+        deliverable: Deliverable configuration dict (optional, for Single Context Protocol)
+        task: Task configuration dict (optional, for Single Context Protocol)
     """
 
     node_id: str
@@ -42,6 +45,9 @@ class NodeConfig:
     deliverable_type: str
     persona: dict[str, Any]
     evaluator: dict[str, Any]
+    description: str = ""  # Task description for Single Context Protocol
+    deliverable: dict[str, Any] = field(default_factory=dict)  # Deliverable config
+    task: dict[str, Any] = field(default_factory=dict)  # Task config for SCP
 
     def __post_init__(self):
         """Validate node configuration after initialization."""
@@ -89,9 +95,9 @@ class NodeLoader:
             nodes_dir: Path to the nodes directory. Defaults to project root / nodes.
         """
         if nodes_dir is None:
-            # Get autoBMAD root: loader.py -> nodes/ -> docuswarm/ -> autoBMAD/
-            autoBMAD_root = Path(__file__).parent.parent.parent
-            nodes_dir = autoBMAD_root / "nodes"
+            # Get project root: loader.py -> docuswarm/nodes/ -> docuswarm/ -> autoBMAD/ -> project_root/
+            project_root = Path(__file__).parent.parent.parent.parent
+            nodes_dir = project_root / "nodes"
 
         self._nodes_dir = nodes_dir
         self._cache: dict[str, NodeConfig] = {}
@@ -176,6 +182,14 @@ class NodeLoader:
         evaluator_yaml_path = node_dir / "evaluator.yaml"
         evaluator_data = self._load_yaml(evaluator_yaml_path)
 
+        # Extract additional fields for Single Context Protocol
+        # task section: name, description, role_supplement
+        task_data = node_data.get("task", {})
+        task_description = task_data.get("description", "")
+
+        # deliverable section: required_sections, template_title, output_filename
+        deliverable_data = node_data.get("deliverable", {})
+
         # Create NodeConfig
         config = NodeConfig(
             node_id=node_data.get("node_id", node_id),
@@ -184,6 +198,9 @@ class NodeLoader:
             deliverable_type=node_data.get("deliverable_type", ""),
             persona=persona_data,
             evaluator=evaluator_data,
+            description=task_description,  # From task.description
+            deliverable=deliverable_data,  # Full deliverable config
+            task=task_data,  # Full task config
         )
 
         # Cache the configuration
