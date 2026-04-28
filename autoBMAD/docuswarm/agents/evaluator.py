@@ -2,36 +2,33 @@
 
 This module provides the EvaluatorAgent class which:
 - Loads evaluation criteria from nodes/{node_id}/evaluator.yaml
-- Calls LLM with Kimi K2.5 Thinking mode (temperature 0.5, max_tokens 8000)
+- Calls LLM with Claude Thinking mode (temperature 0.5, max_tokens 8000)
 - Scores deliverables against criteria (0.0-1.0 scale)
 - Calculates weighted alignment score using criterion weights
 - Returns verdict (APPROVED | NEEDS_REVISION | BLOCKED) based on thresholds
 - Maintains context isolation - NO access to private_reasoning from Independent Agent
-- Updated to support KimiSessionManager (Story 7.3)
+- Updated to support SessionManager (Story 7.3)
 - Updated to use session_manager.single_prompt() SDK API (Story 7.5)
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast, override
+from typing import TYPE_CHECKING, Any, override
 
 import structlog
 import yaml
-from kimi_agent_sdk import Message
 
-from autoBMAD.docuswarm.agents.base import BaseAgent
+from autoBMAD.docuswarm.agents.base import AgentConfig, BaseAgent
+from autoBMAD.docuswarm.agents.evaluator_config.schemas import EVALUATOR_OUTPUT_SCHEMA
 from autoBMAD.docuswarm.llm.response import (
     ResponseParseError,
-    ValidationError,
     extract_json,
-    validate_evaluator_output,
 )
-from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+from autoBMAD.docuswarm.llm.session_manager import SessionManager
 from autoBMAD.docuswarm.prompts.contract_builder import create_contract_builder
 
 if TYPE_CHECKING:
-    from autoBMAD.docuswarm.config import Config as AgentConfig
     from autoBMAD.docuswarm.node_execution.contracts import EvaluatorAgentInput
 
 # Type alias for evaluator agent output
@@ -65,26 +62,34 @@ class EvaluatorAgent(BaseAgent):
     Attributes:
         node_id: The node identifier for criteria loading.
         criteria: List of evaluation criteria with name, description, and weight.
+        approval_threshold: Minimum score for APPROVED verdict (from node config).
+        blocked_threshold: Maximum score for BLOCKED verdict (from node config).
     """
 
-    # Verdict thresholds
-    APPROVAL_THRESHOLD = 0.70
-    BLOCKED_THRESHOLD = 0.50
+    # P0 Fix: Default thresholds now serve as fallback only
+    # Actual thresholds are loaded from node evaluator.yaml configuration
+    DEFAULT_APPROVAL_THRESHOLD = 0.70
+    DEFAULT_BLOCKED_THRESHOLD = 0.50
 
     def __init__(
         self,
         config: AgentConfig,
-        session_manager: KimiSessionManager,
+        session_manager: SessionManager,
         node_id: str = "dev",
         project_root: Path | None = None,
+        # P0 Fix: Add explicit threshold parameters with defaults
+        approval_threshold: float | None = None,
+        blocked_threshold: float | None = None,
     ) -> None:
         """Initialize the EvaluatorAgent.
 
         Args:
             config: Agent configuration object.
-            session_manager: KimiSessionManager for SDK interactions.
+            session_manager: SessionManager for SDK interactions.
             node_id: The node identifier for loading criteria from nodes/{node_id}/evaluator.yaml.
             project_root: Root directory of the project. If None, uses cwd.
+            approval_threshold: Minimum score for APPROVED verdict (overrides node config).
+            blocked_threshold: Maximum score for BLOCKED verdict (overrides node config).
 
         Raises:
             CriteriaLoadError: If criteria loading fails.
@@ -96,13 +101,30 @@ class EvaluatorAgent(BaseAgent):
         # Initialize contract builder (P0: Node Prompt Contract Builder)
         self.contract_builder = create_contract_builder()
 
-        # Load criteria
+        # Load criteria and threshold configuration from node config
         self.criteria = self._load_criteria()
+
+        # P0 Fix: Load thresholds from node evaluator.yaml configuration
+        node_thresholds = self._load_thresholds()
+
+        # Use explicitly provided thresholds, fall back to node config, then to defaults
+        self.approval_threshold = (
+            approval_threshold
+            if approval_threshold is not None
+            else node_thresholds.get("approval", self.DEFAULT_APPROVAL_THRESHOLD)
+        )
+        self.blocked_threshold = (
+            blocked_threshold
+            if blocked_threshold is not None
+            else node_thresholds.get("escalation", self.DEFAULT_BLOCKED_THRESHOLD)
+        )
 
         # Rebind logger with agent name
         self.logger: structlog.stdlib.BoundLogger = structlog.get_logger().bind(
             agent=self.__class__.__name__,
             node_id=node_id,
+            approval_threshold=self.approval_threshold,
+            blocked_threshold=self.blocked_threshold,
         )
 
     def _load_criteria(self) -> list[dict[str, Any]]:
@@ -130,7 +152,7 @@ class EvaluatorAgent(BaseAgent):
         if not data or "criteria" not in data:
             raise CriteriaLoadError("Criteria file must contain 'criteria' key")
 
-        criteria: list[dict[str, Any]] = cast(list[dict[str, Any]], data["criteria"])
+        criteria: list[dict[str, Any]] = data["criteria"]
 
         if len(criteria) == 0:
             raise CriteriaLoadError("At least one criterion is required")
@@ -156,6 +178,45 @@ class EvaluatorAgent(BaseAgent):
             raise CriteriaLoadError(f"Criteria weights must sum to 1.0, got {total_weight}")
 
         return criteria
+
+    def _load_thresholds(self) -> dict[str, float]:
+        """Load evaluation thresholds from evaluator.yaml or node.yaml configuration.
+
+        P0 Fix: Load threshold configuration from node evaluator.yaml to ensure
+        runtime behavior matches node configuration.
+
+        Returns:
+            Dictionary with 'approval' and 'escalation' threshold values.
+        """
+        from autoBMAD.nodes.loader import NodeLoader
+
+        try:
+            # Use NodeLoader to get full node configuration
+            # Need to ensure NodeLoader base path is set correctly
+            node_config = NodeLoader.load(self.node_id)
+
+            if node_config.evaluator and node_config.evaluator.threshold:
+                return {
+                    "approval": node_config.evaluator.threshold.get(
+                        "approval", self.DEFAULT_APPROVAL_THRESHOLD
+                    ),
+                    "escalation": node_config.evaluator.threshold.get(
+                        "escalation", self.DEFAULT_BLOCKED_THRESHOLD
+                    ),
+                }
+        except Exception as e:
+            # Log but don't fail - fall back to defaults
+            self.logger.warning(
+                "failed_to_load_thresholds_from_node_config",
+                node_id=self.node_id,
+                error=str(e),
+            )
+
+        # Fall back to defaults
+        return {
+            "approval": self.DEFAULT_APPROVAL_THRESHOLD,
+            "escalation": self.DEFAULT_BLOCKED_THRESHOLD,
+        }
 
     def _format_evaluation_prompt(
         self,
@@ -272,23 +333,33 @@ Do not include any other text in your response.
     def _determine_verdict(self, alignment_score: float) -> str:
         """Determine verdict based on alignment score.
 
+        P0 Fix: Uses instance thresholds loaded from node config instead of class constants.
+
         Args:
             alignment_score: The weighted alignment score.
 
         Returns:
             Verdict string: APPROVED, NEEDS_REVISION, or BLOCKED.
         """
-        if alignment_score >= self.APPROVAL_THRESHOLD:
+        if alignment_score >= self.approval_threshold:
             return "APPROVED"
-        elif alignment_score <= self.BLOCKED_THRESHOLD:
+        elif alignment_score <= self.blocked_threshold:
             return "BLOCKED"
         else:
             return "NEEDS_REVISION"
 
+    # TDD-09: System prompt for evaluator role context
+    EVALUATOR_SYSTEM_PROMPT = (
+        "You are an expert evaluator agent. Your role is to review deliverables "
+        "against defined criteria and provide fair, actionable feedback. "
+        "You MUST always respond with valid JSON in the specified format. "
+        "Never respond with markdown tables, narrative text, or any non-JSON format."
+    )
+
     async def _call_llm_with_prompt(
         self,
         prompt: str,
-    ) -> list[Message]:
+    ) -> list[dict[str, Any]]:
         """Call LLM with pre-built prompt (P0: Contract Builder).
 
         Uses session_manager.single_prompt() (SDK API - Story 7.5).
@@ -297,11 +368,16 @@ Do not include any other text in your response.
         enabling structured prompt contracts with explicit criteria and deliverable
         requirements.
 
+        TDD-09: Now passes system_prompt to single_prompt() for role context.
+
+        Story 38.1: Passes output_format=EVALUATOR_OUTPUT_SCHEMA for structured output
+        validation via SDK's native output_format mechanism.
+
         Args:
             prompt: The complete prompt (from contract).
 
         Returns:
-            list[Message] from the LLM.
+            list[dict[str, Any]] from the LLM.
 
         Raises:
             EvaluationError: If the LLM call fails.
@@ -312,12 +388,16 @@ Do not include any other text in your response.
             assert self.session_manager is not None
 
             # Use session_manager.single_prompt() with:
-            # - mode="thinking" for Kimi K2.5 thinking mode
+            # - mode="thinking" for Claude thinking mode
             # - yolo=True for evaluator (no tools to approve, read-only agent)
-            sdk_response: list[Message] = await self.session_manager.single_prompt(
+            # - system_prompt for evaluator role context (TDD-09)
+            # - output_format for structured output (Story 38.1)
+            sdk_response: list[dict[str, Any]] = await self.session_manager.single_prompt(
                 prompt=prompt,
                 mode="thinking",
                 yolo=True,
+                system_prompt=self.EVALUATOR_SYSTEM_PROMPT,
+                output_format=EVALUATOR_OUTPUT_SCHEMA,
             )
             return sdk_response
         except EvaluationError:
@@ -331,7 +411,7 @@ Do not include any other text in your response.
         self,
         subject_context: str,
         deliverable: dict[str, Any],
-    ) -> list[Message]:
+    ) -> list[dict[str, Any]]:
         """Call the LLM with the evaluation prompt.
 
         Uses session_manager.single_prompt() (SDK API - Story 7.5).
@@ -341,7 +421,7 @@ Do not include any other text in your response.
             deliverable: The deliverable to evaluate.
 
         Returns:
-            list[Message] from the LLM.
+            list[dict[str, Any]] from the LLM.
 
         Raises:
             EvaluationError: If the LLM call fails.
@@ -357,13 +437,38 @@ valid JSON in the specified format."""
         full_prompt = f"{system_prompt}\n\n{user_prompt}"
         return await self._call_llm_with_prompt(full_prompt)
 
-    def _parse_response(self, response: list[Message]) -> dict[str, Any]:
-        """Parse and validate LLM response against EvaluatorOutput schema.
-
-        Uses list[Message] from session_manager.single_prompt() (SDK API - Story 7.5).
+    def _extract_text_from_content(self, content: Any) -> str:
+        """Extract text from content which may be str or list of dicts.
 
         Args:
-            response: The list[Message] from the LLM.
+            content: Content from message (str or list of content parts).
+
+        Returns:
+            Extracted text string.
+        """
+        if isinstance(content, str):
+            return content
+        elif isinstance(content, list):
+            texts = []
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    texts.append(part.get("text", ""))
+                elif isinstance(part, str):
+                    texts.append(part)
+            return " ".join(texts)
+        else:
+            return str(content)
+
+    def _parse_response(self, response: list[dict[str, Any]]) -> dict[str, Any]:
+        """Parse and validate LLM response against EvaluatorOutput schema.
+
+        Uses list[dict[str, Any]] from session_manager.single_prompt() (SDK API - Story 7.5).
+
+        Story 38.1: Prioritizes structured_output from SDK when available (type="structured"),
+        falls back to extract_json() for backward compatibility.
+
+        Args:
+            response: The list[dict[str, Any]] from the LLM.
 
         Returns:
             Parsed and validated output dictionary.
@@ -371,54 +476,57 @@ valid JSON in the specified format."""
         Raises:
             EvaluationError: If parsing or validation fails.
         """
-        # SDK API: list[Message]
+        # SDK API: list[dict[str, Any]]
         if not response:
             raise EvaluationError("Empty response from LLM")
 
+        # Story 38.1: Check for structured output from SDK (type="structured")
+        for msg in response:
+            if isinstance(msg, dict) and msg.get("type") == "structured" and "data" in msg:
+                structured_data = msg["data"]
+                if isinstance(structured_data, dict):
+                    self.logger.debug("using_structured_output_from_sdk")
+                    data: dict[str, Any] = structured_data
+                    # Skip to validation logic (same as JSON extracted path)
+                    return self._validate_and_finalize_parsed_data(data)
+
+        # Fallback: Extract JSON from the response text
         # Get content from the last assistant message with content
-        content_raw = None
+        content_str = None
         for msg in reversed(response):
-            if msg.role == "assistant" and msg.content:
-                content_raw = msg.content
-                break
+            if msg.get("role") == "assistant":
+                content = msg.get("content")
+                if content:
+                    content_str = self._extract_text_from_content(content)
+                    break
 
-        # Handle different content types from SDK
-        # content can be: str, ContentPart, or list[ContentPart]
-        if content_raw is None:
-            raise EvaluationError("Empty response from LLM")
-
-        # Convert content to string if needed
-        # Declare content variable upfront to avoid redeclaration
-        content: str
-        if isinstance(content_raw, str):
-            content = content_raw
-        else:
-            # After str check, remaining types are list[ContentPart] or single ContentPart
-            # Use hasattr to check for iterability without isinstance check
-            if hasattr(content_raw, "__iter__") and not isinstance(content_raw, str):
-                # content_raw is a list of ContentPart objects
-                content = ""
-                for part in cast("list[Any]", content_raw):
-                    if hasattr(part, "text"):
-                        content += part.text
-                    elif isinstance(part, str):
-                        content += part
-            else:
-                # Single ContentPart object
-                if hasattr(content_raw, "text"):
-                    content = content_raw.text
-                else:
-                    content = str(content_raw)
-
-        if not content or not content.strip():
+        if not content_str or not content_str.strip():
             raise EvaluationError("Empty response from LLM")
 
         # Try to extract JSON from the response
         try:
-            data: dict[str, Any] = extract_json(cast(str, content))
+            data = extract_json(content_str)
         except ResponseParseError as e:
-            self.logger.error("response_parse_failed", error=str(e), content=content[:200])
+            self.logger.error("response_parse_failed", error=str(e), content=content_str[:200])
             raise EvaluationError(f"Failed to parse response: {e}") from e
+
+        return self._validate_and_finalize_parsed_data(data)
+
+    def _validate_and_finalize_parsed_data(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Validate and finalize parsed data from either structured output or JSON extraction.
+
+        Story 38.1: Extracted validation logic to avoid duplication between
+        structured output path and JSON extraction path.
+
+        Args:
+            data: Parsed data dictionary (from structured output or JSON extraction).
+
+        Returns:
+            Validated and finalized output dictionary.
+
+        Raises:
+            EvaluationError: If validation fails.
+        """
 
         # Add default scores for missing criteria
         for criterion in self.criteria:
@@ -426,9 +534,7 @@ valid JSON in the specified format."""
                 data.setdefault("criterion_scores", {})[criterion["name"]] = 0.5
 
         # Clamp scores to valid range BEFORE validation
-        data["criterion_scores"] = self._clamp_scores(
-            cast(dict[str, float], data["criterion_scores"])
-        )
+        data["criterion_scores"] = self._clamp_scores(data["criterion_scores"])
 
         # Recalculate alignment score from clamped criterion_scores BEFORE validation
         data["alignment_score"] = self._calculate_alignment_score(data["criterion_scores"])
@@ -439,12 +545,24 @@ valid JSON in the specified format."""
         elif data["alignment_score"] < 0.0:
             data["alignment_score"] = 0.0
 
-        # Validate against EvaluatorOutput schema
-        try:
-            validate_evaluator_output(data)
-        except ValidationError as e:
-            self.logger.error("response_validation_failed", error=str(e), data=data)
-            raise EvaluationError(f"Response validation failed: {e}") from e
+        # Validate against EvaluatorOutput schema using ContextValidator
+        from autoBMAD.docuswarm.context import ContextValidator
+
+        validator = ContextValidator()
+        validation_result = validator.validate_evaluator_output(data, node_id=self.node_id)
+        if not validation_result.valid:
+            # Log the first error for debugging
+            if validation_result.issues:
+                first_issue = validation_result.issues[0]
+                self.logger.error(
+                    "response_validation_failed",
+                    field=first_issue.field,
+                    message=first_issue.message,
+                    code=first_issue.code,
+                )
+            raise EvaluationError(
+                f"Response validation failed: {validation_result.issues[0].message if validation_result.issues else 'Unknown error'}"
+            )
 
         # Ensure verdict matches calculated score
         data["verdict"] = self._determine_verdict(data["alignment_score"])
@@ -488,7 +606,7 @@ valid JSON in the specified format."""
         # Normalize subject_context to string (may arrive as dict from ContextManager)
         subject_context: str = str(subject_context_raw)
 
-        deliverable: dict[str, Any] = context.get("deliverable")  # type: ignore[assignment]
+        deliverable: dict[str, Any] = context.get("deliverable")
         if not deliverable:
             raise EvaluatorAgentError("deliverable is required in context")
 
@@ -545,11 +663,10 @@ valid JSON in the specified format."""
         # Single Context Protocol: 直接从结构化输入读取字段
         # 使用 .get() 安全访问 TypedDict 的可选字段 (基于类型安全修复)
         task_name = agent_input.get("task_name", "")
-        task_description = agent_input.get("task_description", "")
+        _ = agent_input.get("task_description", "")
         # deliverable_artifact reserved for future use
         _ = agent_input.get("deliverable_artifact", {})
         deliverable_body = agent_input.get("deliverable_body", "")
-        criteria = agent_input.get("criteria") or self.criteria
 
         # F3: 修复 - 读取原始上下文摘要（关键修复）
         original_context_summary = agent_input.get("original_context_summary", "")
@@ -567,14 +684,8 @@ valid JSON in the specified format."""
         context = NodeExecutionContext(
             pipeline_id="",
             node_id=self.node_id,
-            node_name=task_name,  # Fallback to task_name
+            node_name=task_name or self.node_id,
             node_order=0,
-            task_name=task_name,
-            task_description=task_description,
-            role_supplement="",
-            deliverable_type="",
-            deliverable_requirements={},
-            # F3: 修复 - 传递原始上下文摘要到 context
             original_context={"content": original_context_summary}
             if original_context_summary
             else {},
@@ -582,7 +693,6 @@ valid JSON in the specified format."""
             shared_context={},
             iteration_feedback=None,
             docs_context=[],
-            evaluator_criteria=criteria,
         )
 
         # P0: Build contract from context using NodePromptContractBuilder
@@ -612,7 +722,7 @@ valid JSON in the specified format."""
 # Convenience function for creating EvaluatorAgent
 def create_evaluator_agent(
     config: AgentConfig,
-    session_manager: KimiSessionManager,
+    session_manager: SessionManager,
     node_id: str = "dev",
     project_root: Path | None = None,
 ) -> EvaluatorAgent:
@@ -620,7 +730,7 @@ def create_evaluator_agent(
 
     Args:
         config: Agent configuration.
-        session_manager: KimiSessionManager for SDK interactions.
+        session_manager: SessionManager for SDK interactions.
         node_id: The node identifier for criteria loading.
         project_root: Root directory of the project.
 

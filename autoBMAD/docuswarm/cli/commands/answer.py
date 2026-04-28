@@ -19,7 +19,7 @@ console = Console()
 @click.option("--text", "-t", help="Answer text (alternative to positional argument)")
 def answer(question_id: str, answer_text: str | None, text: str | None) -> None:
     """Record an answer to a question.
-    
+
     QUESTION_ID: The unique question ID (format: pipeline_id_node_index)
     ANSWER: The answer text, or use --text / -t option
     """

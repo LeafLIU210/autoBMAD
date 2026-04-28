@@ -1,0 +1,57 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "5.6"
+story_title: "Quality Metrics Collection"
+gate: "PASS"
+status_reason: "All quality gates pass. Type checking (BasedPyright) 0 errors, linting (Ruff) 0 errors, unit tests (18), and integration tests (15) all pass. Implementation matches acceptance criteria with full database persistence."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-20T00:00:00Z"
+
+waiver:
+  active: false
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_gates:
+  - tool: "BasedPyright (Type Checking)"
+    status: "PASS"
+    details: "0 errors, 0 warnings, 0 notes on docuswarm/node_execution/metrics.py"
+  - tool: "Ruff (Linting)"
+    status: "PASS"
+    details: "All checks passed on docuswarm/node_execution/metrics.py (import sorting auto-fixed)"
+  - tool: "Pytest (Unit Tests)"
+    status: "PASS"
+    details: "18 unit tests passed for test_metrics.py"
+  - tool: "Pytest (Integration Tests)"
+    status: "PASS"
+    details: "15 integration tests passed for test_metrics.py"
+
+acceptance_criteria_coverage:
+  - ac: "Track alignment scores per node run and persist to database"
+    status: "COVERED"
+    evidence: "NodeRunMetrics.final_score stores alignment score, persisted via record_node_completion() to node_run_metrics table"
+  - ac: "Track iteration counts per node run (including force completions)"
+    status: "COVERED"
+    evidence: "NodeRunMetrics.iterations and force_completed fields track iteration counts and force completion status"
+  - ac: "Calculate aggregate statistics per node_id (average score, average iterations, force completion rate)"
+    status: "COVERED"
+    evidence: "generate_node_aggregate_report() calculates mean(scores), mean(iterations), and force_completion_rate"
+  - ac: "Generate quality reports that include summary statistics and individual run details"
+    status: "COVERED"
+    evidence: "generate_report() returns run_id, node_id, summary with iterations, final_score, verdict, force_completed"
+
+evidence:
+  tests_reviewed: 33
+  risks_identified: 0
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Task 6 (Integration with DualAgentNode) is pending - tracked in Story 5.8"
+    - action: "Consider adding metrics aggregation by context_hash for per-context statistics"

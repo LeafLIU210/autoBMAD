@@ -8,10 +8,13 @@ Provides audit logging for context isolation verification:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import structlog
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 
 # Event type constants
 EVENT_TYPE_CONTEXT_BUILD = "context_build"
@@ -86,7 +89,7 @@ class IsolationAuditLogger:
         effective_context_keys = context_keys or (list(details.keys()) if details else [])
 
         event = AuditEvent(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(_BEIJING_TZ),
             event_type=EVENT_TYPE_CONTEXT_BUILD,
             agent_type=agent_type,
             run_id=effective_run_id,
@@ -128,7 +131,7 @@ class IsolationAuditLogger:
 
         details = {"fields_removed": effective_fields_removed}
         event = AuditEvent(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(_BEIJING_TZ),
             event_type=EVENT_TYPE_FILTER,
             agent_type=agent_type,
             run_id=effective_run_id,
@@ -175,7 +178,7 @@ class IsolationAuditLogger:
             violation_details.update(details)
 
         event = AuditEvent(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(_BEIJING_TZ),
             event_type=EVENT_TYPE_VIOLATION,
             agent_type=agent_type,
             run_id=effective_run_id,

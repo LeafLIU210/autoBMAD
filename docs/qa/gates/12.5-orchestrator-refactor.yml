@@ -1,0 +1,102 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "12.5"
+story_title: "Orchestrator 重构"
+gate: "PASS"
+status_reason: "All quality gates pass - refactoring complete with CheckpointManager integration, type checking (0 errors), linting (0 errors), and tests (35 passed) all successful."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T18:30:00Z"
+
+# Tool validation results
+tool_validation:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+    notes: 0
+  ruff:
+    status: PASS
+    errors: 0
+  pytest:
+    status: PASS
+    tests_passed: 35
+    test_files:
+      - test_orchestrator_checkpoint_manager.py: 11
+      - test_checkpoint_manager.py: 24
+
+# Document completeness
+document_completeness:
+  status: PASS
+  score: 100
+  sections_reviewed:
+    - Status
+    - Story
+    - Acceptance Criteria
+    - Tasks/Subtasks
+    - Dev Notes
+    - Testing
+    - File List
+    - Change Log
+
+# Acceptance criteria verification
+ac_verification:
+  - id: 1
+    criterion: "在 __init__ 方法中初始化 CheckpointManager 实例"
+    status: VERIFIED
+    evidence: "Line 150: self._checkpoint_manager = CheckpointManager(...)"
+  - id: 2
+    criterion: "start_pipeline 方法使用 CheckpointManager.get_or_create() 获取 checkpointer"
+    status: VERIFIED
+    evidence: "Line 433: checkpointer, config = await self._checkpoint_manager.get_or_create(...)"
+  - id: 3
+    criterion: "resume_pipeline 方法使用 CheckpointManager.get_or_create() 获取 checkpointer"
+    status: VERIFIED
+    evidence: "Line 538: checkpointer, config = await self._checkpoint_manager.get_or_create(...)"
+  - id: 4
+    criterion: "restart_from_node 方法使用 CheckpointManager.get_or_create() 获取 checkpointer"
+    status: VERIFIED
+    evidence: "Line 679: checkpointer, config = await self._checkpoint_manager.get_or_create(...)"
+  - id: 5
+    criterion: "_restart_node 方法使用 CheckpointManager.get_or_create() 获取 checkpointer"
+    status: VERIFIED
+    evidence: "Line 821: checkpointer, config = await self._checkpoint_manager.get_or_create(...)"
+  - id: 6
+    criterion: "删除所有 4 处重复的 checkpointer 创建逻辑（PRAGMA 设置等）"
+    status: VERIFIED
+    evidence: "grep PRAGMA in orchestrator.py returns 0 occurrences"
+  - id: 7
+    criterion: "orchestrator.py 文件行数减少至少 60 行"
+    status: VERIFIED
+    evidence: "Reduced from 1134 to 1042 lines (92 lines reduction, exceeds 60-line requirement)"
+
+# Implementation verification
+implementation_verification:
+  - CheckpointManager properly initialized in __init__ with db_path and external_checkpointer
+  - All 4 methods now use get_or_create() instead of inline checkpointer creation
+  - PRAGMA journal_mode removed from orchestrator.py (0 occurrences)
+  - Unused imports (generate_thread_id, create_checkpoint_config) removed
+  - Code maintains proper error handling and logging patterns
+
+# Risk summary
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# QA Results summary
+qa_results:
+  decision: PASS
+  summary: |
+    Story 12.5 Orchestrator refactoring passes all quality gates.
+    - CheckpointManager successfully integrated into HybridOrchestrator
+    - Type annotations complete and pass basedpyright validation
+    - Code style passes ruff linting with no errors
+    - All 35 unit tests pass (11 orchestrator + 24 checkpoint manager)
+    - All 7 acceptance criteria are met
+    - Code reduction of 92 lines exceeds the 60-line requirement
+    - Zero PRAGMA occurrences confirms duplicate code removal

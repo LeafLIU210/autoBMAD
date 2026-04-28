@@ -1,0 +1,631 @@
+{
+  "timestamp": "2026-03-25T22:13:40.037962",
+  "old_entry": {
+    "name": "old_main_py",
+    "module_path": "autoBMAD.docuswarm.main",
+    "file_path": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+    "line_count": 825,
+    "commands": [
+      {
+        "name": "start",
+        "help_text": "Start a new pipeline with the provided context file.",
+        "params": [
+          {
+            "name": "context_file",
+            "type": "Option",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": "Path to the context file for the pipeline"
+          }
+        ],
+        "is_async": true,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 66,
+        "has_asyncio_run": true
+      },
+      {
+        "name": "status",
+        "help_text": "Show detailed progress of the specified pipeline.",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 94,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "resume",
+        "help_text": "Resume an interrupted pipeline from its last checkpoint.\n\n    Use --node to restart from a specific node instead of resuming.\n    Use --force to resume a running pipeline.\n    ",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "node_id",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Restart from a specific node (instead of resuming from last checkpoint)"
+          },
+          {
+            "name": "force",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Force resume even if pipeline is running"
+          }
+        ],
+        "is_async": true,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 76,
+        "has_asyncio_run": true
+      },
+      {
+        "name": "export",
+        "help_text": "Export all deliverables to the specified output directory.",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "output_dir",
+            "type": "Argument",
+            "required": false,
+            "default": ".",
+            "help": null
+          },
+          {
+            "name": "output_path",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Custom destination directory for exported files"
+          },
+          {
+            "name": "include_metadata",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Include _metadata.json in the export"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 77,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "list-pipelines",
+        "help_text": "Show all pipelines with their status, optionally filtered by status.",
+        "params": [
+          {
+            "name": "status_filter",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Filter pipelines by status"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 67,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "questions",
+        "help_text": "List all unanswered questions for the specified pipeline.\n\n    Displays questions sorted by priority: blocking (red), clarifying (yellow), optional (dimmed).\n\n    Use --run to query questions from a specific run instead of the latest.\n    ",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "run_id",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Query a specific run ID instead of latest"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 84,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "answer",
+        "help_text": "Record an answer to a question.\n\n    QUESTION_ID: The unique question ID (format: pipeline_id_node_index)\n\n    ANSWER: The answer text, or use --text / -t option\n    ",
+        "params": [
+          {
+            "name": "question_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "answer",
+            "type": "Argument",
+            "required": false,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "text",
+            "type": "Option",
+            "required": false,
+            "default": "Sentinel.UNSET",
+            "help": "Answer text (alternative to positional argument)"
+          }
+        ],
+        "is_async": true,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 62,
+        "has_asyncio_run": true
+      },
+      {
+        "name": "cancel",
+        "help_text": "Cancel a running pipeline.\n\n    This will stop the pipeline execution and mark it as cancelled.",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 39,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "cancel-all",
+        "help_text": "Cancel all pipelines (or filter by status).\n\n    Examples:\n        # Cancel all pending pipelines\n        python -m autoBMAD.docuswarm cancel-all --status pending --confirm\n\n        # Cancel all pipelines with confirmation\n        python -m autoBMAD.docuswarm cancel-all\n    ",
+        "params": [
+          {
+            "name": "status",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Only cancel pipelines with this status"
+          },
+          {
+            "name": "confirm",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Skip confirmation prompt"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 69,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "clean",
+        "help_text": "Delete pipelines from database.\n\n    WARNING: This permanently deletes pipeline data!\n\n    Examples:\n        # Delete all cancelled and failed pipelines\n        python -m autoBMAD.docuswarm clean --status cancelled --confirm\n\n        # Delete completed pipelines older than 7 days\n        python -m autoBMAD.docuswarm clean --status completed --older-than-days 7\n    ",
+        "params": [
+          {
+            "name": "status",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Only delete pipelines with this status"
+          },
+          {
+            "name": "older_than_days",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Only delete pipelines older than N days"
+          },
+          {
+            "name": "confirm",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Skip confirmation prompt"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\main.py",
+        "line_count": 97,
+        "has_asyncio_run": false
+      }
+    ],
+    "click_group_options": []
+  },
+  "new_entry": {
+    "name": "new_cli_main",
+    "module_path": "autoBMAD.docuswarm.cli.main",
+    "file_path": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+    "line_count": 88,
+    "commands": [
+      {
+        "name": "start",
+        "help_text": "Start a new pipeline with the provided context file.",
+        "params": [
+          {
+            "name": "context_file",
+            "type": "Option",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": "Path to the context file for the pipeline"
+          }
+        ],
+        "is_async": true,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 24,
+        "has_asyncio_run": true
+      },
+      {
+        "name": "status",
+        "help_text": "Show detailed progress of the specified pipeline.",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 59,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "resume",
+        "help_text": "Resume an interrupted pipeline from its last checkpoint.\n\n    Use --node to restart from a specific node instead of resuming.\n    Use --force to resume a running pipeline.\n    ",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "node_id",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Restart from a specific node (instead of resuming from last checkpoint)"
+          },
+          {
+            "name": "force",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Force resume even if pipeline is running"
+          }
+        ],
+        "is_async": true,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 58,
+        "has_asyncio_run": true
+      },
+      {
+        "name": "cancel",
+        "help_text": "Cancel a running pipeline.\n\n    This will stop the pipeline execution and mark it as cancelled.\n    ",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 19,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "clean",
+        "help_text": "Delete pipelines from database.\n\n    WARNING: This permanently deletes pipeline data!\n\n    Examples:\n        # Delete all cancelled and failed pipelines\n        python -m autoBMAD.docuswarm clean --status cancelled --confirm\n\n        # Delete completed pipelines older than 7 days\n        python -m autoBMAD.docuswarm clean --status completed --older-than-days 7\n    ",
+        "params": [
+          {
+            "name": "status",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Only delete pipelines with this status"
+          },
+          {
+            "name": "older_than_days",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Only delete pipelines older than N days"
+          },
+          {
+            "name": "confirm",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Skip confirmation prompt"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 94,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "list",
+        "help_text": "Show all pipelines with their status, optionally filtered by status.",
+        "params": [
+          {
+            "name": "status_filter",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Filter pipelines by status"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 56,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "export",
+        "help_text": "Export all deliverables to the specified output directory.",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "output_dir",
+            "type": "Argument",
+            "required": false,
+            "default": ".",
+            "help": null
+          },
+          {
+            "name": "output_path",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Custom destination directory for exported files"
+          },
+          {
+            "name": "include_metadata",
+            "type": "Option",
+            "required": false,
+            "default": "False",
+            "help": "Include _metadata.json in the export"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 61,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "questions",
+        "help_text": "List all unanswered questions for the specified pipeline.\n\n    Displays questions sorted by priority: blocking (red), clarifying (yellow), optional (dimmed).\n    ",
+        "params": [
+          {
+            "name": "pipeline_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "run_id",
+            "type": "Option",
+            "required": false,
+            "default": "None",
+            "help": "Query a specific run ID instead of latest"
+          }
+        ],
+        "is_async": false,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 69,
+        "has_asyncio_run": false
+      },
+      {
+        "name": "answer",
+        "help_text": "Record an answer to a question.\n\n    QUESTION_ID: The unique question ID (format: pipeline_id_node_index)\n    ANSWER: The answer text, or use --text / -t option\n    ",
+        "params": [
+          {
+            "name": "question_id",
+            "type": "Argument",
+            "required": true,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "answer",
+            "type": "Argument",
+            "required": false,
+            "default": "Sentinel.UNSET",
+            "help": null
+          },
+          {
+            "name": "text",
+            "type": "Option",
+            "required": false,
+            "default": "Sentinel.UNSET",
+            "help": "Answer text (alternative to positional argument)"
+          }
+        ],
+        "is_async": true,
+        "source_file": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\main.py",
+        "line_count": 49,
+        "has_asyncio_run": true
+      }
+    ],
+    "click_group_options": []
+  },
+  "service_layer": {
+    "module_path": "autoBMAD.docuswarm.cli.services.pipeline_service",
+    "file_path": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\cli\\services\\pipeline_service.py",
+    "methods": [
+      {
+        "name": "status",
+        "is_async": false,
+        "line_count": 10,
+        "args": [
+          "pipeline_id"
+        ]
+      },
+      {
+        "name": "cancel",
+        "is_async": false,
+        "line_count": 20,
+        "args": [
+          "pipeline_id"
+        ]
+      },
+      {
+        "name": "list_pipelines",
+        "is_async": false,
+        "line_count": 10,
+        "args": [
+          "status"
+        ]
+      }
+    ],
+    "dependencies": [
+      "autoBMAD.docuswarm.pipeline.orchestrator.HybridOrchestrator",
+      "autoBMAD.docuswarm.storage.state_manager.StateManager"
+    ],
+    "has_orchestrator": true,
+    "has_state_manager": true
+  },
+  "entry_config": {
+    "pyproject_entry": "docuswarm = \"autoBMAD.docuswarm.main:cli\"",
+    "pyproject_module": "autoBMAD.docuswarm.main",
+    "main_py_entry": "from autoBMAD.docuswarm.main import cli",
+    "main_py_module": "autoBMAD.docuswarm.main",
+    "is_aligned": true
+  },
+  "migration_gaps": [
+    {
+      "category": "production_entry",
+      "description": "生产入口 (pyproject.toml) 仍指向旧 main 模块",
+      "severity": "high",
+      "evidence": [
+        "当前配置: docuswarm = \"autoBMAD.docuswarm.main:cli\"",
+        "建议改为: docuswarm = \"autoBMAD.docuswarm.cli.main:cli\""
+      ],
+      "recommendation": "修改 pyproject.toml [project.scripts] 指向新入口"
+    },
+    {
+      "category": "command_coverage",
+      "description": "新入口缺失 2 个命令",
+      "severity": "high",
+      "evidence": [
+        "cancel-all",
+        "list-pipelines"
+      ],
+      "recommendation": "将缺失的命令实现迁移到 cli/commands/ 目录"
+    },
+    {
+      "category": "service_layer",
+      "description": "服务层缺失 2 个预期方法",
+      "severity": "medium",
+      "evidence": [
+        "resume",
+        "start"
+      ],
+      "recommendation": "在 PipelineService 中实现缺失的方法"
+    },
+    {
+      "category": "architecture",
+      "description": "旧入口有 3 个命令直接调用 asyncio.run",
+      "severity": "medium",
+      "evidence": [
+        "start (66 行)",
+        "resume (76 行)",
+        "answer (62 行)"
+      ],
+      "recommendation": "将业务逻辑迁移到服务层，CLI 层只负责参数解析和结果展示"
+    },
+    {
+      "category": "code_bloat",
+      "description": "旧入口代码量过大，新入口过于精简",
+      "severity": "low",
+      "evidence": [
+        "旧入口: 825 行",
+        "新入口: 88 行",
+        "差值: 737 行"
+      ],
+      "recommendation": "这是正常的分层结果，新入口的代码量转移到 commands/ 和 services/ 目录"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "P0",
+      "title": "立即切换入口配置",
+      "description": "修改 pyproject.toml 和 __main__.py 指向新入口",
+      "steps": [
+        "修改 pyproject.toml: docuswarm = \"autoBMAD.docuswarm.cli.main:cli\"",
+        "修改 __main__.py: from autoBMAD.docuswarm.cli.main import cli",
+        "验证 pip install -e . 后 docuswarm 命令可用"
+      ],
+      "risks": [
+        "需要确保新入口的所有命令已实现"
+      ]
+    },
+    {
+      "priority": "P1",
+      "title": "完成命令迁移",
+      "description": "将 2 个命令从旧入口迁移到新入口",
+      "steps": [
+        "迁移命令: cancel-all, list-pipelines",
+        "在 cli/commands/ 下创建新的命令模块",
+        "使用 PipelineService 封装业务逻辑",
+        "保持命令行接口向后兼容"
+      ],
+      "risks": [
+        "命令参数可能有细微差异，需要验证"
+      ]
+    },
+    {
+      "priority": "P2",
+      "title": "删除或归档旧入口",
+      "description": "在验证新入口稳定后删除旧 main.py",
+      "steps": [
+        "运行完整回归测试",
+        "确保所有旧命令在新入口可用",
+        "删除 autoBMAD/docuswarm/main.py",
+        "更新相关文档"
+      ],
+      "risks": [
+        "如果有其他模块直接导入旧 main.py 会失败"
+      ]
+    }
+  ]
+}

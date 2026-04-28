@@ -1,0 +1,116 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate: 31.4 - Update node.yaml for All 5 Nodes
+
+schema: 1
+story: "31.4"
+story_title: "Update node.yaml for All 5 Nodes"
+gate: "PASS"
+status_reason: "All acceptance criteria verified and met. All 5 node.yaml files contain valid tools.skills configuration with SDK-native skills properly whitelisted per role. All 83 tests passing. YAML syntax validated. Skill-to-role mapping matches Epic-31 specification exactly."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T16:30:00Z"
+
+# Waiver inactive - full validation passed
+waiver: { active: false }
+
+# No issues found
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence of quality
+evidence:
+  tests_reviewed: 83
+  tests_passed: 83
+  coverage_percent: 88
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+# NFR validation
+nfr_validation:
+  maintainability: { status: PASS, notes: "Clean YAML structure with consistent 2-space indentation across all 5 node files" }
+  reliability: { status: PASS, notes: "All YAML files pass validation, backward compatibility maintained via NodeLoader defaults" }
+  testability: { status: PASS, notes: "Comprehensive test suite with 83 test cases covering file structure, skills config, whitelist mapping, and loader integration" }
+  performance: { status: PASS, notes: "No performance impact - configuration loading unchanged" }
+  security: { status: PASS, notes: "Skill whitelisting provides proper security isolation per node role" }
+
+# Review details
+review_details:
+  files_reviewed:
+    - autoBMAD/nodes/analyst/node.yaml
+    - autoBMAD/nodes/pm/node.yaml
+    - autoBMAD/nodes/ux/node.yaml
+    - autoBMAD/nodes/architect/node.yaml
+    - autoBMAD/nodes/po/node.yaml
+    - tests/test_node_yaml_skills_config.py
+    - nodes/analyst/node.yaml
+    - nodes/pm/node.yaml
+    - nodes/ux/node.yaml
+    - nodes/architect/node.yaml
+    - nodes/po/node.yaml
+  key_findings:
+    - "All 5 node.yaml files have valid tools.skills configuration section at root level"
+    - "Each node's whitelist contains only role-relevant skills (analyst=research, pm=PRD, ux=design, architect=architecture, po=backlog)"
+    - "All YAML files pass syntax validation without errors"
+    - "tools.skills section includes all 4 required fields: sdk_native: true, whitelist array, quick_reference_enabled: true, quick_reference_include_descriptions: true"
+    - "Skill-to-role mapping follows Epic-31 specification exactly"
+    - "All 83 unit and integration tests pass with comprehensive coverage"
+    - "NodeLoader correctly parses skills configuration from all 5 nodes with NodeSkillsConfig dataclass"
+    - "Backward compatibility verified - nodes without tools.skills load with sdk_native: false and empty whitelist"
+    - "All skill names follow bmad-* naming convention without spaces"
+    - "All nodes include bmad-advanced-elicitation skill as required"
+  recommendations:
+    immediate: []
+    future:
+      - action: "Consider adding integration tests with actual skill invocation when Story 31.5 (IndependentAgent integration) is complete"
+        refs: ["docs/stories/31.5.md"]
+      - action: "Monitor for any skill loading issues in production environment after SDK skills are enabled"
+        refs: ["docs/epics/epic-31.md"]
+
+# Skill-to-Role Mapping Verification
+skill_mapping_verification:
+  analyst:
+    expected: [bmad-product-brief, bmad-domain-research, bmad-market-research, bmad-advanced-elicitation]
+    actual: [bmad-product-brief, bmad-domain-research, bmad-market-research, bmad-advanced-elicitation]
+    status: MATCH
+  pm:
+    expected: [bmad-create-prd, bmad-edit-prd, bmad-validate-prd, bmad-advanced-elicitation]
+    actual: [bmad-create-prd, bmad-edit-prd, bmad-validate-prd, bmad-advanced-elicitation]
+    status: MATCH
+  ux:
+    expected: [bmad-create-ux-design, bmad-advanced-elicitation]
+    actual: [bmad-create-ux-design, bmad-advanced-elicitation]
+    status: MATCH
+  architect:
+    expected: [bmad-create-architecture, bmad-technical-research, bmad-advanced-elicitation]
+    actual: [bmad-create-architecture, bmad-technical-research, bmad-advanced-elicitation]
+    status: MATCH
+  po:
+    expected: [bmad-create-epics-and-stories, bmad-sprint-planning, bmad-advanced-elicitation]
+    actual: [bmad-create-epics-and-stories, bmad-sprint-planning, bmad-advanced-elicitation]
+    status: MATCH
+
+# Configuration Structure Verification
+configuration_verification:
+  sdk_native: { all_nodes: true, status: PASS }
+  quick_reference_enabled: { all_nodes: true, status: PASS }
+  quick_reference_include_descriptions: { all_nodes: true, status: PASS }
+  whitelist_not_empty: { all_nodes: true, status: PASS }
+  bmad_prefix_verified: { all_skills: true, status: PASS }
+
+# History - Append only
+history:
+  - at: "2026-04-07T12:00:00Z"
+    gate: PASS
+    note: "Initial developer self-review - all tests passing"
+    reviewer: "James (Full Stack Developer)"
+  - at: "2026-04-07T16:30:00Z"
+    gate: PASS
+    note: "QA Agent review - all acceptance criteria verified, no issues found"
+    reviewer: "Quinn (Test Architect)"

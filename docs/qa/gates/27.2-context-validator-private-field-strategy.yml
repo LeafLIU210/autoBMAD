@@ -1,0 +1,79 @@
+# Story 27.2 Gate: Private Field Validation Strategy Migration
+
+description: |
+  Migrate private field validation logic from `isolation.py` to `PrivateFieldIsolationStrategy`
+  within the `ContextValidator` framework.
+
+checklist:
+  - name: PrivateFieldIsolationStrategy Implementation
+    criteria:
+      - "Strategy class created in context/validator.py"
+      - "Implements recursive private field checking equivalent to _check_for_private_fields"
+      - "Returns ValidationResult with ValidationIssue objects for each leak found"
+      - "Handles circular references using visited set with id()"
+      - "Correctly identifies private fields by _ prefix (not dunder methods)"
+
+  - name: ContextValidator Integration
+    criteria:
+      - "ContextValidator._isolation_strategy is set to PrivateFieldIsolationStrategy instance"
+      - "ContextValidator.validate_isolation() uses the strategy"
+      - "ValidationResult correctly reports errors with field paths"
+
+  - name: ContextManager Updates
+    criteria:
+      - "ContextManager accepts optional ContextValidator in __init__"
+      - "build_evaluator_context calls ContextValidator.validate_isolation()"
+      - "ContextIsolationError raised with same message format on validation failure"
+
+  - name: Old Code Removal
+    criteria:
+      - "_validate_no_private_fields method removed from ContextManager"
+      - "_check_for_private_fields function removed from isolation.py"
+      - "No references to deleted methods remain"
+
+  - name: Test Coverage
+    criteria:
+      - "test_private_field_strategy_clean - data without private fields passes"
+      - "test_private_field_strategy_detects_simple_leak - detects {\"_private\": \"value\"}"
+      - "test_private_field_strategy_detects_nested_leak - detects leak in nested dict"
+      - "test_private_field_strategy_detects_list_leak - detects leak in list items"
+      - "test_private_field_strategy_allows_public_fields - {\"public\": \"value\"} passes"
+      - "test_private_field_strategy_allows_dunder - {\"__dict__\": {}} passes"
+      - "test_private_field_strategy_circular_reference - handles circular refs"
+      - "test_context_manager_raises_isolation_error - verifies ContextIsolationError still raised"
+      - "test_context_manager_calls_validator - verifies validate_isolation is called"
+      - "All tests pass with >80% coverage"
+
+entry_criteria:
+  - "Story 27.1 ContextValidator framework is complete"
+  - "tests/unit/context/test_validator.py exists and passes"
+
+exit_criteria:
+  - "All checklist items pass"
+  - "pytest -v --tb=short --cov=autoBMAD.docuswarm.context passes"
+  - "No regression in existing tests"
+
+# QA Gate Result
+gate_result:
+  status: PASS
+  reviewed_by: Quinn (QA Agent)
+  reviewed_date: 2026-03-27
+  decision: |
+    All acceptance criteria met. Implementation correctly migrates private field validation
+    to PrivateFieldIsolationStrategy within the ContextValidator framework.
+  test_results:
+    total_tests: 80
+    passed: 80
+    failed: 0
+    coverage_validator: "100%"
+  minor_issues:
+    - "UP038: isinstance style preference (cosmetic)"
+    - "Type warnings in placeholder methods (Stories 27.3-27.5)"
+  notes: |
+    - All 35 new isolation tests pass
+    - All 80 context tests pass (35 new + 45 existing)
+    - validator.py has 100% coverage
+    - ContextManager properly integrates with ContextValidator
+    - ContextIsolationError preserved with same message format
+    - Old validation methods successfully removed from isolation.py
+    - No functional references to deleted methods found

@@ -1,0 +1,83 @@
+# Story Gate: 34.3 - Verify and Update UX node.yaml Tools Config
+
+## Story Information
+- **Story ID**: 34.3
+- **Story Title**: Verify and Update UX node.yaml Tools Config
+- **Epic**: EPIC-34 (Tool Permissions Full Open Access)
+
+## Quality Gate Checklist
+
+### Code Implementation
+- [x] `nodes/ux/node.yaml` contains a complete `tools` section with unified configuration
+- [x] `tools.allowed_builtin_tools` is set to `["Read", "Glob"]`
+- [x] `tools.file_permissions.allowed_read_dirs` includes `"docs/"`
+- [x] `tools.search_permissions.search_dirs` includes `"docs/"`
+- [x] YAML syntax validation passes without errors
+- [x] NodeLoader correctly parses the file and search permissions from the updated node.yaml
+
+### Testing
+- [x] Unit tests created: `tests/test_ux_node_tools_config.py`
+- [x] Unit test: NodeLoader correctly parses `tools.allowed_builtin_tools` from UX node.yaml
+- [x] Unit test: NodeLoader correctly extracts `tools.file_permissions.allowed_read_dirs` as a list
+- [x] Unit test: NodeLoader correctly extracts `tools.search_permissions.search_dirs` as a list
+- [x] Unit test: YAML validation passes for the updated node.yaml structure
+- [x] Integration test: `read_document` tool can read a file in `docs/` directory as UX agent
+- [x] Integration test: `read_document` tool can read a file in `docs/research/` subdirectory as UX agent
+- [x] Integration test: `list_documents` tool can list contents of `docs/` directory as UX agent
+- [x] Integration test: `glob_search` tool can find files matching patterns in `docs/` as UX agent
+- [x] Integration test: Cross-directory access works within the `docs/` tree
+- [x] Integration test: Sensitive files outside allowed dirs (e.g., `.env`, `.db` files) are blocked
+
+### Test Coverage
+- [x] All tests pass (35/35)
+- [x] Coverage for `autoBMAD.nodes.loader`: 89%
+- [x] Coverage for `autoBMAD.docuswarm.tools.file_tools`: 54%
+
+## Test Results
+
+```
+pytest tests/test_ux_node_tools_config.py -v --tb=short
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0
+collected 35 items
+
+tests\test_ux_node_tools_config.py ...................................   [100%]
+
+============================= 35 passed in 1.68s =============================
+```
+
+## QA Review Summary
+
+**Review Date**: 2026-04-07
+**Reviewer**: Quinn (QA Agent)
+
+### Configuration Verification
+| Check | Result |
+|-------|--------|
+| tools section exists | PASS |
+| allowed_builtin_tools = ["Read", "Glob"] | PASS |
+| file_permissions.allowed_read_dirs includes "docs/" | PASS |
+| search_permissions.search_dirs includes "docs/" | PASS |
+| YAML syntax valid | PASS |
+
+### Document Completeness: 100%
+- All acceptance criteria completed: 7/7
+- All tasks/subtasks completed: 7/7
+- All unit tests completed: 4/4
+- All integration tests completed: 6/6
+
+### Tool Validation: PASS (30 points)
+- All 35 tests passing
+- YAML configuration valid
+- NodeLoader parsing verified
+- Tool permissions correctly configured
+
+## Gate Status: **PASS**
+
+All quality gates passed. The UX node.yaml has been successfully updated with the proper tools configuration following the EPIC-34 unified full access pattern.
+
+## Notes
+- The simplified `allowed_read_dirs: ["docs/"]` correctly covers subdirectory access via PathValidator's prefix matching
+- Skills configuration preserved and remains functional
+- Configuration follows the same pattern as Analyst (34.1) and PM (34.2) nodes
+- All acceptance criteria met with passing tests

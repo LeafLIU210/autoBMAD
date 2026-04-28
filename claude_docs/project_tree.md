@@ -1,112 +1,234 @@
-project/                       # 项目根目录
-├── src/                        # 源代码
-│   └── my_qt_app/              # 主程序包（命名用下划线）
-│       ├── __init__.py
-│       ├── __main__.py         # 程序入口：python -m my_qt_app
-│       ├── main.py             # 启动逻辑（实例化QApplication）
-│       ├── ui/                 # UI层
-│       │   ├── __init__.py
-│       │   ├── main_window.ui  # Qt Designer文件
-│       │   ├── main_window.py  # UI逻辑（业务分离）
-│       │   └── resources.qrc   # Qt资源文件（图标、图片）
-│       ├── core/               # 核心业务逻辑（测试重点）
-│       │   ├── __init__.py
-│       │   ├── models.py       # 数据模型
-│       │   ├── services.py     # 业务服务
-│       │   └── config.py       # 配置管理
-│       └── utils/              # 工具模块
-│           ├── __init__.py
-│           └── logger.py       # 日志处理
-│
-├── tests/                      # 测试目录（镜像src结构）
-│   ├── __init__.py
-│   ├── conftest.py             # pytest全局fixture
-│   ├── fixtures/               # 测试固件（TDD关键）
-│   │   ├── __init__.py
-│   │   └── mock_qt_objects.py  # Mock的Qt组件
-│   ├── unit/                   # 单元测试（无UI，快速）
-│   │   ├── test_models.py
-│   │   └── test_services.py
-│   ├── integration/            # 集成测试（含DB、文件）
-│   │   └── test_config.py
-│   └── gui/                    # GUI测试（用pytest-qt）
-│       ├── __init__.py
-│       └── test_main_window.py
-│
-├── autoBMAD/                   # autoBMAD工作流工具 ⭐
-│   ├── epic_automation/        # Epic自动化系统（5阶段BMAD工作流）
-│   │   ├── epic_driver.py      # 主编排器和CLI接口
-│   │   ├── sm_agent.py         # Story Master代理
-│   │   ├── dev_agent.py        # 开发代理
-│   │   ├── qa_agent.py         # QA代理
-│   │   ├── state_manager.py    # SQLite状态管理
-│   │   ├── log_manager.py      # 双写日志系统
-│   │   ├── controllers/        # 工作流控制器
-│   │   ├── agents/             # Agent实现
-│   │   ├── core/               # 基础设施（SDK执行器等）
-│   │   ├── logs/               # 日志输出目录
-│   │   └── README.md           # 详细文档
+# DocuSwarm 项目结构说明
+
+**版本**: 2.1
+**最后更新**: 2026-04-05
+**项目**: DocuSwarm Multi-Agent Orchestration System
+
+---
+
+## 目录结构
+
+```
+DocuSwarm/                     # 项目根目录
+├── autoBMAD/                  # autoBMAD 工作流系统
+│   ├── docuswarm/             # DocuSwarm 核心系统
+│   │   ├── agents/            # Agent 实现
+│   │   │   ├── base.py        # BaseAgent 基类
+│   │   │   ├── independent.py # Independent Agent
+│   │   │   ├── evaluator.py   # Evaluator Agent
+│   │   │   └── evaluator_config/  # Evaluator 配置
+│   │   ├── context/           # 上下文管理
+│   │   │   ├── isolation.py   # ContextManager
+│   │   │   ├── filter.py      # ContextFilter
+│   │   │   ├── audit.py       # IsolationAuditLogger
+│   │   │   └── memory.py      # ContextMemory
+│   │   ├── llm/               # LLM 集成
+│   │   │   ├── session_manager.py  # KimiSessionManager
+│   │   │   ├── response.py    # ResponseParser
+│   │   │   ├── mode_mapper.py # ModeMapper
+│   │   │   └── claude_sdk_wrapper.py  # Claude SDK 封装
+│   │   ├── models/            # 数据模型
+│   │   │   ├── tool.py        # 工具定义
+│   │   │   └── tool_registry.py  # 工具注册表
+│   │   ├── nodes/             # 节点系统
+│   │   │   ├── dual_agent.py  # DualAgentNode
+│   │   │   ├── iteration.py   # IterationController
+│   │   │   └── loader.py      # NodeConfigLoader
+│   │   ├── node_execution/    # 节点执行系统
+│   │   │   ├── executor.py    # NodeExecutor
+│   │   │   ├── flow.py        # ExecutionFlow
+│   │   │   ├── state.py       # ExecutionState
+│   │   │   ├── metrics.py     # MetricsCollector
+│   │   │   └── validator.py   # ContextValidator
+│   │   ├── pipeline/          # 流水线编排
+│   │   │   ├── orchestrator.py   # HybridOrchestrator
+│   │   │   ├── state.py       # PipelineState
+│   │   │   ├── graph.py       # LangGraph 图定义
+│   │   │   ├── checkpoint_manager.py  # 检查点管理
+│   │   │   ├── context_validator.py   # 上下文验证
+│   │   │   └── quality.py     # VerdictDeterminer
+│   │   ├── prompts/           # 提示词模板
+│   │   │   ├── templates/     # YAML 模板文件
+│   │   │   ├── template_loader.py
+│   │   │   ├── independent_agent.py
+│   │   │   └── evaluator_agent.py
+│   │   ├── storage/           # 存储层
+│   │   │   ├── state_manager.py
+│   │   │   ├── checkpoints.py
+│   │   │   ├── database.py
+│   │   │   └── files.py
+│   │   ├── tools/             # 工具函数
+│   │   │   ├── create_deliverable.py
+│   │   │   ├── create_document_set.py
+│   │   │   ├── update_context.py
+│   │   │   ├── update_docs_file.py
+│   │   │   ├── read_docs_file.py
+│   │   │   ├── list_docs_files.py
+│   │   │   └── tool_result_extractor.py
+│   │   ├── utils/             # 工具类
+│   │   │   ├── logging.py
+│   │   │   ├── session_ids.py
+│   │   │   └── context_resolver.py
+│   │   ├── tests/             # 测试文件
+│   │   │   ├── unit/          # 单元测试
+│   │   │   ├── integration/   # 集成测试
+│   │   │   ├── cli/           # CLI 测试
+│   │   │   └── conftest.py    # Pytest 配置
+│   │   ├── config.py          # 配置管理
+│   │   ├── exceptions.py      # 异常定义
+│   │   ├── main.py            # CLI 入口
+│   │   ├── README.md          # DocuSwarm 文档
+│   │   └── CONFIGURATION.md   # 配置说明
 │   │
-│   ├── docuswarm/              # 多智能体文档编排系统（LangGraph）
-│   │   ├── main.py             # CLI入口
-│   │   ├── pipeline/           # 流水线编排
-│   │   ├── nodes/              # 节点系统
-│   │   ├── agents/             # Agent实现（Independent + Evaluator）
-│   │   ├── context/            # 上下文管理
-│   │   ├── storage/            # 存储层
-│   │   ├── llm/                # LLM集成（Kimi SDK）
-│   │   ├── tools/              # 工具函数
-│   │   ├── docuswarm.yaml      # 配置文件
-│   │   └── README.md           # 详细文档
+│   ├── epic_automation/       # Epic 自动化系统
+│   │   ├── agents/            # Agent 实现
+│   │   │   ├── base_agent.py
+│   │   │   ├── dev_agent.py
+│   │   │   ├── qa_agent.py
+│   │   │   ├── sm_agent.py
+│   │   │   └── state_agent.py
+│   │   ├── controllers/       # 控制器模块
+│   │   │   ├── devqa_controller.py
+│   │   │   ├── pytest_controller.py
+│   │   │   └── quality_check_controller.py
+│   │   ├── core/              # 核心功能
+│   │   │   ├── cancellation_manager.py
+│   │   │   ├── sdk_executor.py
+│   │   │   └── sdk_result.py
+│   │   ├── architecture/      # 架构文档
+│   │   ├── logs/              # 日志输出
+│   │   ├── reports/           # 报告生成
+│   │   ├── epic_driver.py     # 主编排器
+│   │   ├── state_manager.py   # 状态管理
+│   │   ├── sdk_wrapper.py     # SDK 封装
+│   │   ├── README.md          # 详细文档
+│   │   └── SETUP.md           # 安装指南
 │   │
-│   ├── nodes/                  # BMAD节点配置
-│   │   ├── analyst/            # 业务分析师节点
-│   │   │   ├── node.yaml
-│   │   │   ├── persona.json
-│   │   │   └── evaluator.yaml
-│   │   ├── pm/                 # 项目经理节点
-│   │   ├── ux/                 # UX设计师节点
-│   │   ├── architect/          # 架构师节点
-│   │   └── po/                 # 产品负责人节点
+│   ├── nodes/                 # 节点配置
+│   │   ├── analyst/           # Analyst 节点配置
+│   │   ├── pm/                # PM 节点配置
+│   │   ├── ux/                # UX 节点配置
+│   │   ├── architect/         # Architect 节点配置
+│   │   └── po/                # PO 节点配置
 │   │
-│   ├── agentdocs/              # Claude Agent SDK文档
-│   └── Skill/                  # Claude Code Skill文件
+│   └── Skill/                 # Claude Code Skill
 │       ├── autoBMAD-epic-automation.skill
 │       ├── SKILL.md
-│       └── install_autoBMAD_skill.ps1
+│       └── SKILL_INSTALLATION_GUIDE.md
 │
-├── build/                      # Nuitka构建专用
-│   ├── build.py                # 一键构建脚本
-│   ├── build.spec              # Nuitka参数配置
-│   ├── app.ico                 # Windows程序图标
-│   └── version_info.py         # Windows版本信息（FILEVERSION等）
+├── claude_docs/               # 详细说明文档
+│   ├── core_principles.md     # 四大开发原则
+│   ├── ai_workflow.md         # AI 助手工作流程
+│   ├── development_rules.md   # 编码规范
+│   ├── testing_guide.md       # 测试规范
+│   ├── quality_assurance.md   # 质量保证流程
+│   ├── technical_specs.md     # 技术规范
+│   ├── workflow_tools.md      # autoBMAD 工作流
+│   ├── bmad_methodology.md    # BMAD 方法论
+│   ├── quick_reference.md     # 常用命令速查
+│   ├── project_tree.md        # 项目结构
+│   ├── venv.md                # 虚拟环境管理
+│   └── git-commit-trigger-update.md  # Git 提交触发更新
 │
-├── dist/                       # 打包输出（gitignore）
-│   └── build.log               # 构建日志
+├── docs/                      # 项目文档
+│   ├── architecture/          # 架构文档
+│   ├── epics/                 # Epic 文档
+│   ├── evaluation/            # 评估报告
+│   ├── migration/             # 迁移文档
+│   ├── plan/                  # 计划文档 (PRD, UX)
+│   ├── qa/gates/              # QA 门控配置
+│   ├── reports/               # 研究报告
+│   ├── research/              # 研究文档
+│   ├── solution/              # TDD 解决方案
+│   └── stories/               # Story 文档
 │
-├── docs/                       # 项目文档
-│   └── epics/                  # Epic文档
+├── nodes/                     # 节点配置（根目录）
+│   ├── analyst/
+│   ├── pm/
+│   ├── ux/
+│   ├── architect/
+│   └── po/
 │
-├── claude_docs/                # 详细说明文档 ⭐
-│   ├── core_principles.md
-│   ├── bmad_methodology.md
-│   ├── workflow_tools.md
-│   ├── development_rules.md
-│   ├── testing_guide.md
-│   ├── quality_assurance.md
-│   ├── technical_specs.md
-│   ├── project_tree.md
-│   ├── quick_reference.md
-│   ├── ai_workflow.md
-│   └── venv.md
+├── scripts/                   # 脚本工具
+├── tests/                     # 根级测试目录
+├── output/                    # 输出目录
+├── logs/                      # 日志目录
+├── .bmad-core/               # BMAD 核心配置
+├── .agents/                   # Agent 配置
 │
-├── .venv/                      # 虚拟环境（gitignore）
-│
-├── requirements.txt            # 生产依赖：PySide6, loguru
-├── requirements-dev.txt        # 开发依赖：pytest, pytest-qt, nuitka, black
-├── pyproject.toml              # 现代Python配置（pytest、black、mypy）
-├── pytest.ini                  # pytest专用配置（Qt插件等）
-├── .gitignore                  # Git忽略规则
-├── .pre-commit-config.yaml     # 代码质量检查（可选但推荐）
-├── README.md                   # 项目说明
-└── CLAUDE.md                   # Claude Code指导文档
+├── README.md                  # 项目主文档
+├── CLAUDE.md                  # Claude Code 指导文档
+├── SETUP.md                   # 安装指南
+├── pyproject.toml             # 项目配置
+├── requirements.txt           # 生产依赖
+├── requirements-dev.txt       # 开发依赖
+├── .env                       # 环境变量（不提交）
+├── .gitignore                 # Git 忽略规则
+└── .pre-commit-config.yaml    # 预提交钩子
+```
+
+---
+
+## 核心目录说明
+
+### autoBMAD/docuswarm/
+DocuSwarm 多 Agent 文档编排系统核心代码，包含：
+- **agents/**: Independent Agent 和 Evaluator Agent 实现
+- **context/**: 三层上下文隔离机制
+- **llm/**: claude-agent-sdk 集成 (Kimi K2.5 via Kimi Code API)
+- **pipeline/**: LangGraph 流水线编排
+- **storage/**: SQLite 状态持久化
+- **tools/**: Agent 可调用的工具函数
+
+### autoBMAD/epic_automation/
+Epic 自动化工作流系统，包含：
+- **agents/**: SM、Dev、QA 等 Agent 实现
+- **controllers/**: 工作流控制器
+- **core/**: 核心功能（SDK 封装、取消管理等）
+- Epic Driver: 完整的 5 阶段 BMAD 自动化
+
+### claude_docs/
+面向 Claude Code AI 助手的详细指导文档：
+- 开发原则和工作流程
+- 编码规范和测试指南
+- 质量保证和技术规范
+
+### docs/
+项目文档目录：
+- **architecture/**: 系统架构设计文档
+- **epics/**: Epic 规格说明
+- **solution/**: TDD 重构方案
+- **research/**: 深度研究报告
+
+---
+
+## 配置文件
+
+### pyproject.toml
+项目核心配置文件，包含：
+- 项目元数据
+- 依赖列表
+- Pytest、Ruff、BasedPyright 配置
+
+### .env
+环境变量文件（不提交到 Git）：
+```env
+ANTHROPIC_API_KEY=your_api_key_here
+ANTHROPIC_BASE_URL=https://api.kimi.com/coding/
+```
+
+### requirements.txt / requirements-dev.txt
+- **requirements.txt**: 生产依赖（LangGraph、LangChain、claude-agent-sdk 等）
+- **requirements-dev.txt**: 开发依赖（pytest、ruff、basedpyright 等）
+
+---
+
+**参考文档**:
+- [技术规范](./technical_specs.md)
+- [开发规则](./development_rules.md)
+
+---
+
+**版本历史**:
+- v2.0 (2026-03-02): 更新为 DocuSwarm 实际项目结构
+- v1.0 (2026-01-04): 初始版本

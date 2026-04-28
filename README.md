@@ -1,46 +1,53 @@
-# autoBMAD Epic Automation System
+# DocuSwarm Multi-Agent Document Orchestration System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)]()
+[![Python](https://img.shields.io/badge/python-3.12.10+-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)]()
 
-**autoBMAD** (Breakthrough Method of Agile AI-driven Development) is an intelligent automation system that processes epics through a complete 5-phase workflow with integrated code quality gates and test automation.
+**DocuSwarm** is an intelligent multi-agent orchestration system that automates BMAD (Breakthrough Method of Agile AI-driven Development) workflows through a dual-agent pattern with context isolation.
 
 ## 🎯 Project Overview
 
-**Note:** This project was originally created as a development template for Python Qt applications. However, its primary and most powerful feature is the **autoBMAD workflow system**. 
+DocuSwarm 编排 5 个专业 Agent（Analyst、PM、UX Designer、Architect、PO），按照 BMAD 方法论创建全面的项目文档。
 
-The design relies on:
-- **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** - AI-powered agent orchestration
-- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - Agile AI-driven development methodology
+架构基于：
+- **[LangGraph](https://langchain-ai.github.io/langgraph/)** - 多 Agent 工作流状态机
+- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Claude SDK（通过 Kimi Code API OpenAI 兼容接口）
+- **[Kimi K2.5](https://platform.moonshot.cn/)** - 大上下文窗口 LLM（256K tokens）
+- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI 驱动的敏捷开发方法论
+- **上下文隔离** - 运行时访问控制 + 提示模板隔离 + 消息过滤
 
-The system targets **fully automated development** of epic documents created by Product Owners (PO), including:
-- **SM-Dev-QA BMAD development cycle** - Story creation, implementation, and validation
-- **Quality gate checks and auto-fixing** - Type checking, linting, and code quality assurance
-- **Test automation** - Comprehensive test execution and reporting
+### Core Features
+- **Dual-Agent Pattern** - Independent Agent (creates deliverables + questions) + Evaluator Agent (reviews with context isolation)
+- **Sequential Pipeline** - 5 BMAD phases: Analyst → PM → UX → Architect → PO
+- **Context Isolation** - Three-layer defense (runtime access control + prompt templates + message filtering)
+- **State Persistence** - SQLite with WAL mode for checkpoint/resume
+- **Session Management** - Stateless query-based SDK calls
+- **Native Tool System** - Standard Tool Use Block pattern
+- **Streaming** - AsyncGenerator-based message streaming
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12+
+- Anthropic API Key (或 Kimi Code API Key)
 - Git
-- Virtual environment tool (venv)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd pytQt_template
+   cd DocuSwarm
    ```
 
 2. **Create virtual environment**
    ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # Windows
+   python -m venv venv
+   venv\Scripts\activate  # Windows
    # or
-   source .venv/bin/activate  # Linux/macOS
+   source venv/bin/activate  # Linux/macOS
    ```
 
 3. **Install dependencies**
@@ -48,253 +55,282 @@ The system targets **fully automated development** of epic documents created by 
    pip install -r requirements.txt
    ```
 
-4. **Verify installation**
+4. **Configure API Keys**
    ```bash
-   python -m autoBMAD.epic_automation.epic_driver --help
+   # Create .env file
+   echo "ANTHROPIC_API_KEY=your_api_key_here" > .env
+   # Optional: for Kimi Code API
+   echo "ANTHROPIC_BASE_URL=https://api.kimi.com/coding/" >> .env
+   ```
+
+5. **Verify installation**
+   ```bash
+   python -m autoBMAD.docuswarm --help
    ```
 
 ### Basic Usage
 
-Process an epic through the complete workflow:
+Start a new pipeline with a context file:
 
 ```bash
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
+python -m autoBMAD.docuswarm start --context docs/examples/project-requirements.md
+python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
 ```
 
-Skip quality gates for faster iteration:
+Check pipeline status:
 
 ```bash
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+python -m autoBMAD.docuswarm status <pipeline-id>
 ```
 
-Skip test automation:
+Resume an interrupted pipeline:
 
 ```bash
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
+python -m autoBMAD.docuswarm resume <pipeline-id>
 ```
 
-## 📊 Complete Workflow
+## 📊 DocuSwarm 架构
 
-The autoBMAD system processes epics through **5 integrated phases**:
+DocuSwarm 通过**5个顺序 BMAD 阶段**处理工作流，采用双 Agent 模式：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    EPIC PROCESSING                          │
+│                DOCUSWARM PIPELINE (Sequential)              │
 └─────────────────────────────────────────────────────────────┘
 
-Phase 1: SM TaskGroup
-├── SM Agent (Story Creation via Claude SDK)
-├── Epic Document Analysis
-├── Story ID Extraction
-└── Story File Generation
-         ↓
-Phase 2: Dev-QA Cycle
-├── DevQA Controller (State-Driven Workflow)
-├── Dev Agent (Implementation)
-├── QA Agent (Validation)
-└── Status-Based Iteration (max 3 attempts)
-         ↓
-Phase 3: Quality Gates
-├── Ruff Code Check & Auto-Fix
-├── BasedPyright Type Checking
-├── Ruff Format (Final)
-└── Max 3 Retry Cycles per Tool
-         ↓
-Phase 4: Test Automation
-├── Pytest Execution (Batch Processing)
-├── Test Result Analysis
-├── Debugpy for Persistent Failures
-└── Max 5 Retry Cycles
-         ↓
-Phase 5: Orchestration & Documentation
-├── Epic Driver (Workflow Management)
-├── State Manager (SQLite Persistence)
-├── Log Manager (Dual-Write Logging)
-└── Quality Reports & Error Summaries
+Phase 1: Analysis
+├── Analyst Node (Dual-Agent)
+│   ├── Independent Agent
+│   │   ├── Creates analyst report
+│   │   └── Generates clarifying questions
+│   └── Evaluator Agent
+│       ├── Reviews report (context isolated)
+│       └── Provides feedback + verdict
+│
+Phase 2: Planning
+├── PM Node (Dual-Agent)
+│   ├── Creates Product Requirements Document (PRD)
+│   └── Evaluator reviews
+├── UX Node (Dual-Agent)
+│   ├── Creates UX Design
+│   └── Evaluator reviews
+│
+Phase 3: Solutioning
+├── Architect Node (Dual-Agent)
+│   ├── Creates Architecture Document
+│   └── Evaluator reviews
+├── PO Node (Dual-Agent)
+│   ├── Creates Epics + Stories
+│   └── Evaluator reviews
+│
+State Management:
+├── SQLite with WAL mode
+├── LangGraph checkpointing
+├── Optimistic locking
+└── Automatic resume on failure
 ```
 
-### Phase Details
+### Project Structure
 
-**Phase 1: SM TaskGroup**
-- SM Agent creates stories from epic documents using Claude SDK
-- Extracts story IDs via regex patterns
-- Generates complete story markdown files with AI
-- Validates story structure and requirements
-- **Must execute** even if story files already exist (per Memory)
+```
+DocuSwarm/
+├── autoBMAD/                    # Main source code
+│   ├── docuswarm/              # DocuSwarm core system
+│   │   ├── agents/             # Agent implementations (Independent + Evaluator)
+│   │   ├── context/            # Context isolation (filter, audit, memory)
+│   │   ├── llm/                # LLM integration (Claude SDK wrapper)
+│   │   ├── node_execution/     # Node execution engine
+│   │   ├── nodes/              # Node definitions (DualAgentNode)
+│   │   ├── pipeline/           # Pipeline orchestration (LangGraph)
+│   │   ├── prompts/            # Prompt templates (YAML + Markdown)
+│   │   ├── storage/            # State persistence (SQLite + files)
+│   │   ├── tools/              # Tool system (deliverables, context)
+│   │   ├── utils/              # Utilities (logging, session IDs)
+│   │   ├── tests/              # Unit and integration tests
+│   │   ├── config.py           # Configuration management
+│   │   ├── main.py             # CLI entry point
+│   │   └── docuswarm.yaml      # Default YAML configuration
+│   └── epic_automation/        # Epic automation system
+├── nodes/                       # Node configurations (BMAD personas)
+│   ├── analyst/                # Analyst node config
+│   ├── pm/                     # PM node config
+│   ├── ux/                     # UX node config
+│   ├── architect/              # Architect node config
+│   └── po/                     # PO node config
+├── tests/                       # Additional test suite
+├── docs/                        # Documentation & examples
+│   └── examples/               # Example context files
+├── scripts/                     # Utility scripts
+├── claude_docs/                # AI-assisted development guides
+├── pyproject.toml              # Project configuration
+├── requirements.txt            # Dependencies
+└── README.md                   # This file
+```
 
-**Phase 2: Dev-QA Cycle**
-- **DevQA Controller** orchestrates state-driven workflow
-- **Dev Agent**: Implements story according to specifications
-- **QA Agent**: Validates implementation against acceptance criteria
-- **State Agent**: Parses story status to drive workflow decisions
-- **Status Update Agent**: Updates story status via SDK
-- Automatic retry on failures (up to 3 attempts)
-- Loop continues until story reaches "Ready for Done" or "Done"
-
-**Phase 3: Quality Gates**
-- **Ruff Check**: Linting with auto-fix (Cycle 1)
-- **BasedPyright**: Static type checking (Cycle 2)
-- **Ruff Format**: Final code formatting (Cycle 3)
-- Maximum 5 retry cycles per tool
-- Non-blocking: continues even with quality warnings
-- Error summaries saved to JSON files
-
-**Phase 4: Test Automation**
-- **Pytest Controller**: Manages test execution pipeline
-- **Batch Executor**: Runs tests efficiently
-- **Test Automation Agent**: Fixes persistent failures via SDK
-- **Debugpy Integration**: Debug complex test failures
-- Maximum 5 retry cycles
-- Detailed test reports and failure analysis
-
-**Phase 5: Orchestration & Documentation**
-- **Epic Driver**: Central orchestrator for complete workflow
-- **State Manager**: SQLite-based persistence with WAL mode
-- **Log Manager**: Dual-write logging (console + file)
-- **Progress Tracking**: Real-time status across all phases
-- **Quality Reports**: JSON error summaries and recommendations
-- **Resource Monitoring**: CPU and memory usage tracking
-
-## 📋 Phase-by-Phase Usage Guide
-
-### Phase 1: SM TaskGroup
-
-**Purpose**: AI-powered story creation from epic documents
+## 📋 CLI Reference
 
 ```bash
-# SM Agent extracts and creates stories automatically
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
+python -m autoBMAD.docuswarm [OPTIONS] COMMAND [ARGS]...
 ```
 
-**What Happens:**
-- Parses epic markdown to extract story IDs
-- Uses Claude SDK to generate complete story files
-- Creates story structure with acceptance criteria
-- Validates requirements completeness
+### Global Options
 
-**Key Point**: Always executes even if story files exist (ensures state initialization)
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-v, --verbose` | Enable verbose debug output | false |
+| `--log-level` | Set logging level (DEBUG/INFO/WARNING/ERROR) | INFO |
+| `--log-file DIR` | Directory for log files | ./logs |
+| `--json-log` | Use JSON format for log file output | false |
+| `--version` | Show version and exit | - |
 
-### Phase 2: Dev-QA Cycle
+**Note**: Use `-v` or `--verbose` for detailed debug output. Useful for troubleshooting.
 
-**Purpose**: State-driven implementation and validation loop
+### Commands
+
+#### `start` - Start a new pipeline
 
 ```bash
-# DevQA Controller manages the cycle automatically
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --max-iterations 3
+python -m autoBMAD.docuswarm start --context <file>
 ```
 
-**Workflow:**
-1. **State Agent** reads current story status from markdown
-2. **Dev Agent** implements if status = "Ready for Development"
-3. **QA Agent** validates if status = "Ready for Review"
-4. **Status Update Agent** updates story via SDK
-5. Loops until status = "Ready for Done" or "Done"
+**Options:**
+- `-c, --context FILE` - Path to the context file (required)
 
-**Retry Logic**: Up to 3 iterations per story
+**Example:**
+```bash
+python -m autoBMAD.docuswarm start --context docs/examples/my-project.md
+```
 
-### Phase 3: Quality Gates
-
-**Purpose**: Automated code quality checks (non-blocking)
+#### `status` - Show pipeline status
 
 ```bash
-# Run all quality gates (default)
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
-
-# Skip quality gates for faster iteration
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
+python -m autoBMAD.docuswarm status <pipeline-id>
 ```
 
-**Three-Cycle Process:**
-
-**Cycle 1: Ruff Check**
+**Example:**
 ```bash
-ruff check --fix src/  # Auto-fixes linting issues
+python -m autoBMAD.docuswarm status abc123-def456
 ```
-- Checks PEP 8 compliance, unused imports, code complexity
-- Automatic fixes applied where possible
-- Max 5 retry cycles
 
-**Cycle 2: BasedPyright**
-```bash
-basedpyright src/  # Type checking
-```
-- Static type validation
-- Reports type errors and missing annotations
-- Max 5 retry cycles
-
-**Cycle 3: Ruff Format**
-```bash
-ruff format src/  # Final formatting
-```
-- Applies consistent code style
-- Final polish before tests
-
-**Error Handling:**
-- Non-blocking: continues even with warnings
-- Error summaries saved to `autoBMAD/epic_automation/errors/*.json`
-- Quality warnings logged but don't halt pipeline
-
-### Phase 4: Test Automation
-
-**Purpose**: Comprehensive test execution with intelligent retry
+#### `resume` - Resume an interrupted pipeline
 
 ```bash
-# Run pytest automation (default)
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
-
-# Skip tests for quick validation
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-tests
-
-# Custom test directory
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --test-dir tests/
+python -m autoBMAD.docuswarm resume <pipeline-id> [OPTIONS]
 ```
 
-**Test Pipeline:**
-1. **Pytest Controller** discovers and batches tests
-2. **Batch Executor** runs tests efficiently
-3. **Test Automation Agent** analyzes failures and fixes via SDK
-4. **Debugpy** activates for persistent failures (300s timeout)
-5. Max 5 retry cycles
+**Options:**
+- `-n, --node NODE` - Restart from a specific node (analyst/pm/ux/architect/po)
+- `-f, --force` - Force resume even if pipeline is running
 
-**Batch Execution:**
-- Dynamic directory scanning (no hardcoded paths)
-- Automatic batch grouping by test type
-- Parallel execution support
-
-### Phase 5: Orchestration & Documentation
-
-**Purpose**: Workflow management and persistent state tracking
-
-**Components:**
-
-**Epic Driver** (Central Orchestrator)
-- Coordinates all phase execution
-- Manages phase-gated progression
-- Handles retry logic and error recovery
-
-**State Manager** (SQLite Persistence)
-- WAL mode for concurrent access
-- Optimistic locking for consistency
-- Tracks epic/story progress across phases
-
-**Log Manager** (Dual-Write Logging)
+**Examples:**
 ```bash
-# Enable log file creation
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --log-file
+# Resume from last checkpoint
+python -m autoBMAD.docuswarm resume abc123-def456
+
+# Restart from specific node
+python -m autoBMAD.docuswarm resume abc123-def456 --node pm
 ```
-- Console output (always on)
-- File logging (optional, timestamped)
-- Structured logging with phase context
 
-**Quality Reports**
-- JSON error summaries in `errors/` directory
-- Includes tool name, cycles, remaining issues
-- Recommendations for manual fixes
+#### `list-pipelines` - List all pipelines
 
-**Resource Monitoring**
-- CPU and memory usage tracking
-- Performance metrics collection
-- Bottleneck identification
+```bash
+python -m autoBMAD.docuswarm list-pipelines [OPTIONS]
+```
+
+**Options:**
+- `-s, --status STATUS` - Filter by status (pending/running/completed/failed/paused)
+
+**Examples:**
+```bash
+# List all pipelines
+python -m autoBMAD.docuswarm list-pipelines
+
+# List only running pipelines
+python -m autoBMAD.docuswarm list-pipelines --status running
+```
+
+#### `export` - Export deliverables
+
+```bash
+python -m autoBMAD.docuswarm export <pipeline-id> [OUTPUT_DIR] [OPTIONS]
+```
+
+**Options:**
+- `-o, --output PATH` - Custom destination directory
+- `--include-metadata` - Include _metadata.json in export
+
+**Examples:**
+```bash
+# Export to current directory
+python -m autoBMAD.docuswarm export abc123-def456
+
+# Export to specific directory
+python -m autoBMAD.docuswarm export abc123-def456 ./output --include-metadata
+```
+
+#### `questions` - List unanswered questions
+
+```bash
+python -m autoBMAD.docuswarm questions <pipeline-id> [OPTIONS]
+```
+
+**Options:**
+- `-r, --run RUN_ID` - Query a specific run ID instead of latest
+
+**Example:**
+```bash
+python -m autoBMAD.docuswarm questions abc123-def456
+```
+
+#### `answer` - Answer a question
+
+```bash
+python -m autoBMAD.docuswarm answer <question-id> [answer] [OPTIONS]
+```
+
+**Options:**
+- `-t, --text TEXT` - Answer text (alternative to positional argument)
+
+**Example:**
+```bash
+python -m autoBMAD.docuswarm answer abc123_analyst_0 "Yes, we should use PostgreSQL"
+```
+
+#### `cancel` - Cancel a running pipeline
+
+```bash
+python -m autoBMAD.docuswarm cancel <pipeline-id>
+```
+
+#### `cancel-all` - Cancel all pipelines
+
+```bash
+python -m autoBMAD.docuswarm cancel-all [OPTIONS]
+```
+
+**Options:**
+- `--status STATUS` - Only cancel pipelines with this status
+- `--confirm` - Skip confirmation prompt
+
+#### `clean` - Delete pipelines from database
+
+```bash
+python -m autoBMAD.docuswarm clean [OPTIONS]
+```
+
+**Options:**
+- `--status STATUS` - Only delete pipelines with this status
+- `--older-than-days N` - Only delete pipelines older than N days
+- `--confirm` - Skip confirmation prompt
+
+**Examples:**
+```bash
+# Delete all cancelled pipelines
+python -m autoBMAD.docuswarm clean --status cancelled --confirm
+
+# Delete completed pipelines older than 7 days
+python -m autoBMAD.docuswarm clean --status completed --older-than-days 7 --confirm
+```
 
 ## ⚙️ Configuration
 
@@ -302,74 +338,139 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --log-file
 
 ```toml
 [tool.basedpyright]
-pythonVersion = "3.12"
-typeCheckingMode = "basic"
+pythonVersion = "3.12.10"
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py312"
-select = ["E", "F", "B", "I"]
+select = ["E", "F", "B", "I", "W", "C4", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
+asyncio_mode = "auto"
 addopts = "--verbose"
 ```
 
 ### Environment Variables
 
+Create a `.env` file in the project root:
+
 ```bash
-export ANTHROPIC_API_KEY=your_api_key  # Required for Claude SDK
-export PYTHONPATH=.  # Required for imports
+# Required - Anthropic API Key (or Kimi Code API Key)
+ANTHROPIC_API_KEY=your_api_key_here
+
+# Optional - API Base URL (for Kimi Code API)
+ANTHROPIC_BASE_URL=https://api.kimi.com/coding/
+
+# Optional - DocuSwarm Configuration
+DOCUSWARM_DB_PATH=docuswarm.db
+DOCUSWARM_OUTPUT_DIR=output
+DOCUSWARM_LOG_LEVEL=INFO
+DOCUSWARM_MAX_ITERATIONS=100
 ```
 
-## 🎯 CLI Reference
+### YAML Configuration
 
-```bash
-python -m autoBMAD.epic_automation.epic_driver [OPTIONS] EPIC_PATH
+You can also configure DocuSwarm via `autoBMAD/docuswarm/docuswarm.yaml`:
+
+```yaml
+# API Configuration
+base_url: https://api.anthropic.com/v1/
+
+# Database Configuration
+db_path: docuswarm.db
+
+# Output Configuration
+output_dir: output
+
+# Logging Configuration
+log_level: INFO
+
+# Pipeline Configuration
+max_iterations: 100
 ```
 
-**Essential Options:**
+**Configuration Priority**: Environment Variables > YAML Config > Default Values
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `EPIC_PATH` | Path to epic markdown file | *required* |
-| `--skip-quality` | Skip Phase 3 (Quality Gates) | false |
-| `--skip-tests` | Skip Phase 4 (Test Automation) | false |
-| `--max-iterations N` | Phase 2 retry limit | 3 |
-| `--verbose` | Detailed logging | false |
-| `--log-file` | Create timestamped log files | false |
-| `--source-dir DIR` | Source code directory | src |
-| `--test-dir DIR` | Test directory | tests |
+## 🔄 Common Workflows
 
-**Common Patterns:**
+### Full Pipeline Execution
 
 ```bash
-# Full 5-phase pipeline
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
+# 1. Start pipeline
+python -m autoBMAD.docuswarm start --context docs/examples/project.md
 
-# Fast iteration (skip Phase 3 & 4)
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality --skip-tests
+# 2. Check status (repeat as needed)
+python -m autoBMAD.docuswarm status <pipeline-id>
 
-# Debug mode with logs
-python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose --log-file
+# 3. Answer any blocking questions
+python -m autoBMAD.docuswarm questions <pipeline-id>
+python -m autoBMAD.docuswarm answer <question-id> "Your answer"
+
+# 4. Export results when complete
+python -m autoBMAD.docuswarm export <pipeline-id> ./output --include-metadata
+```
+
+### Pipeline Management
+
+```bash
+# List all pipelines
+python -m autoBMAD.docuswarm list-pipelines
+
+# Cancel a running pipeline
+python -m autoBMAD.docuswarm cancel <pipeline-id>
+
+# Cancel all pending pipelines
+python -m autoBMAD.docuswarm cancel-all --status pending --confirm
+
+# Clean up old pipelines
+python -m autoBMAD.docuswarm clean --status completed --older-than-days 7 --confirm
+```
+
+### Development Workflow
+
+```bash
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=autoBMAD.docuswarm --cov-report=html
+
+# Quality checks
+ruff check autoBMAD/
+basedpyright autoBMAD/
+
+# Format code
+ruff format autoBMAD/
 ```
 
 ## 🔍 Troubleshooting
 
-### Common Issues
+### Pipeline Issues
+
+**Pipeline stuck or failed:**
+```bash
+# Check status
+python -m autoBMAD.docuswarm status <pipeline-id>
+
+# Resume from last checkpoint
+python -m autoBMAD.docuswarm resume <pipeline-id>
+
+# Or restart from specific node
+python -m autoBMAD.docuswarm resume <pipeline-id> --node analyst --force
+```
 
 **Quality Gates Fail:**
 
 ```bash
 # Check BasedPyRight errors
-basedpyright src/ --output-format=json
+basedpyright autoBMAD/ --output-format=json
 
 # Check Ruff errors
-ruff check src/ --output-format=json
+ruff check autoBMAD/ --output-format=json
 
 # Fix all issues automatically
-ruff check --fix src/
+ruff check --fix autoBMAD/
 ```
 
 **Test Failures:**
@@ -382,66 +483,70 @@ pytest tests/ -v --tb=long
 pytest tests/test_specific.py -s --pdb
 ```
 
-**Installation Issues:**
+### Common Errors
+
+**API Key Error:**
+```
+ConfigurationError: ANTHROPIC_API_KEY is required
+```
+**Solution:**
+- Ensure `.env` file exists with `ANTHROPIC_API_KEY=your_key`
+- Verify the API key is valid and not expired
+
+**Pipeline Not Found:**
+```
+Error: Pipeline not found: abc123xyz
+```
+**Solution:**
+- Use `list-pipelines` to see all available pipelines
+- Check the pipeline ID spelling (case-sensitive)
+- Verify the database file exists: `ls docuswarm.db`
+
+**Database Locked:**
+```
+sqlite3.OperationalError: database is locked
+```
+**Solution:**
+- Ensure only one process is accessing the database
+- Enable WAL mode: `sqlite3 docuswarm.db "PRAGMA journal_mode=WAL;"`
+
+### Installation Issues
 
 ```bash
-# Recreate virtual environment
-rm -rf .venv
-python -m venv .venv
-.venv\Scripts\activate
+# Recreate virtual environment (Windows)
+venv\Scripts\deactivate
+rmdir /s venv
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+
+# Recreate virtual environment (Linux/macOS)
+deactivate
+rm -rf venv
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-See `docs/troubleshooting/quality-gates.md` for detailed troubleshooting.
-
-## 🔌 Claude Code Integration - Skills
-
-The autoBMAD system can be integrated into Claude Code as a **Skill** for seamless AI-powered development.
-
-### Installing the Skill
-
-The autoBMAD skill package is located at `autoBMAD/Skill/`:
-
-```bash
-# Copy skill to Claude Code skills directory
-cp autoBMAD/Skill/autoBMAD-epic-automation.skill ~/.claude/skills/
-
-# Or use the installation script
-# Windows PowerShell
-.\autoBMAD\Skill\install_autoBMAD_skill.ps1
-
-# Linux/macOS
-./autoBMAD/Skill/install_autoBMAD_skill.sh
-```
-
-### Skill Documentation
-
-- **[SKILL.md](autoBMAD/Skill/SKILL.md)** - Complete skill reference and usage guide
-- **[SKILL_INSTALLATION_GUIDE.md](autoBMAD/Skill/SKILL_INSTALLATION_GUIDE.md)** - Step-by-step installation instructions
-
-### Using the Skill in Claude Code
-
-Once installed, Claude Code can invoke the autoBMAD workflow directly:
-
-```
-Please process the epic file docs/epics/my-epic.md using the autoBMAD workflow
-```
-
-The skill provides:
-- ✅ Complete 5-phase workflow automation
-- ✅ SM-Dev-QA cycle orchestration
-- ✅ Quality gates (BasedPyright + Ruff)
-- ✅ Test automation (Pytest)
-- ✅ State management and recovery
-- ✅ Detailed logging and reporting
-
 ## 📚 Documentation
 
+### User Documentation
 - [Setup Guide](SETUP.md) - Installation and setup
 - [Claude Code Guide](CLAUDE.md) - AI-assisted development guide
-- [Workflow Tools](claude_docs/workflow_tools.md) - autoBMAD workflow details
-- [Quality Assurance](claude_docs/quality_assurance.md) - QA processes and gates
-- [BMAD Methodology](claude_docs/bmad_methodology.md) - Development methodology
+- [DocuSwarm Detailed Guide](autoBMAD/docuswarm/README.md) - Complete usage guide
+- [Configuration Guide](autoBMAD/docuswarm/CONFIGURATION.md) - API and configuration details
+
+### Development Guides
+- [Core Principles](claude_docs/core_principles.md) - DRY, KISS, YAGNI, Occam's Razor
+- [Development Rules](claude_docs/development_rules.md) - Coding standards
+- [Testing Guide](claude_docs/testing_guide.md) - Testing practices
+- [Quality Assurance](claude_docs/quality_assurance.md) - QA processes
+- [AI Workflow](claude_docs/ai_workflow.md) - Three-phase AI workflow
+
+### DocuSwarm Internal Documentation
+- [DocuSwarm CLI Research Report](autoBMAD/docuswarm/docs/DocuSwarm-CLI-Research-Report.md)
+- [DocuSwarm TDD Refactor Plan](autoBMAD/docuswarm/docs/DocuSwarm-TDD-Refactor-Plan.md)
+- [Pipeline CurrentNode Analysis](autoBMAD/docuswarm/docs/DocuSwarm流水线CurrentNode问题分析与操作指引.md)
 
 ## 🤝 Contributing
 
@@ -456,6 +561,6 @@ MIT License - see LICENSE file for details
 
 ## 🆘 Support
 
-- Create an issue for bugs or feature requests
-- Check [troubleshooting guide](docs/troubleshooting/)
-- Review [quality gate documentation](docs/user-guide/quality-gates.md)
+- 创建 issue 提交 bug 或功能请求
+- 查看 [quality_assurance.md](claude_docs/quality_assurance.md) 了解质量保证流程
+- 查看 [workflow_tools.md](claude_docs/workflow_tools.md) 了解 autoBMAD 工作流

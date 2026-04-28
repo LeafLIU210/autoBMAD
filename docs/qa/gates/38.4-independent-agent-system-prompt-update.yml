@@ -1,0 +1,14 @@
+schema: 1
+story: "38.4"
+story_title: "IndependentAgent System Prompt 更新"
+gate: PASS
+status_reason: "All 29 tests passed (100%), Ruff linting clean, acceptance criteria fully met. System prompt correctly updated with tool call sequence guidance."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T10:30:00Z"
+waiver: { active: false }
+top_issues: []
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []

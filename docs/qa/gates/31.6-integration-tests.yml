@@ -1,0 +1,53 @@
+# <!-- Powered by BMAD Core -->
+schema: 1
+story: "31.6"
+story_title: "Integration Tests"
+gate: "PASS"
+status_reason: "All 37 integration tests pass with 95% coverage for skill_injector.py. Type checking (0 errors) and linting (0 errors) pass. All acceptance criteria verified."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T03:15:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 37
+  tests_passed: 37
+  coverage_skill_injector: "95%"
+  type_check_errors: 0
+  lint_errors: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+test_validation:
+  test_file: "tests/test_skills_integration.py"
+  test_classes:
+    - TestSkillInjectorBuildsQuickReference
+    - TestNodeConfigLoadsSkills
+    - TestSessionManagerEnablesSkillTool
+    - TestIndependentAgentWithSkills
+    - TestEdgeCasesAndErrorHandling
+    - TestBackwardCompatibility
+    - TestFullWorkflowIntegration
+    - TestSDKConfiguration
+    - TestSystemPromptContent
+  key_tests:
+    - test_skill_injector_builds_quick_reference
+    - test_node_config_loads_skills
+    - test_session_manager_enables_skill_tool
+    - test_independent_agent_with_skills
+
+gate_criteria:
+  document_completeness: { status: PASS, score: "100%" }
+  tool_validation:
+    pytest: { status: PASS, result: "37/37 passed" }
+    basedpyright: { status: PASS, result: "0 errors" }
+    ruff: { status: PASS, result: "0 errors" }

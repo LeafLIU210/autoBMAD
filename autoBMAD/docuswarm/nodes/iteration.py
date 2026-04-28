@@ -13,10 +13,13 @@ for subsequent iterations.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 import structlog
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 
 if TYPE_CHECKING:
     from structlog import BoundLogger as StructlogBoundLogger
@@ -46,7 +49,7 @@ class IterationHistory:
     feedback: str = ""
     issues: list[str] = field(default_factory=list)
     suggestions: list[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(_BEIJING_TZ))
 
 
 @dataclass
@@ -187,7 +190,7 @@ class IterationController:
             feedback=feedback,
             issues=issues or [],
             suggestions=suggestions or [],
-            timestamp=datetime.now(),
+            timestamp=datetime.now(_BEIJING_TZ),
         )
 
         state.history.append(history_entry)

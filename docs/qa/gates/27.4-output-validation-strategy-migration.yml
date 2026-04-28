@@ -1,0 +1,130 @@
+story_id: "27.4"
+story_title: "输出验证策略迁移"
+status: "PASS"
+qa_review_date: "2026-03-27"
+qa_engineer: "Quinn (Test Architect)"
+
+document_completeness:
+  score: "100%"
+  checks:
+    - item: "Story title and description"
+      status: "pass"
+    - item: "Acceptance criteria"
+      status: "pass"
+      notes: "All 6 criteria marked complete"
+    - item: "Tasks/Subtasks"
+      status: "pass"
+      notes: "All 5 tasks with subtasks completed"
+    - item: "Dev Notes"
+      status: "pass"
+      notes: "Implementation details well documented"
+    - item: "Testing section"
+      status: "pass"
+      notes: "11 unit tests, 3 integration tests, 3 manual tests - all marked complete"
+    - item: "Dev Agent Record"
+      status: "pass"
+      notes: "Files modified/created documented, test results recorded"
+    - item: "Change Log"
+      status: "pass"
+      notes: "Dated entries with implementation milestones"
+
+tool_validation:
+  test_results:
+    - command: "pytest tests/unit/context/test_validator.py -v --tb=short"
+      result: "PASS"
+      details: "45/45 tests passed"
+    - command: "pytest tests/unit/context/test_output_strategies.py -v --tb=short"
+      result: "PASS"
+      details: "55/55 tests passed"
+    - command: "pytest tests/unit/context/ -v --tb=short --cov=autoBMAD.docuswarm.context.validator"
+      result: "PASS"
+      details: "181/181 tests passed, 98% coverage for validator.py"
+  coverage:
+    module: "autoBMAD.docuswarm.context.validator"
+    percentage: 98
+    target: 80
+    status: "pass"
+
+code_review:
+  - item: "IndependentOutputValidationStrategy implementation"
+    status: "pass"
+    location: "autoBMAD/docuswarm/context/validator.py"
+  - item: "EvaluatorOutputValidationStrategy implementation"
+    status: "pass"
+    location: "autoBMAD/docuswarm/context/validator.py"
+  - item: "Old functions removed from llm/response.py"
+    status: "pass"
+  - item: "Independent agent updated to use ContextValidator"
+    status: "pass"
+    location: "autoBMAD/docuswarm/agents/independent.py"
+  - item: "Evaluator agent updated to use ContextValidator"
+    status: "pass"
+    location: "autoBMAD/docuswarm/agents/evaluator.py"
+
+gate_decision: "PASS"
+decision_rationale: |
+  All acceptance criteria met. Implementation follows Strategy Pattern correctly.
+  Test coverage at 98% exceeds 80% target. All 181 context tests pass.
+  Migration from procedural functions to strategy classes complete.
+  Callers successfully updated to use ContextValidator facade methods.
+
+recommendations:
+  - "Consider adding integration tests for full dual-agent flow validation"
+  - "Document node-specific rule examples in developer guide"
+
+entrance_criteria:
+  - Story 27.1 完成 - ContextValidator 框架已建立
+  - Story 27.2 完成 - PrivateFieldIsolationStrategy 已实现
+  - Story 27.3 完成 - NodeExecutionContextStrategy 已实现
+  - `validate_independent_output` 和 `validate_evaluator_output` 函数在 `llm/response.py` 中存在
+  - `ContextValidator` 类在 `context/validator.py` 中存在并带有占位方法
+
+exit_criteria:
+  - `IndependentOutputValidationStrategy` 完整实现（等价于原 `validate_independent_output`）
+  - `EvaluatorOutputValidationStrategy` 完整实现（等价于原 `validate_evaluator_output`）
+  - `llm/response.py` 中旧函数已删除
+  - 所有调用方更新为使用 `ContextValidator.validate_independent_output()` 和 `ContextValidator.validate_evaluator_output()`
+  - 支持节点级规则（通过 `ValidationRuleRegistry`）
+  - 新策略类返回 `ValidationResult` 对象而非抛出异常
+  - 单元测试覆盖率 > 80%
+  - 所有测试通过
+
+validation_commands:
+  - command: "pytest tests/unit/context/test_validator.py -v --tb=short"
+    expected_result: "All tests pass"
+  - command: "pytest tests/unit/context/test_output_strategies.py -v --tb=short"
+    expected_result: "All tests pass"
+  - command: "pytest tests/unit/agents/test_independent.py -v --tb=short -k test_parse"
+    expected_result: "All tests pass"
+  - command: "pytest tests/unit/agents/test_evaluator.py -v --tb=short -k test_parse"
+    expected_result: "All tests pass"
+  - command: "pytest -v --tb=short --cov=autoBMAD.docuswarm.context.validator --cov-report=term-missing"
+    expected_result: "Coverage > 80%"
+
+dependencies:
+  - story: "27.1"
+    description: "ContextValidator framework foundation"
+  - story: "27.2"
+    description: "PrivateFieldIsolationStrategy implementation"
+  - story: "27.3"
+    description: "NodeExecutionContextStrategy implementation"
+
+file_changes:
+  created:
+    - "tests/unit/context/test_output_strategies.py"
+  modified:
+    - "autoBMAD/docuswarm/context/validator.py"
+    - "autoBMAD/docuswarm/context/__init__.py"
+    - "autoBMAD/docuswarm/agents/independent.py"
+    - "autoBMAD/docuswarm/agents/evaluator.py"
+    - "autoBMAD/docuswarm/llm/response.py"
+    - "docs/stories/27.4.md"
+  deleted: []
+
+notes: |
+  This story migrates the output validation logic from procedural functions in
+  `llm/response.py` to strategy classes in the ContextValidator framework, enabling:
+  - Node-specific validation rules via ValidationRuleRegistry
+  - Consistent ValidationResult return type (no exceptions)
+  - Better separation of concerns
+  - Easier testing and maintenance

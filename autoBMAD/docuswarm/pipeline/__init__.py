@@ -13,7 +13,6 @@ from autoBMAD.docuswarm.pipeline.force_completion import (
 from autoBMAD.docuswarm.pipeline.graph import (
     PIPELINE_NODES,
     create_graph_config,
-    create_graph_with_checkpointer,
     create_pipeline_graph,
 )
 from autoBMAD.docuswarm.pipeline.orchestrator import (
@@ -61,7 +60,6 @@ __all__ = [
     # Graph exports
     "PIPELINE_NODES",
     "create_pipeline_graph",
-    "create_graph_with_checkpointer",
     "create_graph_config",
     # Orchestrator exports
     "HybridOrchestrator",

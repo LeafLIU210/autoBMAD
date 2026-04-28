@@ -1,0 +1,225 @@
+{
+  "summary": {
+    "files_analyzed": 185,
+    "files_with_kimi_imports": 7,
+    "files_with_claude_imports": 6,
+    "files_with_kaos_imports": 3,
+    "drift_score": 85,
+    "severity": "CRITICAL"
+  },
+  "declared_dependencies": [
+    "claude-agent-sdk"
+  ],
+  "drift_issues": [
+    {
+      "severity": "CRITICAL",
+      "type": "kimi_sdk_usage",
+      "message": "Found 7 files using deprecated kimi-agent-sdk",
+      "files": [
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\llm\\approval.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\llm\\session_manager.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\pipeline\\orchestrator.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\callable_tool_wrapper.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\sdk_adapter.py"
+      ],
+      "total_files": 7
+    },
+    {
+      "severity": "HIGH",
+      "type": "kaos_usage",
+      "message": "Found 3 files using kaos.path (deprecated)",
+      "files": [
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\llm\\session_manager.py",
+        "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\pipeline\\orchestrator.py"
+      ],
+      "total_files": 3
+    },
+    {
+      "severity": "CRITICAL",
+      "type": "declaration_mismatch",
+      "message": "pyproject.toml declares claude-agent-sdk but code imports kimi-agent-sdk",
+      "declared": [
+        "claude-agent-sdk"
+      ],
+      "actual_usage": [
+        "kimi-agent-sdk"
+      ]
+    }
+  ],
+  "detailed_findings": {
+    "kimi_imports_by_file": {
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "Message",
+          "line": 21
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "Message",
+          "line": 23
+        },
+        {
+          "module": "kimi_agent_sdk._aggregator",
+          "name": "MessageAggregator",
+          "line": 24
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "MaxStepsReached",
+          "line": 288
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "RunCancelled",
+          "line": 288
+        },
+        {
+          "module": "kimi_agent_sdk._aggregator",
+          "name": "MessageAggregator",
+          "line": 289
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\llm\\approval.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ApprovalRequest",
+          "line": 29
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\llm\\session_manager.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ApprovalHandlerFn",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ChatProviderError",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "Config",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ConfigError",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "InvalidToolError",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "MaxStepsReached",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "Message",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "RunCancelled",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "Session",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "WireMessage",
+          "line": 26
+        },
+        {
+          "module": "kimi_agent_sdk._aggregator",
+          "name": "MessageAggregator",
+          "line": 38
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\pipeline\\orchestrator.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "Message",
+          "line": 17
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\callable_tool_wrapper.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "CallableTool2",
+          "line": 11
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ToolReturnValue",
+          "line": 11
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\sdk_adapter.py": [
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ToolError",
+          "line": 12
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ToolOk",
+          "line": 12
+        },
+        {
+          "module": "kimi_agent_sdk",
+          "name": "ToolReturnValue",
+          "line": 12
+        }
+      ]
+    },
+    "kaos_imports_by_file": {
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py": [
+        {
+          "module": "kaos.path",
+          "name": "KaosPath",
+          "line": 565
+        },
+        {
+          "module": "kaos.path",
+          "name": "KaosPath",
+          "line": 695
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\llm\\session_manager.py": [
+        {
+          "module": "kaos.path",
+          "name": "KaosPath",
+          "line": 25
+        }
+      ],
+      "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\pipeline\\orchestrator.py": [
+        {
+          "module": "kaos.path",
+          "name": "KaosPath",
+          "line": 16
+        }
+      ]
+    }
+  },
+  "recommendations": [
+    "Remove all kimi-agent-sdk imports from the codebase",
+    "Remove all kaos.path imports from the codebase",
+    "Migrate to claude-agent-sdk using autoBMAD/epic_automation/sdk_wrapper.py as reference",
+    "Update requirements-dev.txt to remove kimi-agent-sdk references",
+    "Add CI check to prevent future kimi-agent-sdk imports"
+  ]
+}

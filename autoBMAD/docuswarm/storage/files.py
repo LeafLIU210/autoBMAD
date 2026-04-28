@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import aiofiles
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 import yaml
 
 from autoBMAD.docuswarm.exceptions import StorageError
@@ -149,7 +152,7 @@ class FileStorage:
             frontmatter = {
                 "pipeline_id": pipeline_id,
                 "node": node_type,
-                "created_at": datetime.now(UTC).isoformat(),
+                "created_at": datetime.now(_BEIJING_TZ).isoformat(),
             }
             if evaluation_score is not None:
                 frontmatter["evaluation_score"] = evaluation_score
@@ -203,7 +206,7 @@ class FileStorage:
         metadata_file = pipeline_dir / "_metadata.json"
 
         # Build metadata
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(_BEIJING_TZ).isoformat()
         metadata = {
             "pipeline_id": pipeline_id,
             "created_at": now,

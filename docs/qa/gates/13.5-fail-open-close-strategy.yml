@@ -1,0 +1,52 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "13.5"
+story_title: "Fail-Open/Close 策略"
+gate: "PASS"
+status_reason: "All quality gates passed - type checking (0 errors), linting (0 errors), and all 84 tests passed."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 84
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+# Quality metrics
+quality_score: 100
+
+# Test summary
+test_summary:
+  total_tests: 84
+  passed: 84
+  failed: 0
+  skipped: 0
+
+# Tool validation results
+tool_validation:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 6
+    notes: "Warnings are type inference issues, not actual errors"
+  ruff:
+    status: PASS
+    errors: 0
+    warnings: 0
+  pytest:
+    status: PASS
+    tests_passed: 84
+    tests_failed: 0

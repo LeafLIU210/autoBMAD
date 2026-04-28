@@ -17,6 +17,14 @@ from autoBMAD.docuswarm.prompts.evaluator_agent import TEMPLATE as EVALUATOR_TEM
 from autoBMAD.docuswarm.prompts.independent_agent import (
     TEMPLATE as INDEPENDENT_TEMPLATE,
 )
+from autoBMAD.docuswarm.prompts.skill_injector import (
+    NODE_SKILL_MAP,
+    SkillInjector,
+)
+from autoBMAD.docuswarm.prompts.template_engine import (
+    PromptBuildConfig,
+    PromptTemplateEngine,
+)
 from autoBMAD.docuswarm.prompts.template_loader import (
     TemplateLoader,
     TemplateLoadError,
@@ -29,11 +37,17 @@ from autoBMAD.docuswarm.prompts.validator import (
 )
 
 __all__ = [
+    # Story 29.6: Four-Layer Prompt Architecture
+    "PromptBuildConfig",
+    "PromptTemplateEngine",
     # P0: Node Prompt Contract Builder
     "NodePromptContractBuilder",
     "IndependentPromptContract",
     "EvaluatorPromptContract",
     "create_contract_builder",
+    # Story 29.5: BMAD Skill Injector
+    "SkillInjector",
+    "NODE_SKILL_MAP",
     # Legacy templates
     "INDEPENDENT_TEMPLATE",
     "EVALUATOR_TEMPLATE",

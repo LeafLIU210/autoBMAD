@@ -1,0 +1,155 @@
+================================================================================
+                    DOCUSWARM DEPENDENCY DRIFT
+                      EXECUTIVE SUMMARY
+================================================================================
+
+Date: 2026-03-25
+Severity: CRITICAL
+Drift Score: 85/100
+
+================================================================================
+IMPACT
+================================================================================
+
+  - Files analyzed: 185
+  - Files with kimi-agent-sdk: 7 (MUST FIX)
+  - Files with kaos.path: 3 (MUST FIX)
+  - Migration Progress: 0.0%
+
+================================================================================
+ROOT CAUSE
+================================================================================
+
+Architecture migration from kimi-agent-sdk to claude-agent-sdk is
+INCOMPLETE in core runtime modules.
+
+Declared dependencies (pyproject.toml): claude-agent-sdk
+Actual runtime dependencies: kimi-agent-sdk + kaos.path
+
+================================================================================
+AFFECTED MODULES (7 files)
+================================================================================
+
+  1. llm/session_manager.py        [CRITICAL BLOCKER]
+     - Imports: Session, Config, Message, WireMessage, MessageAggregator
+     - Also uses: kaos.path.KaosPath
+     - Lines: 618
+
+  2. agents/independent.py
+     - Imports: Message, MessageAggregator, MaxStepsReached, RunCancelled
+     - Also uses: kaos.path.KaosPath
+
+  3. agents/evaluator.py
+     - Imports: Message
+
+  4. llm/approval.py
+     - Imports: ApprovalRequest
+
+  5. pipeline/orchestrator.py
+     - Imports: Message
+     - Also uses: kaos.path.KaosPath
+
+  6. tools/callable_tool_wrapper.py
+     - Imports: CallableTool2, ToolReturnValue
+
+  7. tools/sdk_adapter.py
+     - Imports: ToolOk, ToolError, ToolReturnValue
+
+================================================================================
+REFERENCE ARCHITECTURE
+================================================================================
+
+File: autoBMAD/epic_automation/sdk_wrapper.py
+
+Uses: claude-agent-sdk
+  - ResultMessage, query
+  - AssistantMessage, SystemMessage, UserMessage
+  - TextBlock, ThinkingBlock, ToolUseBlock, ToolResultBlock
+
+================================================================================
+DELIVERABLES CREATED
+================================================================================
+
+Tools:
+  - tools/dependency_analysis/dependency_drift_analyzer.py
+    (Analyzes dependency drift across the project)
+
+  - tools/dependency_analysis/migration_tracker.py
+    (Tracks migration progress with --check for CI)
+
+Reports:
+  - docs/research/dependency-drift-2026-03-25/README.md
+    (Complete research report)
+
+  - docs/research/dependency-drift-2026-03-25/migration-plan.md
+    (Detailed migration plan with 3-day timeline)
+
+  - docs/research/README-dependency-drift.md
+    (Quick reference guide)
+
+Data:
+  - docs/research/dependency_drift_analysis.json
+    (Raw analysis data)
+
+================================================================================
+CONFIGURATION FIXES APPLIED
+================================================================================
+
+[FIXED] requirements-dev.txt
+  - Changed: "kimi-agent-sdk architecture"
+  - To:      "claude-agent-sdk architecture"
+  - Updated: Date from 2026-02-21 to 2026-03-25
+
+Status:
+  [OK] pyproject.toml       (has claude, no kimi)
+  [OK] requirements.txt     (has claude, no kimi)
+  [OK] requirements-dev.txt (has claude, no kimi)
+
+================================================================================
+MIGRATION PLAN OVERVIEW
+================================================================================
+
+Phase 1: Core Module Migration (1-2 days)
+  - Rewrite llm/session_manager.py using claude-agent-sdk
+  - Replace KaosPath with pathlib.Path
+  - Replace Message types with dict[str, Any]
+
+Phase 2: Tools & Agents Migration (1 day)
+  - Migrate tools/ to pure functions (remove CallableTool2)
+  - Migrate agents/ to use dict messages
+
+Phase 3: Verification (1 day)
+  - Run full test suite
+  - Verify new environment installation
+  - Add CI checks
+
+Total Effort: ~21 hours (~3 days)
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+[ ] Drift Score = 0
+[ ] No kimi_agent_sdk imports
+[ ] No kaos imports
+[ ] All tests pass
+[ ] New environment installation verified
+[ ] CI checks pass
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Review migration-plan.md for detailed implementation steps
+2. Allocate resources (~3 days)
+3. Prioritize llm/session_manager.py (critical blocker)
+4. Use migration_tracker.py --check in CI
+
+================================================================================
+CONTACT
+================================================================================
+
+Research Location: docs/research/dependency-drift-2026-03-25/
+Tools Location:    tools/dependency_analysis/
+
+================================================================================

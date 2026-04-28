@@ -1,0 +1,160 @@
+{
+  "title": "P0-2 执行主干分叉深度分析报告",
+  "findings": {
+    "create_node_executor": {
+      "implementations": [
+        {
+          "file": "autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 941,
+          "args": [
+            "node_id",
+            "session_manager"
+          ],
+          "doc_summary": "Create a node executor function for LangGraph pipeline."
+        },
+        {
+          "file": "autoBMAD\\docuswarm\\node_execution\\executor.py",
+          "line": 33,
+          "args": [
+            "node_id",
+            "session_manager"
+          ],
+          "doc_summary": "Create a node executor function for LangGraph single-node execution."
+        }
+      ],
+      "imports": [
+        {
+          "file": "autoBMAD\\docuswarm\\__init__.py",
+          "module": "autoBMAD.docuswarm.nodes",
+          "name": "create_node_executor",
+          "asname": "create_node_execution",
+          "line": 22
+        },
+        {
+          "file": "autoBMAD\\docuswarm\\__init__.py",
+          "module": "autoBMAD.docuswarm.nodes",
+          "name": "create_node_executor",
+          "asname": "create_node_execution",
+          "line": 36
+        },
+        {
+          "file": "autoBMAD\\docuswarm\\nodes\\__init__.py",
+          "module": "autoBMAD.docuswarm.nodes.dual_agent",
+          "name": "create_node_executor",
+          "asname": null,
+          "line": 3
+        },
+        {
+          "file": "autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "module": "autoBMAD.docuswarm.node_execution.executor",
+          "name": "create_node_executor",
+          "asname": null,
+          "line": 115
+        },
+        {
+          "file": "autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "module": "autoBMAD.docuswarm.node_execution.executor",
+          "name": "create_node_executor",
+          "asname": null,
+          "line": 20
+        },
+        {
+          "file": "autoBMAD\\docuswarm\\pipeline\\graph.py",
+          "module": "autoBMAD.docuswarm.node_execution.executor",
+          "name": "create_node_executor",
+          "asname": null,
+          "line": 72
+        }
+      ],
+      "calls": [
+        {
+          "file": "autoBMAD\\docuswarm\\pipeline\\graph.py",
+          "line": 75,
+          "type": "direct"
+        }
+      ]
+    },
+    "graph_factories": {
+      "create_pipeline_graph": {
+        "implementations": [
+          {
+            "file": "autoBMAD\\docuswarm\\pipeline\\graph.py",
+            "line": 174,
+            "doc_summary": "Create the pipeline StateGraph with all nodes and edges."
+          }
+        ],
+        "calls": [
+          {
+            "file": "autoBMAD\\docuswarm\\pipeline\\graph.py",
+            "line": 352,
+            "type": "direct"
+          },
+          {
+            "file": "autoBMAD\\docuswarm\\pipeline\\orchestrator.py",
+            "line": 764,
+            "type": "direct"
+          },
+          {
+            "file": "autoBMAD\\docuswarm\\pipeline\\orchestrator.py",
+            "line": 362,
+            "type": "direct"
+          },
+          {
+            "file": "autoBMAD\\docuswarm\\pipeline\\orchestrator.py",
+            "line": 469,
+            "type": "direct"
+          },
+          {
+            "file": "autoBMAD\\docuswarm\\pipeline\\orchestrator.py",
+            "line": 616,
+            "type": "direct"
+          }
+        ]
+      },
+      "create_node_execution_graph": {
+        "implementations": [
+          {
+            "file": "autoBMAD\\docuswarm\\node_execution\\graph.py",
+            "line": 67,
+            "doc_summary": "Create a LangGraph StateGraph for single-node execution."
+          }
+        ],
+        "calls": [
+          {
+            "file": "autoBMAD\\docuswarm\\node_execution\\flow.py",
+            "line": 304,
+            "type": "direct"
+          }
+        ]
+      }
+    },
+    "node_execution_graph_body": {
+      "has_dual_agent_import": false,
+      "executor_uses_deep_copy_only": true,
+      "executor_calls_any_real_node_logic": false,
+      "calls_in_executor": [
+        "deepcopy"
+      ]
+    },
+    "public_exports": {
+      "autoBMAD\\docuswarm\\__init__.py": {
+        "exports_legacy_dual_agent": false,
+        "exports_new_executor": false,
+        "has_lazy_loader": true
+      },
+      "autoBMAD\\docuswarm\\nodes\\__init__.py": {
+        "exports_legacy_dual_agent": true,
+        "exports_new_executor": false,
+        "has_lazy_loader": false
+      },
+      "autoBMAD\\docuswarm\\node_execution\\__init__.py": {
+        "exports_legacy_dual_agent": false,
+        "exports_new_executor": true,
+        "has_lazy_loader": true
+      }
+    },
+    "execute_node_flow_usage": {
+      "calls": []
+    }
+  }
+}

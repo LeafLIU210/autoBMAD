@@ -1,0 +1,157 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate: EPIC-37.37.6
+# Story: Support Pipeline Resume with Cached Summaries
+
+schema: 1
+story: "37.6"
+story_title: "Support Pipeline Resume with Cached Summaries"
+gate: "PASS"
+status_reason: "All quality gates passed. Type mismatch fixed, imports sorted, TimeoutError updated to builtin. All 71 tests pass."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T20:00:00Z"
+
+waiver:
+  active: false
+
+top_issues: []
+# All issues resolved:
+# - TYPE-001: Fixed return type from list[dict[str, Any]] to list[DocumentSummary]
+# - LINT-001: Import block sorted correctly
+# - LINT-002: Changed asyncio.TimeoutError to builtin TimeoutError
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor:
+      - "All quality gates passed - no further action required"
+
+qa_results:
+  document_completeness:
+    score: "100%"
+    status: "pass"
+    checks:
+      - item: "Story title and status"
+        status: "pass"
+      - item: "Acceptance criteria completion"
+        status: "pass"
+        notes: "All 4 acceptance criteria marked complete"
+      - item: "Task completion"
+        status: "pass"
+        notes: "All 8 tasks/subtasks completed"
+      - item: "Dev Agent Record"
+        status: "pass"
+        notes: "Completion notes and file list present"
+
+  code_review:
+    status: "pass"
+    files_modified:
+      - file: "autoBMAD/docuswarm/pipeline/orchestrator.py"
+        changes: "Added docs_context_summary extraction and restoration in resume_pipeline() method, fixed return type annotation, sorted imports, updated TimeoutError"
+        lines: "428-445, 506-508, 243-297"
+    findings:
+      - check: "Implementation logic"
+        status: "pass"
+        notes: "Clean implementation with proper structured logging and graceful fallback"
+      - check: "Backward compatibility"
+        status: "pass"
+        notes: "Uses .get() with default empty list for old checkpoints"
+      - check: "Error handling"
+        status: "pass"
+        notes: "Graceful fallback prevents pipeline failures"
+      - check: "Type safety"
+        status: "pass"
+        notes: "Return type annotation fixed to match actual return value (list[DocumentSummary])"
+
+  test_review:
+    status: "pass"
+    test_file: "tests/test_pipeline_resume_with_cache.py"
+    test_count: 24
+    coverage:
+      - scenario: "Extract docs_context_summary from checkpoint"
+        status: "covered"
+      - scenario: "Graceful fallback when summary missing"
+        status: "covered"
+      - scenario: "Warning logging on missing summary"
+        status: "covered"
+      - scenario: "Backward compatibility with old checkpoints"
+        status: "covered"
+
+  tool_validation:
+    basedpyright:
+      status: "PASS"
+      errors: 0
+      warnings: 0
+      notes: "All type checks passed"
+    ruff:
+      status: "PASS"
+      errors: 0
+      notes: "All linting checks passed"
+    pytest:
+      status: "PASS"
+      tests_passed: 71
+      tests_failed: 0
+      notes: "All tests in test_pipeline_resume_with_cache.py, test_orchestrator_with_summary.py, test_e2e_docs_context_cache.py, test_pipeline_state_with_docs_context.py passing"
+
+acceptance_criteria_verification:
+  - criterion: "Resume works correctly when docs_context_summary exists in checkpoint state"
+    status: "verified"
+    evidence: "Implementation extracts and restores summaries via .get() with fallback"
+  - criterion: "Resume falls back gracefully when docs_context_summary is missing"
+    status: "verified"
+    evidence: "Uses .get('docs_context_summary', []) for backward compatibility"
+  - criterion: "Warning log emitted when fallback is used"
+    status: "verified"
+    evidence: "logger.warning() with docs_context_summary_missing_from_checkpoint event"
+  - criterion: "Pipeline execution continues without blocking if restoration fails"
+    status: "verified"
+    evidence: "Empty list default allows context_builder fallback, no exceptions raised"
+  - criterion: "Context builder receives restored summaries through initial_state"
+    status: "verified"
+    evidence: "Lines 594-596 inject docs_context_summary into initial_state"
+
+gate_decision:
+  status: "PASS"
+  rationale: |
+    Story 37.6 implementation is complete with comprehensive test coverage (71 tests passing).
+    All quality gate issues have been resolved:
+
+    1. TYPE-001: Fixed return type annotation from list[dict[str, Any]] to list[DocumentSummary]
+       to match actual return value from SummaryAgent.summarize_context()
+
+    2. LINT-001: Import block properly sorted
+
+    3. LINT-002: Changed asyncio.TimeoutError to builtin TimeoutError
+
+    The core functionality works correctly and all acceptance criteria are met.
+    All tests pass including regression tests for related components.
+
+  risk_assessment: |
+    Risk Level: LOW
+    - All type issues resolved
+    - Backward compatibility properly handled through default values
+    - Extensive test coverage (71 tests) mitigates regression risk
+    - Graceful fallback prevents pipeline failures
+
+  recommendations:
+    - "No further action required - all quality gates passed"
+    - "Monitor pipeline resume operations in production for edge cases"
+
+next_steps:
+  - "Update story status to 'Ready for Review'"
+  - "Proceed with final review and merge"
+
+history:
+  - at: "2026-04-07T12:00:00Z"
+    gate: CONCERNS
+    note: "Initial review - type mismatch and linting issues found, all tests pass"
+  - at: "2026-04-07T17:30:00Z"
+    gate: PASS
+    note: "All issues resolved - type mismatch fixed, imports sorted, TimeoutError updated. 71 tests passing."
+  - at: "2026-04-07T20:00:00Z"
+    gate: PASS
+    note: "Final QA review - story status updated to Ready for Done. All quality gates verified: BasedPyright 0 errors, Ruff clean, 71/71 tests passing."

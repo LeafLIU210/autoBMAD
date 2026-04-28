@@ -1,0 +1,389 @@
+{
+  "meta": {
+    "title": "DocuSwarm Context Refactor 深度研究报告",
+    "date": "2026-03-17",
+    "based_on": "docs/evaluation/2026-03-17-docuswarm-context-refactor-implementation-evaluation.md",
+    "scope": "autoBMAD/docuswarm"
+  },
+  "executive_summary": {
+    "total_findings": 18,
+    "critical": 0,
+    "high": 6,
+    "medium": 2,
+    "low": 10,
+    "overall_completion": 68
+  },
+  "implementation_status": [
+    {
+      "category": "P0-1",
+      "target": "收敛为单一上下文协议",
+      "current": "已验证: 3, 部分: 1, 未验证: 0",
+      "completion_pct": 87,
+      "blockers": []
+    },
+    {
+      "category": "P0-2",
+      "target": "让 node.yaml 真正进入 prompt",
+      "current": "已验证: 3, 部分: 1, 未验证: 0",
+      "completion_pct": 87,
+      "blockers": [
+        "EvaluatorAgentInput 缺少原始上下文摘要字段"
+      ]
+    },
+    {
+      "category": "P0-3",
+      "target": "消除摘要/正式文档双轨",
+      "current": "已验证: 1, 部分: 3, 未验证: 0",
+      "completion_pct": 62,
+      "blockers": [
+        "file_path 和 sha256 不是强制验证字段",
+        "DeliverableArtifact 目标结构与运行时验证不一致",
+        "Evaluator 在 file_path 缺失时会退回到 deliverable.content"
+      ]
+    },
+    {
+      "category": "P1-1",
+      "target": "让 update_context 接入 StateManager",
+      "current": "已验证: 1, 部分: 0, 未验证: 2",
+      "completion_pct": 33,
+      "blockers": [
+        "shared_context 未进入 IndependentAgentInput"
+      ]
+    },
+    {
+      "category": "P1-2",
+      "target": "docs-free workflow",
+      "current": "已验证: 1, 部分: 1, 未验证: 0",
+      "completion_pct": 75,
+      "blockers": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "P0-1-001",
+      "severity": "low",
+      "category": "P0-1",
+      "title": "NodeExecutionContext 核心数据结构已定义",
+      "description": "NodeExecutionContext、IndependentAgentInput、EvaluatorAgentInput TypedDict 已在 contracts.py 中定义",
+      "current_state": "核心数据结构已落地",
+      "expected_state": "完整协议定义",
+      "recommendation": "已满足基本要求",
+      "verification_status": "verified",
+      "evidences": [
+        {
+          "path": "autoBMAD\\docuswarm\\node_execution\\contracts.py",
+          "line": 117,
+          "snippet": "NodeExecutionContext TypedDict defined"
+        }
+      ]
+    },
+    {
+      "id": "P0-1-002",
+      "severity": "low",
+      "category": "P0-1",
+      "title": "NodeExecutionContextBuilder 已实现",
+      "description": "上下文构建器已实现，用于从 node.yaml 和 runtime state 构建统一上下文",
+      "current_state": "Builder 已落地",
+      "expected_state": "完整构建逻辑",
+      "recommendation": "已满足基本要求",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P0-1-003",
+      "severity": "low",
+      "category": "P0-1",
+      "title": "Executor 已接入单一上下文协议",
+      "description": "executor.py 已通过 context_builder 构建 execution_context 并调用 execute_with_context",
+      "current_state": "Executor 已接入新协议",
+      "expected_state": "全流程统一协议",
+      "recommendation": "已满足基本要求",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P0-1-004",
+      "severity": "medium",
+      "category": "P0-1",
+      "title": "PipelineState 尚未显式持有 execution_context",
+      "description": "当前 PipelineState 仍以 context_file/chained_context/deliverables 为主，而非显式持有 execution_context",
+      "current_state": "旧状态结构",
+      "expected_state": "PipelineState.execution_context 字段",
+      "recommendation": "考虑在 PipelineState 中显式添加 execution_context 字段以统一协议",
+      "verification_status": "partial",
+      "evidences": [
+        {
+          "path": "autoBMAD\\docuswarm\\pipeline\\state.py",
+          "line": 57,
+          "snippet": "class PipelineState(TypedDict):"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\pipeline\\state.py",
+          "line": 79,
+          "snippet": "def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> PipelineState:"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\pipeline\\state.py",
+          "line": 80,
+          "snippet": "\"\"\"Create an initial PipelineState with default values."
+        }
+      ]
+    },
+    {
+      "id": "P0-2-003",
+      "severity": "high",
+      "category": "P0-2",
+      "title": "EvaluatorAgentInput 缺少原始上下文摘要字段",
+      "description": "EvaluatorAgentInput 当前只包含 task_name, task_description, deliverable_artifact, deliverable_body, criteria，没有原始上下文字段",
+      "current_state": "Evaluator 输入缺少原始上下文",
+      "expected_state": "EvaluatorAgentInput 包含 original_context_summary",
+      "recommendation": "在 EvaluatorAgentInput 中添加原始上下文摘要字段，让 Evaluator prompt 能渲染'原始需求摘要'章节",
+      "verification_status": "partial",
+      "evidences": [
+        {
+          "path": "autoBMAD/docuswarm/node_execution/contracts.py",
+          "line": 2428,
+          "snippet": "class EvaluatorAgentInput(TypedDict):"
+        }
+      ]
+    },
+    {
+      "id": "P0-2-001",
+      "severity": "low",
+      "category": "P0-2",
+      "title": "NodePromptContractBuilder 已实现 prompt 契约构建",
+      "description": "contract_builder.py 已实现 Independent 和 Evaluator 的 prompt 契约构建",
+      "current_state": "Prompt Contract Builder 已落地",
+      "expected_state": "完整 prompt 注入",
+      "recommendation": "已满足基本要求",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P0-2-002",
+      "severity": "low",
+      "category": "P0-2",
+      "title": "IndependentAgent 已使用 contract builder 组装 prompt",
+      "description": "IndependentAgent.execute_with_input() 已使用 NodePromptContractBuilder 构建 prompt",
+      "current_state": "Independent prompt 注入基本完成",
+      "expected_state": "完整闭环",
+      "recommendation": "已满足基本要求",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P0-2-004",
+      "severity": "low",
+      "category": "P0-2",
+      "title": "node.yaml 已普遍采用新 schema",
+      "description": "根目录 nodes/*/node.yaml 已普遍采用带 task / deliverable 子结构的新形态",
+      "current_state": "新 schema 已落地",
+      "expected_state": "完整契约注入",
+      "recommendation": "与 overview 文档同步，更新研究结论",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P0-3-002",
+      "severity": "high",
+      "category": "P0-3",
+      "title": "file_path 和 sha256 不是强制验证字段",
+      "description": "当前验证只要求 deliverable.title 和 deliverable.content，file_path/sha256 仅'如果存在则校验类型'。这意味着模型可以返回只有摘要、没有 artifact metadata 的输出，仍然通过验证。",
+      "current_state": "file_path/sha256 可选",
+      "expected_state": "file_path/sha256 强制",
+      "recommendation": "将 file_path 和 sha256 提升为强制字段，确保单一真相",
+      "verification_status": "partial",
+      "evidences": [
+        {
+          "path": "autoBMAD\\docuswarm\\llm\\response.py",
+          "line": 145,
+          "snippet": "- deliverable: {title: str, content: str, file_path: str, sha256: str, metadata: dict}"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\llm\\response.py",
+          "line": 149,
+          "snippet": "P0 Single Truth: file_path and sha256 are now included in deliverable."
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\llm\\response.py",
+          "line": 175,
+          "snippet": "# P0 Single Truth: Validate file_path (optional, but if present must be string)"
+        }
+      ]
+    },
+    {
+      "id": "P0-3-003",
+      "severity": "high",
+      "category": "P0-3",
+      "title": "DeliverableArtifact 目标结构与运行时验证不一致",
+      "description": "目标类型使用 'summary'，但运行时验证仍使用 'deliverable.content'。代码库同时存在两套语义：文档层用 summary，运行时/验证层用 content。",
+      "current_state": "summary/content 双轨并存",
+      "expected_state": "统一使用 summary",
+      "recommendation": "统一使用 summary 字段，去掉 deliverable.content 的双重语义",
+      "verification_status": "partial",
+      "evidences": [
+        {
+          "path": "autoBMAD/docuswarm/node_execution/contracts.py",
+          "line": 695,
+          "snippet": "summary: str  # 简短摘要"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\llm\\response.py",
+          "line": 169,
+          "snippet": "# Validate deliverable.content (required, must be string)"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\llm\\response.py",
+          "line": 171,
+          "snippet": "raise ValidationError(\"deliverable.content: required field missing\")"
+        }
+      ]
+    },
+    {
+      "id": "P0-3-004",
+      "severity": "high",
+      "category": "P0-3",
+      "title": "Evaluator 在 file_path 缺失时会退回到 deliverable.content",
+      "description": "build_evaluator_input() 中当 file_path 缺失或不可读时会退回到 deliverable.get('content', '')，这意味着 Evaluator 可能评审摘要而非正式正文。",
+      "current_state": "存在 fallback 到摘要的逻辑",
+      "expected_state": "强制从文件读取正文",
+      "recommendation": "禁止 Evaluator 退回到摘要作为正式评审正文，确保评审对象始终来自工具写盘后的正式文档",
+      "verification_status": "partial",
+      "evidences": [
+        {
+          "path": "autoBMAD\\docuswarm\\context\\isolation.py",
+          "line": 96,
+          "snippet": "\"title\": deliverable.get(\"title\", \"Untitled\"),"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\context\\isolation.py",
+          "line": 97,
+          "snippet": "\"summary\": deliverable.get(\"content\", \"\")[:200],  # 只取摘要"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\context\\isolation.py",
+          "line": 130,
+          "snippet": "file_path = deliverable.get(\"file_path\")"
+        }
+      ]
+    },
+    {
+      "id": "P0-3-001",
+      "severity": "low",
+      "category": "P0-3",
+      "title": "create_deliverable 已实现 metadata-first 返回",
+      "description": "create_deliverable 工具已写盘并返回 metadata，而非正文",
+      "current_state": "metadata-first 已实现",
+      "expected_state": "强制 metadata-only",
+      "recommendation": "已满足基本要求",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P1-1-002",
+      "severity": "high",
+      "category": "P1-1",
+      "title": "shared_context 未进入 IndependentAgentInput",
+      "description": "IndependentAgentInput 当前未包含 shared_context 字段，导致即使 StateManager 写入 shared_context，也不会进入 agent 输入。",
+      "current_state": "shared_context 未接入 Agent 输入",
+      "expected_state": "IndependentAgentInput 包含 shared_context",
+      "recommendation": "在 IndependentAgentInput 中添加 shared_context 字段，在 build_independent_input() 中显式渲染",
+      "verification_status": "unverified",
+      "evidences": [
+        {
+          "path": "autoBMAD/docuswarm/node_execution/contracts.py",
+          "line": 1983,
+          "snippet": "class IndependentAgentInput(TypedDict):"
+        }
+      ]
+    },
+    {
+      "id": "P1-1-004",
+      "severity": "low",
+      "category": "P1-1",
+      "title": "StateManager.update_shared_context 已实现真实写库",
+      "description": "StateManager 已实现 update_shared_context 方法，支持 set/append/remove 操作和嵌套 key_path",
+      "current_state": "持久化层已实现",
+      "expected_state": "完整运行时闭环",
+      "recommendation": "与工具层绑定完成闭环",
+      "verification_status": "verified",
+      "evidences": [
+        {
+          "path": "autoBMAD\\docuswarm\\storage\\state_manager.py",
+          "line": 480,
+          "snippet": "async def update_shared_context("
+        }
+      ]
+    },
+    {
+      "id": "P1-1-003",
+      "severity": "medium",
+      "category": "P1-1",
+      "title": "恢复链路不会回填 shared_context",
+      "description": "PipelineState 和 create_initial_state 未声明/初始化 shared_context，恢复路径重建 state 时不会把 shared_context 放回去。",
+      "current_state": "shared_context 不在恢复链路",
+      "expected_state": "resume/restart 恢复 shared_context",
+      "recommendation": "在 PipelineState 中声明 shared_context，在 create_initial_state 中初始化",
+      "verification_status": "unverified",
+      "evidences": [
+        {
+          "path": "autoBMAD\\docuswarm\\pipeline\\state.py",
+          "line": 79,
+          "snippet": "def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> PipelineState:"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\pipeline\\state.py",
+          "line": 282,
+          "snippet": ">>> state = create_initial_state(\"pipeline-1\", {\"task\": \"Build X\"})"
+        },
+        {
+          "path": "autoBMAD\\docuswarm\\pipeline\\state.py",
+          "line": 316,
+          "snippet": "current_state = create_initial_state(pipeline_id, {})"
+        }
+      ]
+    },
+    {
+      "id": "P1-2-001",
+      "severity": "low",
+      "category": "P1-2",
+      "title": "docs_context 已固定为空列表",
+      "description": "NodeExecutionContextBuilder 当前固定 docs_context=[]，符合 docs-free 决策",
+      "current_state": "docs_context 已停用",
+      "expected_state": "完全移除 docs 相关代码",
+      "recommendation": "继续清理 docs 相关残余代码",
+      "verification_status": "verified",
+      "evidences": []
+    },
+    {
+      "id": "P1-2-003",
+      "severity": "low",
+      "category": "P1-2",
+      "title": "README 仍把 docs/*.md 作为标准工作流示例",
+      "description": "README 仍引用 docs/epics/EPIC-01.md、docs/proposal.md 作为标准工作流示例，与 docs-free 决策不一致",
+      "current_state": "文档未同步",
+      "expected_state": "文档更新为 docs-free",
+      "recommendation": "更新 README，移除 docs/ 路径示例",
+      "verification_status": "partial",
+      "evidences": []
+    },
+    {
+      "id": "TEST-001",
+      "severity": "high",
+      "category": "TEST",
+      "title": "本轮重构几乎没有成体系的自动化回归测试",
+      "description": "当前 tests 目录下未发现与重构目标直接对应的 source test 文件。缺失: test_node_execution_context.py, test_prompt_contract_builder.py, test_single_truth_deliverable.py, test_update_context_persistence.py, test_shared_context_cross_node.py, test_docs_free_boundary.py",
+      "current_state": "强依赖人工审查与局部验证",
+      "expected_state": "完整测试护栏",
+      "recommendation": "补上 prompt contract、single truth、update_context persistence、shared_context cross-node、docs-free boundary 的单元/集成测试",
+      "verification_status": "unverified",
+      "evidences": [
+        {
+          "path": "autoBMAD/docuswarm/tests",
+          "line": 0,
+          "snippet": "Existing: None"
+        }
+      ]
+    }
+  ]
+}

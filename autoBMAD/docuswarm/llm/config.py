@@ -59,7 +59,7 @@ class LLMConfig(BaseModel):
     max_tokens: int = Field(description="Maximum tokens to generate")
     api_key: str | None = Field(default=None, description="API key for authentication")
     base_url: str = Field(default=API_BASE, description="API base URL")
-    timeout: int = Field(default=60, description="Request timeout in seconds")
+    timeout: int = Field(default=300, description="Request timeout in seconds")
 
     @classmethod
     def from_mode(

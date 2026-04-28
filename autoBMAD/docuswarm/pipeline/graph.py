@@ -12,16 +12,11 @@ This module defines the LangGraph StateGraph for the DocuSwarm pipeline with:
 
 from __future__ import annotations
 
-import copy
-import json
-import warnings
 from collections.abc import Awaitable, Callable, Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import structlog
 from langchain_core.runnables import Runnable, RunnableConfig
-from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import (  # type: ignore[import-untyped, reportMissingTypeStubs]
     END,
     StateGraph,
@@ -33,12 +28,11 @@ if TYPE_CHECKING:
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 
+from autoBMAD.docuswarm.node_execution.pipeline_adapter import PipelineAdapter
 from autoBMAD.docuswarm.pipeline.state import (
     PIPELINE_NODES,
     PipelineState,
-    accumulate_context,
     finalize_pipeline_state,
-    validate_deliverable_format,
 )
 from autoBMAD.docuswarm.storage.checkpoints import (
     create_checkpoint_config,
@@ -52,247 +46,10 @@ logger = structlog.get_logger(__name__)
 T = TypeVar("T", bound=Mapping[str, Any])
 
 
-def _create_default_node_executor(
-    node_id: str,
-    node_executor_func: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
-) -> Callable[[dict[str, Any]], dict[str, Any]]:
-    """Create a default node executor function.
-
-    .. deprecated::
-        This function is deprecated and will be removed in a future release.
-        It produces empty {} deliverables and should not be used in production.
-
-        **Deprecation Timeline:**
-        - Deprecated: Story 11.6 (Feb 2026)
-        - Removal Target: 2 sprint cycles from deprecation date
-
-        Use :func:`_create_integrated_node_executor` instead, which uses the
-        node_execution.executor module for proper LLM-based execution.
-
-    This creates a node executor that:
-    - Accumulates context from subject_context and previous deliverables
-    - Calls the optional node executor function for actual processing
-    - Validates deliverable format before storing
-    - Handles state finalization when all nodes complete
-
-    Args:
-        node_id: The node identifier.
-        node_executor_func: Optional function to execute node-specific logic.
-
-    Returns:
-        A callable that processes the state.
-    """
-    warnings.warn(
-        (
-            "WARNING: Using deprecated default node executor - this path produces empty {} "
-            "deliverables and will be removed in a future release. "
-            "Use integrated node executor with session_manager instead."
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def executor(state: dict[str, Any]) -> dict[str, Any]:  # type: ignore[no-redef]
-        """Execute node logic with context accumulation and deliverable passing."""
-        import copy
-
-        # Deep copy state to avoid mutation issues
-        new_state = copy.deepcopy(state)
-
-        # Update current_node
-        new_state["current_node"] = node_id
-
-        # Initialize completed_nodes if not present
-        if "completed_nodes" not in new_state:
-            new_state["completed_nodes"] = []
-
-        # Initialize node_iterations if not present
-        if "node_iterations" not in new_state:
-            new_state["node_iterations"] = {}
-
-        # Initialize deliverables if not present
-        if "deliverables" not in new_state:
-            new_state["deliverables"] = {}
-
-        # Initialize questions if not present
-        if "questions" not in new_state:
-            new_state["questions"] = {}
-
-        # Initialize evaluations if not present
-        if "evaluations" not in new_state:
-            new_state["evaluations"] = {}
-
-        # ACCUMULATE CONTEXT: Build context from subject_context + previous deliverables
-        subject_context = new_state.get("subject_context", {})
-        deliverables = new_state.get("deliverables", {})
-        accumulated_context = accumulate_context(subject_context, deliverables, node_id)
-
-        # Execute node-specific logic if provided
-        if node_executor_func is not None:
-            result = node_executor_func(accumulated_context)
-            # If result contains a deliverable, validate and store it
-            if "deliverable" in result and validate_deliverable_format(result["deliverable"]):
-                new_state["deliverables"][node_id] = result["deliverable"]
-            if "questions" in result and isinstance(result["questions"], list):
-                new_state["questions"][node_id] = result["questions"]
-            if "evaluation" in result and isinstance(result["evaluation"], dict):
-                new_state["evaluations"][node_id] = result["evaluation"]
-        else:
-            # Default behavior: create empty deliverable placeholder
-            new_state["deliverables"][node_id] = {}
-
-        # Increment iteration count for this node
-        # type: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        current_iteration: int = new_state["node_iterations"].get(node_id, 0)
-        new_state["node_iterations"][node_id] = current_iteration + 1
-
-        # Add node to completed_nodes if not already there
-        if node_id not in new_state["completed_nodes"]:
-            new_state["completed_nodes"] = new_state["completed_nodes"] + [node_id]
-
-        # Note: State finalization is handled by the graph after all nodes complete
-        # via the END edge, not during individual node execution
-
-        return new_state
-
-    return executor
-
-
-def _convert_pipeline_to_node_state(
-    state: dict[str, Any],
-    node_id: str,
-) -> dict[str, Any]:
-    """Convert PipelineState to NodeRunState for node execution.
-
-    This function transforms a PipelineState into the format expected by
-    the node_execution.executor module's create_node_executor().
-
-    Args:
-        state: The current PipelineState dictionary.
-        node_id: The node identifier being executed.
-
-    Returns:
-        A dictionary in NodeRunState format suitable for node execution.
-
-    Example:
-        >>> pipeline_state = {"pipeline_id": "test-123", "subject_context": {...}}
-        >>> node_state = _convert_pipeline_to_node_state(pipeline_state, "analyst")
-        >>> node_state["run_id"] == "test-123"
-        True
-    """
-    import hashlib
-
-    # Generate context_hash from subject_context and node_id
-    subject_context = state.get("subject_context", {})
-    context_str = json.dumps(subject_context, sort_keys=True)
-    context_hash = hashlib.md5(context_str.encode()).hexdigest()
-
-    # Build context_file (serialized accumulated context)
-    deliverables = state.get("deliverables", {})
-    accumulated = accumulate_context(subject_context, deliverables, node_id)
-    context_file = json.dumps(accumulated)
-
-    # Get current iteration for this node
-    node_iterations = state.get("node_iterations", {})
-    iteration = node_iterations.get(node_id, 0) + 1
-
-    # Build chained_context from previous deliverables
-    chained_context: dict[str, dict[str, Any]] = {}
-    for prev_node_id in PIPELINE_NODES:
-        if prev_node_id == node_id:
-            break
-        if prev_node_id in deliverables:
-            chained_context[prev_node_id] = {
-                "deliverable": deliverables.get(prev_node_id),
-                "iteration": node_iterations.get(prev_node_id, 1),
-            }
-
-    return {
-        "run_id": state.get("pipeline_id", "unknown"),
-        "pipeline_id": state.get("pipeline_id", "unknown"),
-        "node_id": node_id,
-        "context_hash": context_hash,
-        "context_file": context_file,
-        "iteration": iteration,
-        "deliverable": None,  # Will be populated by node execution
-        "questions": [],
-        "evaluation": None,  # Will be populated by node execution
-        "answers": {},
-        "chained_context": chained_context,
-        "status": "pending",
-    }
-
-
-def _convert_node_to_pipeline_state(
-    node_state: dict[str, Any],
-    original_state: dict[str, Any],
-) -> dict[str, Any]:
-    """Convert NodeRunState back to PipelineState after node execution.
-
-    This function transforms the results from node execution back into
-    the PipelineState format, preserving all original fields and updating
-    only the node-specific fields.
-
-    Args:
-        node_state: The NodeRunState after node execution.
-        original_state: The original PipelineState before node execution.
-
-    Returns:
-        Updated PipelineState with node execution results merged in.
-
-    Example:
-        >>> original = {"pipeline_id": "test", "deliverables": {}}
-        >>> node_result = {"node_id": "analyst", "deliverable": {...}}
-        >>> result = _convert_node_to_pipeline_state(node_result, original)
-        >>> "analyst" in result["deliverables"]
-        True
-    """
-    # Deep copy original state to avoid mutation
-    new_state = copy.deepcopy(original_state)
-
-    node_id = node_state.get("node_id")
-
-    # Update deliverable if present
-    if node_state.get("deliverable") is not None:
-        if "deliverables" not in new_state:
-            new_state["deliverables"] = {}
-        new_state["deliverables"][node_id] = node_state["deliverable"]
-
-    # Update questions if present
-    questions = node_state.get("questions", [])
-    if questions:
-        if "questions" not in new_state:
-            new_state["questions"] = {}
-        new_state["questions"][node_id] = questions
-
-    # Update evaluation if present
-    evaluation = node_state.get("evaluation")
-    if evaluation is not None:
-        if "evaluations" not in new_state:
-            new_state["evaluations"] = {}
-        new_state["evaluations"][node_id] = evaluation
-
-    # Update iteration count
-    if "node_iterations" not in new_state:
-        new_state["node_iterations"] = {}
-    new_state["node_iterations"][node_id] = node_state.get("iteration", 1)
-
-    # Add node to completed_nodes if not already there
-    if "completed_nodes" not in new_state:
-        new_state["completed_nodes"] = []
-    if node_id not in new_state["completed_nodes"]:
-        new_state["completed_nodes"] = new_state["completed_nodes"] + [node_id]
-
-    # Update current_node
-    new_state["current_node"] = node_id
-
-    return new_state
-
-
 def _create_integrated_node_executor(
     node_id: str,
     session_manager: Any,
-) -> Callable[[dict[str, Any]], dict[str, Any]]:
+) -> Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]:
     """Create an integrated node executor that uses node_execution.executor.
 
     This function creates a node executor that:
@@ -304,10 +61,10 @@ def _create_integrated_node_executor(
 
     Args:
         node_id: The node identifier.
-        session_manager: KimiSessionManager instance for SDK interactions.
+        session_manager: SessionManager instance for SDK interactions.
 
     Returns:
-        A callable that processes the state using the integrated executor.
+        An async callable that processes the state using the integrated executor.
     """
     # Lazy import to avoid circular imports
     from autoBMAD.docuswarm.node_execution.executor import create_node_executor
@@ -315,40 +72,12 @@ def _create_integrated_node_executor(
     # Create the async node executor
     async_node_executor = create_node_executor(node_id, session_manager)
 
-    def _run_async(coro: Awaitable[Any]) -> Any:
-        """Run async coroutine, handling event loop properly.
-
-        This helper handles the case where there's already a running event loop
-        (e.g., when called from pytest with pytest-asyncio).
-
-        IMPORTANT: For best results, callers should ensure no event loop is running
-        on the current thread (e.g., use sync test functions instead of async).
-        The ThreadPoolExecutor fallback path can cause thread accumulation on Windows.
-        """
-        import asyncio
-
-        try:
-            # Try to get the running loop
-            asyncio.get_running_loop()
-        except RuntimeError:
-            # No running loop - use asyncio.run() which creates a new loop
-            return asyncio.run(coro)
-
-        # There's a running loop - create a new thread to run the coroutine
-        # This path should be avoided when possible (see docstring)
-        import concurrent.futures
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(asyncio.run, coro)
-            # Add timeout to prevent indefinite blocking (4 minutes per call)
-            return future.result(timeout=240)
-
-    def executor(state: dict[str, Any]) -> dict[str, Any]:
+    async def executor(state: dict[str, Any]) -> dict[str, Any]:
         """Execute node logic using integrated node_execution.executor."""
         import copy as copy_module
 
         # Deep copy state to avoid mutation issues
-        new_state = copy_module.deepcopy(state)
+        new_state: dict[str, Any] = copy_module.deepcopy(state)
 
         # Update current_node
         new_state["current_node"] = node_id
@@ -365,17 +94,28 @@ def _create_integrated_node_executor(
         if "evaluations" not in new_state:
             new_state["evaluations"] = {}
 
-        # Convert PipelineState to NodeRunState
-        node_run_state = _convert_pipeline_to_node_state(new_state, node_id)
+        # Story 37.5: Extract docs_context_summary from pipeline state
+        # and pass explicitly to PipelineAdapter for propagation to NodeRunState
+        docs_context_summary = new_state.get("docs_context_summary", [])
 
-        # Run the async executor in sync context
+        # CHANGED: Use PipelineAdapter for state conversion with explicit docs_context_summary
+        node_run_state = PipelineAdapter.convert_pipeline_to_node_state(
+            new_state, node_id, docs_context_summary=docs_context_summary
+        )
+
+        # Run the async executor
+        result_state: dict[str, Any] = new_state  # Default to new_state for error case
         try:
-            # Run async executor synchronously for LangGraph compatibility
-            # Use _run_async to handle event loop properly
-            executed_node_state = _run_async(async_node_executor(node_run_state))
+            executed_node_state = await async_node_executor(node_run_state)
 
-            # Convert back to PipelineState
-            new_state = _convert_node_to_pipeline_state(executed_node_state, new_state)
+            # CHANGED: Use PipelineAdapter for reverse conversion
+            converted_state = PipelineAdapter.convert_node_to_pipeline_state(
+                executed_node_state, new_state
+            )
+            # Ensure we return a dict, not PipelineState
+            result_state = (
+                dict(converted_state) if hasattr(converted_state, "items") else converted_state
+            )
 
             # P0 Single Truth: File is already saved by create_deliverable tool
             # No need to save again here. The deliverable in executed_node_state
@@ -389,46 +129,38 @@ def _create_integrated_node_executor(
                 node_id=node_id,
                 error=str(e),
             )
-            # Fall back to default behavior on error
-            new_state["deliverables"][node_id] = {}
+            # P0-F1: Set error and failed_nodes on exception
+            result_state["deliverables"][node_id] = {}
+            if "failed_nodes" not in result_state:
+                result_state["failed_nodes"] = []
+            if node_id not in result_state["failed_nodes"]:
+                result_state["failed_nodes"] = result_state["failed_nodes"] + [node_id]
+            result_state["error"] = {
+                "node_id": node_id,
+                "error_type": type(e).__name__,
+                "message": str(e),
+            }
+            # Do NOT increment iteration or add to completed_nodes on error
+            return result_state
 
         # Increment iteration count for this node
-        current_iteration = new_state["node_iterations"].get(node_id, 0)
-        new_state["node_iterations"][node_id] = current_iteration + 1
+        current_iteration = result_state["node_iterations"].get(node_id, 0)
+        result_state["node_iterations"][node_id] = current_iteration + 1
 
         # Add node to completed_nodes if not already there
-        if node_id not in new_state["completed_nodes"]:
-            new_state["completed_nodes"] = new_state["completed_nodes"] + [node_id]
+        if node_id not in result_state["completed_nodes"]:
+            result_state["completed_nodes"] = result_state["completed_nodes"] + [node_id]
 
-        return new_state
+        return result_state
 
     return executor
 
 
-def create_enhanced_node_executor(
-    node_id: str,
-) -> Callable[[dict[str, Any]], dict[str, Any]]:
-    """Create an enhanced node executor with full context accumulation.
-
-    This is the production-ready executor that:
-    - Receives accumulated context from all previous nodes
-    - Validates deliverable format
-    - Properly handles state transitions
-
-    Args:
-        node_id: The node identifier.
-
-    Returns:
-        A callable that processes the state with full context accumulation.
-    """
-    return _create_default_node_executor(node_id, None)
-
-
 def create_pipeline_graph(
-    db_path: str | None = None,
     checkpointer: BaseCheckpointSaver[Any] | None = None,
     compile_graph: bool = True,
-    session_manager: Any | None = None,
+    *,  # Force keyword-only argument for session_manager
+    session_manager: Any,
 ) -> Any:
     """Create the pipeline StateGraph with all nodes and edges.
 
@@ -436,58 +168,48 @@ def create_pipeline_graph(
     - 5 nodes: analyst, pm, ux, architect, po
     - Sequential edges: analyst → pm → ux → architect → po
     - START and END connections
-    - Optional integrated node execution via node_execution.executor (Story 11.4)
+    - Integrated node execution via node_execution.executor (Story 11.4)
 
     Args:
-        db_path: Optional database path for SqliteSaver checkpointer.
-                 If provided along with no checkpointer, creates a SqliteSaver.
-        checkpointer: Optional existing checkpointer to use. If not provided
-                      and db_path is given, creates a SqliteSaver.
+        checkpointer: Optional existing checkpointer to use.
         compile_graph: If True (default), returns compiled graph. If False,
                       returns uncompiled StateGraph.
-        session_manager: Optional KimiSessionManager for integrated node execution.
-                        If provided, uses _create_integrated_node_executor.
-                        If None, uses _create_default_node_executor for backward compatibility.
+        session_manager: **REQUIRED** SessionManager for integrated node
+            execution. The deprecated default executor has been removed.
 
     Returns:
         StateGraph (uncompiled) or CompiledStateGraph ready for execution.
 
+    Raises:
+        ValueError: If session_manager is None.
+
     Example:
-        >>> graph = create_pipeline_graph()
-        >>> compiled = graph.compile()
-
-        >>> # With checkpointer
-        >>> graph = create_pipeline_graph(db_path="checkpoints.db")
-        >>> compiled = graph.compile()
-
-        >>> # With session_manager for integrated execution
-        >>> from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
-        >>> session_manager = KimiSessionManager(...)
+        >>> # With session_manager for integrated execution (required)
+        >>> from autoBMAD.docuswarm.llm.session_manager import SessionManager
+        >>> session_manager = SessionManager(...)
         >>> graph = create_pipeline_graph(session_manager=session_manager)
+        >>> compiled = graph.compile()
     """
+    # NEW: Hard fail on missing session_manager
+    if session_manager is None:
+        raise ValueError(
+            "session_manager is required for pipeline execution. "
+            "The deprecated default executor was removed in Story 11.6. "
+            "Please provide a valid SessionManager instance."
+        )
+
     # Create the StateGraph with PipelineState schema
     graph = StateGraph(PipelineState)
 
-    # Determine which executor to use based on session_manager
-    use_integrated = session_manager is not None
+    # Always use integrated executor now
+    logger.info(
+        "using_integrated_node_executor",
+        message="Using integrated node_execution.executor for node execution",
+    )
 
-    if use_integrated:
-        logger.info(
-            "using_integrated_node_executor",
-            message="Using integrated node_execution.executor for node execution",
-        )
-    else:
-        logger.warning(
-            "falling_back_to_default_executor",
-            message="session_manager not provided, falling back to default executor (backward compatibility)",
-        )
-
-    # Add all 5 nodes to the graph
+    # Add all 5 nodes to the graph using integrated executor
     for node_id in PIPELINE_NODES:
-        if use_integrated:
-            node_executor = _create_integrated_node_executor(node_id, session_manager)
-        else:
-            node_executor = _create_default_node_executor(node_id)
+        node_executor = _create_integrated_node_executor(node_id, session_manager)
         # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
         graph.add_node(node_id, node_executor)
 
@@ -519,51 +241,6 @@ def create_pipeline_graph(
 
     # If compile_graph is True, compile and return
     if compile_graph:
-        # If db_path provided but no checkpointer, create AsyncSqliteSaver
-        # Note: We need AsyncSqliteSaver for ainvoke() to work properly
-        if checkpointer is None and db_path is not None:
-            import asyncio
-
-            import aiosqlite
-
-            # Get or create event loop
-            try:
-                loop = asyncio.get_running_loop()
-
-                # If we're already in an async context, use run_until_complete
-                async def create_async_checkpointer():
-                    conn = await aiosqlite.connect(db_path)
-                    # Enable WAL mode for better concurrent access
-                    await conn.execute("PRAGMA journal_mode=WAL")
-                    await conn.execute("PRAGMA synchronous=NORMAL")
-                    # Patch is_alive method for langgraph compatibility
-                    if not hasattr(conn, "is_alive"):
-
-                        def _is_alive():
-                            return True
-
-                        conn.is_alive = _is_alive  # type: ignore[attr-defined]
-                    return AsyncSqliteSaver(conn)
-
-                checkpointer = loop.run_until_complete(create_async_checkpointer())  # type: ignore[assignment]
-            except RuntimeError:
-                # If no running loop, use asyncio.run
-                async def create_async_checkpointer():
-                    conn = await aiosqlite.connect(db_path)
-                    # Enable WAL mode for better concurrent access
-                    await conn.execute("PRAGMA journal_mode=WAL")
-                    await conn.execute("PRAGMA synchronous=NORMAL")
-                    # Patch is_alive method for langgraph compatibility
-                    if not hasattr(conn, "is_alive"):
-
-                        def _is_alive():
-                            return True
-
-                        conn.is_alive = _is_alive  # type: ignore[attr-defined]
-                    return AsyncSqliteSaver(conn)
-
-                checkpointer = asyncio.run(create_async_checkpointer())  # type: ignore[assignment]
-
         # Compile the graph with optional checkpointer
         # type: ignore[reportUnknownMemberType]
         compiled: Runnable[dict[str, Any], dict[str, Any]] = graph.compile(
@@ -572,30 +249,6 @@ def create_pipeline_graph(
         return compiled
 
     return graph
-
-
-def create_graph_with_checkpointer(
-    db_path: str,
-) -> Any:
-    """Create the pipeline graph with a SqliteSaver checkpointer.
-
-    This is a convenience function that creates the graph with a
-    SqliteSaver checkpointer attached for state persistence.
-
-    Args:
-        db_path: The database connection string for SqliteSaver.
-
-    Returns:
-        Compiled StateGraph with checkpointer attached.
-
-    Example:
-        >>> graph = create_graph_with_checkpointer("checkpoints.db")
-        >>> thread_id = generate_thread_id("pipeline-123")
-        >>> config = create_checkpoint_config(thread_id)
-        >>> result = await graph.ainvoke(initial_state, config)
-    """
-    checkpointer: Any = SqliteSaver.from_conn_string(db_path)
-    return create_pipeline_graph(checkpointer=checkpointer)
 
 
 def create_graph_config(pipeline_id: str) -> RunnableConfig:
@@ -630,8 +283,8 @@ class MockNodeExecutor:
     Example:
         >>> mock_executor = MockNodeExecutor()
         >>> # Use with create_pipeline_graph
-        >>> from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
-        >>> session_manager = KimiSessionManager(...)  # or mock
+        >>> from autoBMAD.docuswarm.llm.session_manager import SessionManager
+        >>> session_manager = SessionManager(...)  # or mock
         >>> # Create pipeline with mock
         >>> graph = create_pipeline_graph(session_manager=session_manager)
     """
@@ -771,12 +424,7 @@ def create_mock_node_executor(
 __all__ = [
     "PIPELINE_NODES",
     "create_pipeline_graph",
-    "create_graph_with_checkpointer",
     "create_graph_config",
-    # Story 11.4 - Node execution integration
-    "_create_integrated_node_executor",
-    "_convert_pipeline_to_node_state",
-    "_convert_node_to_pipeline_state",
     # Story 11.6 - Test utilities
     "MockNodeExecutor",
     "create_mock_node_executor",

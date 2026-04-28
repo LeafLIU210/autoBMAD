@@ -1,0 +1,14 @@
+schema: 1
+story: "26.3"
+story_title: "pm 节点配置 v2 升级"
+gate: PASS
+status_reason: "All acceptance criteria met. Schema v2 configuration properly implemented with correct task name, runtime settings, role correction to 'Product Manager', and evaluator threshold field naming."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-27T00:00:00Z"
+top_issues: []
+waiver: { active: false }
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []

@@ -1,0 +1,62 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "6.3"
+story_title: "Create SDK Integration Smoke Test"
+gate: "PASS"
+status_reason: "All acceptance criteria met - tests pass (5 passed, 2 skipped for integration), code passes ruff linting, type checking shows 0 errors with acceptable warnings."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-21T00:00:00Z"
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues: []
+
+# Risk summary (from risk-profile task if run)
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Quality gate evidence
+evidence:
+  tests_reviewed: 7
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7]
+    ac_gaps: []
+
+# Tool validation results
+tool_results:
+  pytest:
+    status: PASS
+    details: "5 passed, 2 skipped (integration tests require KIMI_API_KEY)"
+  ruff:
+    status: PASS
+    details: "All checks passed"
+  basedpyright:
+    status: PASS
+    details: "0 errors, 25 warnings (acceptable - related to dynamic SDK types)"
+
+# Acceptance Criteria Review
+acceptance_criteria_review:
+  - criterion: "Smoke test uses prompt() high-level API"
+    status: MET
+    evidence: "test_prompt_basic() uses prompt() with yolo=True"
+  - criterion: "Test sends Hello and verifies response contains messages"
+    status: MET
+    evidence: "Test verifies len(messages) > 0"
+  - criterion: "Test validates Message object structure (content, role)"
+    status: MET
+    evidence: "Tests check hasattr for content and role"
+  - criterion: "Test runs with pytest -m smoke marker"
+    status: MET
+    evidence: "All tests marked with @pytest.mark.smoke"
+  - criterion: "Test uses yolo=True for automatic approval"
+    status: MET
+    evidence: "All prompt() calls use yolo=True"
+  - criterion: "Test reports SDK version in output"
+    status: MET
+    evidence: "report_sdk_version fixture outputs version at test start"
+  - criterion: "Test fails gracefully with clear message if API key is missing"
+    status: MET
+    evidence: "test_api_key_missing_graceful_failure() verifies graceful handling"

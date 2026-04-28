@@ -13,10 +13,21 @@ from autoBMAD.docuswarm.context.isolation import (
     ContextIsolationError,
     ContextManager,
 )
-from autoBMAD.docuswarm.context.memory import MemoryManager, MemoryScope
+from autoBMAD.docuswarm.context.validator import (
+    DEFAULT_VALIDATION_RULES,
+    ContextValidator,
+    EvaluatorOutputValidationStrategy,
+    IndependentOutputValidationStrategy,
+    LLMContextValidationStrategy,
+    NodeExecutionContextStrategy,
+    PrivateFieldIsolationStrategy,
+    ValidationResult,
+    ValidationRuleRegistry,
+)
 
 __all__ = [
     "AuditEvent",
+    "DEFAULT_VALIDATION_RULES",
     "EVENT_TYPE_CONTEXT_BUILD",
     "EVENT_TYPE_FILTER",
     "EVENT_TYPE_VIOLATION",
@@ -25,6 +36,12 @@ __all__ = [
     "ContextManager",
     "ContextIsolationError",
     "PRIVATE_FIELDS",
-    "MemoryManager",
-    "MemoryScope",
+    "ContextValidator",
+    "EvaluatorOutputValidationStrategy",
+    "IndependentOutputValidationStrategy",
+    "LLMContextValidationStrategy",
+    "NodeExecutionContextStrategy",
+    "PrivateFieldIsolationStrategy",
+    "ValidationResult",
+    "ValidationRuleRegistry",
 ]

@@ -1,0 +1,81 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "32.3"
+story_title: "Enhance PM Node Configuration"
+gate: "PASS"
+status_reason: "All acceptance criteria met. YAML/JSON validation passed. All 28 tests passed. Configuration files correctly updated with skill_ref and persona enhancements."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 28
+  tests_passed: 28
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+nfr_validation:
+  structure: { status: PASS, notes: "YAML and JSON validation passed" }
+  testability: { status: PASS, notes: "All 28 unit/integration tests passed" }
+  maintainability: { status: PASS, notes: "Clean configuration structure with schema_version 2.0" }
+
+validation_details:
+  yaml_validation:
+    file: nodes/pm/node.yaml
+    status: PASS
+    notes: "Valid YAML structure, schema_version 2.0, skill_ref correctly set to 'bmad-create-prd'"
+  json_validation:
+    file: nodes/pm/persona.json
+    status: PASS
+    notes: "Valid JSON, name='John', role='Product Manager - PRD Creation Expert', all expertise entries present"
+  test_results:
+    file: tests/test_pm_node_config_refactor_32_3.py
+    status: PASS
+    tests_run: 28
+    tests_passed: 28
+    coverage: "NodeTaskConfig parsing, persona loading, schema validation, pipeline integration"
+
+acceptance_criteria_verification:
+  - id: AC1
+    criteria: "node.yaml contains task.skill_ref: bmad-create-prd"
+    status: PASS
+    evidence: "Line 24: skill_ref: bmad-create-prd"
+  - id: AC2
+    criteria: "node.yaml contains task.role_supplement with PRD translation guidance"
+    status: PASS
+    evidence: "Line 23: role_supplement present with translation guidance"
+  - id: AC3
+    criteria: "persona.json name field set to 'John'"
+    status: PASS
+    evidence: "Line 2: name: John"
+  - id: AC4
+    criteria: "persona.json role field set to 'Product Manager - PRD Creation Expert'"
+    status: PASS
+    evidence: "Line 3: role: Product Manager - PRD Creation Expert"
+  - id: AC5
+    criteria: "Expertise includes JTBD, RICE, and acceptance criteria specification"
+    status: PASS
+    evidence: "Lines 29-31: All three expertise entries present"
+  - id: AC6
+    criteria: "YAML validation passes"
+    status: PASS
+    evidence: "Python yaml.safe_load() successful"
+  - id: AC7
+    criteria: "JSON validation passes"
+    status: PASS
+    evidence: "Python json.load() with UTF-8 encoding successful"
+  - id: AC8
+    criteria: "Existing pipeline processes PM node correctly"
+    status: PASS
+    evidence: "Integration tests passed, pipeline loads PM node without errors"

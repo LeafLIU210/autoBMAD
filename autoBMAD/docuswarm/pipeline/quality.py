@@ -10,8 +10,14 @@ Key components:
 - VerdictDeterminer: Determines verdict based on alignment score and thresholds
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass  # No type-only imports needed
 
 
 class Verdict(Enum):
@@ -78,17 +84,43 @@ class QualityConfig:
     def get_thresholds(self, node_id: str) -> QualityThresholds:
         """Get thresholds for a specific node.
 
+        P1 Fix: Now loads thresholds from node evaluator.yaml configuration
+        instead of using hardcoded values. Falls back to defaults if loading fails.
+
         Args:
             node_id: The node identifier (e.g., 'architect', 'reviewer')
 
         Returns:
             QualityThresholds for the specified node
         """
-        # Check for explicit node override first
+        # Check for explicit node override first (highest priority)
         if node_id in self.node_overrides:
             return self.node_overrides[node_id]
 
-        # Apply architect-specific stricter thresholds
+        # P1 Fix: Try to load thresholds from node configuration
+        try:
+            from autoBMAD.nodes.loader import NodeLoader
+
+            node_config = NodeLoader.load(node_id)
+
+            if node_config.evaluator and node_config.evaluator.threshold:
+                threshold_config = node_config.evaluator.threshold
+                approval = threshold_config.get("approval")
+                escalation = threshold_config.get("escalation")
+
+                # Only use config values if both are present
+                if approval is not None and escalation is not None:
+                    return QualityThresholds(
+                        approval=float(approval),
+                        escalation=float(escalation),
+                    )
+        except Exception:
+            # Fall back to defaults if loading fails
+            pass
+
+        # P1: Deprecated hardcoded fallback (will be removed in future)
+        # This maintains backward compatibility for architect node
+        # until all nodes have proper threshold configuration
         if node_id == "architect":
             return QualityThresholds(
                 approval=self.ARCHITECT_APPROVAL,

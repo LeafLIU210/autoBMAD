@@ -1,0 +1,31 @@
+schema: 1
+story: "27.1"
+story_title: "创建 ContextValidator 框架和数据模型"
+gate: PASS
+status_reason: "All acceptance criteria met. Implementation includes ValidationIssue, ValidationResult, ValidationStrategy ABC, ValidationRuleRegistry, and ContextValidator facade with all required methods. 45 unit tests pass with 100% coverage."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-27T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 45
+  tests_passed: 45
+  coverage_validator: "100%"
+  basedpyright_errors: 0
+  basedpyright_warnings: 5
+  warnings_note: "Expected warnings for unused parameters in placeholder strategy implementations (to be completed in Stories 27.2-27.5)"
+
+ac_validation:
+  ac1_validation_components: PASS
+  ac2_import_path: PASS
+  ac3_validation_methods: PASS
+  ac4_exports: PASS

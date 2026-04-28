@@ -1,0 +1,48 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "20.4"
+story_title: "EvaluatorAgent Exception Migration"
+gate: "PASS"
+status_reason: "All quality gates passed - type checking (0 errors), linting (0 errors), and 15 unit tests passed. Code correctly uses unified DocuSwarm exceptions."
+reviewer: "Quinn (QA Agent)"
+updated: "2026-03-02T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_metrics:
+  type_checking:
+    tool: "basedpyright"
+    status: "PASS"
+    errors: 0
+    warnings: 0
+  linting:
+    tool: "ruff"
+    status: "PASS"
+    errors: 0
+  tests:
+    tool: "pytest"
+    status: "PASS"
+    total: 15
+    passed: 15
+    failed: 0
+
+evidence:
+  tests_reviewed: 15
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+nfr_validation:
+  security: { status: PASS, notes: "No security changes in this story" }
+  performance: { status: PASS, notes: "No performance impact" }
+  reliability: { status: PASS, notes: "Improved reliability via unified exception handling" }
+  maintainability: { status: PASS, notes: "Clean exception hierarchy improves maintainability" }

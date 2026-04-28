@@ -1,0 +1,36 @@
+# Powered by BMAD Core
+schema: 1
+story: "25.3"
+story_title: "evaluator_criteria 直接加载"
+gate: "PASS"
+status_reason: "All acceptance criteria verified: evaluator_criteria removed from NodeExecutionContext, isolation.py loads criteria directly from NodeLoader, context_builder no longer builds the field. 19 new tests pass, type checking 0 errors, no regressions."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-27T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 19
+  new_test_file: "tests/unit/test_evaluator_criteria_direct_loading.py"
+  type_check_result: "0 errors, 0 warnings, 0 notes"
+  unit_tests_passed: 42
+  regression_tests: "All passed"
+
+nfr_validation:
+  type_safety: { status: PASS, notes: "basedpyright 0 errors in context/, node_execution/, prompts/" }
+  test_coverage: { status: PASS, notes: "Comprehensive test suite created covering all acceptance criteria" }
+  code_quality: { status: PASS, notes: "Clean removal of dead code, no residual references" }
+  maintainability: { status: PASS, notes: "Simplified protocol, direct loading reduces complexity" }
+
+history:
+  - at: "2026-03-27T00:00:00Z"
+    gate: PASS
+    note: "Initial QA review - all acceptance criteria met, comprehensive test coverage, type safe"

@@ -2,7 +2,7 @@
 
 Features:
 - Environment variables loaded from .env file using python-dotenv
-- KIMI_API_KEY required and validated on startup
+- ANTHROPIC_API_KEY required and validated on startup
 - Optional configuration loaded from docuswarm.yaml with pyyaml
 - Config class with full type hints using Python dataclass (frozen=True)
 - Sensible defaults for all optional settings
@@ -26,7 +26,7 @@ DEFAULT_DB_PATH = "docuswarm.db"
 DEFAULT_OUTPUT_DIR = "output"
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_MAX_ITERATIONS = 100
-DEFAULT_BASE_URL = "https://api.kimi.com/coding/"
+DEFAULT_BASE_URL = "https://api.anthropic.com/v1/"
 
 
 def load_dotenv(env_path: Path | str | None = None) -> Path:
@@ -93,24 +93,25 @@ class Config:
     output_dir: Path = field(default_factory=lambda: Path(DEFAULT_OUTPUT_DIR))
     log_level: str = field(default=DEFAULT_LOG_LEVEL)
     max_iterations: int = field(default=DEFAULT_MAX_ITERATIONS)
+    agent_timeout: int = field(default=7200)
     yaml_config: dict[str, Any] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
-        # Validate required KIMI_API_KEY
-        # Can come from init parameter, environment, or yaml_config (deprecated)
+        # Validate required ANTHROPIC_API_KEY
+        # Can come from init parameter or environment
 
         # Explicitly reject empty string - must provide a valid key
         if self.api_key is not None and self.api_key == "":
             raise ConfigurationError(
-                "KIMI_API_KEY cannot be empty. Please provide a valid API key."
+                "ANTHROPIC_API_KEY cannot be empty. Please provide a valid API key."
             )
 
-        api_key = self.api_key or os.environ.get("KIMI_API_KEY")
+        api_key = self.api_key or os.environ.get("ANTHROPIC_API_KEY")
 
         if not api_key:
             raise ConfigurationError(
-                "KIMI_API_KEY is required. Please set it in your .env file "
+                "ANTHROPIC_API_KEY is required. Please set it in your .env file "
                 + "or as an environment variable."
             )
 
@@ -136,10 +137,12 @@ class Config:
 
         # Get API key from environment (highest precedence)
         # Never from YAML for security
-        api_key = os.environ.get("KIMI_API_KEY")
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
 
         # Get base_url from environment (highest precedence)
-        base_url = os.environ.get("KIMI_BASE_URL") or yaml_config.get("base_url", DEFAULT_BASE_URL)
+        base_url = os.environ.get("ANTHROPIC_BASE_URL") or yaml_config.get(
+            "base_url", DEFAULT_BASE_URL
+        )
 
         # Get other values from YAML with env override capability
         db_path = Path(
@@ -156,6 +159,9 @@ class Config:
             os.environ.get("DOCUSWARM_MAX_ITERATIONS")
             or yaml_config.get("max_iterations", DEFAULT_MAX_ITERATIONS)
         )
+        agent_timeout = int(
+            os.environ.get("DOCUSWARM_AGENT_TIMEOUT") or yaml_config.get("agent_timeout", 7200)
+        )
 
         return cls(
             api_key=api_key,
@@ -164,6 +170,7 @@ class Config:
             output_dir=output_dir,
             log_level=log_level,
             max_iterations=max_iterations,
+            agent_timeout=agent_timeout,
             yaml_config=yaml_config,
         )
 
@@ -185,7 +192,7 @@ def load_config(
         Validated Config instance.
 
     Raises:
-        ConfigurationError: If required KIMI_API_KEY is missing.
+        ConfigurationError: If required ANTHROPIC_API_KEY is missing.
     """
     # Load .env file
     _ = load_dotenv(env_path)

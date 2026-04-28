@@ -1,5 +1,10 @@
 """State Manager for pipeline state persistence - Story 1.5.
 
+StateManager provides SYNCHRONOUS storage operations.
+
+Callers in async contexts must use asyncio.to_thread() or an explicit
+executor if they need non-blocking I/O.
+
 This module provides the StateManager class for managing pipeline state,
 including creating pipelines, updating status, saving node results, and
 querying pipeline state.
@@ -18,8 +23,12 @@ import json
 import logging
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from sqlite3 import Row
 from typing import Any, cast
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 
 from autoBMAD.docuswarm.exceptions import StorageError
 from autoBMAD.docuswarm.storage.database import DatabaseManager
@@ -42,7 +51,7 @@ class StateManager:
     Example:
         >>> sm = StateManager(db_path=Path("docuswarm.db"))
         >>> pipeline_id = sm.create_pipeline(subject="My Subject")
-        >>> sm.update_pipeline_status(pipeline_id, status="running")
+        >>> await sm.update_pipeline_state(pipeline_id, {"status": "running"})
         >>> pipeline = sm.get_pipeline(pipeline_id)
     """
 
@@ -95,6 +104,37 @@ class StateManager:
                 operation_type="validate",
             )
 
+    def _create_initial_state(
+        self, pipeline_id: str, subject_context: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Create an initial PipelineState with default values.
+
+        This is a local copy to avoid import chain issues.
+
+        Args:
+            pipeline_id: Unique identifier for the pipeline
+            subject_context: Context information about the subject being processed
+
+        Returns:
+            A new PipelineState dict with all fields initialized to defaults
+        """
+        return {
+            "pipeline_id": pipeline_id,
+            "subject_context": subject_context,
+            "current_node": None,
+            "completed_nodes": [],
+            "deliverables": {},
+            "questions": {},
+            "evaluations": {},
+            "node_iterations": {},
+            "session_ids": {},
+            "session_metadata": {},
+            "current_node_session_id": None,
+            "status": "pending",
+            "error": None,
+            "shared_context": {},
+        }
+
     def create_pipeline(
         self,
         subject: str,
@@ -112,11 +152,9 @@ class StateManager:
         Raises:
             StorageError: If pipeline creation fails.
         """
-        from autoBMAD.docuswarm.pipeline.state import create_initial_state
-
         pipeline_id = self._generate_pipeline_id()
         # Create complete PipelineState (F1: state_json as single source of truth)
-        initial_state = create_initial_state(pipeline_id, subject_context or {})
+        initial_state = self._create_initial_state(pipeline_id, subject_context or {})
         state_json = json.dumps(initial_state)
 
         try:
@@ -135,56 +173,77 @@ class StateManager:
 
         return pipeline_id
 
-    def update_pipeline_status(
-        self,
-        pipeline_id: str,
-        status: str,
-        current_node: str | None = None,
-    ) -> bool:
-        """Update pipeline status and optionally current node.
+    def _verify_state_consistency(self, pipeline_id: str) -> dict[str, Any] | None:
+        """运行时一致性检查 - P0 新增
 
-        Args:
-            pipeline_id: The pipeline ID to update.
-            status: New status (pending, running, completed, failed, paused).
-            current_node: Optional current node identifier.
+        验证顶层字段与 state_json 的一致性，发现不一致时记录警告。
 
         Returns:
-            True if update was successful.
-
-        Raises:
-            StorageError: If pipeline not found or status is invalid.
+            如果不一致返回差异信息，否则返回 None
         """
-        self._validate_status(status)
-
-        # Check if pipeline exists
-        if not self._pipeline_exists(pipeline_id):
-            raise StorageError(
-                f"Pipeline not found: {pipeline_id}",
-                operation_type="update",
-                pipeline_id=pipeline_id,
-            )
-
         try:
             with self._db.acquire() as conn:
-                if current_node is not None:
-                    _ = conn.execute(
-                        "UPDATE pipelines SET status = ?, current_node = ?, "
-                        + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
-                        (status, current_node, pipeline_id),
+                cursor = conn.execute(
+                    "SELECT current_node, state_json FROM pipelines WHERE pipeline_id = ?",
+                    (pipeline_id,),
+                )
+                row = cursor.fetchone()
+
+                if not row:
+                    return None
+
+                top_current_node = row["current_node"]
+                state = json.loads(row["state_json"] or "{}")
+                state_current_node = state.get("current_node")
+
+                if top_current_node != state_current_node:
+                    inconsistency = {
+                        "pipeline_id": pipeline_id,
+                        "top_current_node": top_current_node,
+                        "state_current_node": state_current_node,
+                        "field": "current_node",
+                    }
+                    logger.warning(
+                        "state_inconsistency_detected: pipeline=%s top=%s state=%s",
+                        pipeline_id,
+                        top_current_node,
+                        state_current_node,
                     )
-                else:
-                    _ = conn.execute(
-                        "UPDATE pipelines SET status = ?, "
-                        + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
-                        (status, pipeline_id),
-                    )
-            return True
+                    return inconsistency
+
+                return None
+
         except Exception as e:
-            raise StorageError(
-                f"Failed to update pipeline status: {e}",
-                operation_type="update",
-                pipeline_id=pipeline_id,
-            ) from e
+            logger.error("consistency_check_failed: pipeline=%s error=%s", pipeline_id, str(e))
+            return None
+
+    def _update_state_json_partial(self, pipeline_id: str, partial_update: dict[str, Any]) -> bool:
+        """部分更新 state_json - 内部方法
+
+        读取现有 state_json，深度合并 partial_update，然后写回。
+        """
+        with self._db.acquire() as conn:
+            # 读取现有状态
+            cursor = conn.execute(
+                "SELECT state_json FROM pipelines WHERE pipeline_id = ?", (pipeline_id,)
+            )
+            row = cursor.fetchone()
+
+            if not row:
+                return False
+
+            # 解析并合并
+            current_state = json.loads(row["state_json"] or "{}")
+            self._deep_merge(current_state, partial_update)
+
+            # 写回
+            updated_json = json.dumps(current_state)
+            conn.execute(
+                "UPDATE pipelines SET state_json = ? WHERE pipeline_id = ?",
+                (updated_json, pipeline_id),
+            )
+
+        return True
 
     def save_node_result(
         self,
@@ -307,16 +366,33 @@ class StateManager:
                         }
                     )
 
-                return {
+                # Parse state_json and flatten it for easier access
+                state = json.loads(cast(str, row["state_json"])) if row["state_json"] else {}
+
+                # Build result with flattened state fields (Phase 2 P1)
+                result: dict[str, Any] = {
                     "pipeline_id": row["pipeline_id"],
                     "subject": row["subject"],
-                    "status": row["status"],
-                    "current_node": row["current_node"],
-                    "state": json.loads(cast(str, row["state_json"])) if row["state_json"] else {},
-                    "node_results": node_results,
                     "created_at": row["created_at"],
                     "updated_at": row["updated_at"],
+                    # Flattened state fields for easier access
+                    "status": state.get("status", row["status"]),
+                    "current_node": state.get("current_node", row["current_node"]),
+                    "completed_nodes": state.get("completed_nodes", []),
+                    "deliverables": state.get("deliverables", {}),
+                    "questions": state.get("questions", {}),
+                    "evaluations": state.get("evaluations", {}),
+                    "node_iterations": state.get("node_iterations", {}),
+                    "session_ids": state.get("session_ids", {}),
+                    "session_metadata": state.get("session_metadata", {}),
+                    "current_node_session_id": state.get("current_node_session_id"),
+                    "error": state.get("error"),
+                    "shared_context": state.get("shared_context", {}),
+                    "subject_context": state.get("subject_context", {}),
+                    "node_results": node_results,
                 }
+
+                return result
         except Exception as e:
             raise StorageError(
                 f"Failed to get pipeline: {e}",
@@ -487,11 +563,12 @@ class StateManager:
         update: Any,
         operation: str = "set",
         key_path: str | None = None,
-    ) -> bool:
-        """Update shared_context within state_json.
+    ) -> dict[str, Any]:
+        """Update shared_context within state_json with version control.
 
         Updates the shared_context namespace in the pipeline's state_json.
         Supports set, append, and remove operations on nested keys.
+        Automatically manages _metadata.version and _metadata.updated_at.
 
         Args:
             pipeline_id: The pipeline to update.
@@ -500,7 +577,7 @@ class StateManager:
             key_path: Dot-separated path like "facts.market_scope" or "open_questions".
 
         Returns:
-            True if successful.
+            Dictionary with version info: {"version": int, "updated_at": str, "success": bool}
 
         Raises:
             StorageError: If pipeline not found or update fails.
@@ -540,6 +617,21 @@ class StateManager:
 
                 shared_context: dict[str, Any] = current_state["shared_context"]
 
+                # Ensure _metadata exists (backward compatibility)
+                if "_metadata" not in shared_context:
+                    shared_context["_metadata"] = {
+                        "version": 0,
+                        "updated_at": None,
+                    }
+
+                # Get the current version for previous value tracking
+                previous_value = None
+                if key_path:
+                    previous_value = self._get_nested_value(shared_context, key_path)
+
+                # Track new value for history recording
+                new_value: Any = None
+
                 # Apply operation
                 if operation == "set":
                     if key_path:
@@ -560,13 +652,16 @@ class StateManager:
                         ):
                             update_dict: dict[str, Any] = update
                             self._deep_merge(target[final_key], update_dict)
+                            new_value = target[final_key]
                         else:
                             target[final_key] = update
+                            new_value = update
                     else:
                         # Merge update into shared_context
                         if isinstance(update, dict):
                             update_dict_shared: dict[str, Any] = update
                             self._deep_merge(shared_context, update_dict_shared)
+                            new_value = update
                         else:
                             raise StorageError(
                                 "update must be a dict when merging into shared_context",
@@ -601,6 +696,7 @@ class StateManager:
                         )
 
                     append_target[final_key].append(update)
+                    new_value = append_target[final_key]
 
                 elif operation == "remove":
                     if not key_path:
@@ -614,12 +710,15 @@ class StateManager:
                     target = shared_context
                     for key in keys[:-1]:
                         if key not in target:
-                            return True  # Key doesn't exist, nothing to remove
+                            # Key doesn't exist, nothing to remove - still update version
+                            break
                         target = target[key]
-
-                    final_key = keys[-1]
-                    if final_key in target:
-                        del target[final_key]
+                    else:
+                        final_key = keys[-1]
+                        if final_key in target:
+                            del target[final_key]
+                    # For remove, new_value is always None
+                    new_value = None
 
                 else:
                     raise StorageError(
@@ -627,6 +726,13 @@ class StateManager:
                         operation_type="update",
                         pipeline_id=pipeline_id,
                     )
+
+                # Update version and timestamp
+                current_version = shared_context["_metadata"]["version"]
+                new_version = (current_version if current_version is not None else 0) + 1
+                new_timestamp = datetime.now(_BEIJING_TZ).isoformat()
+                shared_context["_metadata"]["version"] = new_version
+                shared_context["_metadata"]["updated_at"] = new_timestamp
 
                 # Update the pipeline
                 updated_state_json = json.dumps(current_state)
@@ -636,7 +742,26 @@ class StateManager:
                     (updated_state_json, pipeline_id),
                 )
 
-            return True
+                # Record history entry (atomic with the update)
+                history_key = key_path if key_path else "_root"
+                self._record_context_history(
+                    conn=conn,
+                    pipeline_id=pipeline_id,
+                    node_id=None,  # TODO: Pass node_id from caller when available
+                    operation=operation,
+                    key=history_key,
+                    old_value=previous_value,
+                    new_value=new_value,
+                    version=new_version,
+                    timestamp=new_timestamp,
+                )
+
+            return {
+                "success": True,
+                "version": new_version,
+                "updated_at": new_timestamp,
+                "previous_value": previous_value,
+            }
         except StorageError:
             raise
         except Exception as e:
@@ -645,6 +770,25 @@ class StateManager:
                 operation_type="update",
                 pipeline_id=pipeline_id,
             ) from e
+
+    def _get_nested_value(self, data: dict[str, Any], key_path: str) -> Any:
+        """Get a value from a nested dictionary using dot notation.
+
+        Args:
+            data: The dictionary to search.
+            key_path: Dot-separated path like "facts.market_scope".
+
+        Returns:
+            The value at the path, or None if not found.
+        """
+        keys = key_path.split(".")
+        target: Any = data
+        for key in keys:
+            if isinstance(target, dict) and key in target:
+                target = target[key]
+            else:
+                return None
+        return target
 
     async def update_pipeline_state(
         self,
@@ -981,3 +1125,185 @@ class StateManager:
                 operation_type="update",
                 run_id=run_id,
             ) from e
+
+    # =======================================================================
+    # Story 35.6: Shared Context History
+    # =======================================================================
+
+    def _record_context_history(
+        self,
+        conn: Any,
+        pipeline_id: str,
+        node_id: str | None,
+        operation: str,
+        key: str,
+        old_value: Any,
+        new_value: Any,
+        version: int,
+        timestamp: str,
+    ) -> None:
+        """Record a history entry for a shared_context change.
+
+        This is a private method that should be called within a transaction.
+
+        Args:
+            conn: The database connection (from acquire() context).
+            pipeline_id: The pipeline ID.
+            node_id: The node ID that made the change (optional).
+            operation: One of 'set', 'append', 'remove'.
+            key: The dot-notation key path that was modified.
+            old_value: The previous value (JSON serializable).
+            new_value: The new value (JSON serializable).
+            version: The version number after the change.
+            timestamp: ISO 8601 timestamp string.
+        """
+        old_value_json = json.dumps(old_value) if old_value is not None else None
+        new_value_json = json.dumps(new_value) if new_value is not None else None
+
+        conn.execute(
+            """
+            INSERT INTO shared_context_history
+            (pipeline_id, node_id, operation, key, old_value, new_value, timestamp, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                pipeline_id,
+                node_id,
+                operation,
+                key,
+                old_value_json,
+                new_value_json,
+                timestamp,
+                version,
+            ),
+        )
+
+    def get_context_history(
+        self,
+        pipeline_id: str,
+        node_id: str | None = None,
+        operation: str | None = None,
+        key_pattern: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Query shared_context change history for a pipeline.
+
+        Returns history entries sorted by timestamp (newest first).
+
+        Args:
+            pipeline_id: The pipeline ID to query.
+            node_id: Optional filter by node ID.
+            operation: Optional filter by operation type ('set', 'append', 'remove').
+            key_pattern: Optional filter by key pattern (SQL LIKE pattern, e.g., 'facts.%').
+            limit: Optional limit on number of results.
+
+        Returns:
+            List of history entry dictionaries.
+        """
+        try:
+            with self._db.acquire() as conn:
+                # Build query dynamically based on filters
+                where_clauses = ["pipeline_id = ?"]
+                params: list[Any] = [pipeline_id]
+
+                if node_id is not None:
+                    where_clauses.append("node_id = ?")
+                    params.append(node_id)
+
+                if operation is not None:
+                    where_clauses.append("operation = ?")
+                    params.append(operation)
+
+                if key_pattern is not None:
+                    where_clauses.append("key LIKE ?")
+                    params.append(key_pattern)
+
+                where_sql = " AND ".join(where_clauses)
+
+                query = f"""
+                    SELECT id, pipeline_id, node_id, operation, key,
+                           old_value, new_value, timestamp, version
+                    FROM shared_context_history
+                    WHERE {where_sql}
+                    ORDER BY timestamp DESC, id DESC
+                """
+
+                if limit is not None:
+                    query += " LIMIT ?"
+                    params.append(limit)
+
+                cursor = conn.execute(query, params)
+
+                history: list[dict[str, Any]] = []
+                for row in cursor.fetchall():
+                    history.append(
+                        {
+                            "id": row["id"],
+                            "pipeline_id": row["pipeline_id"],
+                            "node_id": row["node_id"],
+                            "operation": row["operation"],
+                            "key": row["key"],
+                            "old_value": row["old_value"],
+                            "new_value": row["new_value"],
+                            "timestamp": row["timestamp"],
+                            "version": row["version"],
+                        }
+                    )
+
+                return history
+
+        except Exception as e:
+            logger.warning(
+                "Failed to get context history for pipeline %s: %s",
+                pipeline_id,
+                str(e),
+            )
+            return []
+
+    # =======================================================================
+    # Phase 2 P1: Unified State Read API
+    # =======================================================================
+
+    def get_current_node(self, pipeline_id: str) -> str | None:
+        """获取当前节点（从 state_json 读取）。
+
+        Args:
+            pipeline_id: Pipeline ID
+
+        Returns:
+            当前节点 ID，或 None
+        """
+        pipeline = self.get_pipeline(pipeline_id)
+        if pipeline is None:
+            return None
+        return pipeline.get("state", {}).get("current_node")
+
+    def get_pipeline_status(self, pipeline_id: str) -> str:
+        """获取 Pipeline 状态（从 state_json 读取）。
+
+        Args:
+            pipeline_id: Pipeline ID
+
+        Returns:
+            Pipeline 状态，默认为 "unknown"
+        """
+        pipeline = self.get_pipeline(pipeline_id)
+        if pipeline is None:
+            return "unknown"
+        return pipeline.get("state", {}).get("status", "unknown")
+
+    def is_node_completed(self, pipeline_id: str, node_id: str) -> bool:
+        """检查节点是否已完成。
+
+        Args:
+            pipeline_id: Pipeline ID
+            node_id: 节点 ID
+
+        Returns:
+            True if 节点在 completed_nodes 中
+        """
+        pipeline = self.get_pipeline(pipeline_id)
+        if pipeline is None:
+            return False
+        completed_nodes = pipeline.get("state", {}).get("completed_nodes", [])
+        return node_id in completed_nodes

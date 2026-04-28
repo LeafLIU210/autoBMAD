@@ -1,0 +1,39 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "15.2"
+story_title: "@docs/ 路径解析"
+gate: "PASS"
+status_reason: "All quality gates passed - tests (32), type checking (0 errors), and linting (0 issues) all clear with 95% coverage on new code."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  evidence:
+    tests_reviewed: 32
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5, 6, 7]
+      ac_gaps: []
+    coverage: "95% on context_resolver.py"
+    tools_validated:
+      - name: "BasedPyright"
+        result: "PASS"
+        details: "0 errors, 0 warnings"
+      - name: "Ruff"
+        result: "PASS"
+        details: "0 issues"
+      - name: "Pytest"
+        result: "PASS"
+        details: "32 tests passing"
+
+quality_score: 100

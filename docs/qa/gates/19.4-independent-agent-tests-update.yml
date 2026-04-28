@@ -1,0 +1,64 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "19.4"
+story_title: "IndependentAgent Tests Update"
+gate: "PASS"
+status_reason: "All acceptance criteria met - tests updated to use standard Python mock fixtures, all 13 tests pass with 100% coverage on test file, full suite 254 tests pass with no regressions."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues: []
+
+# Risk summary (from risk-profile task if run)
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 13
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+  test_results:
+    test_file: "tests/unit/test_independent_agent_dict_migration.py"
+    tests_passed: 13
+    tests_failed: 0
+    coverage_percent: 100
+  full_suite_results:
+    tests_passed: 254
+    tests_skipped: 2
+    tests_failed: 0
+    no_regressions: true
+
+# Acceptance Criteria Verification
+ac_verification:
+  - ac: "移除 kimi_agent_sdk 相关 mock 导入和依赖"
+    status: PASS
+    evidence: "Kimiact_agent_sdk imports removed, standard AsyncMock used"
+  - ac: "使用 mock_session_manager fixture (来自 conftest.py) 替代自定义复杂 mock"
+    status: PASS
+    evidence: "Tests updated to use mock_session_manager from conftest.py"
+  - ac: "验证 dict 格式消息处理正确 (role, content 字段)"
+    status: PASS
+    evidence: "test_parse_response_with_dict_format passes"
+  - ac: "验证工具调用提取功能正常 (tool_use 类型 content)"
+    status: PASS
+    evidence: "test_execute_creates_deliverable passes"
+  - ac: "所有 IndependentAgent 测试用例通过"
+    status: PASS
+    evidence: "13/13 tests pass"
+  - ac: "测试覆盖率保持不变或提升"
+    status: PASS
+    evidence: "100% coverage on test file"
+
+# Recommendations
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding more edge case tests for error handling scenarios"
+      refs: ["tests/unit/test_independent_agent_dict_migration.py"]

@@ -24,7 +24,7 @@ console = Console()
 def start(context_file: str) -> None:
     """Start a new pipeline with the provided context file."""
     service = PipelineService()
-    
+
     try:
         pipeline_id = asyncio.run(service.start(context_file))
         console.print(f"[green]+[/green] Pipeline started: [bold]{pipeline_id}[/bold]")

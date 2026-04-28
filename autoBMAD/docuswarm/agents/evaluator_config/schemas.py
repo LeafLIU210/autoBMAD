@@ -4,9 +4,10 @@ This module provides TypedDict definitions for:
 - CriteriaWeights: Single criterion weight configuration
 - EvaluationCriteria: Full evaluation criteria with universal defaults and node overrides
 - ThresholdConfig: Approval/escalation threshold configuration
+- EVALUATOR_OUTPUT_SCHEMA: JSON Schema for SDK structured output (Story 38.1)
 """
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class CriteriaWeights(TypedDict):
@@ -78,6 +79,51 @@ DEFAULT_THRESHOLDS: ThresholdConfig = {
 # Weight validation tolerance
 WEIGHT_SUM_TOLERANCE: float = 0.05
 
+# EvaluatorAgent output schema for SDK structured output (Story 38.1)
+# This schema defines the JSON Schema format for constrained EvaluatorAgent output
+EVALUATOR_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "criterion_scores": {
+            "type": "object",
+            "description": "Scores for each evaluation criterion (0.0-1.0)",
+            "additionalProperties": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0,
+            },
+        },
+        "alignment_score": {
+            "type": "number",
+            "description": "Weighted alignment score (0.0-1.0)",
+            "minimum": 0.0,
+            "maximum": 1.0,
+        },
+        "verdict": {
+            "type": "string",
+            "description": "Evaluation verdict",
+            "enum": ["APPROVED", "NEEDS_REVISION", "BLOCKED"],
+        },
+        "issues_found": {
+            "type": "array",
+            "description": "List of issues found during evaluation",
+            "items": {"type": "string"},
+        },
+        "suggestions": {
+            "type": "array",
+            "description": "List of suggestions for improvement",
+            "items": {"type": "string"},
+        },
+    },
+    "required": [
+        "criterion_scores",
+        "alignment_score",
+        "verdict",
+        "issues_found",
+        "suggestions",
+    ],
+}
+
 
 __all__ = [
     "CriteriaWeights",
@@ -86,4 +132,5 @@ __all__ = [
     "UNIVERSAL_CRITERIA_DEFAULTS",
     "DEFAULT_THRESHOLDS",
     "WEIGHT_SUM_TOLERANCE",
+    "EVALUATOR_OUTPUT_SCHEMA",
 ]

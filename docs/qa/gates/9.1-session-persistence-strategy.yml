@@ -1,0 +1,83 @@
+# <!-- Powered by BMAD™ Core -->
+template:
+  id: qa-gate-template-v1
+  name: Quality Gate Decision
+  version: 1.0
+  output:
+    format: yaml
+    filename: qa.qaLocation/gates/{{epic_num}}.{{story_num}}-{{story_slug}}.yml
+    title: "Quality Gate: {{epic_num}}.{{story_num}}"
+
+# Required fields (keep these first)
+schema: 1
+story: "9.1"
+story_title: "Session Persistence Strategy"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Implementation complete with 78 passing tests (25 session_id tests + 53 pipeline_state tests). Type checking passes with 0 errors, linting passes after auto-fix."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-21T00:00:00Z"
+
+# Always present but only active when WAIVED
+waiver: { active: false }
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues: []
+
+# Risk summary (from risk-profile task if run)
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# ============ Quality Gate Details ============
+quality_and_expiry: |
+  quality_score: 100
+  expires: "2026-03-21T00:00:00Z"
+
+evidence: |
+  evidence:
+    tests_reviewed: 78
+    tests_passed: 78
+    tests_failed: 0
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+      ac_gaps: []
+
+nfr_validation: |
+  nfr_validation:
+    security: { status: PASS, notes: "No security concerns - pure function with no side effects" }
+    performance: { status: PASS, notes: "Simple string formatting, no performance concerns" }
+    reliability: { status: PASS, notes: "Deterministic function, handles None values gracefully" }
+    maintainability: { status: PASS, notes: "Well-documented with type hints and docstrings" }
+
+# ============ Acceptance Criteria Verification ============
+acceptance_criteria_verification: |
+  - [x] Session ID generator follows naming convention: docuswarm-{pipeline_id}-{node_id}[-iter{n}]
+  - [x] Pipeline-level session ID format: docuswarm-{pipeline_id}
+  - [x] Node-level session ID format: docuswarm-{pipeline_id}-{node_id}
+  - [x] Iteration-level session ID format: docuswarm-{pipeline_id}-{node_id}-iter{n}
+  - [x] Session IDs are deterministic (same inputs always produce same output)
+  - [x] Session IDs stored in LangGraph PipelineState for recovery
+  - [x] Utility function handles None values for optional parameters
+
+# ============ Quality Gates Results ============
+tool_results: |
+  tool_results:
+    basedpyright:
+      status: PASS
+      errors: 0
+      warnings: 4
+      notes: "Deprecation warnings for Optional syntax (Python 3.10+). No errors."
+    ruff:
+      status: PASS
+      errors_fixed: 3
+      notes: "Auto-fixed import sorting and type annotation style issues."
+    pytest:
+      status: PASS
+      tests_run: 78
+      tests_passed: 78
+      tests_failed: 0
+      coverage_session_ids: "100%"
+      coverage_pipeline_state: "98%"

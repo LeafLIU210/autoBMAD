@@ -1,0 +1,67 @@
+# QA Gate - Story 22.5
+# Refactor _format_system_prompt()
+
+## Status
+**Decision**: PASS
+
+## Summary
+The implementation successfully refactors the `_format_system_prompt()` method to assemble all four sections in the correct order.
+
+## Quality Gate Results
+
+### Document Completeness (100%)
+- [x] Story title and status: Complete
+- [x] Acceptance criteria: All 5 ACs implemented and tested
+- [x] Tasks/Subtasks: All 4 tasks completed
+
+### Tool Validation (30/30 points - PASS)
+
+#### BasedPyright (Type Checking)
+- **Result**: PASS (0 errors, 0 warnings)
+- Fixed type annotation for `build_system_prompt()` to accept `NodeDeliverableConfig | None`
+
+#### Ruff (Linting)
+- **Result**: PASS (0 errors)
+
+#### Fixtest (Test Automation)
+- **Result**: PASS (36 tests passed)
+- Test files:
+  - `tests/agents/test_system_prompt_sections.py` (16 tests)
+  - `tests/agents/test_complete_system_prompt.py` (20 tests)
+
+### Acceptance Criteria Verification
+
+| AC | Description | Status |
+|----|-------------|--------|
+| AC1 | Complete Section Assembly | VERIFIED |
+| AC2 | Correct Section Ordering | VERIFIED |
+| AC3 | Placeholder Preservation | VERIFIED |
+| AC4 | Execution Instructions Format | VERIFIED |
+| AC5 | Empty Config Handling | VERIFIED |
+
+### Implementation Details
+
+**Files Modified:**
+- `autoBMAD/docuswarm/agents/independent.py`
+
+**Key Changes:**
+1. Added `_format_system_prompt()` instance method (lines 271-290)
+2. Added `_format_execution_instructions()` static method (lines 167-178)
+3. Added `build_system_prompt()` function (lines 181-208)
+4. Added static method aliases in IndependentAgent class (lines 222-226)
+5. Fixed type annotation: `deliverable: NodeDeliverableConfig | None` (line 184)
+
+## Decision Rationale
+- All acceptance criteria are met
+- All tests pass
+- Type checking passes (after fix)
+- Linting passes
+- Implementation correctly handles None values for optional parameters (AC5)
+
+## Notes
+- Minor type annotation fix applied during review to ensure pyright compliance
+- The implementation follows the exact structure specified in the story
+
+---
+*Gate reviewed by Quinn (Test Architect)*
+*Date: 2026-03-02*

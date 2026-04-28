@@ -1,0 +1,57 @@
+schema: 1
+story: "35.5"
+story_title: "Make Whitelist Configurable in UpdateContextTool"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Configurable whitelist implemented with union merge strategy (global + node-specific), clear error messages with allowed_patterns, structured logging indicating whitelist source, and full backward compatibility verified."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T14:30:00Z"
+waiver: { active: false }
+top_issues: []
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+gate_checks:
+  - id: "35.5.1"
+    description: "UpdateContextTool accepts configurable allowed_keys parameter from node configuration"
+    status: "passed"
+  - id: "35.5.2"
+    description: "Node-specific allowed_keys are merged with global whitelist (union, not replacement)"
+    status: "passed"
+  - id: "35.5.3"
+    description: "Attempts to update non-whitelisted keys fail with clear, actionable error message"
+    status: "passed"
+  - id: "35.5.4"
+    description: "Logging indicates which whitelist (global, node-specific, or merged) is active during each operation"
+    status: "passed"
+  - id: "35.5.5"
+    description: "Backward compatible: nodes without custom allowed_keys continue to use global whitelist only"
+    status: "passed"
+  - id: "35.5.6"
+    description: "Wildcard patterns supported in both global and node-specific whitelists"
+    status: "passed"
+  - id: "35.5.7"
+    description: "Effective whitelist built via _build_effective_whitelist() using deduplication"
+    status: "passed"
+  - id: "35.5.8"
+    description: "All 28 unit tests pass with 85% coverage on update_context module"
+    status: "passed"
+  - id: "35.5.9"
+    description: "All 22 existing version control tests pass (backward compatibility)"
+    status: "passed"
+  - id: "35.5.10"
+    description: "Type checking passes with 0 errors"
+    status: "passed"
+  - id: "35.5.11"
+    description: "Ruff linting passes with 0 errors"
+    status: "passed"
+evidence:
+  tests_reviewed: 50
+  tests_passed: 50
+  type_check_errors: 0
+  lint_errors: 0
+  coverage_update_context: "85%"
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []

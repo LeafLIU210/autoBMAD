@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 # Single Context Protocol contracts (these have no dependencies)
 from autoBMAD.docuswarm.node_execution.contracts import (
-    DeliverableRequirements,
+    DeliverableArtifact,
     EvaluatorAgentInput,
     EvaluatorOutput,
     IndependentAgentInput,
@@ -44,26 +44,6 @@ def __getattr__(name: str) -> Any:
         from autoBMAD.docuswarm.node_execution.chaining import get_predecessors
 
         return get_predecessors
-    elif name in [
-        "execute_node_flow",
-        "export_output",
-        "generate_context_hash",
-        "generate_run_id",
-        "get_chained_context",
-        "load_context_file",
-        "save_node_run",
-    ]:
-        from autoBMAD.docuswarm.node_execution import flow
-
-        return getattr(flow, name)
-    elif name in [
-        "create_node_execution_graph",
-        "create_node_execution_config",
-        "create_checkpoint_config",
-    ]:
-        from autoBMAD.docuswarm.node_execution import graph
-
-        return getattr(graph, name)
     elif name in ["MetricsCollector", "NodeRunMetrics"]:
         from autoBMAD.docuswarm.node_execution import metrics
 
@@ -92,14 +72,14 @@ def __getattr__(name: str) -> Any:
         "update_node_run_state",
         "validate_node_result",
         "validate_node_run_state",
+        # Multi-document support (Story 33.5)
+        "is_multi_document",
+        "get_all_documents",
+        "get_total_word_count",
     ]:
         from autoBMAD.docuswarm.node_execution import state
 
         return getattr(state, name)
-    elif name == "ContextValidator":
-        from autoBMAD.docuswarm.node_execution import validator
-
-        return validator.ContextValidator
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
@@ -117,20 +97,6 @@ if TYPE_CHECKING:
         create_context_builder,
     )
     from autoBMAD.docuswarm.node_execution.executor import create_node_executor
-    from autoBMAD.docuswarm.node_execution.flow import (
-        execute_node_flow,
-        export_output,
-        generate_context_hash,
-        generate_run_id,
-        get_chained_context,
-        load_context_file,
-        save_node_run,
-    )
-    from autoBMAD.docuswarm.node_execution.graph import (
-        create_checkpoint_config,
-        create_node_execution_config,
-        create_node_execution_graph,
-    )
     from autoBMAD.docuswarm.node_execution.metrics import MetricsCollector, NodeRunMetrics
     from autoBMAD.docuswarm.node_execution.run_tracker import NodeRunTracker
     from autoBMAD.docuswarm.node_execution.state import (
@@ -147,6 +113,9 @@ if TYPE_CHECKING:
         create_node_run_state,
         deserialize_node_result,
         deserialize_node_run_state,
+        get_all_documents,
+        get_total_word_count,
+        is_multi_document,
         is_valid_status,
         serialize_node_result,
         serialize_node_run_state,
@@ -154,23 +123,18 @@ if TYPE_CHECKING:
         validate_node_result,
         validate_node_run_state,
     )
-    from autoBMAD.docuswarm.node_execution.validator import ContextValidator
 
 __all__ = [
     # Single Context Protocol contracts
     "NodeExecutionContext",
     "IndependentAgentInput",
     "EvaluatorAgentInput",
-    "DeliverableRequirements",
+    "DeliverableArtifact",
     "IndependentOutput",
     "EvaluatorOutput",
     # Builder
     "NodeExecutionContextBuilder",
     "create_context_builder",
-    # Graph factory functions
-    "create_node_execution_graph",
-    "create_node_execution_config",
-    "create_checkpoint_config",
     # Node executor factory
     "create_node_executor",
     # Status constants
@@ -197,21 +161,15 @@ __all__ = [
     "deserialize_node_run_state",
     "serialize_node_result",
     "deserialize_node_result",
-    # Context validator
-    "ContextValidator",
+    # Multi-document support (Story 33.5)
+    "is_multi_document",
+    "get_all_documents",
+    "get_total_word_count",
     # Context chainer
     "ContextChainer",
     "SEQUENCE",
     "get_sequence",
     "get_predecessors",
-    # Node execution flow
-    "execute_node_flow",
-    "export_output",
-    "generate_context_hash",
-    "generate_run_id",
-    "get_chained_context",
-    "load_context_file",
-    "save_node_run",
     # Node run tracker
     "NodeRunTracker",
     # Quality metrics

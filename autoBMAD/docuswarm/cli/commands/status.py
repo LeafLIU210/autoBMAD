@@ -17,10 +17,10 @@ console = Console()
 def status(pipeline_id: str) -> None:
     """Show detailed progress of the specified pipeline."""
     service = PipelineService()
-    
+
     try:
         pipeline = service.status(pipeline_id)
-        
+
         if pipeline is None:
             console.print(f"[red]Error: Pipeline not found: {pipeline_id}[/red]")
             raise click.ClickException(f"Pipeline not found: {pipeline_id}")

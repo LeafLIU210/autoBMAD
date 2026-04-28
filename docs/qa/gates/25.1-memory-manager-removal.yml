@@ -1,0 +1,137 @@
+# Gate 25.1: MemoryManager Complete Removal
+# Story: 25.1 - MemoryManager 彻底删除
+
+gate_id: "25.1"
+title: "MemoryManager Complete Removal"
+status: "completed"
+story_ref: "docs/stories/25.1.md"
+
+# Entry Criteria (all must pass before development starts)
+entry_criteria:
+  - id: EC-1
+    description: "Story 25.1.md exists and is in Ready for Development status"
+    status: "passed"
+  - id: EC-2
+    description: "All dependencies on MemoryManager analyzed and confirmed safe to remove"
+    status: "passed"
+  - id: EC-3
+    description: "Test infrastructure exists or can be created"
+    status: "passed"
+
+# Phase Checkpoints (development progress gates)
+phase_checkpoints:
+  - id: P1
+    name: "Phase 1: Remove Exports"
+    description: "Remove MemoryManager and MemoryScope from __init__.py"
+    criteria:
+      - id: P1-C1
+        description: "__init__.py imports updated - MemoryManager/MemoryScope removed"
+        status: "passed"
+      - id: P1-C2
+        description: "__all__ list updated - MemoryManager/MemoryScope removed"
+        status: "passed"
+      - id: P1-C3
+        description: "ContextManager and ContextFilter exports preserved"
+        status: "passed"
+      - id: P1-C4
+        description: "Import tests pass for remaining exports"
+        status: "passed"
+
+  - id: P2
+    name: "Phase 2: Delete Dead Code"
+    description: "Delete memory.py file"
+    criteria:
+      - id: P2-C1
+        description: "memory.py file physically deleted"
+        status: "passed"
+      - id: P2-C2
+        description: "File no longer exists in filesystem"
+        status: "passed"
+      - id: P2-C3
+        description: "Git status shows deletion staged"
+        status: "passed"
+
+  - id: P3
+    name: "Phase 3: Verification"
+    description: "Run all verification tests"
+    criteria:
+      - id: P3-C1
+        description: "MemoryManager import raises ImportError"
+        status: "passed"
+      - id: P3-C2
+        description: "MemoryScope import raises ImportError"
+        status: "passed"
+      - id: P3-C3
+        description: "ContextManager imports successfully"
+        status: "passed"
+      - id: P3-C4
+        description: "ContextFilter imports successfully"
+        status: "passed"
+      - id: P3-C5
+        description: "grep for MemoryManager returns empty (except diagnostic scripts)"
+        status: "passed"
+      - id: P3-C6
+        description: "Full test suite passes (pytest returns 0)"
+        status: "passed"
+      - id: P3-C7
+        description: "Type checking passes for context module"
+        status: "passed"
+
+  - id: P4
+    name: "Phase 4: Architecture Protection"
+    description: "Create architecture tests"
+    criteria:
+      - id: P4-C1
+        description: "Architecture test for context exports created"
+        status: "passed"
+      - id: P4-C2
+        description: "Test prevents regression of removed exports"
+        status: "passed"
+
+# Exit Criteria (all must pass for story completion)
+exit_criteria:
+  - id: XC-1
+    description: "All phase checkpoints completed"
+    status: "passed"
+  - id: XC-2
+    description: "Test coverage >= 80% for modified files"
+    status: "passed"
+  - id: XC-3
+    description: "No linting errors"
+    status: "passed"
+  - id: XC-4
+    description: "Story status updated to Ready for Review"
+    status: "passed"
+
+# Sign-offs
+sign_offs:
+  - role: "Developer"
+    name: "Claude Sonnet 4.6"
+    date: "2026-03-26"
+    signature: "James (Full Stack Developer)"
+  - role: "Code Reviewer"
+    name: ""
+    date: ""
+    signature: ""
+  - role: "QA Reviewer"
+    name: "Quinn (Test Architect)"
+    date: "2026-03-26"
+    signature: "Quinn"
+
+# QA Review Decision
+decline_reasons: []
+qa_decision:
+  status: "PASS"
+  decision_date: "2026-03-26"
+  reviewed_by: "Quinn (Test Architect)"
+  rationale: |
+    All acceptance criteria verified and passing:
+    - memory.py physically deleted
+    - __init__.py exports cleaned (MemoryManager/MemoryScope removed)
+    - ContextManager/ContextFilter exports preserved and functional
+    - MemoryManager import correctly raises ImportError
+    - All 20 tests pass (13 unit + 7 architecture tests)
+    - 100% coverage on context/__init__.py
+    - basedpyright: 0 errors, 0 warnings, 0 notes
+    - No MemoryManager references remain in autoBMAD/ codebase
+  conditions: []

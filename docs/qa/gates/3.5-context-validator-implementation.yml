@@ -1,0 +1,101 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "3.5"
+story_title: "Context Validator Implementation"
+gate: "PASSED"
+status_reason: "All QA gates passed - 0 errors on BasedPyright, 0 errors on Ruff, 16 tests pass with 100% coverage"
+reviewer: "Quinn (QA Agent)"
+updated: "2026-02-20T19:45:00Z"
+
+# Current Verification (2026-02-20)
+verification:
+  basedpyright:
+    command: "basedpyright docuswarm/node_execution/validator.py"
+    result: "0 errors, 4 warnings (deprecation warnings for Python 3.9+), 0 notes"
+    status: verified
+  ruff:
+    command: "ruff check docuswarm/node_execution/validator.py"
+    result: "All checks passed!"
+    status: verified
+  pytest:
+    command: "pytest tests/unit/test_context_validator.py"
+    result: "16 passed, 100% coverage on validator module"
+    status: verified
+
+# Issues resolved
+resolved_issues:
+  - id: "LINT-001"
+    severity: medium
+    resolution: "Fixed import sorting order (I001)"
+    location: "docuswarm/node_execution/validator.py:3-6"
+  - id: "LINT-002"
+    severity: low
+    resolution: "Replaced deprecated typing.Dict with dict (UP035, UP006)"
+    location: "docuswarm/node_execution/validator.py:6,33,83"
+  - id: "LINT-003"
+    severity: medium
+    resolution: "Added 'from e' to JSONDecodeError raise statement (B904)"
+    location: "docuswarm/node_execution/validator.py:57"
+
+# Quality Gates Results
+quality_gates:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 4
+    notes: "Warnings are deprecation notices for Python 3.9+ (typing.Dict) - acceptable"
+  ruff:
+    status: PASS
+    errors: 0
+    warnings: 0
+  pytest:
+    status: PASS
+    tests_passed: 16
+    tests_failed: 0
+    coverage_percent: 100
+
+# Acceptance Criteria Coverage
+ac_coverage:
+  - ac: "ContextValidator class created in node_execution/validator.py"
+    status: covered
+    evidence: "Class implemented with __init__, validate_context(), generate_context_hash() methods"
+  - ac: "Validates context file structure (valid JSON, expected top-level keys)"
+    status: covered
+    evidence: "validate_context() method parses JSON and validates structure"
+  - ac: "Validates context completeness (project_description and requirements fields present)"
+    status: covered
+    evidence: "_validate_required_fields() checks for required fields"
+  - ac: "Generates context_hash using SHA256 for context chaining"
+    status: covered
+    evidence: "generate_context_hash() uses hashlib.sha256()"
+  - ac: "Raises descriptive ValueError for missing fields"
+    status: covered
+    evidence: "ValueError raised with field list in message"
+  - ac: "Raises descriptive JSONDecodeError for invalid JSON"
+    status: covered
+    evidence: "JSONDecodeError re-raised with custom message"
+  - ac: "Supports async context file reading for consistency with other async operations"
+    status: covered
+    evidence: "Uses run_in_executor for async file I/O"
+  - ac: "Returns parsed context dict on successful validation"
+    status: covered
+    evidence: "validate_context() returns parsed dict"
+
+# Document Completeness
+document_completeness:
+  status: complete
+  sections_present:
+    - Story: present
+    - "Acceptance Criteria": present (all checked)
+    - "Tasks / Subtasks": present (all checked)
+    - "Dev Notes": present
+    - Testing: present (unit tests all checked, integration/manual unchecked)
+
+# Recommendations
+recommendations:
+  immediate: []
+  future:
+    - action: "Add integration tests for ContextValidator with actual node execution flow"
+      refs: ["docs/stories/3.5.md:52"]
+    - action: "Add manual test verification for context chaining"
+      refs: ["docs/stories/3.5.md:58"]

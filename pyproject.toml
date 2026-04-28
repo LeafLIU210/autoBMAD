@@ -2,88 +2,115 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
-
 [project]
-name = "pytqt-template"
-version = "2.0.0"
-description = "PyQt Windows应用程序开发模板"
+name = "docuswarm"
+version = "1.0.0"
+description = "Multi-agent document orchestration system with BMAD methodology"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
-    {name = "PyQt Template Team"},
+    {name = "DocuSwarm Team"},
 ]
-keywords = ["PyQt", "Qt", "GUI", "Windows", "Template"]
+keywords = ["multi-agent", "LangGraph", "BMAD", "document-automation", "AI", "claude-agent-sdk"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: Microsoft :: Windows",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: User Interfaces",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "PySide6>=6.5.0",
-    "loguru>=0.7.0",
-    "PyYAML>=6.0.0",
+    "langgraph>=0.2.50,<0.3.0",
+    "langgraph-checkpoint-sqlite>=2.0.4,<3.0.0",
+    "langchain>=0.3.0,<0.4.0",
+    "langchain-core>=0.3.0,<0.4.0",
+    "claude-agent-sdk>=0.1.0,<0.2.0",
+    "pyyaml==6.0.3",
+    "pydantic>=2.0.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "rich==14.2.0",
+    "click>=8.1.0,<9.0.0",
+    "structlog>=24.0.0,<25.0.0",
+    "aiofiles>=24.0.0,<26.0.0",
+    "aiosqlite>=0.19.0,<1.0.0",
 ]
+
+[project.scripts]
+docuswarm = "autoBMAD.docuswarm.cli.main:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-timeout>=2.1.0",
-    "debugpy>=1.6.0",
-    "ruff>=0.1.0",
-    "basedpyright>=0.1.0",
-]
-epic = [
-    "anthropic>=0.40.0",
-    "claude-agent-sdk>=0.1.0",
-    "pytest-qt>=4.2.0",
-    "pytest-timeout>=2.1.0",
-    "pytest-mock>=3.11.0",
-    "nuitka>=1.8.0",
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-asyncio>=0.23.0,<0.24.0",
+    "pytest-timeout>=2.1.0,<3.0.0",
+    "pytest-mock>=3.12.0,<4.0.0",
+    "typeguard>=4.0.0,<5.0.0",
+    "ruff>=0.5.0,<0.6.0",
+    "basedpyright>=1.1.0,<2.0.0",
+    "black>=24.0.0,<25.0.0",
+    "pre-commit>=3.6.0,<4.0.0",
 ]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-ra -q --strict-markers --cov=src --cov-report=term-missing --json-report --json-report-file=test_results.json --tb=short"
+minversion = "8.0"
+# P1-3 修复: 添加 basetemp 配置避免临时目录权限问题
+addopts = "-ra -q --strict-markers --cov=autoBMAD.docuswarm --cov-report=term-missing --cov-report=html --tb=short --basetemp=.pytest-temp"
 testpaths = ["tests"]
 asyncio_mode = "auto"
-pythonpath = ["src"]
+pythonpath = [".", "autoBMAD"]
 timeout = 300
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "e2e: marks tests as end-to-end tests",
-    "performance: marks tests as performance tests",
-    "documentation: marks tests as documentation tests",
-    "epic: marks tests as epic-related tests",
-    "gui: marks tests as GUI tests",
-    "acceptance: marks tests as acceptance criteria tests",
+    "agent: marks tests as agent-related tests",
+    "pipeline: marks tests as pipeline tests",
+    "smoke: marks tests as SDK smoke tests",
+    "llm: marks tests that require real LLM API calls",
 ]
-# Configure pytest-json-report plugin for robustness
-filterwarnings = [
-    "ignore::pytest_json_report.plugin.PytestJSONReportWarning:pytest_json_report",
-    "ignore::UserWarning",
+
+[tool.coverage.run]
+source = ["autoBMAD.docuswarm"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
 ]
 
 [tool.black]
 line-length = 88
-target-version = ['py312']
+target-version = ['py312', 'py313', 'py314']
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -97,29 +124,26 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long (handled by formatter)
     "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["B018", "B017"]
 
-[project.scripts]
-bubble-sort = "src.cli:main"
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-
 [tool.basedpyright]
-# Ignore specific type checking errors that are difficult to fix
+pythonVersion = "3.12.10"
 reportMissingImports = false
+reportMissingModuleSource = false
+reportImplicitRelativeImport = false
 reportArgumentType = false
 reportAttributeAccessIssue = false
-reportIncompatibleMethodOverride = false
-reportReturnType = false
-reportInvalidStringEscapeSequence = false
+reportExplicitAny = false
+reportUnannotatedClassAttribute = false
+reportAssignmentType = false
+reportAny = false
+reportMissingTypeStubs = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false

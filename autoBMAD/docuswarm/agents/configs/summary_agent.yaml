@@ -1,0 +1,45 @@
+# Agent file for Summary Agent
+# This file configures the Summary Agent for document summary generation
+# Story 36.2: Summary Agent Configuration
+
+version: 1
+
+agent:
+  name: summary
+  description: Generates structured LLM summaries of referenced documents
+  extend: default
+
+  # LLM Configuration
+  llm_config:
+    temperature: 0.3
+    max_tokens: 1000
+    timeout_seconds: 30
+    max_retries: 2
+
+  # Processing Configuration
+  processing:
+    max_concurrent_calls: 3
+    max_file_size_kb: 500
+    critical_file_pattern: "requirement"
+
+  # File Discovery
+  file_discovery:
+    search_dirs:
+      - "docs"
+    allowed_extensions:
+      - ".md"
+      - ".txt"
+      - ".yaml"
+      - ".yml"
+      - ".json"
+    prefer_shallowest_path: true
+
+  # Output Schema
+  output_schema:
+    required_fields:
+      - summary
+      - key_points
+      - structure
+    structure_fields:
+      - sections
+      - concepts

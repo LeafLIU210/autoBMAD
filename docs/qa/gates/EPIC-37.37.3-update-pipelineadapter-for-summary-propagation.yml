@@ -1,0 +1,105 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate: EPIC-37.37.3
+schema: 1
+story: "37.3"
+story_title: "Update PipelineAdapter for Summary Propagation"
+gate: "PASS"
+status_reason: "All acceptance criteria satisfied. Implementation correctly propagates docs_context_summary from PipelineState to NodeRunState with backward compatibility preserved. All 13 new tests pass, 0 type errors, 0 lint violations."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T12:00:00Z"
+
+# Waiver (inactive)
+waiver:
+  active: false
+
+# No issues found
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 13
+  tests_passed: 13
+  type_checking:
+    tool: BasedPyright
+    errors: 0
+    warnings: 0
+    notes: 0
+  linting:
+    tool: Ruff
+    status: PASS
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+# Acceptance Criteria Verification
+ac_verification:
+  - id: 1
+    criteria: "docs_context_summary from PipelineState is injected into original_context when present"
+    status: PASS
+    evidence: "Lines 199-202 in pipeline_adapter.py - conditional injection when docs_summary is non-empty"
+  - id: 2
+    criteria: "When PipelineState has no docs_context_summary, original_context remains unchanged (backward compatibility)"
+    status: PASS
+    evidence: "Empty list check at line 201 prevents injection when summary is absent or empty"
+  - id: 3
+    criteria: "The serialized context_file includes the docs_context_summary data for downstream consumption"
+    status: PASS
+    evidence: "accumulated dict includes docs_context_summary before json.dumps at line 204"
+  - id: 4
+    criteria: "The implementation preserves all existing PipelineAdapter functionality"
+    status: PASS
+    evidence: "All 26 existing tests pass, no regression detected"
+  - id: 5
+    criteria: "Unit tests verify the adapter correctly propagates the summary to NodeRunState"
+    status: PASS
+    evidence: "13 comprehensive tests in test_pipeline_adapter_docs_summary.py covering all scenarios"
+
+# Test Coverage Summary
+test_coverage:
+  unit_tests:
+    total: 13
+    passed: 13
+    scenarios:
+      - "Summary injection when present"
+      - "Backward compatibility when absent"
+      - "Context file serialization with summary"
+      - "Original context unchanged when no summary"
+      - "Integration with previous deliverables"
+      - "Complex nested data handling"
+      - "Empty summary handling"
+      - "Type safety validation"
+  integration_tests:
+    - "End-to-end flow from PipelineState to NodeRunState"
+    - "Serialized context structure validation"
+
+# NFR Validation
+nfr_validation:
+  type_safety:
+    status: PASS
+    notes: "Proper list[dict[str, Any]] typing maintained throughout"
+  backward_compatibility:
+    status: PASS
+    notes: "Empty summary check ensures no breaking changes"
+  performance:
+    status: PASS
+    notes: "O(1) dictionary operation, no performance impact"
+  maintainability:
+    status: PASS
+    notes: "Clean, documented code following project patterns"
+
+# History
+history:
+  - at: "2026-04-07T12:00:00Z"
+    gate: PASS
+    note: "Initial QA review - All criteria met, implementation approved"

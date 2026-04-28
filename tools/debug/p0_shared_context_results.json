@@ -1,0 +1,180 @@
+{
+  "issue_id": "F2",
+  "severity": "CRITICAL",
+  "title": "shared_context设计有持久化表象，但运行时传递链路断裂",
+  "tests": [
+    {
+      "test": "convert_pipeline_to_node_state_missing_shared_context",
+      "issue": "PipelineAdapter.convert_pipeline_to_node_state() does not include shared_context in returned dict",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/pipeline_adapter.py:233-246",
+          "input_shared_context": {
+            "facts": {
+              "market_scope": "global"
+            },
+            "decisions": {
+              "architecture": "microservices"
+            }
+          },
+          "output_keys": [
+            "run_id",
+            "pipeline_id",
+            "node_id",
+            "context_hash",
+            "context_file",
+            "iteration",
+            "deliverable",
+            "questions",
+            "evaluation",
+            "answers",
+            "chained_context",
+            "status"
+          ],
+          "has_shared_context_key": false,
+          "shared_context_value": null,
+          "verdict": "BUG CONFIRMED"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "convert_node_to_pipeline_state_missing_shared_context",
+      "issue": "PipelineAdapter.convert_node_to_pipeline_state() does not merge shared_context from node_state back to pipeline_state",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/pipeline_adapter.py:249-303",
+          "node_state_shared_context": {
+            "updated": "by_tool",
+            "facts": {
+              "new": "fact"
+            }
+          },
+          "original_pipeline_shared_context": {
+            "original": "data"
+          },
+          "result_pipeline_shared_context": {
+            "original": "data"
+          },
+          "updated_merged": false,
+          "verdict": "BUG CONFIRMED"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "executor_shared_context_fallback",
+      "issue": "NodeExecutor uses state.get('shared_context', {}) which returns empty dict when key is missing",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/executor.py",
+          "shared_context_references": [
+            "Line 134:             shared_context=state.get(\"shared_context\", {}),",
+            "Line 213:         # ===== Story 35.1: Refresh shared_context from DB =====",
+            "Line 214:         # After node execution, refresh shared_context from DB to capture",
+            "Line 217:             latest_state = _refresh_shared_context_from_db(pipeline_id, session_manager, logger)",
+            "Line 219:                 new_state[\"shared_context\"] = latest_state",
+            "Line 221:                     \"shared_context_refreshed_from_db\",",
+            "Line 228:                 \"shared_context_refresh_failed_using_in_memory\",",
+            "Line 357: def _refresh_shared_context_from_db(",
+            "Line 362:     \"\"\"Refresh shared_context from database.",
+            "Line 365:     and extracts the shared_context field. It handles JSON parsing and",
+            "Line 374:         The refreshed shared_context dict, or None if refresh fails.",
+            "Line 397:         # Extract shared_context from the flattened state fields",
+            "Line 399:         shared_context = latest_pipeline.get(\"shared_context\")",
+            "Line 401:         if shared_context is None:",
+            "Line 402:             logger.debug(\"shared_context_not_found_in_db_state\", pipeline_id=pipeline_id)",
+            "Line 405:         if not isinstance(shared_context, dict):",
+            "Line 407:                 \"shared_context_is_not_dict\",",
+            "Line 409:                 type=type(shared_context).__name__,",
+            "Line 413:         return shared_context",
+            "Line 417:             \"json_decode_error_refreshing_shared_context\",",
+            "Line 424:             \"error_refreshing_shared_context_from_db\","
+          ],
+          "refresh_logic": [
+            "Line 213:         # ===== Story 35.1: Refresh shared_context from DB =====",
+            "Line 214:         # After node execution, refresh shared_context from DB to capture",
+            "Line 217:             latest_state = _refresh_shared_context_from_db(pipeline_id, session_manager, logger)",
+            "Line 221:                     \"shared_context_refreshed_from_db\",",
+            "Line 228:                 \"shared_context_refresh_failed_using_in_memory\",",
+            "Line 357: def _refresh_shared_context_from_db(",
+            "Line 362:     \"\"\"Refresh shared_context from database.",
+            "Line 374:         The refreshed shared_context dict, or None if refresh fails.",
+            "Line 417:             \"json_decode_error_refreshing_shared_context\",",
+            "Line 424:             \"error_refreshing_shared_context_from_db\","
+          ],
+          "finding": "Executor builds execution_context with state.get('shared_context', {}) - if missing, gets empty dict"
+        }
+      ],
+      "severity": "HIGH"
+    },
+    {
+      "test": "refresh_shared_context_from_db_duck_typing",
+      "issue": "_get_state_manager_from_session uses duck typing on SessionManager which lacks stable StateManager exposure",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/executor.py:432-472",
+          "duck_typing_checks": [
+            "Check if session_manager itself has get_pipeline",
+            "Check hasattr(session_manager, '_state_manager')",
+            "Check hasattr(session_manager, 'storage')",
+            "Check hasattr(session_manager, 'state_manager')"
+          ],
+          "session_manager_has_get_pipeline": false,
+          "session_manager_has__state_manager": false,
+          "session_manager_has_storage": false,
+          "finding": "SessionManager does NOT have get_pipeline, _state_manager, or storage attributes. Duck typing will ALWAYS return None."
+        }
+      ],
+      "severity": "HIGH"
+    },
+    {
+      "test": "update_context_sdk_creates_default_state_manager",
+      "issue": "create_update_context_server() creates StateManager() without db_path, causing database path mismatch",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/tools/update_context_sdk.py:98-102",
+          "code": [
+            "Line 99:                 state_manager=StateManager(),"
+          ],
+          "finding": "StateManager() is called WITHOUT db_path parameter. It will use DatabaseManager.get_instance() which may point to wrong database."
+        }
+      ],
+      "severity": "CRITICAL"
+    }
+  ],
+  "chain_analysis": {
+    "chain": [
+      {
+        "step": "PipelineState -> NodeRunState",
+        "component": "PipelineAdapter.convert_pipeline_to_node_state()",
+        "finding": "shared_context is NOT included in returned dict",
+        "impact": "Node never receives existing shared_context"
+      },
+      {
+        "step": "NodeRunState -> ExecutionContext",
+        "component": "NodeExecutor._execute_node()",
+        "finding": "Uses state.get('shared_context', {}) - falls back to empty dict",
+        "impact": "Node works with empty shared_context even if DB has data"
+      },
+      {
+        "step": "Tool writes shared_context",
+        "component": "update_context_tool in MCP server",
+        "finding": "Creates StateManager() without db_path, writes to potentially wrong DB",
+        "impact": "Update may go to wrong database file"
+      },
+      {
+        "step": "Post-execution refresh",
+        "component": "NodeExecutor._refresh_shared_context_from_db()",
+        "finding": "Duck typing on SessionManager always fails, returns None",
+        "impact": "Never successfully refreshes shared_context from DB"
+      },
+      {
+        "step": "NodeRunState -> PipelineState",
+        "component": "PipelineAdapter.convert_node_to_pipeline_state()",
+        "finding": "Does NOT merge shared_context from node_state back to pipeline_state",
+        "impact": "Any shared_context updates are lost for downstream nodes"
+      }
+    ]
+  }
+}

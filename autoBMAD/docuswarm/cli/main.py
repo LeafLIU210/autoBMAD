@@ -13,6 +13,7 @@ from autoBMAD.docuswarm import __version__
 from autoBMAD.docuswarm.cli.commands import (
     answer,
     cancel,
+    cancel_all,
     clean,
     export,
     list_pipelines,
@@ -77,6 +78,7 @@ cli.add_command(start)
 cli.add_command(status)
 cli.add_command(resume)
 cli.add_command(cancel)
+cli.add_command(cancel_all)
 cli.add_command(clean)
 cli.add_command(list_pipelines)
 cli.add_command(export)

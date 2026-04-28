@@ -85,7 +85,8 @@ class TemplateLoader:
     - Validate isolation between templates
     """
 
-    DEFAULT_TEMPLATES_DIR = Path(__file__).parent / "templates"
+    # F8 Fix: Point to docuswarm/templates/ instead of prompts/templates/
+    DEFAULT_TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
     def __init__(self, templates_dir: Path | None = None):
         """Initialize the TemplateLoader.

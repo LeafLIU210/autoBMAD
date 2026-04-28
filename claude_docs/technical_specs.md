@@ -1,7 +1,8 @@
-# 技术规范详细说明
+# 技术规范详细说明 - DocuSwarm
 
-**版本**: 1.2
-**最后更新**: 2026-02-24
+**版本**: 3.1
+**最后更新**: 2026-03-02
+**项目**: DocuSwarm Multi-Agent Orchestration System (claude-agent-sdk architecture)
 
 ---
 
@@ -24,130 +25,201 @@
 
 本项目依赖以下核心技术：
 
-#### Claude Agent SDK
-- **版本**: >=0.1.0
-- **用途**: AI代理编排和执行（Epic Automation使用）
-- **链接**: [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)
+#### LangGraph (多代理工作流)
+- **版本**: >=0.2.0
+- **用途**: 状态机和多代理工作流编排
+- **链接**: [LangGraph](https://langchain-ai.github.io/langgraph/)
 - **特性**:
-  - AI驱动的代理系统
-  - 异步任务执行
-  - 权限管理和安全控制
+  - 原生状态图(StateGraph)支持
+  - SQLite检查点持久化
+  - 消息传递和代理通信
+  - 条件边和工作流路由
 
-#### Kimi Agent SDK
-- **版本**: >=0.1.0
-- **用途**: AI代理编排和执行（DocuSwarm使用）
-- **链接**: [Kimi Agent SDK](https://github.com/moonshot-ai/kimi-agent-sdk)
+#### LangChain (LLM集成框架)
+- **版本**: >=0.3.0
+- **用途**: LLM抽象和集成
+- **链接**: [LangChain](https://python.langchain.com/)
 - **特性**:
-  - Kimi K2.5模型集成
-  - 自动工具调度
-  - 结构化输出支持
+  - 统一LLM接口
+  - 提示模板管理
+  - 输出解析器
+  - 异步支持
 
-#### BMAD Method
-- **用途**: AI驱动的敏捷开发方法论
+#### Kimi K2.5 (主要LLM提供商)
+- **提供商**: Moonshot AI
+- **集成方式**: claude-agent-sdk（通过 Kimi Code API OpenAI 兼容接口）
+- **上下文窗口**: 256K tokens
+- **链接**: [Kimi API](https://platform.moonshot.cn/)
+
+#### claude-agent-sdk (LLM集成SDK)
+- **版本**: >=0.1.0,<0.2.0
+- **用途**: Claude Agent SDK，通过 Kimi Code API OpenAI 兼容接口调用 Kimi K2.5
+- **核心能力**:
+  - `query()` — 无状态查询 API
+  - `ClaudeAgentOptions` — 配置选项
+  - 标准工具调用支持
+  - 异步生成器支持
+
+#### BMAD Method (方法论来源)
+- **用途**: Agent persona提取和工作流模式
 - **链接**: [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)
 - **特性**:
-  - 结构化的开发流程
-  - SM-Dev-QA循环
-  - 质量门控集成
-
-#### LangGraph
-- **版本**: >=0.2.0
-- **用途**: DocuSwarm流水线状态机
-- **特性**:
-  - 基于图的工作流编排
-  - 状态持久化
-  - 检查点恢复机制
+  - 5阶段开发流程(Analyst → PM → UX → Architect → PO)
+  - Agent persona定义
+  - 质量门控模式
 
 ### 1.2 生产依赖
 
-#### PySide6
-- **版本**: 最新稳定版
-- **用途**: Qt for Python，现代Qt框架
+#### langgraph
+- **版本**: >=0.2.0
+- **用途**: 多代理工作流状态机
 - **特性**:
-  - 跨平台GUI开发
-  - 完整的Qt 6 API
-  - 高性能渲染
-  - 丰富的UI组件
+  - StateGraph工作流定义
+  - 原生检查点支持
+  - 条件边和路由
+  - 异步执行
+
+#### langchain
+- **版本**: >=0.3.0
+- **用途**: LLM集成和提示管理
+- **特性**:
+  - 统一LLM接口
+  - 提示模板
+  - 输出解析
+  - 链式调用
+
+#### kimi-agent-sdk (已移除)
+- **状态**: 已由 claude-agent-sdk 完全替代
+- **迁移完成**: 2026-04-05
+- **替代方案**: claude-agent-sdk 通过 Kimi Code API OpenAI 兼容接口调用 Kimi K2.5
+
+#### pyyaml
+- **版本**: >=6.0.0
+- **用途**: 配置文件管理
+- **特性**:
+  - YAML解析
+  - 配置加载
+  - 结构化数据
+
+#### pydantic
+- **版本**: >=2.0.0
+- **用途**: 数据验证和模式定义
+- **特性**:
+  - 类型验证
+  - 自动文档
+  - JSON Schema生成
+  - 性能优化
+
+#### python-dotenv
+- **版本**: >=1.0.0
+- **用途**: 环境变量管理
+- **特性**:
+  - .env文件加载
+  - 配置隔离
+  - 安全凭据管理
 
 #### loguru
-- **版本**: 最新稳定版
+- **版本**: >=0.7.0
 - **用途**: 日志处理
 - **特性**:
   - 零配置日志记录
   - 彩色输出
   - 自动日志轮转
   - 异常捕获
+  - 异步日志
 
 ### 1.3 开发依赖
 
 #### pytest
-- **版本**: 最新稳定版
+- **版本**: >=8.0.0
 - **用途**: 测试框架
 - **常用插件**:
   - pytest-cov: 代码覆盖率
-  - pytest-qt: Qt应用测试
+  - pytest-asyncio: 异步测试支持
   - pytest-timeout: 超时控制
   - pytest-mock: 模拟对象
+  - pytest-json-report: JSON报告
 
-#### pytest-qt
-- **用途**: Qt应用测试插件
+#### pytest-asyncio
+- **版本**: >=0.23.0
+- **用途**: 异步测试支持
 - **特性**:
-  - Qt事件循环集成
-  - 信号和槽测试
-  - GUI测试支持
+  - async/await测试
+  - 事件循环管理
+  - LangGraph异步节点测试
 
-#### nuitka
-- **版本**: 最新稳定版
-- **用途**: Python打包工具
-- **优势**:
-  - 高性能编译
-  - 小体积分发
-  - 跨平台支持
-
-#### black
-- **版本**: 最新稳定版
-- **用途**: 代码格式化
+#### ruff
+- **版本**: >=0.5.0
+- **用途**: Python代码检查和格式化
 - **特性**:
-  - 一致的代码风格
-  - 最小的配置
-  - 自动格式化
+  - 极速代码检查(比Flake8快10-100倍)
+  - 自动修复
+  - PEP 8合规
+  - Import排序
+  - 代码复杂度检查
+
+#### basedpyright
+- **版本**: >=1.1.0
+- **用途**: 静态类型检查
+- **特性**:
+  - Pyright的增强版本
+  - 类型推导
+  - 配置灵活
+  - VS Code集成
 
 ### 1.4 依赖管理
 
 #### requirements.txt (生产依赖)
-```
-PySide6>=6.5.0
+```txt
+# DocuSwarm Multi-Agent Orchestration System
+# Production Dependencies
+# Updated: 2026-03-02 (claude-agent-sdk architecture)
+
+# === Core Framework ===
+langgraph>=0.2.0
+langgraph-checkpoint-sqlite>=3.0.0
+langchain>=0.3.0
+
+# === LLM Integration ===
+claude-agent-sdk>=0.1.0,<0.2.0
+
+# === Configuration & Data ===
+PyYAML>=6.0.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# === Logging ===
 loguru>=0.7.0
-claude-agent-sdk>=0.1.0
+structlog>=24.0.0
+
+# === CLI & UI ===
+click>=8.1.0
+rich>=13.0.0
+
+# === Async & IO ===
+aiofiles>=23.0.0
+watchfiles>=0.21.0
 ```
 
 #### requirements-dev.txt (开发依赖)
-```
-# 测试
-pytest>=7.0.0
+```txt
+# DocuSwarm Development Dependencies
+# Updated: 2026-03-02 (claude-agent-sdk architecture)
+
+# ========== Production Dependencies ==========
+-r requirements.txt
+
+# ========== Testing Framework ==========
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-json-report>=1.5.0
 pytest-cov>=4.0.0
-pytest-qt>=4.0.0
 pytest-timeout>=2.1.0
-pytest-mock>=3.10.0
+pytest-mock>=3.11.0
 
-# 构建
-nuitka>=1.8.0
-
-# 代码质量
-black>=23.0.0
-ruff>=0.1.0
-basedpyright>=1.0.0
-pre-commit>=3.0.0
-
-# Epic Automation依赖
-claude-agent-sdk>=0.1.0
-anyio>=4.0.0
-debugpy>=1.6.0
-
-# DocuSwarm依赖
-kimi-agent-sdk>=0.1.0
-langgraph>=0.2.0
-langchain-core>=0.3.0
+# ========== Code Quality ==========
+ruff>=0.5.0
+basedpyright>=1.1.0
 ```
 
 ---
@@ -156,48 +228,44 @@ langchain-core>=0.3.0
 
 ### 2.1 pyproject.toml
 
-现代Python项目的核心配置文件：
+DocuSwarm项目的核心配置文件：
 
 ```toml
 [project]
-name = "my-qt-app"
+name = "docuswarm"
 version = "1.0.0"
-description = "PyQt Windows应用程序"
+description = "Multi-agent document orchestration system with BMAD methodology"
+requires-python = ">=3.12.10"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "DocuSwarm Team"},
 ]
-readme = "README.md"
-requires-python = ">=3.12"
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-]
+keywords = ["multi-agent", "LangGraph", "BMAD", "document-automation", "AI", "claude-agent-sdk"]
 dependencies = [
-    "PySide6>=6.5.0",
+    "langgraph>=0.2.0",
+    "langgraph-checkpoint-sqlite",
+    "langchain>=0.3.0",
+    "claude-agent-sdk>=0.1.0,<0.2.0",
+    "pyyaml>=6.0.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
     "loguru>=0.7.0",
-    "claude-agent-sdk>=0.1.0",
-    "kimi-agent-sdk>=0.1.0",
+    "rich>=13.0.0",
+    "click>=8.1.0",
+    "structlog>=24.0.0",
+    "watchfiles>=0.21.0",
+    "aiofiles>=23.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-json-report>=1.5.0",
     "pytest-cov>=4.0.0",
-    "pytest-qt>=4.0.0",
     "pytest-timeout>=2.1.0",
-    "pytest-mock>=3.10.0",
-    "nuitka>=1.8.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-    "basedpyright>=1.0.0",
-    "pre-commit>=3.0.0",
-    "anyio>=4.0.0",
-    "debugpy>=1.6.0",
-    "langgraph>=0.2.0",
-    "langchain-core>=0.3.0",
+    "pytest-mock>=3.11.0",
+    "ruff>=0.5.0",
+    "basedpyright>=1.1.0",
 ]
 
 [build-system]
@@ -205,74 +273,33 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-ra -q --strict-markers"
+minversion = "8.0"
+addopts = "-ra -q --strict-markers --cov=docuswarm --cov=nodes --cov-report=term-missing --cov-report=html --tb=short"
+pythonpath = ["."]
 testpaths = ["tests"]
-timeout = 120
-filterwarnings = [
-    "error",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
+asyncio_mode = "auto"
+timeout = 300
+markers = [
+    "slow: marks tests as slow",
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "e2e: marks tests as end-to-end tests",
+    "agent: marks tests as agent-related tests",
+    "pipeline: marks tests as pipeline tests",
+    "smoke: marks tests as SDK smoke tests",
 ]
-
-[tool.coverage.run]
-source = ["src"]
-omit = ["*/tests/*", "*/venv/*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-]
-
-[tool.black]
-line-length = 88
-target-version = ["py312"]
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py312"
-select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-]
-ignore = [
-    "E501",  # line too long, handled by black
-    "B008",  # do not perform function calls in argument defaults
-]
 
-[tool.ruff.per-file-ignores]
-"__init__.py" = ["F401"]
-"tests/*" = ["B011"]
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501", "B008"]
 
 [tool.basedpyright]
-include = ["src/**/*"]
-exclude = ["tests/**/*", "build/**/*", "dist/**/*"]
-report = {
-    enable = true,
-    format = "json"
-}
+pythonVersion = "3.12.10"
+reportMissingImports = false
 ```
 
 ### 2.2 pytest.ini
@@ -349,7 +376,7 @@ coverage.xml
 .pytest_cache/
 
 # Virtual environments
-.venv/
+venv/
 venv/
 ENV/
 env/
@@ -468,7 +495,7 @@ basedpyright-workflow workflow
 
 ```toml
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py312"
 select = [
     "E",  # pycodestyle errors
@@ -480,7 +507,7 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long, handled by formatter
     "B008",  # do not perform function calls in argument defaults
 ]
 
@@ -491,13 +518,13 @@ ignore = [
 #### 执行命令
 ```bash
 # 检查代码风格
-ruff check src/
+ruff check docuswarm/
 
 # 自动修复可修复的问题
-ruff check --fix src/
+ruff check --fix docuswarm/
 
 # 格式化代码
-ruff format src/
+ruff format docuswarm/
 ```
 
 ### 3.3 智能冲突解决
@@ -741,7 +768,7 @@ pre-commit run --all-files
 #### VS Code设置 (.vscode/settings.json)
 ```json
 {
-    "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "./venv/Scripts/python.exe",
     "python.linting.enabled": true,
     "python.linting.ruffEnabled": true,
     "python.linting.pyrightEnabled": true,
@@ -768,7 +795,7 @@ pre-commit run --all-files
 ```json
 {
     "include": ["src/**/*"],
-    "exclude": ["tests/**/*", "build/**/*", "dist/**/*", ".venv/**/*"],
+    "exclude": ["tests/**/*", "build/**/*", "dist/**/*", "venv/**/*"],
     "report": {
         "enable": true,
         "format": "json",
@@ -839,7 +866,7 @@ extend-exclude = '''
   | \.git
   | \.mypy_cache
   | \.tox
-  | \.venv
+  | \venv
   | build
   | dist
 )/
@@ -886,16 +913,15 @@ isort --diff src/ tests/
 
 ### 8.1 虚拟环境信息
 
-- **Python版本**: 3.12.10
-- **环境路径**: `./.venv/`
-- **创建日期**: 2026-01-04
+- **Python版本**: 3.12.10+
+- **环境路径**: `./venv/`
 
 ### 8.2 使用方法
 
 #### 激活虚拟环境
 ```cmd
 # Windows
-.venv\Scripts\activate
+venv\Scripts\activate
 ```
 
 #### 安装依赖包
@@ -921,7 +947,7 @@ deactivate
 ### 8.3 最佳实践
 
 1. 每次工作前记得激活虚拟环境
-2. 提交代码时，不要包含`.venv/`目录
+2. 提交代码时，不要包含`venv/`目录
 3. 使用`requirements.txt`管理项目依赖
 4. 在IDE中将Python解释器路径指向虚拟环境
 
@@ -986,6 +1012,6 @@ message = "欢迎"  # 直接使用中文字符
 ---
 
 **版本历史**:
-- v1.2 (2026-02-24): 添加DocuSwarm依赖（Kimi Agent SDK、LangGraph等）
-- v1.1 (2026-01-14): 添加autoBMAD Epic Automation技术规范
+- v3.0 (2026-02-20): claude-agent-sdk 架构升级，替换 kimi-agent-sdk，更新依赖和配置
+- v2.0 (2026-02-19): DocuSwarm 项目适配
 - v1.0 (2026-01-04): 初始版本，完整的技术规范说明

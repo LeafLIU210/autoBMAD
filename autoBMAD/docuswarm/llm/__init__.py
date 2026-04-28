@@ -24,9 +24,8 @@ from autoBMAD.docuswarm.llm.response import (
     extract_json,
     extract_json_from_markdown,
     extract_text_from_messages,
-    validate_evaluator_output,
-    validate_independent_output,
 )
+from autoBMAD.docuswarm.llm.tool_filter import NodeToolFilter
 
 __all__ = [
     # Config
@@ -41,8 +40,8 @@ __all__ = [
     "extract_json",
     "extract_json_from_markdown",
     "extract_text_from_messages",
-    "validate_independent_output",
-    "validate_evaluator_output",
     "ResponseParseError",
     "ValidationError",
+    # Tool filter
+    "NodeToolFilter",
 ]

@@ -1,7 +1,7 @@
 # autoBMAD Epic自动化工作流详细说明
 
-**版本**: 2.1
-**最后更新**: 2026-02-24
+**版本**: 3.1
+**最后更新**: 2026-04-05
 
 ---
 
@@ -204,7 +204,7 @@ PENDING → IN_PROGRESS → QA_REVIEW →
 
 #### 必需软件
 
-- **Python 3.12+**: 核心运行时
+- **Python 3.12.10+**: 核心运行时
 - **Claude Agent SDK**: AI代理功能(SM Agent故事创建)
 - **Basedpyright>=1.1.0**: 类型检查工具
 - **Ruff>=0.1.0**: 代码风格检查工具
@@ -287,7 +287,7 @@ python -c "import claude_agent_sdk; print('Claude Agent SDK installed')"
 
 ```toml
 [tool.basedpyright]
-pythonVersion = "3.12"
+pythonVersion = "3.12.10"
 typeCheckingMode = "basic"
 reportMissingImports = true
 reportMissingTypeStubs = true
@@ -492,7 +492,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
 
 ```toml
 [tool.basedpyright]
-pythonVersion = "3.12"
+pythonVersion = "3.12.10"
 typeCheckingMode = "basic"
 reportMissingImports = true
 reportMissingTypeStubs = true
@@ -863,153 +863,16 @@ A: 可以,修改 `.bmad-core/tasks/` 中的任务指导文件可以自定义代�
 
 ---
 
-## 8. DocuSwarm文档编排系统
-
-DocuSwarm是autoBMAD生态系统中的多智能体文档编排系统，基于LangGraph实现双Agent协作模式，用于自动化生成高质量的PRD、架构设计、UX文档等。
-
-### 8.1 系统概述
-
-**核心特性**:
-- **双Agent协作模式**: Independent Agent创建交付物，Evaluator Agent评估质量
-- **5节点顺序流水线**: analyst → pm → ux → architect → po
-- **Kimi Agent SDK集成**: 基于Kimi K2.5模型的智能文档生成
-- **三层上下文隔离**: 运行时隔离、提示模板隔离、消息过滤机制
-- **检查点恢复**: 支持中断后从断点恢复执行
-
-### 8.2 系统架构
-
-```
-DocuSwarm
-├── Pipeline (流水线编排)
-│   ├── HybridOrchestrator (混合编排器)
-│   ├── PipelineState (流水线状态管理)
-│   └── QuestionHandler (问题处理器)
-├── Nodes (节点系统)
-│   └── DualAgentNode (双Agent节点)
-│       ├── IndependentAgent (独立Agent)
-│       └── EvaluatorAgent (评估Agent)
-├── Context (上下文管理)
-│   ├── ContextManager (上下文管理器)
-│   └── ContextFilter (上下文过滤器)
-├── Storage (存储层)
-│   ├── StateManager (状态管理器)
-│   └── CheckpointManager (检查点管理器)
-└── LLM (LLM集成)
-    └── KimiSessionManager (会话管理器)
-```
-
-### 8.3 节点角色说明
-
-| 节点 | 角色 | 主要职责 | 输出交付物 |
-|------|------|----------|-----------|
-| **analyst** | 业务分析师 | 需求分析、用户场景识别 | 需求分析文档 |
-| **pm** | 项目经理 | 任务分解、里程碑规划 | 项目计划文档 |
-| **ux** | 用户体验设计师 | 界面设计、交互流程 | UX设计文档 |
-| **architect** | 架构师 | 技术架构、系统设计 | 架构设计文档 |
-| **po** | 产品负责人 | 验收标准、最终验证 | 验收文档 |
-
-### 8.4 CLI使用指南
-
-#### 启动新流水线
-```bash
-python -m autoBMAD.docuswarm start -c docs/epics/EPIC-01.md
-```
-
-#### 查看流水线状态
-```bash
-python -m autoBMAD.docuswarm status <pipeline_id>
-```
-
-#### 恢复中断的流水线
-```bash
-# 从检查点恢复
-python -m autoBMAD.docuswarm resume <pipeline_id>
-
-# 从指定节点重新开始
-python -m autoBMAD.docuswarm resume <pipeline_id> --node <node_id>
-```
-
-#### 列出所有流水线
-```bash
-python -m autoBMAD.docuswarm list-pipelines [--status STATUS]
-```
-
-#### 取消流水线
-```bash
-# 取消单个流水线
-python -m autoBMAD.docuswarm cancel <pipeline_id>
-
-# 批量取消
-python -m autoBMAD.docuswarm cancel-all --status pending --confirm
-```
-
-#### 导出交付物
-```bash
-python -m autoBMAD.docuswarm export <pipeline_id> -o ./deliverables
-```
-
-### 8.5 配置说明
-
-#### 环境变量
-| 环境变量 | 必需 | 默认值 | 说明 |
-|---------|------|--------|------|
-| `KIMI_API_KEY` | ✅ | 无 | Kimi API密钥 |
-| `KIMI_BASE_URL` | ❌ | `https://api.kimi.com/coding/v1` | Kimi API Base URL |
-| `DOCUSWARM_DB_PATH` | ❌ | `docuswarm.db` | SQLite数据库路径 |
-| `DOCUSWARM_OUTPUT_DIR` | ❌ | `output` | 输出目录 |
-
-#### 配置文件
-DocuSwarm使用三层配置系统：
-1. **环境变量文件**: `.env`（项目根目录）
-2. **YAML配置**: `autoBMAD/docuswarm/docuswarm.yaml`
-3. **节点配置**: `nodes/{node_id}/`目录下的配置文件
-
-### 8.6 工作流示例
-
-#### 基本工作流
-```bash
-# 1. 启动新流水线
-python -m autoBMAD.docuswarm start -c docs/proposal.md
-
-# 2. 查看状态
-python -m autoBMAD.docuswarm status <pipeline_id>
-
-# 3. 回答问题（如有阻塞问题）
-python -m autoBMAD.docuswarm questions <pipeline_id>
-python -m autoBMAD.docuswarm answer <question_id> "答案内容"
-
-# 4. 导出结果
-python -m autoBMAD.docuswarm export <pipeline_id> -o ./output
-```
-
-### 8.7 与Epic Automation的关系
-
-| 特性 | Epic Automation | DocuSwarm |
-|------|----------------|-----------|
-| **主要用途** | 代码开发和实现 | 文档生成和规划 |
-| **Agent SDK** | Claude Agent SDK | Kimi Agent SDK |
-| **工作流模式** | SM-Dev-QA循环 | 双Agent协作 |
-| **执行方式** | 状态驱动执行 | LangGraph流水线 |
-| **输出产物** | 代码和测试 | PRD/架构/UX文档 |
-
-**典型使用场景**:
-1. 使用DocuSwarm生成PRD和架构文档
-2. 基于生成的文档创建Epic
-3. 使用Epic Automation实现代码
-
----
-
 **参考文档**:
 - [BMAD开发方法论](./bmad_methodology.md)
 - [质量保证流程](./quality_assurance.md)
 - [测试指南](./testing_guide.md)
-- [autoBMAD Epic Automation README](../autoBMAD/epic_automation/README.md)
-- [autoBMAD DocuSwarm README](../autoBMAD/docuswarm/README.md)
+- [autoBMAD README](../autoBMAD/epic_automation/README.md)
+- [autoBMAD SETUP](../autoBMAD/epic_automation/SETUP.md)
 
 ---
 
 **版本历史**:
-- v2.3 (2026-02-24): 添加DocuSwarm多智能体文档编排系统章节
 - v2.2 (2026-01-22): 移除CI/CD集成，更新为autoBMAD工作流
 - v2.1 (2026-01-14): 添加Claude Code Skills集成章节
 - v2.0 (2026-01-14): 重写为autoBMAD Epic自动化工作流说明

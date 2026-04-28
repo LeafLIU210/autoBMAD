@@ -1,8 +1,8 @@
 # Claude Code 指导文档
 
-**项目名称**: PyQt Windows 应用程序开发模板
-**版本**: 2.1
-**最后更新**: 2026-02-24
+**项目名称**: DocuSwarm Multi-Agent Orchestration System
+**版本**: 3.1
+**最后更新**: 2026-04-05
 
 ---
 
@@ -23,57 +23,52 @@
 
 ### 1.1 项目性质
 
-这是一个 **Windows Qt 程序的开发项目模板**，集成了：
+DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 
-- **PySide6/Qt6** - 现代Qt框架
+- **LangGraph** - 多代理工作流的状态机框架
+- **Claude Agent SDK** - Anthropic 官方 SDK
+- **Claude 3.5/4 Sonnet** - 大上下文窗口LLM(200K tokens)
 - **BMAD (Breakthrough Method of Agile AI-driven Development)** - AI驱动的敏捷开发方法论
-- **pytest** - 测试框架
-- **Nuitka** - Python打包工具
-- **AI辅助开发** - 通过Claude Code IDE进行智能开发
+- **Dual-Agent Pattern** - 双代理模式(Independent + Evaluator)
+- **Context Isolation** - 三层上下文隔离机制
+- **Sequential Pipeline** - 5个BMAD阶段的顺序执行
 
 ### 1.2 核心理念
 
-本项目采用 **"Vibe CEO"** 模式：
+本项目采用 **"Occam's Razor"** 原则:
 
-- **你作为CEO**: 提供愿景和决策
-- **AI作为执行团队**: 通过专用代理实现具体任务
-- **结构化工作流**: 从想法到部署的经过验证的模式
-- **清晰的交接**: 每次都使用全新的上下文窗口
+- **简单优先**: 使用LangGraph而非自定义NodeExecutor(节省8-12周)
+- **双代理模式**: Independent Agent + Evaluator(比三代理模式简化33%)
+- **顺序执行**: MVP使用顺序流程,DAG并行延迟到Phase 2
+- **单一LLM**: 仅使用Claude Sonnet,无需多provider抽象
+- **无RAG系统**: 256K上下文窗口足够,移除向量数据库复杂度
+
+### 1.3 架构演进
+
+当前系统已完成核心重构，详见 [TDD重构方案](docs/solution/README.md):
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| **Phase 1 (P0)** | CheckpointManager + ContextValidator 提取 | ✅ 已完成 |
+| **Phase 2 (P1)** | SDK统一异常处理 + 消息格式切换 | ✅ 已完成 |
+| **Phase 3 (P2)** | 质量保障增强 + 测试覆盖提升 | 🔄 进行中 |
+
+**关键TDD方案**:
+- [TDD-01](docs/solution/TDD-01-CheckpointManager-Refactor.md) - CheckpointManager提取 (DRY修复)
+- [TDD-02](docs/solution/TDD-02-ContextValidator-Refactor.md) - ContextValidator提取 (职责拆分)
+- [TDD-03](docs/solution/TDD-03-ToolResultExtractor-Refactor.md) - 纯工具输出模式 (12-Factor对齐)
+- [TDD-04](docs/solution/TDD-04-ContextResolver-Refactor.md) - @路径注入系统
+- [TDD-05](docs/solution/TDD-05-SDKWrapper-Refactor.md) - SDK替换 (kimi→claude)
 
 ### 1.3 项目依赖
 
-本项目的核心依赖：
-- **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** - AI代理编排和执行
-- **[Kimi Agent SDK](https://github.com/moonshot-ai/kimi-agent-sdk)** - Kimi AI代理SDK（DocuSwarm使用）
-- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI驱动的敏捷开发方法论
-- **autoBMAD Epic Automation** - 完整的5阶段BMAD开发自动化系统
-- **autoBMAD DocuSwarm** - 多智能体文档编排系统（基于LangGraph的双Agent模式）
-
-### 1.4 测试驱动开发 (TDD)
-
-本项目采用 **严格的测试驱动开发方法**：
-
-#### TDD核心原则
-- **测试优先**: 先写测试，后写实现代码
-- **红-绿-重构循环**: 失败测试 → 最小实现 → 代码重构
-- **持续质量**: 测试覆盖所有核心业务逻辑
-
-#### TDD工作流程
-```
-1. 编写失败测试 (Red)
-   ↓
-2. 编写最小实现使测试通过 (Green)
-   ↓
-3. 重构代码消除重复 (Refactor)
-   ↓
-4. 回到步骤1
-```
-
-#### 测试要求
-- **单元测试**: 所有核心业务逻辑必须有单元测试
-- **集成测试**: 关键功能必须有集成测试
-- **回归测试**: Bug修复前必须先写测试用例
-- **测试覆盖率**: 核心模块覆盖率 >80%
+核心技术栈:
+- **[LangGraph](https://langchain-ai.github.io/langgraph/)** - 状态机和工作流编排
+- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Claude Agent SDK（通过 Kimi Code API）
+- **[Kimi K2.5](https://platform.moonshot.cn/)** - 主要LLM提供商（256K上下文窗口）
+- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - 方法论来源
+- **SQLite with WAL** - 状态持久化
+- **Python 3.12+** - 实现语言
 
 ---
 
@@ -89,7 +84,7 @@
 | **[bmad_methodology.md](claude_docs/bmad_methodology.md)** | BMAD开发方法论完整说明 | 团队协作、敏捷开发时 |
 | **[ai_workflow.md](claude_docs/ai_workflow.md)** | AI助手三阶段工作流程 | 任何开发任务的开始 |
 | **[development_rules.md](claude_docs/development_rules.md)** | 编码规范、代码风格 | 编写代码时 |
-| **[testing_guide.md](claude_docs/testing_guide.md)** | 测试规范和实践（含详细TDD指导） | 编写和运行测试时 |
+| **[testing_guide.md](claude_docs/testing_guide.md)** | 测试规范和实践 | 编写和运行测试时 |
 | **[quality_assurance.md](claude_docs/quality_assurance.md)** | 质量保证流程和工具 | QA审查、质量门控 |
 | **[technical_specs.md](claude_docs/technical_specs.md)** | 技术规范和配置 | 技术决策、配置管理 |
 | **[workflow_tools.md](claude_docs/workflow_tools.md)** | autoBMAD工作流详解 | 自动化任务时 |
@@ -97,22 +92,61 @@
 | **[project_tree.md](claude_docs/project_tree.md)** | 项目结构说明 | 了解项目布局时 |
 | **[venv.md](claude_docs/venv.md)** | 虚拟环境管理 | **运行任何py程序时** |
 
-### 2.2 核心目录结构
+### 2.2 重构与架构文档
+
+📋 **重构方案位于 `docs-test/solution/` 目录**：
+
+| 文档 | 描述 | 何时使用 |
+|------|------|----------|
+| **[solution/README.md](docs-test/solution/README.md)** | TDD重构方案总览和实施路线图 | 规划重构工作时 |
+| **[TDD-SDK-Migration](docs-test/solution/TDD-SDK-Migration-2026-03-25.md)** | SDK迁移方案 | kimi→claude迁移 |
+
+📊 **研究文档位于 `docs-test/research/` 目录**：
+
+| 文档 | 描述 | 何时使用 |
+|------|------|----------|
+| **[Context Refactor Overview](docs-test/research/2026-03-13-docuswarm-context-refactor-overview.md)** | 上下文重构概览 | 理解重构背景时 |
+| **[Dependency Drift](docs-test/research/dependency-drift-2026-03-25/README.md)** | 依赖漂移分析 | 了解SDK迁移时 |
+
+🏗️ **架构文档位于 `docs-test/architecture/` 目录**：
+
+| 文档 | 描述 | 何时使用 |
+|------|------|----------|
+| **[Project Structure](docs-test/architecture/project-structure.md)** | 项目结构规范 | 理解项目布局时 |
+| **[Tech Stack](docs-test/architecture/tech-stack.md)** | 技术栈规范 | 理解技术选型时 |
+| **[Pipeline Architecture](docs-test/architecture/03_PIPELINE_ARCHITECTURE.md)** | 管道执行架构 | 理解节点执行时 |
+
+### 2.3 核心目录结构
 
 ```
 project/
-├── src/                      # 源代码
+├── autoBMAD/                 # 主源代码
+│   ├── docuswarm/            # DocuSwarm系统 ⭐
+│   │   ├── agents/           # Agent实现
+│   │   ├── cli/              # CLI命令
+│   │   ├── context/          # 上下文管理
+│   │   ├── llm/              # LLM集成
+│   │   ├── node_execution/   # 节点执行
+│   │   ├── nodes/            # 节点定义
+│   │   ├── pipeline/         # 管道编排
+│   │   ├── prompts/          # 提示模板
+│   │   ├── storage/          # 存储层
+│   │   ├── tools/            # 工具系统
+│   │   ├── utils/            # 工具函数
+│   │   ├── README.md         # DocuSwarm文档
+│   │   └── CONFIGURATION.md  # 配置说明
+│   └── epic_automation/      # Epic自动化系统
+├── nodes/                    # 节点配置（BMAD personas）
 ├── tests/                    # 测试代码
-├── build/                    # 构建配置
-├── docs/                     # 项目文档
-├── claude_docs/              # 详细说明文档 ⭐
-├── autoBMAD/                 # autoBMAD工作流工具
-│   ├── epic_automation/      # Epic自动化系统（5阶段BMAD工作流）
-│   ├── docuswarm/            # 多智能体文档编排系统
-│   ├── nodes/                # BMAD节点配置（analyst/pm/ux/architect/po）
-│   ├── agentdocs/            # Claude Agent SDK文档
-│   └── Skill/                # Claude Code Skill文件
-└── 配置文件...
+├── docs/                     # 示例文档
+│   └── bubble-sort/          # Bubble Sort测试示例
+├── docs-test/                # 测试与架构文档 ⭐
+│   ├── architecture/         # 架构文档
+│   ├── research/             # 研究报告
+│   └── solution/             # TDD方案
+├── claude_docs/              # 开发规范文档 ⭐
+├── pyproject.toml            # 项目配置
+└── README.md                 # 项目概览
 ```
 
 ---
@@ -172,9 +206,8 @@ project/
 #### **阶段三：执行方案** `【执行方案】`
 
 **必须做的事**:
-- 严格按照TDD方式实现：先写测试，后写代码
 - 严格按照选定方案实现
-- 修改后运行类型检查和测试验证
+- 修改后运行类型检查
 
 **详细说明**: [ai_workflow.md](claude_docs/ai_workflow.md)
 
@@ -224,17 +257,6 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 
 **详细说明**: [workflow_tools.md](claude_docs/workflow_tools.md)
 
-#### DocuSwarm多智能体文档编排
-
-**autoBMAD DocuSwarm** - 基于LangGraph的双Agent文档生成系统
-- 双Agent协作模式（Independent Agent + Evaluator Agent）
-- 5节点顺序流水线（analyst → pm → ux → architect → po）
-- Kimi Agent SDK集成
-- 三层上下文隔离防御
-- 检查点恢复机制
-
-**详细说明**: [workflow_tools.md](claude_docs/workflow_tools.md#docuswarm文档编排系统)
-
 ### 5.3 Claude Code Skills集成
 
 autoBMAD系统可以作为Claude Code的Skill安装和使用：
@@ -268,65 +290,37 @@ autoBMAD系统可以作为Claude Code的Skill安装和使用：
 
 ```bash
 # 激活虚拟环境
-.venv\Scripts\activate  # Windows
-source .venv/bin/activate  # Linux/macOS
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/macOS
 
 # 安装依赖
 pip install -r requirements.txt
 
 # 运行应用
-python -m my_qt_app
+python -m autoBMAD.docuswarm --help
 ```
 
-### 6.2 测试 (TDD工作流)
+### 6.2 测试
 
-#### 基本测试命令
 ```bash
-# 运行所有测试
+# 运行测试
 pytest -v --tb=short
 
-# 运行并显示标准输出
-pytest -v --tb=short -s
-
-# 运行特定测试
-pytest -v --tb=short -k "test_name"
-
-# 首次失败后停止
-pytest -v --tb=short --maxfail=1
-
 # 生成覆盖率报告
-pytest --cov=src --cov-report=html --cov-report=term
+pytest --cov=src --cov-report=html
 
 # GUI测试
 pytest tests/gui/ -v
-```
-
-#### TDD开发循环
-```bash
-# 1. 编写失败测试 (Red)
-pytest tests/test_new_feature.py -v  # 预期失败
-
-# 2. 编写最小实现 (Green)
-# ... 编写代码 ...
-pytest tests/test_new_feature.py -v  # 预期通过
-
-# 3. 重构代码 (Refactor)
-# ... 消除重复，优化代码 ...
-pytest tests/test_new_feature.py -v  # 确保仍然通过
-
-# 4. 运行全部测试确保无回归
-pytest -v --tb=short
 ```
 
 ### 6.3 代码质量
 
 ```bash
 # 类型检查
-basedpyright src/
+basedpyright docuswarm/
 
 # 代码风格
-ruff check --fix src/
-black src/
+ruff check --fix docuswarm/
 ```
 
 ### 6.4 构建
@@ -358,54 +352,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --skip-test
 
 ## 7. 质量保证
 
-### 7.1 测试驱动开发 (TDD) 实践
-
-#### TDD三大定律
-1. **定律一**: 在编写失败的单元测试前，不要编写任何生产代码
-2. **定律二**: 只编写刚好能够导致失败的单元测试（编译失败也算失败）
-3. **定律三**: 只编写刚好能够使失败的测试通过的生产代码
-
-#### 测试组织结构
-```
-tests/
-├── fixtures/              # 测试固件（TDD关键）
-│   ├── __init__.py
-│   └── mock_qt_objects.py # Mock的Qt组件
-├── unit/                  # 单元测试（无UI，快速）
-│   ├── test_models.py
-│   └── test_services.py
-├── integration/           # 集成测试（含DB、文件）
-│   └── test_config.py
-└── gui/                   # GUI测试（用pytest-qt）
-    └── test_main_window.py
-```
-
-#### AAA测试模式
-所有测试必须遵循AAA模式：
-```python
-def test_example():
-    # Arrange（准备）- 设置测试数据和环境
-    instance = MyClass()
-    expected_result = "expected"
-    
-    # Act（执行）- 调用被测试的方法
-    actual_result = instance.some_method()
-    
-    # Assert（断言）- 验证结果
-    assert actual_result == expected_result
-```
-
-#### 测试覆盖要求
-- **P0级别**: 核心业务逻辑，覆盖率必须100%
-- **P1级别**: 重要功能，覆盖率必须≥90%
-- **P2级别**: 辅助功能，覆盖率建议≥80%
-
-#### 回归测试策略
-- **Bug修复流程**: 必须先编写复现Bug的测试用例，再修复代码
-- **重构保护**: 重构前后测试必须持续通过
-
-
-### 7.2 QA命令参考
+### 7.1 QA命令参考
 
 | 阶段 | 命令 | 目的 | 优先级 |
 |------|------|------|--------|
@@ -416,7 +363,7 @@ def test_example():
 | **开发后** | `*review` | 综合评估 | **必需** |
 | **审查后** | `*gate` | 更新质量决策 | 根据需要 |
 
-### 7.3 质量门控状态
+### 7.2 质量门控状态
 
 | 状态 | 含义 | 后续操作 | 是否可继续 |
 |------|------|----------|------------|
@@ -425,7 +372,7 @@ def test_example():
 | **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
 | **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
 
-### 7.4 autoBMAD工作流集成
+### 7.3 autoBMAD工作流集成
 
 ```
 Epic处理
@@ -449,6 +396,11 @@ Epic处理
 
 | 日期 | 版本 | 提交信息 | 变更内容 |
 |------|------|----------|----------|
+| 2026-04-05 | 3.1 | bd8b0f2d - refactor(docuswarm): 替换 Kimi API 为 Anthropic API 并清理遗留代码 | Kimi API 替换为 Anthropic API，遗留代码清理 |
+| 2026-03-02 | 3.0 | 22a59d34 - refactor(docuswarm): 完成SDK异常统一处理及消息格式切换 | SDK异常统一处理完成，消息格式切换 |
+| 2026-03-02 | 3.0 | docs: 对齐更新 README.md、CLAUDE.md 和 claude_docs 全部文档 | 文档对齐更新 |
+| 2026-02-11 | 2.0 | 8ae2add5 - test: 最终监控测试 | test_final_monitor.txt |
+| 2026-02-09 | 2.0 | 4144725c - feat(scripts): implement multi-document auto-update system | 多文档自动更新系统 |
 
 ---
 
@@ -472,22 +424,20 @@ Epic处理
 
 ## 🎯 总结
 
-本项目是一个集成了现代开发工具和AI辅助开发方法论的PyQt Windows应用程序模板。通过遵循：
+本项目是一个基于BMAD方法论的多代理文档编排系统，通过Anthropic SDK与Claude Sonnet深度集成。通过遵循：
 
 - **四大开发原则**: DRY、KISS、YAGNI、奥卡姆剃刀
 - **三阶段AI工作流**: 分析问题 → 制定方案 → 执行方案
-- **测试驱动开发 (TDD)**: 先写测试，后写代码，红-绿-重构循环
 - **BMAD开发方法论**: 通过专用AI代理实现敏捷开发
 - **严格的质量保证**: 测试驱动开发，QA门控流程
 
-您可以高效地开发出高质量、可维护的Windows Qt应用程序。
+您可以高效地开发出高质量、可维护的多代理文档编排系统。
 
 **记住**:
 - **DRY** 让代码更高效
 - **KISS** 让代码更可靠
 - **YAGNI** 让代码更专注
 - **奥卡姆剃刀** 让代码更简洁
-- **TDD** 让代码更可靠，让质量更有保障
 
 让Claude Code成为您践行这些原则的得力助手，共同打造卓越的软件。
 

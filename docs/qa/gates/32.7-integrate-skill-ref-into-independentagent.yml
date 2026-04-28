@@ -1,0 +1,76 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "32.7"
+story_title: "Integrate skill_ref into IndependentAgent"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Implementation correctly adds skill invocation hints to system prompt when skill_ref is configured. All 31 new tests pass, type checking clean, linting passes. All 5 nodes configured with appropriate skill_refs."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T10:30:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 31
+  tests_passed: 31
+  test_coverage:
+    - file: autoBMAD/docuswarm/prompts/contract_builder.py
+      coverage: "52%"
+    - file: autoBMAD/nodes/loader.py
+      coverage: "88%"
+  tool_results:
+    basedpyright: "0 errors, 0 warnings, 0 notes"
+    ruff: "All checks passed"
+    pytest: "31/31 tests passed in test_skill_ref_system_prompt_integration.py"
+
+nfr_validation:
+  security: { status: PASS, notes: "No security concerns - skill_ref only affects prompt text" }
+  performance: { status: PASS, notes: "Minimal overhead - single node config load during prompt building" }
+  reliability: { status: PASS, notes: "Graceful error handling - returns empty string on any exception" }
+  maintainability: { status: PASS, notes: "Clean separation of concerns in _build_skill_hint_section()" }
+
+ac_validation:
+  - id: 1
+    criteria: "System prompt references the skill when skill_ref is configured"
+    status: PASS
+    evidence: "_build_skill_hint_section() loads node config and extracts skill_ref"
+  - id: 2
+    criteria: "Skill hint is clear and actionable (format: Use the {skill_ref} skill...)"
+    status: PASS
+    evidence: "Hint format matches exactly: 'Use the `{skill_ref}` skill to complete this task.'"
+  - id: 3
+    criteria: "Nodes without skill_ref continue to work without errors"
+    status: PASS
+    evidence: "Returns empty string when skill_ref is None/missing; filter(None, sections) removes empty"
+  - id: 4
+    criteria: "skill_ref value is read from node_config.task.skill_ref"
+    status: PASS
+    evidence: "NodeTaskConfig dataclass includes skill_ref: str | None = None"
+  - id: 5
+    criteria: "Skill hint appears in correct location (before user instructions)"
+    status: PASS
+    evidence: "render_independent_system_prompt() orders: persona -> skill_hint -> instructions"
+
+nodes_configured:
+  - node: analyst
+    skill_ref: bmad-product-brief
+  - node: pm
+    skill_ref: bmad-create-prd
+  - node: ux
+    skill_ref: bmad-create-ux-design
+  - node: architect
+    skill_ref: bmad-create-architecture
+  - node: po
+    skill_ref: bmad-create-epics-and-stories
+
+history:
+  - at: "2026-04-07T10:30:00Z"
+    gate: PASS
+    note: "Initial QA review - all criteria met, implementation complete"

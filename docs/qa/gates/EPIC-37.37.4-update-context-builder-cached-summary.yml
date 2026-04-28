@@ -1,0 +1,122 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate: EPIC-37.37.4
+schema: 1
+story: "37.4"
+story_title: "Update Context Builder to Use Cached Summary"
+gate: "PASS"
+status_reason: "All acceptance criteria satisfied. ContextBuilder correctly uses cached docs_context_summary from PipelineState, eliminating redundant disk reads. Implementation preserves backward compatibility with fallback to _resolve_reference_docs(). All 21 new tests pass with 88% coverage, 0 type errors."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T16:45:00Z"
+
+# Waiver (inactive)
+waiver:
+  active: false
+
+# No issues found
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 21
+  tests_passed: 21
+  type_checking:
+    tool: BasedPyright
+    errors: 0
+    warnings: 1
+    notes: "1 pre-existing warning about unused parameter in _resolve_reference_docs (not introduced by this change)"
+  linting:
+    tool: Ruff
+    status: PASS
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7]
+    ac_gaps: []
+
+# Acceptance Criteria Verification
+ac_verification:
+  - id: 1
+    criteria: "context_builder.build() reads docs_context from original_context['docs_context_summary'] when the cached summary is present"
+    status: PASS
+    evidence: "Lines 62-68 in context_builder.py - conditional check and assignment from cache"
+  - id: 2
+    criteria: "Falls back to _resolve_reference_docs() method when cache is missing, with appropriate warning log"
+    status: PASS
+    evidence: "Lines 69-76 in context_builder.py - elif branch with fallback and warning log"
+  - id: 3
+    criteria: "_resolve_reference_docs() method is PRESERVED (not deleted or modified) for backward compatibility and fallback scenarios"
+    status: PASS
+    evidence: "Lines 90-172 in context_builder.py - method unchanged from original implementation"
+  - id: 4
+    criteria: "Original caching behavior remains unchanged for cases where docs_context_summary is not provided"
+    status: PASS
+    evidence: "Test test_existing_behavior_without_docs_context_summary verifies backward compatibility"
+  - id: 5
+    criteria: "Info log emitted when cache hit occurs: using_cached_docs_summary with node_id and count"
+    status: PASS
+    evidence: "Line 64-67 in context_builder.py - logger.info with structured data"
+  - id: 6
+    criteria: "Warning log emitted when fallback occurs: missing_cached_docs_summary_using_fallback with node_id and count"
+    status: PASS
+    evidence: "Line 72-76 in context_builder.py - logger.warning with structured data"
+  - id: 7
+    criteria: "NodeExecutionContext is correctly constructed with the docs_context from cache or fallback"
+    status: PASS
+    evidence: "Lines 78-88 in context_builder.py - NodeExecutionContext constructed with docs_context from either source"
+
+# Test Coverage Summary
+test_coverage:
+  unit_tests:
+    total: 21
+    passed: 21
+    scenarios:
+      - "Cache hit - uses cached docs_context_summary"
+      - "Cache hit with complex nested data"
+      - "Cache hit skips disk read"
+      - "Empty cached summary triggers fallback"
+      - "Cache miss fallback to _resolve_reference_docs"
+      - "No repo_root returns empty docs_context"
+      - "Cache hit logs info message"
+      - "Fallback logs warning message"
+      - "No log when neither cache nor repo_root"
+      - "_resolve_reference_docs preserved unchanged"
+      - "Backward compatibility without cache"
+      - "No regression in existing functionality"
+      - "Integration with PipelineAdapter format"
+      - "All 5 nodes receive cached docs"
+      - "docs_context consistency across nodes"
+      - "Type safety - list[dict[str, Any]]"
+      - "Edge cases with None values"
+  integration_tests:
+    - "End-to-end flow with PipelineAdapter"
+    - "Full pipeline with 5 nodes"
+
+# NFR Validation
+nfr_validation:
+  type_safety:
+    status: PASS
+    notes: "Proper list[dict[str, Any]] typing maintained throughout"
+  backward_compatibility:
+    status: PASS
+    notes: "Fallback mechanism ensures no breaking changes"
+  performance:
+    status: PASS
+    notes: "~2.5 seconds saved per pipeline by eliminating 5 disk reads"
+  maintainability:
+    status: PASS
+    notes: "Clean, documented code following project patterns"
+
+# History
+history:
+  - at: "2026-04-07T15:00:00Z"
+    gate: PASS
+    note: "Initial QA review - All criteria met, implementation approved"

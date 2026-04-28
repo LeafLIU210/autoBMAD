@@ -1,6 +1,7 @@
 """Shared utilities module."""
 
 from autoBMAD.docuswarm.utils.logging import (
+    BEIJING_TZ,
     bind_context,
     configure_logging,
     debug,
@@ -12,6 +13,7 @@ from autoBMAD.docuswarm.utils.logging import (
 )
 
 __all__ = [
+    "BEIJING_TZ",
     "bind_context",
     "configure_logging",
     "debug",

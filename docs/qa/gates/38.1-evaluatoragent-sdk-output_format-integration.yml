@@ -1,0 +1,143 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate: Story 38.1
+schema: 1
+story: "EPIC-38.1"
+story_title: "EvaluatorAgent — SDK `output_format` 集成"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Implementation complete with 27 passing tests. Minor concern: integration tests marked pending but unit test coverage is comprehensive."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-04-07T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "Integration tests (IT1-IT3) and manual tests (MT1-MT3) are marked pending in story doc. These should be completed in follow-up work to ensure full pipeline validation."
+
+qa_results:
+  document_completeness:
+    status: COMPLETE
+    score: 100%
+    notes: |
+      - Story title, acceptance criteria, tasks, and dev notes all present
+      - All 5 tasks marked complete [x]
+      - All 6 unit tests marked complete [x]
+
+  acceptance_criteria_verification:
+    status: ALL_MET
+    verification_details:
+      - ac: "session_manager.py::single_prompt() accepts optional output_format parameter"
+        status: VERIFIED
+        evidence: "Line 569 in session_manager.py - parameter defined"
+      - ac: "_create_options() injects output_format into ClaudeAgentOptions"
+        status: VERIFIED
+        evidence: "Lines 347-351 in session_manager.py - conditional injection"
+      - ac: "EVALUATOR_OUTPUT_SCHEMA defined in evaluator_config/schemas.py"
+        status: VERIFIED
+        evidence: "Lines 84-125 in schemas.py - complete JSON Schema"
+      - ac: "evaluator.py::_call_llm_with_prompt() passes output_format"
+        status: VERIFIED
+        evidence: "Line 400 in evaluator.py - passes EVALUATOR_OUTPUT_SCHEMA"
+      - ac: "_parse_response() prioritizes structured_output"
+        status: VERIFIED
+        evidence: "Lines 484-491 in evaluator.py - structured output path first"
+      - ac: "error_max_structured_output_retries handled"
+        status: VERIFIED
+        evidence: "Lines 673-683 in session_manager.py - raises LLMError"
+      - ac: "extract_json() fallback retained"
+        status: VERIFIED
+        evidence: "Lines 493-513 in evaluator.py - fallback path preserved"
+      - ac: "All 5 output fields constrained by schema"
+        status: VERIFIED
+        evidence: "Schema defines criterion_scores, alignment_score, verdict (enum), issues_found, suggestions"
+
+  test_coverage:
+    unit_tests:
+      total: 27
+      passed: 27
+      status: PASS
+      coverage_areas:
+        - "Schema definition validation (8 tests)"
+        - "SessionManager output_format parameter handling (7 tests)"
+        - "EvaluatorAgent structured output integration (9 tests)"
+        - "Full flow integration test (1 test)"
+        - "Error handling for max retries exhaustion (1 test)"
+        - "Backward compatibility fallback (1 test)"
+    integration_tests:
+      status: PENDING
+      notes: "Integration tests IT1-IT3 and manual tests MT1-MT3 marked pending in story. Unit test coverage is comprehensive."
+
+  code_quality:
+    linting:
+      tool: Ruff
+      status: PASS
+      errors: 0
+      warnings: 0
+    type_checking:
+      tool: BasedPyright
+      status: PASS_WITH_WARNINGS
+      errors: 0
+      warnings: 3
+      notes: "Minor type inference warnings in evaluator.py (lines 454, 457, 484) - non-blocking, code functional"
+
+  implementation_quality:
+    code_structure:
+      status: GOOD
+      notes: |
+        - Clean separation of concerns between SessionManager and EvaluatorAgent
+        - Helper method _validate_and_finalize_parsed_data() avoids code duplication
+        - Proper error handling with LLMError re-raise to preserve api_error_type
+    backward_compatibility:
+      status: VERIFIED
+      notes: "extract_json() fallback ensures existing behavior continues to work"
+    documentation:
+      status: GOOD
+      notes: |
+        - Code comments reference Story 38.1
+        - Docstrings explain output_format parameter usage
+        - Dev notes section in story provides implementation context
+
+  file_changes_reviewed:
+    - path: "autoBMAD/docuswarm/agents/evaluator_config/schemas.py"
+      change_type: MODIFIED
+      lines_added: ~43
+      status: APPROVED
+      notes: "EVALUATOR_OUTPUT_SCHEMA correctly defined with all 5 fields and constraints"
+    - path: "autoBMAD/docuswarm/llm/session_manager.py"
+      change_type: MODIFIED
+      lines_added: ~40
+      status: APPROVED
+      notes: "output_format parameter added to single_prompt() and _create_options(), error handling for max retries"
+    - path: "autoBMAD/docuswarm/agents/evaluator.py"
+      change_type: MODIFIED
+      lines_added: ~50
+      status: APPROVED
+      notes: "Structured output path implemented with fallback, validation logic extracted to helper"
+    - path: "tests/test_evaluator_output_schema.py"
+      change_type: CREATED
+      lines_added: ~603
+      status: APPROVED
+      notes: "Comprehensive test coverage for new functionality"
+
+  regression_testing:
+    status: PASS
+    results: |
+      All 21 existing evaluator-related tests pass
+      No breaking changes to external interfaces
+
+  final_decision:
+    gate: PASS
+    rationale: |
+      All acceptance criteria are implemented and verified. The implementation follows
+      best practices with proper error handling, backward compatibility, and comprehensive
+      test coverage (27 tests, all passing). Minor type checking warnings are non-blocking.
+      Integration tests are pending but unit test coverage is sufficient for the scope.
+    next_steps: |
+      1. Complete integration tests (IT1-IT3) in follow-up work
+      2. Complete manual tests (MT1-MT3) for pipeline validation
+      3. Consider adding performance benchmark for structured output vs JSON extraction

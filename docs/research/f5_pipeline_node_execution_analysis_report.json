@@ -1,0 +1,117 @@
+================================================================================
+Pipeline vs Node Execution 双主干语义分析报告 (F5 Research Tool)
+================================================================================
+
+## 1. 语义重叠分析
+--------------------------------------------------------------------------------
+
+概念: graph (类型: similar)
+  Pipeline 模块: graph.py, orchestrator.py, state.py, __init__.py
+  Node Execution 模块: graph.py
+  ⚠️  概念在两边都有实现，存在重复责任
+
+概念: state (类型: similar)
+  Pipeline 模块: graph.py, orchestrator.py, state.py, __init__.py
+  Node Execution 模块: executor.py, graph.py, pipeline_adapter.py, state.py, __init__.py
+  ⚠️  概念在两边都有实现，存在重复责任
+
+概念: metrics (类型: similar)
+  Pipeline 模块: metrics.py
+  Node Execution 模块: metrics.py, __init__.py
+  ⚠️  概念在两边都有实现，存在重复责任
+
+概念: escalation (类型: identical)
+  Pipeline 模块: escalation.py
+  Node Execution 模块: escalation.py
+  ⚠️  两边使用完全相同的文件名，极易混淆
+
+概念: executor (类型: similar)
+  Pipeline 模块: graph.py
+  Node Execution 模块: executor.py, flow.py, graph.py, __init__.py
+  ⚠️  概念在两边都有实现，存在重复责任
+
+概念: checkpoint (类型: similar)
+  Pipeline 模块: graph.py, orchestrator.py, state.py, __init__.py
+  Node Execution 模块: graph.py, state.py, __init__.py
+  ⚠️  概念在两边都有实现，存在重复责任
+
+## 2. Fallback / Deprecated 路径分析
+--------------------------------------------------------------------------------
+
+❌ [SILENT] pipeline/graph.py:326
+   描述: Fallback path: The ThreadPoolExecutor fallback path can cause thread accumulation on Windows.
+
+❌ [BACKWARD_COMPAT] pipeline/graph.py:450
+   描述: Backward compatibility: If None, uses _create_default_node_executor for backward compatibility.
+
+❌ [SILENT] pipeline/graph.py:481
+   描述: Fallback path: "falling_back_to_default_executor",
+
+❌ [BACKWARD_COMPAT] pipeline/graph.py:482
+   描述: Backward compatibility: message="session_manager not provided, falling back to default executor (backward compatibility)",
+
+⚠️ [CONDITIONAL] pipeline/graph.py:472
+   描述: Runtime selection between integrated vs default executor
+
+## 3. 边界违规分析 (PipelineAdapter 应该是唯一边界)
+--------------------------------------------------------------------------------
+
+❌ [synthetic_id_creation] node_execution/flow.py:290
+   问题: Direct synthetic ID creation: pipeline_id = f"node-{node_id}-{run_id}"
+   建议: Use PipelineAdapter.create_pipeline_id() instead
+
+❌ [synthetic_id_creation] node_execution/flow.py:365
+   问题: Direct synthetic ID creation: pipeline_id = f"node-run-{run_id}"
+   建议: Use PipelineAdapter.create_pipeline_id() instead
+
+❌ [synthetic_id_creation] node_execution/flow.py:290
+   问题: Synthetic pipeline_id in flow.py: pipeline_id = f"node-{node_id}-{run_id}"
+   建议: Use PipelineAdapter.create_pipeline_id() or create_run_pipeline_id()
+
+❌ [synthetic_id_creation] node_execution/flow.py:365
+   问题: Synthetic pipeline_id in flow.py: pipeline_id = f"node-run-{run_id}"
+   建议: Use PipelineAdapter.create_pipeline_id() or create_run_pipeline_id()
+
+## 4. PipelineAdapter 使用情况
+--------------------------------------------------------------------------------
+
+Adapter 存在: ✅
+方法数量: 6
+  - [静态] create_pipeline_id (行 35)
+  - [静态] create_run_pipeline_id (行 51)
+  - [静态] parse_pipeline_id (行 63)
+  - [静态] is_synthetic_pipeline_id (行 98)
+  - [静态] adapt_state (行 110)
+  - [静态] extract_node_id_from_pipeline (行 149)
+
+使用位置 (0 处):
+
+⚠️  可能未使用的方法: is_synthetic_pipeline_id, parse_pipeline_id, create_run_pipeline_id, adapt_state, create_pipeline_id, extract_node_id_from_pipeline
+
+## 5. PipelineState <-> NodeRunState 转换路径
+--------------------------------------------------------------------------------
+
+→ pipeline -> node_execution
+   位置: pipeline/graph.py:_convert_pipeline_to_node_state
+   责任方: pipeline module
+
+→ node_execution -> pipeline
+   位置: pipeline/graph.py:_convert_node_to_pipeline_state
+   责任方: pipeline module
+
+→ node_execution -> pipeline
+   位置: node_execution/pipeline_adapter.py:adapt_state
+   责任方: PipelineAdapter (correct boundary)
+
+================================================================================
+治理建议
+================================================================================
+
+[P0] Boundary Enforcement
+  描述: 所有 synthetic pipeline_id 创建必须通过 PipelineAdapter
+  数量: 4
+
+[P1] Adapter Utilization
+  描述: 推广使用 PipelineAdapter 中未充分利用的方法
+  方法: is_synthetic_pipeline_id, parse_pipeline_id, create_run_pipeline_id, adapt_state, create_pipeline_id, extract_node_id_from_pipeline
+

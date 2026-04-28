@@ -1,0 +1,54 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "26.7"
+story_title: "诊断工具升级"
+gate: "PASS"
+status_reason: "All 4 acceptance criteria met. 30/30 unit tests pass. All 5 nodes report 100% v2 compliance with zero false-positives on v2 schema fields."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-27T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Optional Extended Fields
+quality_score: 95
+
+nfr_validation:
+  correctness: { status: PASS, notes: "Tool correctly validates all v2 schema fields" }
+  testability: { status: PASS, notes: "30 comprehensive unit tests with edge case coverage" }
+  maintainability: { status: PASS, notes: "Clean code structure with clear separation of concerns" }
+  reliability: { status: PASS, notes: "Exit code 0 on success, 1 on failure for CI integration" }
+
+evidence:
+  tests_reviewed: 30
+  tests_passed: 30
+  tests_failed: 0
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+acceptance_criteria_verification:
+  - id: 1
+    description: "task.name, task.description as required nested fields"
+    status: PASS
+    verification: "NODE_YAML_V2_REQUIRED_NESTED constant with get_nested_value() validation"
+  - id: 2
+    description: "Detect thresholds (plural) vs threshold (singular) in evaluator.yaml"
+    status: PASS
+    verification: "EVALUATOR_DEPRECATED_FIELDS with critical severity flagging"
+  - id: 3
+    description: "Detect communication_style in persona.json"
+    status: PASS
+    verification: "PERSONA_V2_REQUIRED_FIELDS with non-empty validation"
+  - id: 4
+    description: "All 5 nodes ≥95% real completeness with no false-positives"
+    status: PASS
+    verification: "Live run confirms analyst, architect, pm, po, ux all at 100% v2 compliance"

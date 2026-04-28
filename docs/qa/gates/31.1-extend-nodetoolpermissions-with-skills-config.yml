@@ -1,0 +1,53 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate: 31.1 Extend NodeToolPermissions with Skills Config
+schema: 1
+story: "31.1"
+story_title: "Extend NodeToolPermissions with Skills Config"
+gate: "PASS"
+status_reason: "All acceptance criteria met. NodeSkillsConfig dataclass implemented with all 4 required fields, NodeToolPermissions extended with skills field, backward compatibility verified, all 21 unit tests passing."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T12:00:00Z"
+
+# Waiver inactive - full validation passed
+waiver: { active: false }
+
+# No issues found
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence of quality
+evidence:
+  tests_reviewed: 21
+  tests_passed: 21
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+# NFR validation
+nfr_validation:
+  maintainability: { status: PASS, notes: "Clean dataclass design with proper defaults" }
+  reliability: { status: PASS, notes: "Backward compatible - existing nodes work without modification" }
+  testability: { status: PASS, notes: "Comprehensive test coverage including edge cases" }
+
+# Review details
+review_details:
+  files_reviewed:
+    - autoBMAD/nodes/loader.py
+    - tests/test_node_loader_skills_config.py
+  key_findings:
+    - "NodeSkillsConfig dataclass correctly implements all 4 required fields with sensible defaults"
+    - "NodeToolPermissions extended with skills field using default_factory for proper mutability handling"
+    - "_build_node_config() correctly parses tools.skills section with full backward compatibility"
+    - "All 21 unit tests pass covering dataclass creation, parsing, backward compatibility, and serialization"
+  recommendations:
+    immediate: []
+    future:
+      - action: "Consider integration tests with actual node.yaml files when Story 31.4 updates node configurations"
+        refs: ["docs/stories/31.4.md"]

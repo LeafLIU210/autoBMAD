@@ -1,0 +1,36 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "2.8"
+story_title: "Evaluation Criteria Configuration"
+gate: "PASS"
+status_reason: "All quality gates pass: pyright (0 errors), ruff (all checks passed), 69 tests passed (unit + integration), 94% code coverage for criteria_loader. All 5 node evaluator.yaml files validate correctly with weights summing to 1.0. All acceptance criteria verified complete."
+reviewer: "Quinn (QA)"
+updated: "2026-02-20T01:30:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  evidence:
+    tests_reviewed: 69
+    coverage: "94%"
+    unit_tests: 29
+    integration_tests: 12
+    type_errors: 0
+    lint_errors: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5]
+      ac_gaps: []
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding more edge case tests for future criteria types"
+      refs: ["docuswarm/agents/evaluator_config/criteria_loader.py"]

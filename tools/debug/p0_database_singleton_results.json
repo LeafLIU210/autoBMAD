@@ -1,0 +1,79 @@
+{
+  "issue_id": "F2/F4",
+  "severity": "CRITICAL",
+  "title": "DatabaseManager单例按路径污染，测试/多pipeline互相污染",
+  "tests": [
+    {
+      "test": "singleton_path_pollution",
+      "issue": "DatabaseManager.get_instance() returns first-created instance regardless of requested db_path",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/storage/database.py:64-78",
+          "first_call_db_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpg4av9te9\\one.db",
+          "first_instance_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpg4av9te9\\one.db",
+          "second_call_db_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpg4av9te9\\two.db",
+          "second_instance_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmpg4av9te9\\one.db",
+          "same_object": true,
+          "same_path": true,
+          "verdict": "BUG CONFIRMED"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "direct_instantiation_vs_singleton",
+      "issue": "Direct DatabaseManager() creates separate instance but get_instance() still returns singleton",
+      "evidence": [
+        {
+          "singleton_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp4x3x7ayd\\default.db",
+          "direct_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp4x3x7ayd\\direct.db",
+          "same_object": false,
+          "note": "Direct instantiation can create different instance, but get_instance() ignores it"
+        }
+      ],
+      "severity": "HIGH"
+    },
+    {
+      "test": "state_manager_default_instantiation",
+      "issue": "StateManager() called without db_path uses default 'docuswarm.db' via DatabaseManager.get_instance()",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/tools/update_context_sdk.py:99",
+          "code": [
+            "                state_manager=StateManager(),"
+          ],
+          "finding": "update_context_sdk creates StateManager() WITHOUT db_path, so it uses DatabaseManager.get_instance() with default path",
+          "orchestrator_db_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp71osgbgb\\one.db",
+          "update_context_will_use": "docuswarm.db (default) or existing singleton path"
+        }
+      ],
+      "severity": "CRITICAL"
+    }
+  ],
+  "code_analysis": {
+    "code": [
+      "Line 65:     def get_instance(cls, db_path: Path | str = \"docuswarm.db\") -> DatabaseManager:",
+      "Line 66:         \"\"\"Get or create the singleton DatabaseManager instance.",
+      "Line 67: ",
+      "Line 68:         Args:",
+      "Line 69:             db_path: Path to the SQLite database file.",
+      "Line 70: ",
+      "Line 71:         Returns:",
+      "Line 72:             The singleton DatabaseManager instance.",
+      "Line 73:         \"\"\"",
+      "Line 74:         if cls._instance is None:",
+      "Line 75:             with cls._lock:",
+      "Line 76:                 if cls._instance is None:",
+      "Line 77:                     cls._instance = cls(db_path=db_path)",
+      "Line 78:         return cls._instance",
+      "Line 79: ",
+      "Line 80:     @classmethod"
+    ],
+    "design_flaws": [
+      "Single class-level _instance cannot hold multiple db_path instances",
+      "db_path parameter in get_instance() is only used on first call",
+      "No cache keyed by resolved_db_path",
+      "No warning when requested db_path differs from stored instance's path"
+    ]
+  }
+}

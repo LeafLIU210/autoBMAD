@@ -1,0 +1,1267 @@
+{
+  "total_errors": 19,
+  "total_warnings": 115,
+  "total_files": 13,
+  "categories": [
+    {
+      "name": "TypedDict NotRequired Access",
+      "description": "Accessing TypedDict keys marked as NotRequired without checks",
+      "count": 12,
+      "priority": "high",
+      "fix_strategy": "Use .get() method with default values or add key existence checks",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py",
+          "line": 544,
+          "column": 20,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"EvaluatorAgentInput\" 中的键 \"task_name\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py",
+          "line": 545,
+          "column": 27,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"EvaluatorAgentInput\" 中的键 \"task_description\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py",
+          "line": 547,
+          "column": 12,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"EvaluatorAgentInput\" 中的键 \"deliverable_artifact\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py",
+          "line": 548,
+          "column": 27,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"EvaluatorAgentInput\" 中的键 \"deliverable_body\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\evaluator.py",
+          "line": 549,
+          "column": 19,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"EvaluatorAgentInput\" 中的键 \"criteria\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 640,
+          "column": 20,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"task_name\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 641,
+          "column": 27,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"task_description\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 642,
+          "column": 26,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"role_supplement\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 643,
+          "column": 27,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"deliverable_requirements\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 644,
+          "column": 27,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"original_context_summary\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 645,
+          "column": 31,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"chained_deliverables_summary\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 646,
+          "column": 29,
+          "severity": "error",
+          "message": "无法访问 `TypedDict` 中的项\n  \"IndependentAgentInput\" 中的键 \"iteration_feedback\" 为 `NotRequired`，获取其值可能会导致运行时异常",
+          "rule": "reportTypedDictNotRequiredAccess"
+        }
+      ]
+    },
+    {
+      "name": "Undefined Variable",
+      "description": "Variables or types used but not properly imported or defined",
+      "count": 2,
+      "priority": "high",
+      "fix_strategy": "Add proper imports or fix circular dependency issues",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 234,
+          "column": 10,
+          "severity": "error",
+          "message": "\"NodeExecutionContext\" 未定义",
+          "rule": "reportUndefinedVariable"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 338,
+          "column": 28,
+          "severity": "error",
+          "message": "\"NodeExecutionContext\" 未定义",
+          "rule": "reportUndefinedVariable"
+        }
+      ]
+    },
+    {
+      "name": "__all__ Declaration Mismatch",
+      "description": "Names in __all__ not defined in module (common with lazy imports)",
+      "count": 42,
+      "priority": "medium",
+      "fix_strategy": "Add proper type stubs or use TYPE_CHECKING guards",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\models\\__init__.py",
+          "line": 6,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"ToolResult\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\models\\__init__.py",
+          "line": 7,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"ToolRegistry\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 100,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"NodeExecutionContextBuilder\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 101,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_context_builder\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 103,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_node_execution_graph\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 104,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_node_execution_config\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 105,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_checkpoint_config\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 107,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_node_executor\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 109,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"PENDING\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 110,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"RUNNING\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 111,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"COMPLETED\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 112,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"FAILED\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 113,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"BLOCKED\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 114,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"VALID_STATUSES\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 115,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"NODE_STATUS\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 117,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"NodeResult\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 118,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"NodeRunState\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 120,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_node_result\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 121,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"create_node_run_state\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 122,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"update_node_run_state\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 124,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"validate_node_result\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 125,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"validate_node_run_state\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 126,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"is_valid_status\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 128,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"serialize_node_run_state\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 129,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"deserialize_node_run_state\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 130,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"serialize_node_result\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 131,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"deserialize_node_result\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 133,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"ContextValidator\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 135,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"ContextChainer\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 136,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"SEQUENCE\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 137,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"get_sequence\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 138,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"get_predecessors\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 140,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"execute_node_flow\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 141,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"export_output\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 142,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"generate_context_hash\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 143,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"generate_run_id\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 144,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"get_chained_context\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 145,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"load_context_file\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 146,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"save_node_run\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 148,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"NodeRunTracker\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 150,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"NodeRunMetrics\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 151,
+          "column": 4,
+          "severity": "warning",
+          "message": "\"MetricsCollector\" 已在 `__all__` 中声明，但未在模块中定义",
+          "rule": "reportUnsupportedDunderAll"
+        }
+      ]
+    },
+    {
+      "name": "Unknown Parameter/Argument Types",
+      "description": "Type annotations missing or cannot be inferred",
+      "count": 33,
+      "priority": "medium",
+      "fix_strategy": "Add explicit type annotations",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py",
+          "line": 785,
+          "column": 25,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"join\" 函数中的 \"iterable\" 形参\n  参数类型为 \"list[Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\context\\isolation.py",
+          "line": 109,
+          "column": 41,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"chained_deliverables_summary\" 形参\n  参数类型为 \"list[Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\models\\__init__.py",
+          "line": 11,
+          "column": 16,
+          "severity": "warning",
+          "message": "\"name\" 参数的类型未知",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\models\\__init__.py",
+          "line": 11,
+          "column": 16,
+          "severity": "warning",
+          "message": "\"name\" 参数缺少类型注解",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 14,
+          "column": 16,
+          "severity": "warning",
+          "message": "\"name\" 参数的类型未知",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 14,
+          "column": 16,
+          "severity": "warning",
+          "message": "\"name\" 参数缺少类型注解",
+          "rule": "reportMissingParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 48,
+          "column": 29,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"getattr\" 函数中的 \"name\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 55,
+          "column": 30,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"getattr\" 函数中的 \"name\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 58,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"getattr\" 函数中的 \"name\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 84,
+          "column": 30,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"getattr\" 函数中的 \"name\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\executor.py",
+          "line": 274,
+          "column": 26,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"map\" 形参\n  参数类型为 \"dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\executor.py",
+          "line": 275,
+          "column": 52,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"_extract_original_context_content\" 函数中的 \"data\" 形参\n  参数类型为 \"dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 208,
+          "column": 30,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"__init__\" 函数中的 \"map\" 形参\n  参数类型为 \"dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 227,
+          "column": 8,
+          "severity": "warning",
+          "message": "返回类型未知",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 334,
+          "column": 47,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"execute_with_context\" 函数中的 \"execution_context\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 338,
+          "column": 8,
+          "severity": "warning",
+          "message": "\"execution_context\" 参数的类型未知",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 391,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"log_context_build\" 函数中的 \"pipeline_id\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 401,
+          "column": 38,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"build_independent_input\" 函数中的 \"execution_context\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 408,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"execute_with_input\" 函数中的 \"pipeline_id\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 445,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"log_filter_operation\" 函数中的 \"pipeline_id\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 454,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"log_potential_violation\" 函数中的 \"pipeline_id\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 465,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"log_context_build\" 函数中的 \"pipeline_id\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 474,
+          "column": 38,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"build_evaluator_input\" 函数中的 \"execution_context\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 491,
+          "column": 32,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"log_potential_violation\" 函数中的 \"pipeline_id\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 653,
+          "column": 38,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"build_independent_input\" 函数中的 \"execution_context\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+          "line": 683,
+          "column": 38,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"build_evaluator_input\" 函数中的 \"execution_context\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\storage\\state_manager.py",
+          "line": 557,
+          "column": 64,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"_deep_merge\" 函数中的 \"source\" 形参\n  参数类型为 \"dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\storage\\state_manager.py",
+          "line": 562,
+          "column": 41,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"_deep_merge\" 函数中的 \"target\" 形参\n  参数类型为 \"Any | dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\storage\\state_manager.py",
+          "line": 645,
+          "column": 46,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"_deep_merge\" 函数中的 \"source\" 形参\n  参数类型为 \"dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\__init__.py",
+          "line": 21,
+          "column": 4,
+          "severity": "warning",
+          "message": "返回类型 \"dict[Unknown, Unknown]\" 部分未知",
+          "rule": "reportUnknownParameterType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\tool_result_extractor.py",
+          "line": 107,
+          "column": 36,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"from_dict\" 函数中的 \"data\" 形参\n  参数类型为 \"dict[Unknown, Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\tool_result_extractor.py",
+          "line": 149,
+          "column": 37,
+          "severity": "warning",
+          "message": "参数类型未知\n  实参对应于 \"append\" 函数中的 \"object\" 形参",
+          "rule": "reportUnknownArgumentType"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\tool_result_extractor.py",
+          "line": 150,
+          "column": 21,
+          "severity": "warning",
+          "message": "部分参数的类型未知\n  实参对应于 \"join\" 函数中的 \"iterable\" 形参\n  参数类型为 \"list[Unknown]\"",
+          "rule": "reportUnknownArgumentType"
+        }
+      ]
+    },
+    {
+      "name": "Other Issues",
+      "description": "Miscellaneous type issues",
+      "count": 31,
+      "priority": "low",
+      "fix_strategy": "Review and fix individually",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\pipeline\\graph.py",
+          "line": 409,
+          "column": 10,
+          "severity": "warning",
+          "message": "\"_save_deliverable_async\" 函数未使用",
+          "rule": "reportUnusedFunction"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 74,
+          "column": 21,
+          "severity": "warning",
+          "message": "\"_patch_aiosqlite_connection\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 88,
+          "column": 21,
+          "severity": "warning",
+          "message": "\"_patch_aiosqlite_connection\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 102,
+          "column": 21,
+          "severity": "warning",
+          "message": "\"_patch_aiosqlite_connection\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 106,
+          "column": 21,
+          "severity": "warning",
+          "message": "\"_patch_aiosqlite_connection\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 120,
+          "column": 21,
+          "severity": "warning",
+          "message": "\"_patch_aiosqlite_connection\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 143,
+          "column": 42,
+          "severity": "warning",
+          "message": "\"_create_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 161,
+          "column": 8,
+          "severity": "warning",
+          "message": "变量 \"checkpointer\" 未使用",
+          "rule": "reportUnusedVariable"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 161,
+          "column": 42,
+          "severity": "warning",
+          "message": "\"_create_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 167,
+          "column": 19,
+          "severity": "error",
+          "message": "`None` 不支持下标访问",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 167,
+          "column": 70,
+          "severity": "error",
+          "message": "`None` 不支持下标访问",
+          "rule": "reportOptionalSubscript"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 176,
+          "column": 42,
+          "severity": "warning",
+          "message": "\"_create_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 186,
+          "column": 8,
+          "severity": "warning",
+          "message": "\"temp_db_path\" 未使用",
+          "rule": "reportUnusedParameter"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 190,
+          "column": 42,
+          "severity": "warning",
+          "message": "\"_create_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 203,
+          "column": 8,
+          "severity": "warning",
+          "message": "\"temp_db_path\" 未使用",
+          "rule": "reportUnusedParameter"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 207,
+          "column": 42,
+          "severity": "warning",
+          "message": "\"_create_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 240,
+          "column": 47,
+          "severity": "warning",
+          "message": "\"_state_manager\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 241,
+          "column": 51,
+          "severity": "warning",
+          "message": "\"_state_manager\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 271,
+          "column": 43,
+          "severity": "warning",
+          "message": "\"_state_manager\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 276,
+          "column": 47,
+          "severity": "warning",
+          "message": "\"_state_manager\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 303,
+          "column": 43,
+          "severity": "warning",
+          "message": "\"_state_manager\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 308,
+          "column": 47,
+          "severity": "warning",
+          "message": "\"_state_manager\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 340,
+          "column": 39,
+          "severity": "warning",
+          "message": "\"_restart_node\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 375,
+          "column": 28,
+          "severity": "warning",
+          "message": "\"_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 385,
+          "column": 21,
+          "severity": "warning",
+          "message": "\"_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 395,
+          "column": 32,
+          "severity": "warning",
+          "message": "\"_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 411,
+          "column": 56,
+          "severity": "warning",
+          "message": "\"_create_checkpointer\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 418,
+          "column": 60,
+          "severity": "warning",
+          "message": "\"_patch_aiosqlite_connection\" 在声明它受到保护的类之外被使用",
+          "rule": "reportPrivateUsage"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\__init__.py",
+          "line": 21,
+          "column": 47,
+          "severity": "error",
+          "message": "\"dict\" 泛型类应有类型参数",
+          "rule": "reportMissingTypeArgument"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\update_context.py",
+          "line": 200,
+          "column": 8,
+          "severity": "error",
+          "message": "\"output\" 参数不存在",
+          "rule": "reportCallIssue"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\update_context.py",
+          "line": 201,
+          "column": 8,
+          "severity": "error",
+          "message": "\"metadata\" 参数不存在",
+          "rule": "reportCallIssue"
+        }
+      ]
+    },
+    {
+      "name": "Unused Imports",
+      "description": "Import statements not used in the module",
+      "count": 8,
+      "priority": "low",
+      "fix_strategy": "Remove unused imports",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 32,
+          "column": 12,
+          "severity": "warning",
+          "message": "\"SEQUENCE\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 33,
+          "column": 12,
+          "severity": "warning",
+          "message": "\"ContextChainer\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 34,
+          "column": 12,
+          "severity": "warning",
+          "message": "\"get_predecessors\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\__init__.py",
+          "line": 35,
+          "column": 12,
+          "severity": "warning",
+          "message": "\"get_sequence\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 15,
+          "column": 7,
+          "severity": "warning",
+          "message": "\"sqlite3\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 16,
+          "column": 7,
+          "severity": "warning",
+          "message": "\"tempfile\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 18,
+          "column": 34,
+          "severity": "warning",
+          "message": "\"Any\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tests\\unit\\test_checkpointer_refactor.py",
+          "line": 19,
+          "column": 48,
+          "severity": "warning",
+          "message": "\"Mock\" 导入项未使用",
+          "rule": "reportUnusedImport"
+        }
+      ]
+    },
+    {
+      "name": "Unnecessary Type Checks",
+      "description": "isinstance checks that are always true or false",
+      "count": 5,
+      "priority": "low",
+      "fix_strategy": "Remove unnecessary checks or fix type annotations",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\node_execution\\executor.py",
+          "line": 260,
+          "column": 11,
+          "severity": "warning",
+          "message": "\"dict[str, Any]\" 一定是 \"dict[Unknown, Unknown]\" 的实例，无需再调用 `isinstance`",
+          "rule": "reportUnnecessaryIsInstance"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\prompts\\contract_builder.py",
+          "line": 155,
+          "column": 11,
+          "severity": "warning",
+          "message": "条件的计算结果始终为 `False`，因为类型 \"DeliverableRequirements\" 和 \"None\" 之间不存在交集",
+          "rule": "reportUnnecessaryComparison"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\tool_registry.py",
+          "line": 56,
+          "column": 29,
+          "severity": "warning",
+          "message": "\"ToolResult\" 一定是 \"ToolResult\" 的实例，无需再调用 `isinstance`",
+          "rule": "reportUnnecessaryIsInstance"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\update_context.py",
+          "line": 136,
+          "column": 11,
+          "severity": "warning",
+          "message": "条件的计算结果始终为 `False`，因为类型 \"StateManager\" 和 \"None\" 之间不存在交集",
+          "rule": "reportUnnecessaryComparison"
+        },
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\update_context.py",
+          "line": 142,
+          "column": 11,
+          "severity": "warning",
+          "message": "条件的计算结果始终为 `False`，因为类型 \"str\" 和 \"None\" 之间不存在交集",
+          "rule": "reportUnnecessaryComparison"
+        }
+      ]
+    },
+    {
+      "name": "Implicit Method Override",
+      "description": "Method overrides parent class method without @override decorator",
+      "count": 1,
+      "priority": "low",
+      "fix_strategy": "Add @override decorator from typing module",
+      "errors": [
+        {
+          "file": "d:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\models\\tool_registry.py",
+          "line": 70,
+          "column": 8,
+          "severity": "warning",
+          "message": "\"clear\" 方法没有用 `@override` 装饰，但覆写了 \"ToolRegistry\" 类中的方法",
+          "rule": "reportImplicitOverride"
+        }
+      ]
+    }
+  ],
+  "file_summary": {
+    "__init__.py": {
+      "errors": 1,
+      "warnings": 55,
+      "rules": [
+        "reportUnsupportedDunderAll",
+        "reportUnusedImport",
+        "reportUnknownParameterType",
+        "reportMissingTypeArgument",
+        "reportUnknownArgumentType",
+        "reportMissingParameterType"
+      ]
+    },
+    "test_checkpointer_refactor.py": {
+      "errors": 2,
+      "warnings": 29,
+      "rules": [
+        "reportUnusedImport",
+        "reportUnusedParameter",
+        "reportUnusedVariable",
+        "reportOptionalSubscript",
+        "reportPrivateUsage"
+      ]
+    },
+    "dual_agent.py": {
+      "errors": 2,
+      "warnings": 14,
+      "rules": [
+        "reportUndefinedVariable",
+        "reportUnknownArgumentType",
+        "reportUnknownParameterType"
+      ]
+    },
+    "independent.py": {
+      "errors": 7,
+      "warnings": 1,
+      "rules": [
+        "reportTypedDictNotRequiredAccess",
+        "reportUnknownArgumentType"
+      ]
+    },
+    "evaluator.py": {
+      "errors": 5,
+      "warnings": 0,
+      "rules": [
+        "reportTypedDictNotRequiredAccess"
+      ]
+    },
+    "update_context.py": {
+      "errors": 2,
+      "warnings": 2,
+      "rules": [
+        "reportCallIssue",
+        "reportUnnecessaryComparison"
+      ]
+    },
+    "executor.py": {
+      "errors": 0,
+      "warnings": 3,
+      "rules": [
+        "reportUnknownArgumentType",
+        "reportUnnecessaryIsInstance"
+      ]
+    },
+    "state_manager.py": {
+      "errors": 0,
+      "warnings": 3,
+      "rules": [
+        "reportUnknownArgumentType"
+      ]
+    },
+    "tool_result_extractor.py": {
+      "errors": 0,
+      "warnings": 3,
+      "rules": [
+        "reportUnknownArgumentType"
+      ]
+    },
+    "tool_registry.py": {
+      "errors": 0,
+      "warnings": 2,
+      "rules": [
+        "reportImplicitOverride",
+        "reportUnnecessaryIsInstance"
+      ]
+    },
+    "isolation.py": {
+      "errors": 0,
+      "warnings": 1,
+      "rules": [
+        "reportUnknownArgumentType"
+      ]
+    },
+    "graph.py": {
+      "errors": 0,
+      "warnings": 1,
+      "rules": [
+        "reportUnusedFunction"
+      ]
+    },
+    "contract_builder.py": {
+      "errors": 0,
+      "warnings": 1,
+      "rules": [
+        "reportUnnecessaryComparison"
+      ]
+    }
+  },
+  "recommendations": [
+    "**CRITICAL**: Fix 12 TypedDict NotRequired access issues. These can cause runtime KeyError exceptions. Use .get() with defaults.",
+    "**CRITICAL**: Fix 2 undefined variable errors in dual_agent.py. Add proper imports for NodeExecutionContext.",
+    "**HIGH**: Fix 42 __all__ declaration mismatches. Consider adding type stubs or using explicit re-exports.",
+    "**MEDIUM**: 6 files have type errors. Consider prioritizing fixes by file importance.",
+    "**MEDIUM**: Add pyrightconfig.json to configure basedpyright settings and potentially suppress low-priority warnings.",
+    "**LOW**: Consider enabling stricter type checking gradually rather than all at once to manage technical debt."
+  ]
+}

@@ -102,7 +102,9 @@ class CriteriaLoader:
         criteria = self._validate_criteria(cast(list[dict[str, Any]], data.get("criteria", [])))
 
         # Validate and extract thresholds
-        thresholds = self._validate_thresholds(cast(dict[str, Any] | None, data.get("thresholds")))
+        # F3 Fix: 优先读取 v2 threshold（单数），兼容旧 thresholds（复数）
+        threshold_data = data.get("threshold") or data.get("thresholds", {})
+        thresholds = self._validate_thresholds(cast(dict[str, Any] | None, threshold_data))
 
         return {
             "criteria": criteria,

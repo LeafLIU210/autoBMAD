@@ -1,0 +1,74 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "17.4"
+story_title: "ToolResultExtractor Migration"
+gate: "PASS"
+status_reason: "All quality gates passed: basedpyright (0 errors), ruff (all checks passed), pytest (40 tests: 28 unit + 12 integration). Document completeness 100%. Fixed unused TypedDict import during review."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T09:15:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+tool_validation:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+    informations: 0
+  ruff:
+    status: PASS
+    details: "All checks passed"
+  pytest:
+    status: PASS
+    tests_passed: 40
+    tests_total: 40
+    breakdown:
+      - "Unit tests: 28 passed"
+      - "Integration tests: 12 passed"
+
+document_completeness:
+  status: PASS
+  score: 100
+  details:
+    - "Story title: Present"
+    - "Status: Ready for Review"
+    - "Acceptance Criteria: All 6 items complete"
+    - "Tasks: All 7 items complete"
+    - "Dev Notes: Present with implementation details"
+    - "Testing: Unit and integration tests documented (manual testing pending)"
+
+evidence:
+  tests_reviewed: 40
+  risks_identified: 0
+
+acceptance_criteria_coverage:
+  - ac: "Add extract_from_dicts() method that accepts list[dict[str, Any]] and returns list[DeliverableMetadata]"
+    status: COVERED
+    implementation: "extract_from_dicts() method implemented in ToolResultExtractor"
+  - ac: "Remove Kimi format compatibility code (_extract_kimi_format() method)"
+    status: COVERED
+    implementation: "Kimi SDK compatibility code removed, TypedDict cleaned up"
+  - ac: "Support extracting tool_use blocks from dict format messages (type, name, input, id fields)"
+    status: COVERED
+    implementation: "_extract_from_dict_message() handles tool_use blocks"
+  - ac: "All existing extraction functionality continues to work correctly with dict input"
+    status: COVERED
+    implementation: "28 unit tests verify extraction functionality"
+  - ac: "Content field handling supports both string and list types"
+    status: COVERED
+    implementation: "Content handled as string or list in _extract_from_dict_message()"
+  - ac: "Type hints updated to reflect dict format usage"
+    status: COVERED
+    implementation: "Type hints updated in method signatures"
+
+code_quality:
+  coverage: 60%
+  notes: "tool_result_extractor.py has 60% test coverage"

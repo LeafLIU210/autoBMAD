@@ -1,0 +1,72 @@
+# QA Gate for Story 35.1: Fix executor.py - Refresh shared_context from DB
+
+schema: 1
+story: "35.1"
+story_title: "Fix executor.py - Refresh shared_context from DB"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Implementation correct with proper error handling. 24/24 tests pass. Ruff linting clean. BasedPyright shows 0 errors (4 minor warnings acceptable)."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 24
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+tool_validation:
+  ruff: { status: PASS, details: "No linting errors" }
+  basedpyright: { status: PASS, details: "0 errors, 4 warnings (minor unknown argument types in getattr calls - acceptable)" }
+  pytest: { status: PASS, details: "24/24 tests passed" }
+
+code_metrics:
+  coverage: 72%
+  file: "autoBMAD/docuswarm/node_execution/executor.py"
+
+---
+
+## Implementation Verification Summary
+
+### Code Changes Verified
+- [x] `_refresh_shared_context_from_db()` implemented at lines 358-430
+- [x] Function called after node execution at lines 214-234
+- [x] Fallback mechanism with try/except blocks
+- [x] Proper logging for debug and warning scenarios
+- [x] Duck typing used for StateManager extraction (lines 433-473)
+
+### Test Coverage
+- [x] Unit tests: 7 tests for `_refresh_shared_context_from_db()`
+- [x] Helper tests: 5 tests for `_get_state_manager_from_session()`
+- [x] Integration tests: 12 tests for executor and context propagation
+- [x] Total: 24/24 tests passing
+
+### Data Flow Fix
+**Problem**: IndependentAgent calls update_context tool → Tool writes to SQLite directly → (In-memory state NOT updated) → Node completes, graph.py returns in-memory state → shared_context = OLD value → Next node receives stale shared_context
+
+**Solution**: After node execution, refresh shared_context from DB before returning state:
+```python
+try:
+    latest_state = _refresh_shared_context_from_db(pipeline_id, session_manager, logger)
+    if latest_state is not None:
+        new_state["shared_context"] = latest_state
+except Exception as refresh_error:
+    # Fallback to in-memory version
+```
+
+### Performance
+- Single DB read per node execution
+- Target: < 10ms per node (acceptable overhead)
+
+---
+*Gate reviewed and updated by Quinn (Test Architect) on 2026-04-07*

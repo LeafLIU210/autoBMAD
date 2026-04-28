@@ -1,0 +1,38 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "21.4"
+story_title: "更新 NodeLoader 加载逻辑"
+gate: "CONCERNS"
+status_reason: "Minor linting issues (import sorting, open mode, exception chaining). Core functionality works - all 22 tests pass, type checking passes."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Issues - style/best-practice issues, not critical
+top_issues:
+  - id: "LINT-001"
+    severity: low
+    finding: "Import block is un-sorted (I001)"
+    suggested_action: "Run `ruff check --fix` to auto-fix import sorting"
+  - id: "LINT-002"
+    severity: low
+    finding: "Unnecessary open mode parameters (UP015)"
+    suggested_action: "Run `ruff check --fix` to auto-fix open mode parameters"
+  - id: "LINT-003"
+    severity: low
+    finding: "Exception chaining not explicit (B904)"
+    suggested_action: "Use `raise ... from err` pattern in exception handlers"
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Quality evidence
+evidence:
+  evidence:
+    type_check: "PASS (0 errors, 1 warning)"
+    linting: "11 errors (5 auto-fixable, 6 manual)"
+    tests: "PASS (22/22 tests)"
+    doc_completeness: "100% (all AC checked, all tasks completed)"

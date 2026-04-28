@@ -1,0 +1,71 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "7.2"
+story_title: "ModeMapper Implementation"
+gate: "PASS"
+status_reason: "All acceptance criteria met - SDKModeParams dataclass, MODE_MAP dictionary, and map_mode() function implemented correctly with full test coverage."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-21T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence: |
+  evidence:
+    tests_reviewed: 14
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5, 6]
+      ac_gaps: []
+
+quality_gates: |
+  quality_gates:
+    type_checking:
+      tool: "basedpyright"
+      status: PASS
+      errors: 0
+      warnings: 0
+    linting:
+      tool: "ruff"
+      status: PASS
+      errors: 0
+      fixed: 1
+    tests:
+      tool: "pytest"
+      status: PASS
+      passed: 14
+      failed: 0
+
+acceptance_criteria_verification: |
+  acceptance_criteria_verification:
+    - criterion: "SDKModeParams dataclass created with model, thinking, and max_steps_per_turn fields"
+      status: PASS
+      evidence: "dataclass(frozen=True) with all three fields defined"
+    - criterion: "MODE_MAP dictionary implemented with instant/thinking/agent mode mappings"
+      status: PASS
+      evidence: "Dictionary maps all three ChatMode variants to SDKModeParams"
+    - criterion: "map_mode() function provides safe mode translation with validation"
+      status: PASS
+      evidence: "Function validates mode and returns SDKModeParams"
+    - criterion: "Unknown ChatMode values raise a clear ValueError with descriptive message"
+      status: PASS
+      evidence: "ValueError raised with 'Unknown ChatMode: {mode}' message"
+    - criterion: "All three ChatMode variants map correctly to SDK parameters"
+      status: PASS
+      evidence: "INSTANT(thinking=False,max_steps=5), THINKING(thinking=True,max_steps=10), AGENT(thinking=False,max_steps=50)"
+    - criterion: "Unit tests verify all mode mappings and error handling"
+      status: PASS
+      evidence: "14 tests covering all mappings and error handling"
+
+recommendations: |
+  recommendations:
+    future:
+      - action: "Consider integration test with KimiSessionManager (marked as incomplete in story)"
+        refs: ["docs/stories/7.2.md line 50"]

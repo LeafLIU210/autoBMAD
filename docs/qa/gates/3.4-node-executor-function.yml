@@ -1,0 +1,102 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "3.4"
+story_title: "Node Executor Function"
+gate: "PASSED"
+status_reason: "All QA issues fixed - 0 errors, 0 warnings on BasedPyright, 19 tests pass with 100% coverage"
+reviewer: "Quinn (QA Agent)"
+updated: "2026-02-20T19:30:00Z"
+
+# Current Verification (2026-02-20)
+verification:
+  basedpyright:
+    command: "basedpyright docuswarm/node_execution/executor.py"
+    result: "0 errors, 0 warnings, 0 notes"
+    status: verified
+  ruff:
+    command: "ruff check docuswarm/node_execution/executor.py"
+    result: "All checks passed!"
+    status: verified
+  pytest:
+    command: "pytest tests/unit/test_node_executor.py"
+    result: "19 passed, 100% coverage on executor module"
+    status: verified
+
+# Issues resolved
+resolved_issues:
+  - id: "TYPE-001"
+    severity: medium
+    resolution: "Fixed return type to use Coroutine[Any, Any, NodeRunState]"
+    location: "docuswarm/node_execution/executor.py:32"
+  - id: "TYPE-002"
+    severity: low
+    resolution: "Changed from node_config.keys() to node_config.node_id (NodeConfig attribute)"
+    location: "docuswarm/node_execution/executor.py:107"
+  - id: "TYPE-003"
+    severity: low
+    resolution: "Removed unnecessary isinstance check - type system already knows it's a dict"
+    location: "docuswarm/node_execution/executor.py:214"
+
+# Quality Gates Results
+quality_gates:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+    notes: "All type annotations correct"
+  ruff:
+    status: PASS
+    errors: 0
+    warnings: 0
+  pytest:
+    status: PASS
+    tests_passed: 19
+    tests_failed: 0
+    coverage_percent: 100
+
+# Acceptance Criteria Coverage
+ac_coverage:
+  - ac: "Factory function create_node_executor(node_id: str) returns a callable async executor"
+    status: covered
+    evidence: "Function implemented in executor.py, returns async function"
+  - ac: "Executor loads node configuration via NodeLoader.load(node_id)"
+    status: covered
+    evidence: "Line 101-102: loader.load(node_id)"
+  - ac: "Executor instantiates DualAgentNode with correct node_id and LLM client"
+    status: covered
+    evidence: "Line 114-117: create_dual_agent_node() called"
+  - ac: "Executor updates NodeRunState with deliverable, questions, evaluation, and iteration count"
+    status: covered
+    evidence: "Lines 131-136: state fields updated"
+  - ac: "Iteration count increments on each execution (state['iteration'] + 1)"
+    status: covered
+    evidence: "Line 136: new_state['iteration'] = state.get('iteration', 1) + 1"
+  - ac: "Status changes to 'completed' when evaluation['verdict'] == 'APPROVED'"
+    status: covered
+    evidence: "Lines 141-148: status = COMPLETED when verdict == APPROVED"
+  - ac: "Executor handles and propagates evaluation results correctly"
+    status: covered
+    evidence: "Lines 139-175: verdict handling for APPROVED, BLOCKED, FORCE_APPROVED, NEEDS_REVISION"
+
+# Document Completeness
+document_completeness:
+  status: complete
+  sections_present:
+    - Story: present
+    - "Acceptance Criteria": present (all checked)
+    - "Tasks / Subtasks": present (all checked)
+    - "Dev Notes": present
+    - "Technical Implementation": present
+    - Dependencies: present
+    Testing: present (unit, integration checked)
+    "Definition of Done": present
+    "Completion Notes": present
+
+# Recommendations
+recommendations:
+  immediate:
+    - action: "Fix type annotation for create_node_executor return type"
+      refs: ["docuswarm/node_execution/executor.py:32"]
+  future:
+    - action: "Address type warnings for cleaner type checking"
+      refs: ["docuswarm/node_execution/executor.py:107", "docuswarm/node_execution/executor.py:214"]

@@ -1,0 +1,67 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "17.3"
+story_title: "SessionManager Return Format Update"
+gate: "PASS"
+status_reason: "All quality gates passed: basedpyright (0 errors), ruff (all checks passed), pytest (14/14 tests passed). Document completeness 100%."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+tool_validation:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+    notes: 0
+  ruff:
+    status: PASS
+    details: "All checks passed"
+  pytest:
+    status: PASS
+    tests_passed: 14
+    tests_total: 14
+
+document_completeness:
+  status: PASS
+  score: 100
+  details:
+    - "Story title: Present"
+    - "Status: Ready for Review"
+    - "Acceptance Criteria: All 6 items complete"
+    - "Tasks: All 7 items complete"
+    - "Dev Notes: Present with implementation details"
+    - "Testing: Both unit and integration tests documented"
+
+evidence:
+  tests_reviewed: 14
+  risks_identified: 0
+
+acceptance_criteria_coverage:
+  - ac: "single_prompt() returns list[dict[str, Any]] instead of Kimi SDK Message objects"
+    status: COVERED
+    implementation: "SessionManager.single_prompt() returns list[dict[str, Any]]"
+  - ac: "execute_with_tools() returns result messages in dict format"
+    status: COVERED
+    implementation: "SessionManager.execute_with_tools() returns list[dict[str, Any]]"
+  - ac: "Message dict format includes role and content fields"
+    status: COVERED
+    implementation: "_convert_message_to_dict() extracts role and content"
+  - ac: "Handle content field with multiple types (str, list of blocks)"
+    status: COVERED
+    implementation: "Conversion handles str and list content types"
+  - ac: "Remove any Kimi SDK Message type conversion code"
+    status: COVERED
+    implementation: "Code migrated to Claude SDK patterns"
+  - ac: "All existing agent callers work without modification"
+    status: COVERED
+    implementation: "IndependentAgent and EvaluatorAgent use dict format"

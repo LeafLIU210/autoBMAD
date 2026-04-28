@@ -1,0 +1,60 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision for Story 36.3
+schema: 1
+story: "36.3"
+story_title: "Integrate SummaryAgent into HybridOrchestrator"
+gate: "CONCERNS"
+status_reason: "All acceptance criteria met and 19/19 tests pass. Minor type and lint issues identified that should be addressed for code quality."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T14:45:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "TYPE-001"
+    severity: medium
+    finding: "Return type mismatch in _summarize_referenced_documents(): declares list[dict[str, Any]] but returns list[DocumentSummary] from SummaryAgent.summarize_context()"
+    suggested_action: "Fix return type annotation to match actual return type or convert DocumentSummary objects to dicts before returning"
+    refs: ["autoBMAD/docuswarm/pipeline/orchestrator.py:288"]
+
+  - id: "LINT-001"
+    severity: low
+    finding: "Import block is un-sorted or un-formatted"
+    suggested_action: "Run ruff check --fix to auto-sort imports"
+    refs: ["autoBMAD/docuswarm/pipeline/orchestrator.py:9"]
+
+  - id: "LINT-002"
+    severity: low
+    finding: "Using asyncio.TimeoutError instead of builtin TimeoutError"
+    suggested_action: "Replace asyncio.TimeoutError with builtin TimeoutError (Python 3.11+)"
+    refs: ["autoBMAD/docuswarm/pipeline/orchestrator.py:291"]
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 2 }
+  recommendations:
+    must_fix:
+      - action: "Fix return type annotation in _summarize_referenced_documents()"
+        reason: "Type mismatch could cause issues with downstream type checking"
+    monitor: []
+
+evidence:
+  tests_reviewed: 19
+  tests_passed: 19
+  tests_failed: 0
+  type_check_errors: 1
+  type_check_warnings: 1
+  lint_errors: 2
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+nfr_validation:
+  code_quality: { status: CONCERNS, notes: "Type error and 2 lint issues present" }
+  test_coverage: { status: PASS, notes: "19 integration tests, all passing" }
+  performance: { status: PASS, notes: "120s timeout implemented, ~2.5s savings per pipeline" }
+  reliability: { status: PASS, notes: "Graceful fallback to empty list on timeout/error" }
+
+history:
+  - at: "2026-04-07T10:33:00Z"
+    gate: CONCERNS
+    note: "Initial review - all tests pass, minor type/lint issues identified"

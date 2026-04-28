@@ -1,0 +1,79 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "12.2"
+story_title: "get_or_create 方法实现"
+gate: "PASS"
+status_reason: "All quality gates pass - type checking (0 errors), linting (0 errors), and tests (16 passed, 88% coverage) all successful. Implementation matches all acceptance criteria."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-01T12:00:00Z"
+
+# Tool validation results
+tool_validation:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+  ruff:
+    status: PASS
+    errors: 0
+  pytest:
+    status: PASS
+    tests_passed: 16
+    coverage: 88
+
+# Document completeness
+document_completeness:
+  status: PASS
+  score: 100
+  sections_reviewed:
+    - Status
+    - Story
+    - Acceptance Criteria
+    - Tasks/Subtasks
+    - Dev Notes
+    - Implementation Details
+    - Testing
+
+# Acceptance criteria verification
+ac_verification:
+  - id: 1
+    criterion: "返回 (checkpointer, config) 元组"
+    status: VERIFIED
+  - id: 2
+    criterion: "相同 pipeline_id 返回相同 checkpointer 实例"
+    status: VERIFIED
+  - id: 3
+    criterion: "不同 pipeline_id 返回不同实例"
+    status: VERIFIED
+  - id: 4
+    criterion: "使用 generate_thread_id 生成 thread_id"
+    status: VERIFIED
+  - id: 5
+    criterion: "外部 checkpointer 优先于缓存的 checkpointer"
+    status: VERIFIED
+  - id: 6
+    criterion: "首次调用为新的 pipeline_id 创建新的 checkpointer 并加入缓存"
+    status: VERIFIED
+
+# Risk summary
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# QA Results summary
+qa_results:
+  decision: PASS
+  summary: |
+    Story 12.2 get_or_create method implementation passes all quality gates.
+    - Code is well-structured and follows project conventions
+    - Type annotations are complete and pass basedpyright validation
+    - Code style passes ruff linting
+    - 16 unit tests pass with 88% coverage on the checkpoint_manager module
+    - All acceptance criteria are met and verified by tests
+    - Implementation properly integrates caching, external checkpointer handling, and thread_id generation

@@ -32,13 +32,13 @@ console = Console()
 )
 def clean(status: str | None, older_than_days: int | None, confirm: bool) -> None:
     """Delete pipelines from database.
-    
+
     WARNING: This permanently deletes pipeline data!
-    
+
     Examples:
         # Delete all cancelled and failed pipelines
         python -m autoBMAD.docuswarm clean --status cancelled --confirm
-        
+
         # Delete completed pipelines older than 7 days
         python -m autoBMAD.docuswarm clean --status completed --older-than-days 7
     """
@@ -55,9 +55,11 @@ def clean(status: str | None, older_than_days: int | None, confirm: bool) -> Non
             params.append(status)
 
         if older_than_days:
-            from datetime import UTC, datetime, timedelta
+            from datetime import datetime, timedelta, timezone
 
-            cutoff_date = (datetime.now(UTC) - timedelta(days=older_than_days)).isoformat()
+            # Beijing timezone (UTC+8)
+            _BEIJING_TZ = timezone(timedelta(hours=8))
+            cutoff_date = (datetime.now(_BEIJING_TZ) - timedelta(days=older_than_days)).isoformat()
             query += " AND created_at < ?"
             params.append(cutoff_date)
 
@@ -93,9 +95,7 @@ def clean(status: str | None, older_than_days: int | None, confirm: bool) -> Non
                     conn.execute(
                         "DELETE FROM node_results WHERE pipeline_id = ?", (p["pipeline_id"],)
                     )
-                    conn.execute(
-                        "DELETE FROM pipelines WHERE pipeline_id = ?", (p["pipeline_id"],)
-                    )
+                    conn.execute("DELETE FROM pipelines WHERE pipeline_id = ?", (p["pipeline_id"],))
                     deleted_count += 1
                 except Exception as e:
                     console.print(f"[red]Failed to delete {p['pipeline_id']}: {e}[/red]")

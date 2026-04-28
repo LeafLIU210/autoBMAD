@@ -10,8 +10,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
-from typing import override
+from typing import Any, override
 
 import aiofiles
 import yaml
@@ -89,7 +88,7 @@ class CreateDocumentSetTool(ToolResultCallableTool[CreateDocumentSetParams]):
 
     name: str = "create_document_set"
     description: str = "Create multiple structured documents based on node templates"
-    params: type[CreateDocumentSetParams] = CreateDocumentSetParams
+    params: type[BaseModel] | None = CreateDocumentSetParams
 
     def __init__(self, output_dir: Path | None = None) -> None:
         """Initialize the tool with template loading.

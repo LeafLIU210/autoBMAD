@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import click
 from rich.console import Console
 
@@ -14,13 +16,13 @@ console = Console()
 @click.argument("pipeline_id")
 def cancel(pipeline_id: str) -> None:
     """Cancel a running pipeline.
-    
+
     This will stop the pipeline execution and mark it as cancelled.
     """
     service = PipelineService()
-    
+
     try:
-        service.cancel(pipeline_id)
+        asyncio.run(service.cancel(pipeline_id))
         console.print(f"[green]✓[/green] Pipeline cancelled: [bold]{pipeline_id}[/bold]")
     except ValueError as e:
         console.print(f"[yellow]{e}[/yellow]")

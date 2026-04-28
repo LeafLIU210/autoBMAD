@@ -1,0 +1,42 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "22.11"
+story_title: "编写验证测试 (Write Validation Tests)"
+gate: "CONCERNS"
+status_reason: "All 46 tests pass, but 4 minor linting issues (unused pytest imports) found in test files"
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues:
+  - id: "LINT-001"
+    severity: "low"
+    finding: "Unused pytest import in test_complete_system_prompt.py"
+    suggested_action: "Remove unused 'import pytest' from line 11"
+  - id: "LINT-002"
+    severity: "low"
+    finding: "Unused pytest import in test_persona_communication_style.py"
+    suggested_action: "Remove unused 'import pytest' from line 11"
+  - id: "LINT-003"
+    severity: "low"
+    finding: "Unused pytest import in test_persona_loader.py"
+    suggested_action: "Remove unused 'import pytest' from line 16"
+  - id: "LINT-004"
+    severity: "low"
+    finding: "Unused pytest import in test_system_prompt_sections.py"
+    suggested_action: "Remove unused 'import pytest' from line 14"
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 4 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 46
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7]
+    ac_gaps: []

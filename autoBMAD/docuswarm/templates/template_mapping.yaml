@@ -1,0 +1,86 @@
+# Template ID Mapping Configuration
+# Maps deliverable_type to template_id for improved lookup success rate
+# F4 Fix: Improve template lookup matching rate from 20% to 100%
+
+version: "1.0"
+description: "Template ID mapping for deliverable types"
+
+mappings:
+  # Analyst Node
+  analyst:
+    # Direct mappings
+    product-brief: market_research
+    market-research: market_research
+    user-personas: user_personas
+    risk-assessment: risk_assessment
+    # Alternative names
+    brief: market_research
+    research: market_research
+  
+  # Architect Node
+  architect:
+    architecture: system_architecture
+    system-architecture: system_architecture
+    api-specification: api_specification
+    api-spec: api_specification
+    database-schema: database_schema
+    db-schema: database_schema
+  
+  # PM Node
+  pm:
+    prd: prd
+    product-requirements: prd
+    requirements: prd
+    risk-assessment: risk_assessment
+    risk: risk_assessment
+  
+  # PO Node - Multi-document configuration
+  po:
+    # epics-stories is multi-document type, handled specially
+    epics-stories: null  # Multi-document type, no single template
+    product-vision: product_vision
+    roadmap: roadmap
+    epic-list: epic_list
+    story-list: story_list
+  
+  # UX Node
+  ux:
+    ux-design: user_personas
+    user-personas: user_personas
+    user-flows: user_flows
+    wireframes: wireframes
+    usability-testing: usability_testing
+    usability: usability_testing
+
+# Multi-document node configuration
+multi_document_nodes:
+  po:
+    # PO node uses multi-document mapping
+    default_template: product_vision
+    document_types:
+      product-vision: product_vision
+      roadmap: roadmap
+      epic-list: epic_list
+      story-list: story_list
+
+# Fallback rules when direct mapping fails
+fallback_rules:
+  - pattern: "*brief*"
+    template_id: market_research
+    description: "Brief documents default to market_research"
+  
+  - pattern: "*research*"
+    template_id: market_research
+    description: "Research documents default to market_research"
+  
+  - pattern: "*architecture*"
+    template_id: system_architecture
+    description: "Architecture documents default to system_architecture"
+  
+  - pattern: "*design*"
+    template_id: user_personas
+    description: "Design documents default to user_personas"
+  
+  - pattern: "*requirement*"
+    template_id: prd
+    description: "Requirement documents default to prd"

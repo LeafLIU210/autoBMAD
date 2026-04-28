@@ -1,0 +1,29 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision
+
+schema: 1
+story: "15.6"
+story_title: "ContextSummarizer 实现"
+gate: "PASS"
+status_reason: "All 8 acceptance criteria implemented correctly. Type checking passes with 0 errors, linting passes (2 auto-fixed), and all 20 unit tests pass with 95% coverage on the module."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 20
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+quality_score: 100

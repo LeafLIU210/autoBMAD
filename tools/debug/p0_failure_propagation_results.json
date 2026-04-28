@@ -1,0 +1,197 @@
+{
+  "issue_id": "F1",
+  "severity": "CRITICAL",
+  "title": "节点失败会被流水线层吞掉，并被标记为已完成",
+  "tests": [
+    {
+      "test": "node_executor_exception_handling",
+      "issue": "NodeExecutor catches all exceptions and only sets FAILED status without re-raising",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/executor.py:235-246",
+          "code": [
+            "Line 235:     except Exception as e:",
+            "Line 236:         logger.error(",
+            "Line 237:             \"node_execution_failed\",",
+            "Line 238:             node_id=node_id,",
+            "Line 239:             run_id=run_id,",
+            "Line 240:             error=str(e),",
+            "Line 241:             error_type=type(e).__name__,",
+            "Line 242:         )",
+            "Line 243:         # Set status to failed on exception",
+            "Line 244:         new_state[\"status\"] = FAILED",
+            "Line 245: ",
+            "Line 246:     return new_state"
+          ],
+          "finding": "Exception is caught, status set to FAILED, but function RETURNS normally instead of re-raising"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "pipeline_adapter_status_check",
+      "issue": "PipelineAdapter.convert_node_to_pipeline_state() adds node to completed_nodes without checking status",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/pipeline_adapter.py:294-298",
+          "code": [
+            "Line 294:         # Add node to completed_nodes",
+            "Line 295:         if \"completed_nodes\" not in new_state:",
+            "Line 296:             new_state[\"completed_nodes\"] = []",
+            "Line 297:         if node_id is not None and node_id not in new_state[\"completed_nodes\"]:",
+            "Line 298:             new_state[\"completed_nodes\"] = new_state[\"completed_nodes\"] + [str(node_id)]"
+          ],
+          "finding": "Node is added to completed_nodes WITHOUT checking node_state['status']. FAILED/BLOCKED/RUNNING nodes are treated as completed."
+        },
+        {
+          "location": "Runtime verification",
+          "input_status": "failed",
+          "completed_nodes": [
+            "analyst"
+          ],
+          "verdict": "BUG CONFIRMED"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "graph_integrated_executor_exception_handling",
+      "issue": "Integrated executor catches exception, falls back to empty deliverable, still adds node to completed_nodes",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/graph.py:126-141",
+          "exception_handler": [
+            "Line 126:         except Exception as e:",
+            "Line 127:             logger.error(",
+            "Line 128:                 \"integrated_executor_error\",",
+            "Line 129:                 node_id=node_id,",
+            "Line 130:                 error=str(e),",
+            "Line 131:             )",
+            "Line 132:             # Fall back to default behavior on error",
+            "Line 133:             result_state[\"deliverables\"][node_id] = {}",
+            "Line 134: ",
+            "Line 135:         # Increment iteration count for this node"
+          ],
+          "completed_nodes_logic": [
+            "Line 86:         if \"completed_nodes\" not in new_state:",
+            "Line 87:             new_state[\"completed_nodes\"] = []",
+            "Line 139:         # Add node to completed_nodes if not already there",
+            "Line 140:         if node_id not in result_state[\"completed_nodes\"]:",
+            "Line 141:             result_state[\"completed_nodes\"] = result_state[\"completed_nodes\"] + [node_id]"
+          ],
+          "finding": "On exception: sets empty deliverable, then INCREMENTS iteration and ADDS to completed_nodes"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "orchestrator_unconditional_completed",
+      "issue": "HybridOrchestrator.start_pipeline() updates pipeline status to 'completed' after graph.ainvoke() regardless of node failures",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:457-464",
+          "ainvoke": [
+            "Line 457:             result: dict[str, Any] = await graph.ainvoke(initial_state, config)",
+            "Line 610:             result: dict[str, Any] = await graph.ainvoke(initial_state, config)",
+            "Line 749:             result: dict[str, Any] = await graph.ainvoke(initial_state, config)",
+            "Line 900:         result: dict[str, Any] = await graph.ainvoke(initial_state, config)"
+          ],
+          "status_update": [
+            "Line 458: ",
+            "Line 459:             # Update status to completed and sync current_node from final state",
+            "Line 460:             final_current_node = result.get(\"current_node\", \"po\")",
+            "Line 461:             await self._state_manager.update_pipeline_state(",
+            "Line 462:                 final_pipeline_id,",
+            "Line 463:                 {\"status\": \"completed\", \"current_node\": final_current_node},",
+            "Line 464:             )",
+            "Line 465: ",
+            "Line 466:             logger.info(",
+            "Line 467:                 \"pipeline_started\",",
+            "Line 468:                 pipeline_id=final_pipeline_id,",
+            "Line 469:                 result=result,",
+            "Line 470:             )",
+            "Line 471: ",
+            "Line 611: ",
+            "Line 612:             # Update status",
+            "Line 613:             await self._state_manager.update_pipeline_state(",
+            "Line 614:                 pipeline_id,",
+            "Line 615:                 {\"status\": \"completed\"},",
+            "Line 616:             )",
+            "Line 617: ",
+            "Line 618:             logger.info(",
+            "Line 619:                 \"pipeline_resumed\",",
+            "Line 620:                 pipeline_id=pipeline_id,",
+            "Line 621:                 session_resumed=session_resumed,",
+            "Line 622:                 result=result,",
+            "Line 623:             )",
+            "Line 624: ",
+            "Line 750: ",
+            "Line 751:             # Update status",
+            "Line 752:             await self._state_manager.update_pipeline_state(",
+            "Line 753:                 pipeline_id,",
+            "Line 754:                 {\"status\": \"completed\"},",
+            "Line 755:             )",
+            "Line 756: ",
+            "Line 757:             logger.info(",
+            "Line 758:                 \"pipeline_restarted_from_node\",",
+            "Line 759:                 pipeline_id=pipeline_id,",
+            "Line 760:                 node_id=node_id,",
+            "Line 761:                 result=result,",
+            "Line 762:             )",
+            "Line 763: ",
+            "Line 901: ",
+            "Line 902:         logger.info(",
+            "Line 903:             \"node_restarted\",",
+            "Line 904:             pipeline_id=pipeline_id,",
+            "Line 905:             node_id=node_id,",
+            "Line 906:         )",
+            "Line 907: ",
+            "Line 908:         return result",
+            "Line 909: ",
+            "Line 910:     async def pause_pipeline(self, pipeline_id: str) -> bool:",
+            "Line 911:         \"\"\"Pause a running pipeline, preserving its state.",
+            "Line 912: ",
+            "Line 913:         Args:",
+            "Line 914:             pipeline_id: The ID of the pipeline to pause."
+          ],
+          "finding": "After graph.ainvoke() returns, status is unconditionally set to 'completed' without inspecting result state"
+        }
+      ],
+      "severity": "CRITICAL"
+    }
+  ],
+  "chain_analysis": {
+    "chain": [
+      {
+        "step": 1,
+        "component": "DualAgentNode.execute_with_context()",
+        "issue": "May raise exception or return NEEDS_REVISION",
+        "impact": "Execution problem detected at node level"
+      },
+      {
+        "step": 2,
+        "component": "NodeExecutor._execute_node()",
+        "issue": "Catches ALL exceptions, sets status=FAILED, returns normally (no re-raise)",
+        "impact": "Failure is hidden from caller; upstream sees normal return"
+      },
+      {
+        "step": 3,
+        "component": "PipelineAdapter.convert_node_to_pipeline_state()",
+        "issue": "Ignores node_state['status'], adds ANY node to completed_nodes",
+        "impact": "FAILED node appears in completed_nodes list"
+      },
+      {
+        "step": 4,
+        "component": "pipeline/graph.py _create_integrated_node_executor()",
+        "issue": "If exception slips through, catches it, sets empty deliverable, still adds to completed_nodes",
+        "impact": "Double safety net that STILL marks failed nodes as completed"
+      },
+      {
+        "step": 5,
+        "component": "HybridOrchestrator.start_pipeline()",
+        "issue": "After graph.ainvoke(), unconditionally sets pipeline status='completed'",
+        "impact": "Entire pipeline marked as completed even if nodes failed"
+      }
+    ]
+  }
+}

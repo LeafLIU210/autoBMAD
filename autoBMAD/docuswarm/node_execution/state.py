@@ -58,6 +58,7 @@ class NodeRunState(TypedDict):
     evaluation: dict[str, Any] | None
     answers: dict[str, Any]
     chained_context: dict[str, dict[str, Any]]
+    shared_context: dict[str, Any]
     status: str
 
 
@@ -100,6 +101,7 @@ def create_node_run_state(
     evaluation: dict[str, Any] | None = None,
     answers: dict[str, Any] | None = None,
     chained_context: dict[str, dict[str, Any]] | None = None,
+    shared_context: dict[str, Any] | None = None,
     status: str = PENDING,
 ) -> NodeRunState:
     """Create a NodeRunState with default values for optional fields.
@@ -115,6 +117,7 @@ def create_node_run_state(
         evaluation: Optional evaluation result
         answers: Optional answers to questions
         chained_context: Optional chained context from predecessor nodes
+        shared_context: Optional shared context from pipeline
         status: The status of the run (default PENDING)
 
     Returns:
@@ -131,6 +134,7 @@ def create_node_run_state(
         evaluation=evaluation,
         answers=answers if answers is not None else {},
         chained_context=chained_context if chained_context is not None else {},
+        shared_context=shared_context if shared_context is not None else {},
         status=status,
     )
 
@@ -222,6 +226,7 @@ def validate_node_run_state(state: NodeRunState) -> bool:
         "evaluation",
         "answers",
         "chained_context",
+        "shared_context",
         "status",
     ]
 
@@ -289,3 +294,172 @@ def deserialize_node_result(json_str: str) -> NodeResult:
     """
     data = json.loads(json_str)
     return NodeResult(**data)
+
+
+# Multi-Document Support Functions (Story 33.5)
+
+
+def is_multi_document(result: NodeResult) -> bool:
+    """Check if the deliverable is in multi-document format.
+
+    Args:
+        result: The NodeResult to check.
+
+    Returns:
+        True if deliverable.type == "multi-document", False otherwise.
+        Returns False if deliverable is None or type field is missing.
+
+    Example:
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={"type": "multi-document", "documents": [...]}
+        ... )
+        >>> is_multi_document(result)
+        True
+
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={"file_path": "doc.md", "sha256": "..."}
+        ... )
+        >>> is_multi_document(result)
+        False
+    """
+    deliverable = result.get("deliverable")
+    if deliverable is None:
+        return False
+    if not isinstance(deliverable, dict):
+        return False
+    return deliverable.get("type") == "multi-document"
+
+
+def get_all_documents(result: NodeResult) -> list[dict[str, Any]]:
+    """Get all documents from a NodeResult as a flattened list.
+
+    For multi-document format: returns the documents array.
+    For single-document format: returns a list containing the single deliverable.
+
+    Args:
+        result: The NodeResult to extract documents from.
+
+    Returns:
+        A list of document dictionaries. Never returns None.
+        Returns empty list if deliverable is None.
+
+    Example:
+        >>> # Multi-document format
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={
+        ...         "type": "multi-document",
+        ...         "documents": [
+        ...             {"index": 1, "file_path": "doc1.md"},
+        ...             {"index": 2, "file_path": "doc2.md"},
+        ...         ]
+        ...     }
+        ... )
+        >>> get_all_documents(result)
+        [{"index": 1, "file_path": "doc1.md"}, {"index": 2, "file_path": "doc2.md"}]
+
+        >>> # Single-document format
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={"file_path": "doc.md", "sha256": "..."}
+        ... )
+        >>> get_all_documents(result)
+        [{"file_path": "doc.md", "sha256": "..."}]
+    """
+    deliverable = result.get("deliverable")
+    if deliverable is None:
+        return []
+
+    if not isinstance(deliverable, dict):
+        return []
+
+    # Check for multi-document format
+    if deliverable.get("type") == "multi-document":
+        documents = deliverable.get("documents")
+        if isinstance(documents, list):
+            return documents
+        return []
+
+    # Single-document format: return list containing the deliverable
+    return [deliverable]
+
+
+def get_total_word_count(result: NodeResult) -> int:
+    """Calculate total word count across all documents.
+
+    For multi-document format: sums word_count from all documents in the list.
+    For single-document format: returns deliverable.word_count or 0 if missing.
+    Missing/None word_count values are treated as 0.
+
+    Args:
+        result: The NodeResult to calculate word count from.
+
+    Returns:
+        Total word count as an integer. Returns 0 if word_count fields are missing.
+
+    Example:
+        >>> # Multi-document format
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={
+        ...         "type": "multi-document",
+        ...         "documents": [
+        ...             {"index": 1, "word_count": 1500},
+        ...             {"index": 2, "word_count": 2300},
+        ...         ]
+        ...     }
+        ... )
+        >>> get_total_word_count(result)
+        3800
+
+        >>> # Single-document format
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={"file_path": "doc.md", "word_count": 1500}
+        ... )
+        >>> get_total_word_count(result)
+        1500
+
+        >>> # Missing word_count fields
+        >>> result = create_node_result(
+        ...     iteration=1,
+        ...     status="completed",
+        ...     deliverable={"file_path": "doc.md"}
+        ... )
+        >>> get_total_word_count(result)
+        0
+    """
+    deliverable = result.get("deliverable")
+    if deliverable is None:
+        return 0
+
+    if not isinstance(deliverable, dict):
+        return 0
+
+    # Check for multi-document format
+    if deliverable.get("type") == "multi-document":
+        documents = deliverable.get("documents")
+        if not isinstance(documents, list):
+            return 0
+
+        total = 0
+        for doc in documents:
+            if isinstance(doc, dict):
+                word_count = doc.get("word_count")
+                if isinstance(word_count, int) and word_count > 0:
+                    total += word_count
+        return total
+
+    # Single-document format
+    word_count = deliverable.get("word_count")
+    if isinstance(word_count, int) and word_count > 0:
+        return word_count
+    return 0

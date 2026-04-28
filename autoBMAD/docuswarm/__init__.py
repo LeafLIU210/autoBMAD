@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from autoBMAD.docuswarm.config import Config
 from autoBMAD.docuswarm.exceptions import (
-    AgentError,
     ConfigurationError,
     ContextIsolationError,
     DocuSwarmError,
@@ -12,14 +11,12 @@ from autoBMAD.docuswarm.exceptions import (
     NodeExecutionError,
     PipelineError,
     StorageError,
-    ValidationError,
 )
 
 # Type stubs for lazy-loaded classes (only used by type checkers)
 if TYPE_CHECKING:
     from autoBMAD.docuswarm.agents.evaluator import EvaluatorAgent
     from autoBMAD.docuswarm.agents.independent import IndependentAgent
-    from autoBMAD.docuswarm.nodes import create_node_executor as create_node_execution
 
 
 # Lazy imports to avoid ImportError on modules not yet fully implemented
@@ -32,12 +29,6 @@ def __getattr__(name: str):
         from autoBMAD.docuswarm.agents.evaluator import EvaluatorAgent
 
         return EvaluatorAgent
-    if name == "create_node_execution":
-        from autoBMAD.docuswarm.nodes import (
-            create_node_executor as create_node_execution,
-        )
-
-        return create_node_execution
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -53,9 +44,6 @@ __all__ = [
     "PipelineError",
     "NodeExecutionError",
     "ContextIsolationError",
-    "AgentError",
-    "ValidationError",
     "IndependentAgent",
     "EvaluatorAgent",
-    "create_node_execution",
 ]

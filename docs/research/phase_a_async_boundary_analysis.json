@@ -1,0 +1,94 @@
+{
+  "title": "Phase A 异步边界问题深度研究报告",
+  "description": "针对 Finding P0-1, P0-2, P1-1 的代码分析和问题复现",
+  "timestamp": "2026-04-04",
+  "findings": {
+    "p0_1_start_pipeline_asyncio_run": {
+      "file": "autoBMAD\\docuswarm\\pipeline\\orchestrator.py",
+      "asyncio_run_violations": [
+        {
+          "line": 328,
+          "context": "Inside async start_pipeline()"
+        },
+        {
+          "line": 391,
+          "context": "Inside async start_pipeline()"
+        }
+      ],
+      "state_manager_calls": [
+        {
+          "line": 329,
+          "type": "call"
+        },
+        {
+          "line": 374,
+          "type": "call"
+        },
+        {
+          "line": 392,
+          "type": "call"
+        }
+      ],
+      "context": {
+        "start_pipeline_line": 288,
+        "start_pipeline_end": 397
+      }
+    },
+    "p0_2_run_async_bridge": {
+      "file": "autoBMAD\\docuswarm\\cli\\services\\pipeline_service.py",
+      "run_async_found": true,
+      "run_async_line": 20,
+      "thread_pool_usage": [
+        {
+          "line": 35,
+          "type": "submit"
+        }
+      ],
+      "asyncio_run_in_bridge": [
+        {
+          "line": 39
+        }
+      ],
+      "usage_locations": [
+        {
+          "line": 145,
+          "inside_function": "cancel"
+        },
+        {
+          "line": 188,
+          "inside_function": "cancel_all"
+        }
+      ],
+      "run_async_end": 39
+    },
+    "p1_1_escalation_missing_await": {
+      "file": "autoBMAD\\docuswarm\\nodes\\dual_agent.py",
+      "unawaited_escalate_calls": [
+        {
+          "line": 807,
+          "code": "self.escalation_handler.escalate(",
+          "has_await": false
+        },
+        {
+          "line": 845,
+          "code": "self.escalation_handler.escalate(",
+          "has_await": false
+        }
+      ],
+      "awaited_escalate_calls": [],
+      "escalation_handler_checks": [
+        {
+          "line": 845
+        },
+        {
+          "line": 807
+        }
+      ]
+    },
+    "p1_1_escalation_is_async": {
+      "file": "autoBMAD\\docuswarm\\pipeline\\escalation.py",
+      "escalate_is_async": true,
+      "escalate_line": 119
+    }
+  }
+}

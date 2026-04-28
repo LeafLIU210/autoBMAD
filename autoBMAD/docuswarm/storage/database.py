@@ -39,7 +39,7 @@ class DatabaseManager:
         ...     conn.execute("SELECT 1")
     """
 
-    _instance: DatabaseManager | None = None
+    _instances: dict[str, DatabaseManager] = {}
     _lock: threading.Lock = threading.Lock()
 
     def __init__(self, db_path: Path | str = "docuswarm.db") -> None:
@@ -63,27 +63,31 @@ class DatabaseManager:
 
     @classmethod
     def get_instance(cls, db_path: Path | str = "docuswarm.db") -> DatabaseManager:
-        """Get or create the singleton DatabaseManager instance.
+        """Get or create a DatabaseManager instance for the given db_path.
+
+        P0-F4: Uses per-path caching instead of global singleton to avoid
+        cross-database contamination.
 
         Args:
             db_path: Path to the SQLite database file.
 
         Returns:
-            The singleton DatabaseManager instance.
+            The DatabaseManager instance for the given path.
         """
-        if cls._instance is None:
+        resolved = str(Path(db_path).resolve())
+        if resolved not in cls._instances:
             with cls._lock:
-                if cls._instance is None:
-                    cls._instance = cls(db_path=db_path)
-        return cls._instance
+                if resolved not in cls._instances:
+                    cls._instances[resolved] = cls(db_path=db_path)
+        return cls._instances[resolved]
 
     @classmethod
     def reset_instance(cls) -> None:
-        """Reset the singleton instance. Primarily for testing."""
+        """Reset all cached instances. Primarily for testing."""
         with cls._lock:
-            if cls._instance is not None:
-                cls._instance.close_all()
-                cls._instance = None
+            for instance in cls._instances.values():
+                instance.close_all()
+            cls._instances.clear()
 
     @property
     def db_path(self) -> Path:
@@ -231,6 +235,37 @@ class DatabaseManager:
         """)
         _ = conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_node_run_metrics_node_id ON node_run_metrics(node_id)
+        """)
+
+        # Shared context history table for change tracking (Story 35.6)
+        _ = conn.execute("""
+            CREATE TABLE IF NOT EXISTS shared_context_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pipeline_id TEXT NOT NULL,
+                node_id TEXT,
+                operation TEXT NOT NULL,
+                key TEXT NOT NULL,
+                old_value TEXT,
+                new_value TEXT,
+                timestamp TEXT NOT NULL,
+                version INTEGER NOT NULL,
+                FOREIGN KEY (pipeline_id) REFERENCES pipelines(pipeline_id)
+                    ON DELETE CASCADE
+            )
+        """)
+
+        # Create indexes for shared_context_history table
+        _ = conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_history_pipeline ON shared_context_history(pipeline_id)
+        """)
+        _ = conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_history_timestamp ON shared_context_history(timestamp DESC)
+        """)
+        _ = conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_history_node ON shared_context_history(node_id)
+        """)
+        _ = conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_history_key ON shared_context_history(key)
         """)
 
     @contextmanager

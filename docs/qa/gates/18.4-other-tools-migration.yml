@@ -1,0 +1,73 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "18.4"
+story_title: "Other Tools Migration"
+gate: "PASS"
+status_reason: "Other tools migration complete - all 5 tools (create_document_set, read_docs_file, list_docs_files, update_docs_file, update_context) migrated to pure async functions with ToolResult return type, Pydantic validation, and ToolRegistry registration. Zero linting errors, zero type errors/warnings, all 163 unit tests passing. Backward compatibility maintained with old tool classes."
+reviewer: "James (Full Stack Developer)"
+updated: "2026-03-02T15:00:00Z"
+
+waiver:
+  active: false
+
+top_issues: []
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_metrics:
+  document_completeness: 100
+  tests_passed: 100
+  test_coverage: 80
+  lint_errors: 0
+  type_errors: 0
+  type_warnings: 0
+
+tool_results:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+    details: "Type checking passed on all 5 migrated tool files - 0 errors, 0 warnings, 0 notes"
+  ruff:
+    status: PASS
+    errors: 0
+    warnings: 0
+    details: "Linting passed with 0 errors"
+  pytest:
+    status: PASS
+    tests_passed: 163
+    coverage: 80
+    details: "163/163 tests passed - 80%+ code coverage on migrated tool modules"
+
+evidence:
+  tests_reviewed: 163
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    ac_gaps: []
+
+notes: |
+  - create_document_set: Migrated from CallableTool2 to async function (AC #1, #2, #6, #9, #12)
+  - read_docs_file: Migrated from CallableTool2 to async function (AC #3, #6, #9, #13)
+  - list_docs_files: Migrated from CallableTool2 to async function (AC #4, #6, #9, #14)
+  - update_docs_file: Migrated from CallableTool2 to async function (AC #5, #6, #9, #15)
+  - update_context: Migrated from CallableTool2 to async function (AC #6, #9, #16)
+  - All tools use Pydantic models for parameter validation (AC #7)
+  - All tools registered to ToolRegistry (AC #8)
+  - All tools removed kimi_agent_sdk imports (AC #9)
+  - Unit tests updated and passing (AC #10)
+  - Backward compatibility maintained with old tool classes
+  - Template-based validation in create_document_set preserved
+  - Path traversal prevention maintained in read/list/update docs tools
+
+recommendations:
+  future:
+    - "Consider running manual tests to verify end-to-end file operations in production environment"

@@ -19,11 +19,14 @@ When escalated:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import structlog
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 
 if TYPE_CHECKING:
     from structlog import BoundLogger as StructlogBoundLogger
@@ -67,7 +70,7 @@ class Escalation:
     details: str = ""
     alignment_score: float = 0.0
     issues: list[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(_BEIJING_TZ))
     resolution: str | None = None
     user_guidance: str | None = None
 
@@ -89,7 +92,7 @@ class EscalationHandler:
     Example:
         >>> handler = EscalationHandler(state_manager=state_manager)
         >>> # Trigger escalation
-        >>> escalation = handler.escalate(
+        >>> escalation = await handler.escalate(
         ...     pipeline_id="pipeline-1",
         ...     node_id="analyst",
         ...     reason=EscalationReason.MAX_ITERATIONS,
@@ -97,7 +100,7 @@ class EscalationHandler:
         ...     issues=["Issue 1", "Issue 2"],
         ... )
         >>> # Resolve with user guidance
-        >>> handler.resolve(
+        >>> await handler.resolve(
         ...     pipeline_id="pipeline-1",
         ...     resolution="user_guidance",
         ...     user_guidance="Follow the standard format",
@@ -116,7 +119,7 @@ class EscalationHandler:
             component=self.__class__.__name__
         )
 
-    def escalate(
+    async def escalate(
         self,
         pipeline_id: str,
         node_id: str,
@@ -156,14 +159,14 @@ class EscalationHandler:
             details=details,
             alignment_score=alignment_score,
             issues=issues,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(_BEIJING_TZ),
         )
 
         # Store in memory
         self._escalations[pipeline_id] = escalation
 
-        # Pause the pipeline
-        self._state_manager.update_pipeline_status(pipeline_id, "paused")
+        # Pause the pipeline - use update_pipeline_state (async)
+        await self._state_manager.update_pipeline_state(pipeline_id, {"status": "paused"})
 
         # Log the escalation
         self.logger.info(
@@ -176,7 +179,7 @@ class EscalationHandler:
 
         return escalation
 
-    def resolve(
+    async def resolve(
         self,
         pipeline_id: str,
         resolution: str,
@@ -208,8 +211,8 @@ class EscalationHandler:
         else:
             new_status = "running"
 
-        # Resume the pipeline
-        self._state_manager.update_pipeline_status(pipeline_id, new_status)
+        # Resume the pipeline - use update_pipeline_state (async)
+        await self._state_manager.update_pipeline_state(pipeline_id, {"status": new_status})
 
         # Log the resolution
         self.logger.info(

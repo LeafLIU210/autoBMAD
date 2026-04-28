@@ -12,11 +12,10 @@ from __future__ import annotations
 import hashlib
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 import aiofiles
-from pydantic import BaseModel, Field
-from typing_extensions import override
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from autoBMAD.docuswarm.tools.callable_tool_wrapper import ToolResultCallableTool
 from autoBMAD.docuswarm.tools.tool_result import ToolResult
@@ -25,10 +24,21 @@ from autoBMAD.docuswarm.tools.tool_result import ToolResult
 class CreateDeliverableParams(BaseModel):
     """Parameters for creating a deliverable.
 
+    Supports both single-document and multi-document workflows.
+    For multi-document sets (e.g., Architect nodes with 2-4 documents,
+    PO nodes with 3-5 documents), use document_index, document_total,
+    and document_type fields to track document position and type.
+
     Attributes:
         title: The deliverable title.
         content: The deliverable content in Markdown format.
         metadata: Additional metadata for the deliverable.
+        document_index: 1-based position of this document in a multi-document set.
+            Must be >= 1 when provided. Must be <= document_total when both are provided.
+        document_total: Total number of documents in the multi-document set.
+            Must be >= 1 when provided.
+        document_type: Type identifier for this document (e.g., "system-architecture",
+            "api-design", "prd"). Used for typed documents in multi-document sets.
     """
 
     title: str = Field(description="Deliverable title")
@@ -37,6 +47,48 @@ class CreateDeliverableParams(BaseModel):
         default_factory=dict,
         description="Additional metadata",
     )
+    document_index: int | None = Field(
+        default=None,
+        description="1-based position of this document in a multi-document set (>= 1)",
+    )
+    document_total: int | None = Field(
+        default=None,
+        description="Total number of documents in the multi-document set (>= 1)",
+    )
+    document_type: str | None = Field(
+        default=None,
+        description="Type identifier for this document (e.g., 'system-architecture', 'api-design')",
+    )
+
+    @field_validator("document_index")
+    @classmethod
+    def validate_document_index(cls, v: int | None) -> int | None:
+        """Validate that document_index >= 1 when provided."""
+        if v is not None and v < 1:
+            msg = "document_index must be >= 1 (1-based indexing)"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("document_total")
+    @classmethod
+    def validate_document_total(cls, v: int | None) -> int | None:
+        """Validate that document_total >= 1 when provided."""
+        if v is not None and v < 1:
+            msg = "document_total must be >= 1"
+            raise ValueError(msg)
+        return v
+
+    @model_validator(mode="after")
+    def validate_index_not_exceed_total(self) -> CreateDeliverableParams:
+        """Validate that document_index <= document_total when both are provided."""
+        if (
+            self.document_index is not None
+            and self.document_total is not None
+            and self.document_index > self.document_total
+        ):
+            msg = f"document_index ({self.document_index}) cannot exceed document_total ({self.document_total})"
+            raise ValueError(msg)
+        return self
 
 
 def _slugify_filename(title: str) -> str:
@@ -123,7 +175,7 @@ Returns metadata including:
 
 The full content is saved to disk and can be read from file_path.
 """
-    params: type[CreateDeliverableParams] = CreateDeliverableParams
+    params: type[BaseModel] | None = CreateDeliverableParams
 
     def __init__(self, output_dir: Path | None = None) -> None:
         """Initialize the tool with optional output directory.
@@ -158,7 +210,7 @@ The full content is saved to disk and can be read from file_path.
             section_index = _extract_section_index(params.content)
 
             # Build metadata (Single Truth: metadata only)
-            metadata = {
+            metadata: dict[str, Any] = {
                 "title": params.title,
                 "file_path": str(file_path),
                 "sha256": sha256_hash,
@@ -166,6 +218,14 @@ The full content is saved to disk and can be read from file_path.
                 "section_index": section_index,
                 "content_type": "markdown",
             }
+
+            # Add multi-document metadata if provided (Story 33.1)
+            if params.document_index is not None:
+                metadata["document_index"] = params.document_index
+            if params.document_total is not None:
+                metadata["document_total"] = params.document_total
+            if params.document_type is not None:
+                metadata["document_type"] = params.document_type
 
             # ✅ 返回结构化 ToolResult（不再使用 METADATA: 字符串）
             return ToolResult(

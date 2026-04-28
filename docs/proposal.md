@@ -1,28 +1,13 @@
-# 冒泡排序算法CLI工具开发需求
-
-## 项目目标
-开发一个命令行工具,实现冒泡排序算法的可视化演示和性能测试功能。
-
-## 核心功能
-1. **排序执行**: 接受用户输入的数字序列,执行冒泡排序
-2. **可视化展示**: 在终端中逐步展示排序过程
-3. **性能分析**: 统计比较次数、交换次数、执行时间
-4. **数据生成**: 支持随机生成测试数据
-
-## 技术要求
-- 开发语言: Python 3.8+
-- CLI框架: Click
-- 输出格式: 彩色终端输出(使用Rich库)
-
-## 使用场景
-- 算法学习者理解冒泡排序原理
-- 教学演示
-- 算法性能对比测试
-
-## 交付物
-请创建包含以下内容的完整开发文档:
-- 需求分析报告
-- 技术架构设计
-- 用户交互设计
-- 系统架构图
-- Epic和Story拆解
+# 深度研究深度改造 @autoBMAD/docuswarm 的详细方案，采用或创建完善调试工具 @tools 来深度研究方案，创建多份详细的研究报告，保存到 @docs/research 的新创建的文件夹中。具体要求如下：
+## 1. 研究claude-agent-sdk的skills技能命令引入方案，参考 @autoBMAD/agentdocs 。
+## 2. 各个节点的独立agent的任务应当修改更新，并应当使用相应的skill，要求：
+### 1. analyst节点独立agent任务为`create-product-brief`，应采用技能skill `bmad-product-brief` ，参考 @.claude/skills/bmad-product-brief 和 @.claude/skills/bmad-product-brief/SKILL.md ；
+### 2. pm节点独立agent任务为`create-prd`，应采用技能skill `bmad-create-prd` ，参考 @.claude/skills/bmad-create-prd 和 @.claude/skills/bmad-create-prd/workflow.md ；
+### 3. ux节点独立agent任务为`create-ux-design`，应采用技能skill `bmad-create-ux-design` ，参考 @.claude/skills/bmad-create-ux-design 和 @.claude/skills/bmad-create-ux-design/workflow.md ；
+### 4. architect节点独立agent任务为`create-architecture`，应采用技能skill `bmad-create-architecture` ，参考 @.claude/skills/bmad-create-architecture 和 @.claude/skills/bmad-create-architecture/workflow.md ；
+### 5. po节点独立agent任务为`create-epics-and-stories`，应采用技能skill `bmad-create-epics-and-stories` ，参考 @.claude/skills/bmad-create-epics-and-stories 和 @.claude/skills/bmad-create-epics-and-stories/workflow.md 。
+## 3. analyst、pm、ux节点要求且只能创建一份文档。architect和po节点能创建多份文档。po节点应当创建全部epic文档和全部story文档。所有节点文档模板应当参考 @_bmad/bmm 和 前面所述的bmad技能。
+## 4. 所有节点的独立agent和评估agent都应当允许全部工具：create_deliverable / read_document / list_documents / grep_search / glob_search 。
+## 5. 节点独立agent应当允许调用工具更新shared_context 。
+## 6. 创建单独的摘要agent，用于调用工具遍历读取original_context里的所有文档，将文档内容总结，最后将所有文档的总结内容注入到 docs_context 。修改完善 context_builder.py 。
+## 7. docs_context不能每次独立agent执行前重建，而应当在建立origin_context后就建立和持久化。

@@ -37,8 +37,8 @@ DocuSwarm 是一个基于 BMAD 方法论的多智能体文档编排系统，通�
 2. **提示模板隔离**：确保 private_reasoning 不泄露给 Evaluator
 3. **消息过滤机制**：ContextFilter 过滤敏感字段
 
-### 🔌 Kimi Agent SDK 集成
-- **会话管理**：`KimiSessionManager` 管理 LLM 会话
+### 🔌 Claude Agent SDK 集成
+- **会话管理**：`SessionManager` 管理 LLM 会话
 - **自动工具调度**：SDK 自动处理工具调用
 - **结构化输出**：支持 JSON 格式的结构化响应
 - **模式映射**：自动映射 instant、thinking、agent 三种模式
@@ -78,7 +78,7 @@ DocuSwarm
 │   └── Database (数据库操作)
 │
 ├── LLM (LLM 集成)
-│   ├── KimiSessionManager (会话管理器)
+│   ├── SessionManager (会话管理器)
 │   ├── ResponseParser (响应解析器)
 │   └── ModeMapper (模式映射器)
 │
@@ -91,8 +91,8 @@ DocuSwarm
 
 ### 前置要求
 
-- Python 3.10+
-- Kimi API Key（Kimi K2.5 模型）
+- Python 3.12+
+- Anthropic API Key（Claude 模型）
 - SQLite 3.35.0+（支持 WAL 模式）
 
 ### 安装步骤
@@ -108,11 +108,11 @@ pip install -r requirements.txt
 创建 `.env` 文件并设置必需的环境变量：
 
 ```env
-# 必需：Kimi API Key
-KIMI_API_KEY=your_kimi_api_key_here
+# 必需：Anthropic API Key
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-# 可选：Kimi API Base URL (默认: https://api.kimi.com/coding/)
-KIMI_BASE_URL=https://api.kimi.com/coding/
+# 可选：Anthropic API Base URL (默认: https://api.anthropic.com/v1/)
+ANTHROPIC_BASE_URL=https://api.anthropic.com/v1/
 
 # 可选配置
 DOCUSWARM_DB_PATH=docuswarm.db
@@ -493,8 +493,8 @@ DocuSwarm 使用多层配置系统：
 
 | 环境变量 | 必需 | 默认值 | 说明 |
 |---------|------|--------|------|
-| `KIMI_API_KEY` | ✅ | 无 | Kimi API 密钥（必须设置） |
-| `KIMI_BASE_URL` | ❌ | `https://api.kimi.com/coding/` | Kimi API Base URL |
+| `ANTHROPIC_API_KEY` | ✅ | 无 | Anthropic API 密钥（必须设置） |
+| `ANTHROPIC_BASE_URL` | ❌ | `https://api.anthropic.com/v1/` | Anthropic API Base URL |
 | `DOCUSWARM_DB_PATH` | ❌ | `docuswarm.db` | SQLite 数据库路径 |
 | `DOCUSWARM_OUTPUT_DIR` | ❌ | `output` | 交付物输出目录 |
 | `DOCUSWARM_LOG_LEVEL` | ❌ | `INFO` | 日志级别（DEBUG/INFO/WARNING/ERROR） |
@@ -505,9 +505,9 @@ DocuSwarm 使用多层配置系统：
 创建 `autoBMAD/docuswarm/docuswarm.yaml`：
 
 ```yaml
-# Kimi API 配置
-# 注意：KIMI_API_KEY 必须通过环境变量设置，不应写入此文件
-base_url: https://api.kimi.com/coding/
+# Anthropic API 配置
+# 注意：ANTHROPIC_API_KEY 必须通过环境变量设置，不应写入此文件
+base_url: https://api.anthropic.com/v1/
 
 # 数据库配置
 db_path: docuswarm.db
@@ -523,7 +523,7 @@ max_iterations: 100
 ```
 
 **注意**：
-- `KIMI_API_KEY` 不应写入 YAML 文件，必须通过环境变量设置
+- `ANTHROPIC_API_KEY` 不应写入 YAML 文件，必须通过环境变量设置
 - 所有 YAML 配置项都可以被环境变量覆盖
 
 ### 节点配置文件
@@ -760,7 +760,7 @@ autoBMAD/docuswarm/
 │   ├── audit.py         # IsolationAuditLogger
 │   └── memory.py        # ContextMemory
 ├── llm/                 # LLM 集成
-│   ├── session_manager.py  # KimiSessionManager
+│   ├── session_manager.py  # SessionManager
 │   ├── response.py         # ResponseParser
 │   ├── approval.py         # ApprovalSystem
 │   ├── mode_mapper.py      # ModeMapper
@@ -1014,12 +1014,12 @@ SELECT * FROM checkpoints WHERE thread_id = 'your_pipeline_id';
 
 **错误信息**：
 ```
-ConfigurationError: KIMI_API_KEY is required. Please set it in your .env file or as an environment variable.
+ConfigurationError: ANTHROPIC_API_KEY is required. Please set it in your .env file or as an environment variable.
 ```
 
 **解决方法**：
-- 确保 `.env` 文件存在且包含 `KIMI_API_KEY`
-- 检查环境变量是否正确设置：`echo $KIMI_API_KEY` (Linux/Mac) 或 `echo %KIMI_API_KEY%` (Windows)
+- 确保 `.env` 文件存在且包含 `ANTHROPIC_API_KEY`
+- 检查环境变量是否正确设置：`echo $ANTHROPIC_API_KEY` (Linux/Mac) 或 `echo %ANTHROPIC_API_KEY%` (Windows)
 - 验证 API Key 格式是否正确
 - 确认 API Key 不是空字符串
 
@@ -1093,8 +1093,8 @@ LLMError: Authentication failed
 
 **解决方法**：
 - **Rate Limit**：等待一段时间后重试，或减少并发请求
-- **Authentication**：检查 `KIMI_API_KEY` 是否有效且未过期
-- **Network**：检查网络连接和 `KIMI_BASE_URL` 配置
+- **Authentication**：检查 `ANTHROPIC_API_KEY` 是否有效且未过期
+- **Network**：检查网络连接和 `ANTHROPIC_BASE_URL` 配置
 - 查看详细错误信息：
   ```python
   try:

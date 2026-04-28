@@ -1,7 +1,7 @@
 # 质量保证流程详细说明
 
-**版本**: 1.1
-**最后更新**: 2026-02-24
+**版本**: 2.1
+**最后更新**: 2026-04-05
 
 ---
 
@@ -323,35 +323,35 @@ Test Architect (QA代理)在整个开发生命周期中提供全面的质量保�
 
 ### 7.1 工具链概览
 
-项目集成了autoBMAD Epic Automation系统，形成完整的自动化质量保证体系：
+项目集成了三个专业工作流工具，形成完整的自动化质量保证体系：
 
-1. **autoBMAD Epic Automation** - 5阶段自动化工作流（SM-Dev-QA + 质量门控 + 测试自动化）
-2. **Basedpyright** - 类型检查和代码质量
-3. **Ruff** - 代码风格检查和自动修复
-4. **Pytest** - 测试质量保证
+1. **BMAD-Workflow** - 自动化质量门控
+2. **BasedPyright-Workflow** - 代码质量检查
+3. **Fixtest-Workflow** - 测试质量保证
 
-### 7.2 autoBMAD质量门控
+### 7.2 BMAD-Workflow质量门控
 
 #### 质量门控状态
 
 | 状态 | 含义 | 后续操作 | 是否可继续 |
 |------|------|----------|------------|
 | **PASS** | 所有关键要求满足 | 无 | ✅ 是 |
-| **CONCERNS** | 发现非关键问题 | 进入修复循环 | ⚠️ 谨慎进行 |
+| **CONCERNS** | 发现非关键问题 | 进入Phase C修复 | ⚠️ 谨慎进行 |
 | **FAIL** | 发现关键问题 | 必须修复 | ❌ 否 |
 | **WAIVED** | 问题已被确认和接受 | 记录理由 | ✅ 批准后可以 |
 
 #### 自动化流程
 ```
-Phase 1 (SM-Dev-QA循环) → Phase 2 (质量门控) → Phase 3 (测试自动化)
-                                                ↓
-                                    根据结果进入不同路径
-                                                ↓
+Phase A (开发) → Phase B (QA审查) → 质量门控决策
+                     ↓
+              根据结果进入不同路径
+                     ↓
     ┌─────────────┬─────────────┬─────────────┐
     ↓             ↓             ↓             ↓
   PASS          CONCERNS       FAIL        WAIVED
     ↓             ↓             ↓             ↓
-  完成          建议修复       必须修复      记录理由
+Phase D        Phase C       Phase C      完成
+(最终开发)    (修复开发)    (修复开发)
 ```
 
 #### 门控决策因素
@@ -363,14 +363,11 @@ Phase 1 (SM-Dev-QA循环) → Phase 2 (质量门控) → Phase 3 (测试自动�
 
 #### 使用示例
 ```bash
-# 执行完整的autoBMAD 5阶段工作流
-python -m autoBMAD.epic_automation.epic_driver run-epic docs/epics/my-epic.md --verbose
+# 执行完整的autoBMAD工作流
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
-# 独立运行质量门控
-python -m autoBMAD.epic_automation.epic_driver run-quality --verbose
-
-# 跳过质量门控（快速开发）
-python -m autoBMAD.epic_automation.epic_driver run-epic docs/epics/my-epic.md --skip-quality
+# 跳过质量门控
+python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-quality
 ```
 
 ### 7.3 autoBMAD工作流质量保证
@@ -593,5 +590,4 @@ Phase 5: 文档与测试
 ---
 
 **版本历史**:
-- v1.1 (2026-02-24): 更新autoBMAD质量门控描述，替换旧BMAD-Workflow引用
 - v1.0 (2026-01-04): 初始版本，完整的质量保证流程说明

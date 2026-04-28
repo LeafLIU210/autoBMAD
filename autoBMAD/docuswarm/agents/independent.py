@@ -2,13 +2,13 @@
 
 This module provides the IndependentAgent class which:
 - Loads BMAD persona from nodes/{node_id}/persona.json
-- Calls LLM with Kimi K2.5 Agent mode (temperature 0.7, max_tokens 32768)
+- Calls LLM with Claude Agent mode (temperature 0.7, max_tokens 32768)
 - Tool calling handled entirely by SDK auto-dispatch (Story 8.4)
 - Generates questions with priorities: blocking, clarifying, optional
 - Preserves private reasoning (NOT shared with Evaluator)
 - Returns structured output matching IndependentOutput schema
-- Updated to support KimiSessionManager (Story 7.3)
-- Updated to use Session API with Wire messages (Story 7.4)
+- Updated to support SessionManager (Story 7.3)
+- Updated to use Session API (Story 7.4)
 - Removed manual tool parsing - SDK handles all tool dispatch (Story 8.4)
 """
 
@@ -19,21 +19,17 @@ from typing import TYPE_CHECKING, Any, override
 
 import structlog
 
-# Import SDK types for Session API (Story 7.4)
-from kimi_agent_sdk import Message
-from kimi_agent_sdk._aggregator import MessageAggregator
-
 from autoBMAD.docuswarm.agents.base import BaseAgent
 from autoBMAD.docuswarm.agents.persona import PersonaLoader
-from autoBMAD.docuswarm.config import Config as AgentConfig
+from autoBMAD.docuswarm.context import ContextValidator
 from autoBMAD.docuswarm.llm.response import (
     ResponseParseError,
-    ValidationError,
     extract_json,
-    validate_independent_output,
 )
-from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+from autoBMAD.docuswarm.llm.session_manager import SessionManager
 from autoBMAD.docuswarm.prompts.contract_builder import create_contract_builder
+from autoBMAD.docuswarm.prompts.skill_injector import SkillInjector
+from autoBMAD.docuswarm.prompts.template_engine import PromptBuildConfig, PromptTemplateEngine
 
 if TYPE_CHECKING:
     from autoBMAD.docuswarm.node_execution.contracts import IndependentAgentInput
@@ -85,16 +81,18 @@ class IndependentAgent(BaseAgent):
 
     def __init__(
         self,
-        config: AgentConfig,
-        session_manager: KimiSessionManager,
+        # NOTE: Using Any because the config package shadows config.py and
+        # dynamically imports Config, which basedpyright cannot resolve as a type.
+        config: Any,
+        session_manager: SessionManager,
         node_id: str = "dev",
         project_root: Path | None = None,
     ) -> None:
         """Initialize the IndependentAgent.
 
         Args:
-            config: Agent configuration object.
-            session_manager: KimiSessionManager for SDK interactions.
+            config: Agent configuration object (Config instance).
+            session_manager: SessionManager for SDK interactions.
             node_id: The node identifier for loading persona from nodes/{node_id}/persona.json.
             project_root: Root directory of the project. If None, uses cwd.
 
@@ -106,11 +104,14 @@ class IndependentAgent(BaseAgent):
         self.project_root = project_root or Path.cwd()
 
         # Story 11.1: Instance variables for agent_file and work_dir
-        self._agent_file: Path | None = None
+        self._agent_file: Path | None = self._build_agent_file_path()
         self._work_dir: Path | None = None
 
         # Initialize contract builder (P0: Node Prompt Contract Builder)
         self.contract_builder = create_contract_builder()
+
+        # Story 29.6: Initialize PromptTemplateEngine for Four-Layer Architecture
+        self._prompt_engine = PromptTemplateEngine(self.project_root)
 
         # Load persona
         try:
@@ -128,6 +129,28 @@ class IndependentAgent(BaseAgent):
             node_id=node_id,
         )
 
+    def _build_agent_file_path(self) -> Path | None:
+        """Build agent file path based on project_root.
+
+        P0 Fix: Handles both repo_root and autoBMAD as project_root.
+        """
+        if self.project_root.name == "autoBMAD":
+            return (
+                self.project_root
+                / "docuswarm"
+                / "agents"
+                / "configs"
+                / "independent_agent.yaml"
+            )
+        return (
+            self.project_root
+            / "autoBMAD"
+            / "docuswarm"
+            / "agents"
+            / "configs"
+            / "independent_agent.yaml"
+        )
+
     @override
     def _format_system_prompt(self) -> str:
         """Format system prompt with persona details and agent instructions.
@@ -142,85 +165,132 @@ class IndependentAgent(BaseAgent):
         # Build complete system prompt with agent instructions
         # Story 11.2: Modified to use create_deliverable tool instead of inline JSON
         # P0 Single Truth: Include file_path and sha256 from tool output
-        instructions = """## Agent Instructions
+        # TDD-07: Use MCP tool name format
+        # Story 38.4: Added explicit submit_execution_report tool instructions
+        create_deliverable_tool = f"mcp__docuswarm-deliverable-{self.node_id}__create_deliverable"
+        submit_report_tool = f"mcp__docuswarm-deliverable-{self.node_id}__submit_execution_report"
+        instructions = f"""## Agent Instructions
 
 You are an Independent Agent that creates deliverables and generates questions.
 
+## CRITICAL: Mandatory Tool Call Sequence (Story 38.4)
+
+You MUST follow this exact tool call sequence:
+
+### Step 1: Create Deliverable
+Use the '{create_deliverable_tool}' tool to save your document:
+- Parameters: title (string), content (Markdown string)
+- Returns: file_path, sha256, word_count, section_index
+- **IMPORTANT**: Save the returned file_path and sha256 for Step 2
+
+### Step 2: Submit Execution Report (MANDATORY)
+Use the '{submit_report_tool}' tool to submit your execution report:
+- **WHEN**: Immediately AFTER successfully calling create_deliverable
+- **WHY**: This provides structured metadata about your work and any questions
+
 ## Execution Workflow
 
-1. **Create Deliverable**: Use the 'create_deliverable' tool to save your document
+1. **Create Deliverable**: Use '{create_deliverable_tool}' to save your document
    - The tool accepts: title (string) and content (Markdown string)
    - This writes the deliverable to a .md file
-   - The tool returns metadata including: file_path, sha256, word_count, section_index
+   - **CAPTURE**: file_path and sha256 from the tool result
 
-2. **Generate Questions**: Formulate follow-up questions with priorities
+2. **Submit Execution Report**: Use '{submit_report_tool}' to submit structured report
+   - **REQUIRED**: Use the EXACT file_path and sha256 from Step 1
+   - **REQUIRED**: Use the SAME title as provided to create_deliverable
+   - **OPTIONAL**: Include clarifying questions with valid priority values
 
-3. **Return Execution Report**: After using tools, you MUST return a JSON response
+## submit_execution_report Tool Parameters
 
-## CRITICAL: Output Format
-
-After executing tools, you MUST respond with ONLY this exact JSON structure:
+The execution report must contain:
 
 ```json
-{
-  "deliverable": {
-    "title": "Brief title of what you created",
-    "content": "Brief summary (1-2 sentences, NOT the full document)",
+{{
+  "deliverable": {{
+    "title": "Same title used in create_deliverable",
+    "file_path": "EXACT path from create_deliverable result - DO NOT MODIFY",
+    "sha256": "EXACT hash from create_deliverable result - DO NOT MODIFY"
+  }},
+  "questions": [
+    {{
+      "question": "Your question text here?",
+      "priority": "blocking | clarifying | optional",
+      "context": "Why this question is relevant"
+    }}
+  ],
+  "action": "create_deliverable"
+}}
+```
+
+## Question Priority Enum Values (Story 38.4)
+
+The questions[].priority field MUST be one of these three values:
+
+| Priority | Description | When to Use |
+|----------|-------------|-------------|
+| **blocking** | Must be answered before proceeding | Use when missing critical information that prevents task completion. You MUST have an answer to proceed. |
+| **clarifying** | Help refine the deliverable | Use for ambiguities or areas needing more detail to improve the document quality. |
+| **optional** | Nice-to-have for future consideration | Use for suggestions or improvements that are not required now but may help in future. |
+
+**IMPORTANT**: Any other value (e.g., "urgent", "high", "medium", "low") will be REJECTED.
+
+## Tool Call Sequence Example (Story 38.4)
+
+Here is the CORRECT sequence:
+
+```
+1. Call Tool: {create_deliverable_tool}
+   Input: {{"title": "API Design Document", "content": "# API Design..."}}
+   Output: {{
+     "file_path": "/output/pipeline-123/api-design-document.md",
+     "sha256": "a3f5c8e9d2b1f4e6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0"
+   }}
+
+2. Call Tool: {submit_report_tool}
+   Input: {{
+     "deliverable": {{
+       "title": "API Design Document",
+       "file_path": "/output/pipeline-123/api-design-document.md",
+       "sha256": "a3f5c8e9d2b1f4e6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0"
+     }},
+     "questions": [
+       {{
+         "question": "Should we include rate limiting specifications?",
+         "priority": "clarifying",
+         "context": "Important for API scalability planning"
+       }}
+     ],
+     "action": "create_deliverable"
+   }}
+   Output: {{"status": "success", "report": <your_report>}}
+```
+
+## CRITICAL REMINDERS
+
+1. **ALWAYS call submit_execution_report AFTER create_deliverable** - Never skip this step
+2. **Use EXACT file_path and sha256 values** - Do not modify or guess these values
+3. **Use ONLY valid priority values**: "blocking", "clarifying", "optional"
+4. **action must be exactly**: "create_deliverable"
+5. **The document content goes ONLY to create_deliverable** - submit_execution_report only needs metadata
+
+## Legacy Output Format (Fallback)
+
+If for any reason you cannot use the submit_execution_report tool, you MAY return this JSON structure directly:
+
+```json
+{{
+  "deliverable": {{
+    "title": "Brief title",
+    "content": "Brief summary (1-2 sentences)",
     "file_path": "path from tool output",
     "sha256": "hash from tool output"
-  },
-  "questions": [
-    {
-      "question": "Question text?",
-      "priority": "blocking | clarifying | optional",
-      "context": "Context or rationale for this question"
-    }
-  ],
+  }},
+  "questions": [],
   "action": "create_deliverable"
-}
+}}
 ```
 
-**IMPORTANT**:
-- The entire response must be valid JSON parseable by json.loads()
-- Do NOT include markdown formatting outside the JSON
-- The "deliverable.content" field is just a SUMMARY, not the full document
-- The full document was already saved via the tool
-- You MUST include "file_path" and "sha256" from the create_deliverable tool output
-
-## Question Priorities
-
-- **blocking**: Must be answered before proceeding
-- **clarifying**: Help refine the deliverable
-- **optional**: Nice-to-have for future consideration
-
-## Example
-
-Correct response after creating a document:
-```json
-{
-  "deliverable": {
-    "title": "Project Analysis Report",
-    "content": "Created comprehensive analysis covering architecture and requirements.",
-    "file_path": "output/pipeline-123/project-analysis-report.md",
-    "sha256": "a3f5c8e9d2b1..."
-  },
-  "questions": [
-    {
-      "question": "Should we include performance benchmarks?",
-      "priority": "clarifying",
-      "context": "To provide quantitative performance data for stakeholders"
-    }
-  ],
-  "action": "create_deliverable"
-}
-```
-
-Incorrect response (will cause parsing error):
-```
-## Summary
-
-I have created a Project Analysis Report...
-```
+**Note**: The tool-based approach (submit_execution_report) is STRONGLY preferred.
 """
         return f"{persona_prompt}\n\n{instructions}"
 
@@ -240,91 +310,155 @@ I have created a Project Analysis Report...
         """
         return self.contract_builder.render_independent_system_prompt(contract)
 
-    async def _call_llm(self, user_message: str) -> list[Message]:
-        """Call the LLM using Session API (Story 7.4, 8.4).
+    async def _call_llm(self, user_message: str) -> list[dict[str, Any]]:
+        """Call the LLM using Four-Layer Architecture (Story 29.6).
 
         Uses session_manager.create_session() with mode="agent" and yolo=True
-        for automatic tool call approval. Processes Wire messages via
-        MessageAggregator to collect complete responses.
+        for automatic tool call approval. Creates prompts using PromptTemplateEngine
+        with Layers 2+3+4 for system_prompt_append.
 
         Args:
             user_message: The user message to send.
 
         Returns:
-            list[Message] from the LLM.
+            list[dict[str, Any]] from the LLM.
 
         Raises:
             LLMCallError: If the LLM call fails.
             SessionError: If session creation fails.
         """
-        return await self._call_llm_via_session(user_message)
+        # Story 29.6: Build prompts using Four-Layer Architecture
+        # Layer 2+3+4: Build system_prompt_append using PromptTemplateEngine
+        config = PromptBuildConfig(
+            persona_id=self.node_id,
+            task_name=user_message[:100],  # Use message preview as task name
+            deliverables=[],  # Can be populated from context if available
+            skills=[self.node_id],  # Use node_id as skill identifier
+        )
+        system_prompt_append = self._prompt_engine.build_system_prompt_append(config)
+
+        # User prompt is the pure task content
+        user_prompt = user_message
+
+        return await self._call_llm_with_prompts(
+            system_prompt_append=system_prompt_append,
+            user_prompt=user_prompt,
+        )
 
     async def _call_llm_with_prompts(
         self,
-        system_prompt: str,
+        system_prompt_append: str,
         user_prompt: str,
-    ) -> list[Message]:
-        """Call LLM with pre-built system and user prompts (P0: Contract Builder).
+        timeout: int = 900,  # RC-1 Fix: timeout parameter with 900s default (was 60)
+    ) -> list[dict[str, Any]]:
+        """Call LLM with Four-Layer Architecture prompts (Story 29.6).
+
+        Uses ClaudeAgentOptions preset format with system_prompt_append containing
+        Layers 2+3+4 (Persona, Task Context, Skills). Layer 1 (claude_code preset)
+        is provided by the SDK.
 
         Creates a session with mode="agent" and yolo=True for auto-approval.
-        Uses MessageAggregator to collect streaming Wire messages into
-        complete Message objects.
+        Uses SessionManager to collect messages.
 
-        P0: This method receives pre-built prompts from NodePromptContractBuilder,
-        enabling structured prompt contracts with node-specific task and deliverable
-        requirements.
+        Story 29.6: This method receives system_prompt_append (Layers 2+3+4) and
+        user_prompt separately, passing them to the SDK via preset format.
 
         Args:
-            system_prompt: The system prompt (from contract).
-            user_prompt: The user prompt (from contract).
+            system_prompt_append: System prompt append containing Layers 2+3+4
+                (Persona + Task Context + Skills) to append to claude_code preset.
+            user_prompt: The user prompt with pure task content.
 
         Returns:
-            list[Message] from the LLM.
+            list[dict[str, Any]] from the LLM.
 
         Raises:
             SessionError: If session creation or message processing fails.
             LLMCallError: On SDK exceptions like MaxStepsReached, RunCancelled.
         """
-        from kimi_agent_sdk import MaxStepsReached, RunCancelled
-        from kimi_agent_sdk._aggregator import MessageAggregator
-        from kimi_cli.wire.types import ApprovalRequest
-
-        # P0: Use pre-built prompts from contract
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
-
-        session = None
-        messages: list[Any] = []
+        # Story 31.5: Inject skills quick reference into system prompt
+        # Load node config to get skill permissions and append skills section
         try:
+            from autoBMAD.nodes.loader import NodeLoader
+
+            node_config = NodeLoader.load(self.node_id)
+            skills_config = node_config.tool_permissions.skills
+
+            # Check if quick reference is enabled and we have a whitelist
+            if skills_config.quick_reference_enabled and skills_config.whitelist:
+                skills_quick_ref = SkillInjector.build_skills_quick_reference(
+                    skills_config.whitelist
+                )
+                if skills_quick_ref:
+                    # Append skills section after Layer 3 (task section)
+                    system_prompt_append = f"{system_prompt_append}\n\n{skills_quick_ref}"
+                    self.logger.debug(
+                        "skills_quick_reference_injected",
+                        node_id=self.node_id,
+                        skill_count=len(skills_config.whitelist),
+                    )
+        except Exception as e:
+            # Graceful handling: log warning and continue without skills section
+            self.logger.warning(
+                "skills_injection_failed",
+                node_id=self.node_id,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+
+        messages: list[dict[str, Any]] = []
+
+        try:
+            # P2 Fix: 记录 prompt 开始
+            self.logger.info(
+                "llm_prompt_start",
+                user_prompt_length=len(user_prompt),
+                system_prompt_length=len(system_prompt_append),
+            )
+
             # Create session with mode="agent" and yolo=True for auto-approval (Story 7.4)
-            # Story 11.1: Also pass agent_file for tool registration
+            # Story 29.6: Use preset format with system_prompt_append
             sm = self.session_manager
             assert sm is not None
 
-            # Story 11.1: Pass agent_file to create_session (work_dir is set on session_manager)
+            # Story 29.6: Pass system_prompt to create_session
+            # The SDK will use claude_code preset + system_prompt (Layers 2+3+4)
             session = await sm.create_session(
                 mode="agent",
                 yolo=True,
                 agent_file=self._agent_file,
+                system_prompt=system_prompt_append,
             )
 
-            # Process wire messages with aggregator
-            aggregator: MessageAggregator = MessageAggregator()
+            # P2 Fix: 记录每个收到的消息
+            message_count = 0
+            async for msg in session.prompt(user_prompt, timeout=timeout):  # FIX-1: pass timeout
+                message_count += 1
 
-            async for wire_msg in session.prompt(full_prompt):
-                # Handle ApprovalRequest - auto-approve for independent agent (Story 7.4)
-                if isinstance(wire_msg, ApprovalRequest):
-                    # yolo=True should auto-approve, but handle explicitly just in case
-                    wire_msg.resolve("approve")
-                    self.logger.debug("approval_auto_resolved", request_id=wire_msg.id)
-                    continue
+                # 记录消息类型
+                msg_type = type(msg).__name__
+                self.logger.debug(
+                    "llm_message_received",
+                    message_index=message_count,
+                    msg_type=msg_type,
+                    has_role=hasattr(msg, "role"),
+                )
 
-                # Feed wire messages to aggregator and collect completed messages
-                for msg in aggregator.feed(wire_msg):
+                if isinstance(msg, dict):
                     messages.append(msg)
+                else:
+                    # Fix: 使用 SessionManager._message_to_dict 进行转换
+                    # 而非直接 getattr，以正确处理无 role 属性的 SDK 消息
+                    # 使用 sm 变量 (已通过 assert 验证不为 None)
+                    msg_dict = sm._message_to_dict(msg)
+                    if msg_dict:
+                        messages.append(msg_dict)
 
-            # Flush final messages
-            for msg in aggregator.flush():
-                messages.append(msg)
+            # P2 Fix: 记录 prompt 完成
+            self.logger.info(
+                "llm_prompt_complete",
+                message_count=len(messages),
+                total_received=message_count,
+            )
 
             # Return messages
             if not messages:
@@ -332,70 +466,160 @@ I have created a Project Analysis Report...
 
             return messages
 
-        except MaxStepsReached as e:
-            # Handle MaxStepsReached gracefully - return partial messages (Story 7.4)
-            self.logger.warning("max_steps_reached", error=str(e))
+        except Exception as e:
+            # Handle errors gracefully
+            self.logger.warning("llm_call_error", error=str(e), error_type=type(e).__name__)
             # Return partial messages if available
             if messages:
                 return messages
-            raise LLMCallError(f"Max steps reached: {e}") from e
-        except RunCancelled as e:
-            # Handle RunCancelled gracefully (Story 7.4)
-            self.logger.warning("run_cancelled", error=str(e))
-            if messages:
-                return messages
-            raise LLMCallError(f"Run cancelled: {e}") from e
+            raise LLMCallError(f"LLM call failed: {e}") from e
 
-    async def _call_llm_via_session(self, user_message: str) -> list[Message]:
-        """Call LLM via Session API with Wire message processing (Story 7.4).
-
-        Creates a session with mode="agent" and yolo=True for auto-approval.
-        Uses MessageAggregator to collect streaming Wire messages into
-        complete Message objects.
+    def _extract_content_from_messages(self, messages: list[dict[str, Any]]) -> str:
+        """Extract text content from messages.
 
         Args:
-            user_message: The user message to send.
-
-        Returns:
-            list[Message] from the LLM.
-
-        Raises:
-            SessionError: If session creation or message processing fails.
-            LLMCallError: On SDK exceptions like MaxStepsReached, RunCancelled.
-        """
-        # Use legacy system prompt
-        system_prompt = self._format_system_prompt()
-
-        # Call the new method with legacy prompts
-        return await self._call_llm_with_prompts(
-            system_prompt=system_prompt,
-            user_prompt=f"User request: {user_message}",
-        )
-
-    def _extract_content_from_messages(self, messages: list[Message]) -> str:
-        """Extract text content from aggregated messages.
-
-        Args:
-            messages: List of Message objects from aggregator.
+            messages: List of message dicts.
 
         Returns:
             Extracted text content, or empty string if none found.
         """
         # Get content from the last message with content
         for msg in reversed(messages):
-            if hasattr(msg, "content") and msg.content:
-                # Use SDK's extract_text() method for proper TextPart extraction
-                # This handles both string content and list of content parts
-                if hasattr(msg, "extract_text"):
-                    return msg.extract_text()  # type: ignore[return-value]
-                return str(msg.content)  # type: ignore[return-value]
+            content = msg.get("content", [])
+            if content:
+                # Handle different content formats
+                if isinstance(content, str):
+                    return content
+                elif isinstance(content, list):
+                    # Extract text from content parts
+                    texts = []
+                    for part in content:
+                        if isinstance(part, dict) and part.get("type") == "text":
+                            texts.append(part.get("text", ""))
+                    return "".join(texts)
         return ""
 
-    def _parse_response(self, response: list[Message]) -> IndependentOutput:
-        """Parse and validate LLM response against IndependentOutput schema.
+    def _extract_create_deliverable_result(
+        self, messages: list[dict[str, Any]]
+    ) -> tuple[str | None, str | None]:
+        """从 messages 中提取 create_deliverable 工具的返回结果.
+
+        数据链路验证 (来自 tools/timeout_root_cause_analyzer.py):
+          sdk_adapter.adapt_to_claude() 将 metadata dict 序列化为 JSON字符串存入 content。
+          因此 tool_result["content"] 是字符串，必须先 json.loads() 再检查 dict。
+
+        Returns:
+            (file_path, sha256) 元组，未找到时返回 (None, None)
+        """
+        import json as json_module
+
+        for msg in messages:
+            content_blocks = msg.get("content", [])
+            if not isinstance(content_blocks, list):
+                continue
+
+            for block in content_blocks:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") != "tool_result":
+                    continue
+                if block.get("is_error", False):
+                    continue  # 跳过错误结果
+
+                tool_output = block.get("content", {})
+
+                # 关键修复: content 是 JSON字符串 (sdk_adapter 序列化结果)
+                # 必须先 json.loads() 才能得到 dict
+                if isinstance(tool_output, str):
+                    try:
+                        tool_output = json_module.loads(tool_output)
+                    except json_module.JSONDecodeError:
+                        continue
+
+                if isinstance(tool_output, dict) and "file_path" in tool_output:
+                    return (
+                        str(tool_output["file_path"]),
+                        str(tool_output.get("sha256", "")),
+                    )
+        return None, None
+
+    def _extract_submit_report_result(
+        self, messages: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Extract execution reports from submit_execution_report tool results.
+
+        Story 38.3: Prioritizes submit_execution_report tool results over old parsing paths.
+        F3: Updated to support multi-document workflows (returns list of reports).
+
+        The tool returns: {"status": "success", "report": <execution_report>}
+        where execution_report contains:
+        - deliverable: {title, file_path, sha256, content_summary?} (single)
+        - deliverables: List of {title, file_path, sha256, ...} (multi-document)
+        - questions: List of {question, priority, context}
+        - action: "create_deliverable"
 
         Args:
-            response: The list[Message] from the LLM.
+            messages: List of message dicts from LLM response.
+
+        Returns:
+            List of execution report dicts (may contain multiple for multi-document).
+        """
+        import json as json_module
+
+        reports: list[dict[str, Any]] = []
+
+        for msg in messages:
+            content_blocks = msg.get("content", [])
+            if not isinstance(content_blocks, list):
+                continue
+
+            for block in content_blocks:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") != "tool_result":
+                    continue
+                if block.get("is_error", False):
+                    continue  # Skip error results
+
+                tool_output = block.get("content", {})
+
+                # Handle JSON string content (SDK serialization)
+                if isinstance(tool_output, str):
+                    try:
+                        tool_output = json_module.loads(tool_output)
+                    except json_module.JSONDecodeError:
+                        continue
+
+                # Check for submit_execution_report result structure
+                if isinstance(tool_output, dict):
+                    if tool_output.get("status") == "success" and "report" in tool_output:
+                        report = tool_output["report"]
+                        if not isinstance(report, dict):
+                            continue
+
+                        # F3: 支持多文档格式 (deliverables 数组)
+                        if "deliverables" in report and isinstance(report["deliverables"], list):
+                            # 多文档格式：展开每个 deliverable 为独立 report
+                            for i, deliverable in enumerate(report["deliverables"]):
+                                reports.append({
+                                    "deliverable": deliverable,
+                                    "questions": report.get("questions", []) if i == 0 else [],
+                                    "action": report.get("action", "create_deliverable"),
+                                })
+                        # F3: 支持单文档格式 (向后兼容)
+                        elif "deliverable" in report:
+                            reports.append(report)
+
+        return reports
+
+    def _parse_response(self, response: list[dict[str, Any]]) -> IndependentOutput:
+        """Parse and validate LLM response against IndependentOutput schema.
+
+        Story 38.3: Prioritizes submit_execution_report tool results over old parsing paths.
+        Falls back to JSON content extraction if tool result is not available.
+
+        Args:
+            response: The list[dict[str, Any]] from the LLM.
 
         Returns:
             Parsed and validated output dictionary.
@@ -403,57 +627,141 @@ I have created a Project Analysis Report...
         Raises:
             ResponseParseAgentError: If parsing or validation fails.
         """
-        content = self._extract_content_from_messages(response)
+        # Story 38.3: First try to extract from submit_execution_report tool result
+        # F3: Now returns list of reports (supports multi-document)
+        submit_reports = self._extract_submit_report_result(response)
+        if submit_reports:
+            # F3: 处理多文档情况
+            if len(submit_reports) == 1:
+                # 单文档：保持原有格式
+                data = submit_reports[0]
+                self.logger.info(
+                    "parse_response_using_submit_report",
+                    deliverable_title=data.get("deliverable", {}).get("title"),
+                    questions_count=len(data.get("questions", [])),
+                )
+            else:
+                # F3: 多文档：包装为特殊格式
+                first_report = submit_reports[0]
+                data = {
+                    "deliverable": {
+                        "title": f"{self.node_id.upper()} Deliverables Set",
+                        "type": "multi-document",
+                        "documents": [r.get("deliverable", {}) for r in submit_reports],
+                        "total_word_count": sum(
+                            r.get("deliverable", {}).get("word_count", 0)
+                            for r in submit_reports
+                        ),
+                    },
+                    "questions": first_report.get("questions", []),
+                    "action": "create_deliverable",
+                }
+                self.logger.info(
+                    "parse_response_multi_document",
+                    document_count=len(submit_reports),
+                    questions_count=len(data.get("questions", [])),
+                )
+        else:
+            # Fall back to extracting JSON from content
+            content = self._extract_content_from_messages(response)
 
-        if not content or not content.strip():
-            raise ResponseParseAgentError("Empty response from LLM")
+            if not content or not content.strip():
+                raise ResponseParseAgentError("Empty response from LLM")
 
-        # Try to extract JSON from the response
-        data: dict[str, Any]  # Type annotation for type checker
+            # Try to extract JSON from the response
+            data = self._extract_data_from_content(response, content)
+
+        # Validate against IndependentOutput schema using ContextValidator
+        validator = ContextValidator()
+        validation_result = validator.validate_independent_output(data, node_id=self.node_id)
+        if not validation_result.valid:
+            # Log the first error for debugging
+            if validation_result.issues:
+                first_issue = validation_result.issues[0]
+                self.logger.error(
+                    "response_validation_failed",
+                    field=first_issue.field,
+                    message=first_issue.message,
+                    code=first_issue.code,
+                )
+            raise ResponseParseAgentError(
+                f"Response validation failed: {validation_result.issues[0].message if validation_result.issues else 'Unknown error'}"
+            )
+
+        return data
+
+    def _extract_data_from_content(
+        self, response: list[dict[str, Any]], content: str
+    ) -> dict[str, Any]:
+        """Extract execution report data from message content (fallback path).
+
+        Args:
+            response: The list[dict[str, Any]] from the LLM.
+            content: Extracted text content from messages.
+
+        Returns:
+            Parsed data dictionary.
+
+        Raises:
+            ResponseParseAgentError: If extraction fails.
+        """
         try:
-            data = extract_json(content)
+            data: dict[str, Any] = extract_json(content)
+            return data
         except ResponseParseError as e:
-            # Fallback: If LLM returned pure Markdown, construct JSON
-            if content.strip().startswith(("#", "##", "###")) or "Summary" in content[:100]:
+            # FIX-3: Extended fallback condition - handle any non-JSON content
+            is_non_json_text = (
+                content.strip().startswith(("#", "##", "###"))
+                or "Summary" in content[:100]
+                or not content.strip().startswith("{")  # NEW: Any non-JSON content
+            )
+
+            if is_non_json_text:
+                content_type = "markdown" if content.strip().startswith("#") else "plain_text"
                 self.logger.warning(
-                    "llm_returned_markdown_fallback",
+                    f"llm_returned_{content_type}_fallback",
                     attempting_fallback=True,
                     content_preview=content[:200],
                 )
 
-                # Extract title from first heading
-                import re as re_module
+                # Fix-2: 先从工具调用历史中提取 file_path/sha256
+                file_path, sha256 = self._extract_create_deliverable_result(response)
 
-                title_match = re_module.search(r"^#+\s*(.+)$", content, re_module.MULTILINE)
-                title = title_match.group(1) if title_match else "LLM Generated Document"
+                if file_path:
+                    # 工具已成功执行，补全 LLM 遗漏的字段
+                    import re as re_module
 
-                # Use full content as summary (will be trimmed in validation if needed)
-                data = {
-                    "deliverable": {
-                        "title": title,
-                        "content": content[:500] + "..." if len(content) > 500 else content,
-                    },
-                    "questions": [],
-                    "action": "create_deliverable",
-                }
+                    title_match = re_module.search(r"^#+\s*(.+)$", content, re_module.MULTILINE)
+                    title = title_match.group(1) if title_match else "LLM Generated Document"
 
-                self.logger.info(
-                    "markdown_fallback_success",
-                    constructed_title=title,
-                    content_length=len(content),
-                )
+                    data: dict[str, Any] = {
+                        "deliverable": {
+                            "title": title,
+                            "content": content[:500] + "..." if len(content) > 500 else content,
+                            "file_path": file_path,  # ✅ 来自工具真实返回
+                            "sha256": sha256 or "",  # ✅ 来自工具真实返回
+                        },
+                        "questions": [],
+                        "action": "create_deliverable",
+                    }
+
+                    self.logger.info(
+                        f"{content_type}_fallback_success_with_tool_result",
+                        constructed_title=title,
+                        file_path=file_path,
+                        content_length=len(content),
+                    )
+                    return data
+                else:
+                    # 工具未执行或结果丢失，拒绝处理，触发重试
+                    raise ResponseParseAgentError(
+                        f"LLM returned {content_type} instead of JSON, and no create_deliverable "
+                        "tool result found in messages. LLM must call create_deliverable "
+                        f"tool and include file_path in JSON response. Preview: {content[:200]}"
+                    ) from e
             else:
                 self.logger.error("response_parse_failed", error=str(e), content=content[:200])
                 raise ResponseParseAgentError(f"Failed to parse response: {e}") from e
-
-        # Validate against IndependentOutput schema
-        try:
-            validate_independent_output(data)
-        except ValidationError as e:
-            self.logger.error("response_validation_failed", error=str(e), data=data)
-            raise ResponseParseAgentError(f"Response validation failed: {e}") from e
-
-        return data
 
     @override
     async def execute(self, context: dict[str, Any]) -> IndependentOutput:
@@ -544,11 +852,7 @@ I have created a Project Analysis Report...
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Set instance variables for session creation (Story 11.1)
-        # agent_file is relative to project root: docuswarm/agents/configs/independent_agent.yaml
-        # project_root should be the autoBMAD directory (parent of docuswarm)
-        self._agent_file = (
-            self.project_root / "docuswarm" / "agents" / "configs" / "independent_agent.yaml"
-        )
+        self._agent_file = self._build_agent_file_path()
         self._work_dir = output_dir
 
         self.logger.info(
@@ -561,14 +865,12 @@ I have created a Project Analysis Report...
         )
 
         # Story 11.1: Create a new session manager with the correct work_dir
-        # The work_dir must be set on KimiSessionManager constructor, not create_session()
-        from kaos.path import KaosPath
-
-        from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+        # The work_dir must be set on SessionManager constructor, not create_session()
+        from autoBMAD.docuswarm.llm.session_manager import SessionManager
 
         # Create new session manager with work_dir for this pipeline execution
-        pipeline_session_manager = KimiSessionManager(
-            work_dir=KaosPath(str(output_dir)),
+        pipeline_session_manager = SessionManager(
+            work_dir=output_dir,
             agent_file=self._agent_file,
             config=self.session_manager.config if self.session_manager else None,
         )
@@ -614,6 +916,7 @@ Please create the deliverable based on the original context above. Reference spe
         self,
         agent_input: IndependentAgentInput,
         pipeline_id: str,
+        timeout: int = 900,  # RC-1 Fix: timeout parameter with 900s default (was 60)
     ) -> IndependentOutput:
         """Execute the Independent Agent with structured input (Single Context Protocol).
 
@@ -626,6 +929,7 @@ Please create the deliverable based on the original context above. Reference spe
             agent_input: Structured input containing task_name, task_description,
                 deliverable_requirements, original_context_summary, etc.
             pipeline_id: The pipeline identifier for file output.
+            timeout: Timeout in seconds for LLM calls (default: 900).
 
         Returns:
             Dict containing:
@@ -639,22 +943,20 @@ Please create the deliverable based on the original context above. Reference spe
         # Single Context Protocol: 直接从结构化输入读取字段
         # 使用 .get() 安全访问 TypedDict 的可选字段 (基于类型安全修复)
         task_name = agent_input.get("task_name", "")
-        task_description = agent_input.get("task_description", "")
-        role_supplement = agent_input.get("role_supplement", "")
-        deliverable_reqs = agent_input.get("deliverable_requirements", {})
         original_context = agent_input.get("original_context_summary", "")
         chained_deliverables = agent_input.get("chained_deliverables_summary", [])
         iteration_feedback = agent_input.get("iteration_feedback")
         shared_context = agent_input.get("shared_context", {})
+        # F1 Fix: 获取 deliverable_requirements 和 deliverable_type
+        deliverable_requirements = agent_input.get("deliverable_requirements", {})
+        deliverable_type = agent_input.get("deliverable_type", "")
 
         # Compute output directory: project_root / output / pipeline_id
         output_dir = self.project_root / "output" / pipeline_id
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Set instance variables for session creation
-        self._agent_file = (
-            self.project_root / "docuswarm" / "agents" / "configs" / "independent_agent.yaml"
-        )
+        self._agent_file = self._build_agent_file_path()
         self._work_dir = output_dir
 
         self.logger.info(
@@ -667,21 +969,21 @@ Please create the deliverable based on the original context above. Reference spe
         # P0: Build NodeExecutionContext from agent_input
         from autoBMAD.docuswarm.node_execution.contracts import NodeExecutionContext
 
+        # F4: 从 agent_input 读取 docs_context，而非强制设为空列表
+        docs_context: list[dict[str, Any]] = agent_input.get("docs_context", [])
         context = NodeExecutionContext(
             pipeline_id=pipeline_id,
             node_id=self.node_id,
             node_name=task_name,  # Fallback to task_name if node_name not in agent_input
             node_order=0,
-            task_name=task_name,
-            task_description=task_description,
-            role_supplement=role_supplement,
-            deliverable_type="",
-            deliverable_requirements=deliverable_reqs,
             original_context={"content": original_context},
             chained_deliverables=chained_deliverables,
             shared_context=shared_context,
             iteration_feedback=iteration_feedback,
-            docs_context=[],
+            docs_context=docs_context,
+            # F1 Fix: 传递 deliverable_requirements 和 deliverable_type
+            deliverable_requirements=deliverable_requirements,
+            deliverable_type=deliverable_type,
         )
 
         # P0: Build contract from context using NodePromptContractBuilder
@@ -691,15 +993,52 @@ Please create the deliverable based on the original context above. Reference spe
         system_prompt = self._format_system_prompt_with_contract(contract)
         user_prompt = self.contract_builder.render_independent_user_prompt(contract)
 
-        # Create new session manager with work_dir for this pipeline execution
-        from kaos.path import KaosPath
+        # Load node config to get tool_permissions
+        from autoBMAD.nodes.loader import NodeLoader
 
-        from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+        node_config = NodeLoader.load(self.node_id)
 
-        pipeline_session_manager = KimiSessionManager(
-            work_dir=KaosPath(str(output_dir)),
-            agent_file=self._agent_file,
-            config=self.session_manager.config if self.session_manager else None,
+        # P0 Fix: Use repo root for directory resolution, not autoBMAD subdirectory
+        # project_root currently points to autoBMAD/, but node config paths are relative to repo root
+        repo_root = (
+            self.project_root.parent if self.project_root.name == "autoBMAD" else self.project_root
+        )
+
+        # Prepare permission directories (absolute paths from repo root)
+        file_dirs = [
+            str(repo_root / d)
+            for d in node_config.tool_permissions.file_permissions.allowed_read_dirs
+        ]
+        search_dirs = [
+            str(repo_root / d) for d in node_config.tool_permissions.search_permissions.search_dirs
+        ]
+
+        # P0 Fix: Build complete NodeToolPermissions with allowed_builtin_tools
+        # F1 Fix: Use dataclasses.replace to preserve skills and shared_context
+        from dataclasses import replace
+        from autoBMAD.nodes.loader import (
+            NodeFilePermissions,
+            NodeSearchPermissions,
+        )
+
+        full_tool_permissions = replace(
+            node_config.tool_permissions,
+            file_permissions=NodeFilePermissions(allowed_read_dirs=file_dirs),
+            search_permissions=NodeSearchPermissions(search_dirs=search_dirs),
+        )
+
+        # Create new session manager with full configuration for this pipeline execution
+        # P0 Fix: Pass complete tool_permissions instead of just file_dirs/search_dirs
+        # F2 Fix: 传递 pipeline_id 以创建 shared-context MCP server
+        # F3 Fix: 传递 repo_root 作为 project_root 以正确设置 SDK Skills 发现路径
+        pipeline_session_manager = self._create_pipeline_session_manager(
+            work_dir=output_dir,
+            node_id=self.node_id,
+            file_dirs=file_dirs,
+            search_dirs=search_dirs,
+            tool_permissions=full_tool_permissions,
+            pipeline_id=pipeline_id,  # F2 Fix
+            project_root=repo_root,  # F3 Fix
         )
 
         # Temporarily replace session_manager for this execution
@@ -707,10 +1046,12 @@ Please create the deliverable based on the original context above. Reference spe
         self.session_manager = pipeline_session_manager
 
         try:
-            # P0: Call LLM with contract-based prompts
+            # Story 29.6: Call LLM with Four-Layer Architecture
+            # system_prompt from contract becomes system_prompt_append (Layers 2+3+4)
             response = await self._call_llm_with_prompts(
-                system_prompt=system_prompt,
+                system_prompt_append=system_prompt,
                 user_prompt=user_prompt,
+                timeout=timeout,  # FIX-1: pass timeout
             )
         finally:
             # Restore original session_manager
@@ -726,6 +1067,36 @@ Please create the deliverable based on the original context above. Reference spe
         )
 
         return output
+
+    def _create_pipeline_session_manager(
+        self,
+        work_dir: Path,
+        node_id: str,
+        file_dirs: list[str],
+        search_dirs: list[str],
+        tool_permissions: Any | None = None,
+        pipeline_id: str | None = None,  # F2 Fix: 添加 pipeline_id 参数
+        project_root: Path | None = None,  # F3 Fix: 添加 project_root 参数
+    ):
+        """Factory method for creating pipeline SessionManager - allows testing.
+        
+        F2 Fix: 支持 pipeline_id 参数以创建 shared-context MCP server
+        F3 Fix: 支持 project_root 参数以正确设置 SDK Skills 发现路径
+        """
+        from autoBMAD.docuswarm.llm.session_manager import SessionManager
+
+        return SessionManager(
+            work_dir=work_dir,
+            cwd=project_root or work_dir,  # F3 Fix: 使用 project_root 作为 cwd
+            output_dir=work_dir,
+            agent_file=self._agent_file,
+            config=self.session_manager.config if self.session_manager else None,
+            node_id=node_id,
+            file_dirs=file_dirs,
+            search_dirs=search_dirs,
+            tool_permissions=tool_permissions,
+            pipeline_id=pipeline_id,  # F2 Fix: 传递 pipeline_id
+        )
 
     def _build_user_message(
         self,
@@ -789,16 +1160,18 @@ Please create the deliverable based on the original context above. Reference spe
 
 # Convenience function for creating IndependentAgent
 def create_independent_agent(
-    config: AgentConfig,
-    session_manager: KimiSessionManager,
+    # NOTE: Using Any because the config package shadows config.py and
+    # dynamically imports Config, which basedpyright cannot resolve as a type.
+    config: Any,
+    session_manager: SessionManager,
     node_id: str = "dev",
     project_root: Path | None = None,
 ) -> IndependentAgent:
     """Create an IndependentAgent with configured session manager.
 
     Args:
-        config: Agent configuration.
-        session_manager: KimiSessionManager for SDK interactions.
+        config: Agent configuration (Config instance).
+        session_manager: SessionManager for SDK interactions.
         node_id: The node identifier for persona loading.
         project_root: Root directory of the project.
 

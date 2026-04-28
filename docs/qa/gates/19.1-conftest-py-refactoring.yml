@@ -1,0 +1,34 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "19.1"
+story_title: "Conftest.py Refactoring"
+gate: "PASS"
+status_reason: "All acceptance criteria met - global Kimi SDK mock removed, new fixtures created without autouse, all 217 tests pass"
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  evidence:
+    tests_reviewed: 217
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5]
+      ac_gaps: []
+
+quality_and_expiry:
+  quality_score: 100
+  expires: null
+
+recommendations:
+  immediate: []
+  future: []

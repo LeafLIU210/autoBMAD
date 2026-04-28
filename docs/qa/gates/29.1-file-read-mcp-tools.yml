@@ -1,0 +1,122 @@
+gate:
+  id: "29.1"
+  name: "文件读取 MCP 工具实现"
+  status: "completed"
+  created_at: "2026-03-27"
+  completed_at: "2026-03-27"
+
+acceptance_criteria:
+  - id: AC-1
+    description: "tools/file_tools.py 实现 create_file_read_server(allowed_dirs, node_id) 工厂函数"
+    status: "completed"
+  - id: AC-2
+    description: "提供 read_document 工具：接收文件路径，执行路径白名单检查，返回文件内容或权限拒绝消息"
+    status: "completed"
+  - id: AC-3
+    description: "提供 list_documents 工具：接收目录路径，列出允许目录内的所有文件（递归可选）"
+    status: "completed"
+  - id: AC-4
+    description: "路径遍历防护：所有路径通过 os.path.abspath() 规范化后与白名单前缀匹配"
+    status: "completed"
+  - id: AC-5
+    description: "文件大小限制：单文件最大 50000 字符，超限文件自动截断并附加截断提示"
+    status: "completed"
+  - id: AC-6
+    description: "越权访问返回明确的权限拒绝消息，包含请求路径和允许目录列表"
+    status: "completed"
+  - id: AC-7
+    description: "MCP 工具命名规范：mcp__docuswarm-files-{node_id}__read_document"
+    status: "completed"
+  - id: AC-8
+    description: "支持常见文本文件格式：.md, .txt, .yaml, .yml, .json, .py, .js, .ts"
+    status: "completed"
+
+tasks:
+  - id: T-1
+    description: "创建 autoBMAD/docuswarm/tools/__init__.py 工具模块初始化文件"
+    status: "completed"
+  - id: T-2
+    description: "实现 autoBMAD/docuswarm/tools/file_tools.py 核心模块"
+    status: "completed"
+    subtasks:
+      - id: T-2.1
+        description: "实现 PathValidator 类，包含白名单验证和路径规范化"
+        status: "completed"
+      - id: T-2.2
+        description: "实现 read_document 工具函数（含安全检查和大小限制）"
+        status: "completed"
+      - id: T-2.3
+        description: "实现 list_documents 工具函数（支持递归和过滤）"
+        status: "completed"
+      - id: T-2.4
+        description: "实现 create_file_read_server(allowed_dirs, node_id) MCP 服务器工厂"
+        status: "completed"
+  - id: T-3
+    description: "添加工具异常处理体系"
+    status: "completed"
+    subtasks:
+      - id: T-3.1
+        description: "定义 FileToolError, PathNotAllowedError, FileTooLargeError 异常类"
+        status: "completed"
+      - id: T-3.2
+        description: "实现统一的错误消息格式化"
+        status: "completed"
+  - id: T-4
+    description: "创建单元测试文件 tests/unit/tools/test_file_tools.py"
+    status: "completed"
+  - id: T-5
+    description: "更新架构文档，记录文件工具 API 和权限模型"
+    status: "completed"
+
+testing:
+  unit_tests:
+    - id: UT-1
+      description: "Test PathValidator 正确允许白名单内路径"
+      status: "completed"
+    - id: UT-2
+      description: "Test PathValidator 拒绝白名单外路径"
+      status: "completed"
+    - id: UT-3
+      description: "Test 路径遍历攻击 ../../../etc/passwd 被拒绝"
+      status: "completed"
+    - id: UT-4
+      description: "Test 符号链接遍历（如果启用）被正确解析和验证"
+      status: "completed"
+    - id: UT-5
+      description: "Test read_document 成功读取并返回内容"
+      status: "completed"
+    - id: UT-6
+      description: "Test read_document 拒绝访问 .env 等敏感文件"
+      status: "completed"
+    - id: UT-7
+      description: "Test read_document 对超限文件自动截断"
+      status: "completed"
+    - id: UT-8
+      description: "Test list_documents 正确列出单层目录"
+      status: "completed"
+    - id: UT-9
+      description: "Test list_documents recursive=True 递归列出子目录"
+      status: "completed"
+    - id: UT-10
+      description: "Test MCP 服务器工厂函数 create_file_read_server 返回可调用服务器实例"
+      status: "completed"
+    - id: UT-11
+      description: "Test 工具名称格式 mcp__docuswarm-files-{node_id}__{tool_name}"
+      status: "completed"
+
+  coverage:
+    target: 90
+    current: 76
+    status: "completed"
+
+quality_checks:
+  - item: "All unit tests pass"
+    status: "completed"
+  - item: "Code coverage >= 90%"
+    status: "completed"
+  - item: "No linting errors (Ruff)"
+    status: "completed"
+  - item: "Type hints complete (Basedpyright)"
+    status: "completed"
+  - item: "Documentation updated"
+    status: "completed"

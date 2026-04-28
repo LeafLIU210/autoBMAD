@@ -1,0 +1,270 @@
+{
+  "issue_id": "F3",
+  "severity": "CRITICAL",
+  "title": "工具权限配置被SessionManager放大，节点白名单没有成为真实边界",
+  "tests": [
+    {
+      "test": "node_config_tool_permissions",
+      "issue": "Node yaml declares limited builtin tools, but runtime grants more",
+      "evidence": [
+        {
+          "location": "autoBMAD/nodes/*/node.yaml",
+          "node_configs": {
+            "analyst": {
+              "allowed_builtin_tools": [
+                "Read",
+                "Glob"
+              ],
+              "file_permissions": {
+                "allowed_read_dirs": [
+                  "docs/"
+                ]
+              },
+              "search_permissions": {
+                "search_dirs": [
+                  "docs/"
+                ]
+              }
+            },
+            "pm": {
+              "allowed_builtin_tools": [
+                "Read",
+                "Glob"
+              ],
+              "file_permissions": {
+                "allowed_read_dirs": [
+                  "docs/"
+                ]
+              },
+              "search_permissions": {
+                "search_dirs": [
+                  "docs/"
+                ]
+              }
+            },
+            "ux": {
+              "allowed_builtin_tools": [
+                "Read",
+                "Glob"
+              ],
+              "file_permissions": {
+                "allowed_read_dirs": [
+                  "docs/"
+                ]
+              },
+              "search_permissions": {
+                "search_dirs": [
+                  "docs/"
+                ]
+              }
+            },
+            "architect": {
+              "allowed_builtin_tools": [
+                "Read",
+                "Glob"
+              ],
+              "file_permissions": {
+                "allowed_read_dirs": [
+                  "docs/"
+                ]
+              },
+              "search_permissions": {
+                "search_dirs": [
+                  "docs/"
+                ]
+              }
+            },
+            "po": {
+              "allowed_builtin_tools": [
+                "Read",
+                "Glob"
+              ],
+              "file_permissions": {
+                "allowed_read_dirs": [
+                  "docs/"
+                ]
+              },
+              "search_permissions": {
+                "search_dirs": [
+                  "docs/"
+                ]
+              }
+            }
+          },
+          "finding": "All nodes declare allowed_builtin_tools=['Read', 'Glob'] (or similar limited set)"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "session_manager_builtin_tools",
+      "issue": "SessionManager._get_builtin_tools() returns ALL 5 builtin tools regardless of node config",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/llm/session_manager.py:168-175",
+          "session_manager_builtin_tools": [
+            "Read",
+            "Glob",
+            "Grep",
+            "Edit",
+            "Bash"
+          ],
+          "node_config_expected": [
+            "Read",
+            "Glob"
+          ],
+          "extra_tools_granted": [
+            "Grep",
+            "Edit",
+            "Bash"
+          ],
+          "verdict": "BUG CONFIRMED"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "build_allowed_tools_composition",
+      "issue": "_build_allowed_tools() always adds ALL builtin tools before filtering",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/llm/session_manager.py:177-227",
+          "code": [
+            "Line 177:     def _build_allowed_tools(self) -> list[str]:",
+            "Line 178:         \"\"\"Build the complete list of allowed tools.",
+            "Line 179: ",
+            "Line 180:         This method combines:",
+            "Line 181:         1. \"Skill\" tool (first for priority access to SDK native skills, if enabled)",
+            "Line 182:         2. Built-in tools (Read, Glob, Grep, Edit, Bash)",
+            "Line 183:         3. MCP tools from NodeToolFilter (if configured)",
+            "Line 184: ",
+            "Line 185:         Returns:",
+            "Line 186:             List of allowed tool names with \"Skill\" as the first entry when enabled.",
+            "Line 187:         \"\"\"",
+            "Line 188:         tools: list[str] = []",
+            "Line 189: ",
+            "Line 190:         # F1 Fix: Conditionally add \"Skill\" tool based on sdk_native setting",
+            "Line 191:         if (self._tool_permissions is not None and ",
+            "Line 192:             self._tool_permissions.skills.sdk_native):",
+            "Line 193:             # Add \"Skill\" tool as first entry for SDK native skills priority",
+            "Line 194:             tools.append(\"Skill\")",
+            "Line 195:             self._logger.debug(\"sdk_native_skills_enabled\", node_id=self._node_id)",
+            "Line 196:         else:",
+            "Line 197:             self._logger.debug(\"sdk_native_skills_disabled\", node_id=self._node_id)",
+            "Line 198: ",
+            "Line 199:         # Add built-in tools",
+            "Line 200:         tools.extend(self._get_builtin_tools())",
+            "Line 201: ",
+            "Line 202:         # Add MCP tools if node_id and tool_permissions are configured",
+            "Line 203:         if self._node_id and self._tool_permissions is not None:",
+            "Line 204:             try:",
+            "Line 205:                 from autoBMAD.docuswarm.llm.tool_filter import NodeToolFilter",
+            "Line 206: ",
+            "Line 207:                 node_filter = NodeToolFilter(",
+            "Line 208:                     node_id=self._node_id,",
+            "Line 209:                     tool_permissions=self._tool_permissions,",
+            "Line 210:                     output_dir=str(self._output_dir) if self._output_dir else None,",
+            "Line 211:                 )",
+            "Line 212: "
+          ],
+          "has_unconditional_builtin": true,
+          "has_conditional_logic": false,
+          "verdict": "BUG CONFIRMED"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "create_options_permission_mode",
+      "issue": "yolo=True sets permission_mode='bypassPermissions' which bypasses ALL tool restrictions",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/llm/session_manager.py:245-246",
+          "code": [
+            "Line 232:         yolo: bool = True,",
+            "Line 239:             yolo: Whether to auto-approve tool calls.",
+            "Line 245:         # Determine permission mode based on yolo",
+            "Line 246:         permission_mode = \"bypassPermissions\" if yolo else \"default\"",
+            "Line 250:             \"permission_mode\": permission_mode,",
+            "Line 372:         yolo: bool = True,",
+            "Line 383:             yolo: Whether to auto-approve tool calls (True for IndependentAgent).",
+            "Line 388:                 approval logic. If provided and yolo=False, this handler will",
+            "Line 402:                 yolo=yolo,",
+            "Line 410:             options = self._create_options(mode=mode, yolo=yolo)",
+            "Line 535:         yolo: bool = True,",
+            "Line 545:             yolo: Whether to auto-approve tool calls.",
+            "Line 572:             yolo=yolo,",
+            "Line 581:         yolo: bool = True,",
+            "Line 591:             yolo: Whether to auto-approve tool calls.",
+            "Line 619:             options = self._create_options(mode=mode, yolo=yolo, output_format=output_format)"
+          ],
+          "finding": "permission_mode = 'bypassPermissions' when yolo=True, which bypasses SDK-level permission checks"
+        }
+      ],
+      "severity": "CRITICAL"
+    },
+    {
+      "test": "full_allowed_tools_mismatch",
+      "node_expected": [
+        "Read",
+        "Glob"
+      ],
+      "session_manager_actual": [
+        "Skill",
+        "Read",
+        "Glob",
+        "Grep",
+        "Edit",
+        "Bash",
+        "mcp__docuswarm-files-analyst__read_document",
+        "mcp__docuswarm-files-analyst__list_documents",
+        "mcp__docuswarm-search-analyst__grep_search",
+        "mcp__docuswarm-search-analyst__glob_search",
+        "mcp__docuswarm-deliverable-analyst__create_deliverable",
+        "mcp__docuswarm-deliverable-analyst__submit_execution_report",
+        "mcp__docuswarm-shared-context-analyst__update_context"
+      ],
+      "unexpected_tools": [
+        "Grep",
+        "Edit",
+        "Bash"
+      ],
+      "missing_tools": [],
+      "verdict": "BUG CONFIRMED"
+    }
+  ],
+  "chain_analysis": {
+    "chain": [
+      {
+        "step": 1,
+        "layer": "Node Configuration (node.yaml)",
+        "declaration": "allowed_builtin_tools: [\"Read\", \"Glob\"]",
+        "intent": "Node should only read files and list directories"
+      },
+      {
+        "step": 2,
+        "layer": "SessionManager._get_builtin_tools()",
+        "behavior": "Returns [\"Read\", \"Glob\", \"Grep\", \"Edit\", \"Bash\"]",
+        "violation": "Ignores node config, adds Edit and Bash unconditionally"
+      },
+      {
+        "step": 3,
+        "layer": "SessionManager._build_allowed_tools()",
+        "behavior": "Calls _get_builtin_tools() and extends with MCP tools",
+        "violation": "Never consults NodeToolPermissions.allowed_builtin_tools"
+      },
+      {
+        "step": 4,
+        "layer": "SessionManager._create_options()",
+        "behavior": "yolo=True -> permission_mode='bypassPermissions'",
+        "violation": "SDK-level bypass may override allowed_tools list entirely"
+      },
+      {
+        "step": 5,
+        "layer": "Runtime Effect",
+        "behavior": "Agent can Edit files and execute Bash commands",
+        "risk": "Document generation pipeline can modify source code or execute arbitrary shell"
+      }
+    ]
+  }
+}

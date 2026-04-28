@@ -1,0 +1,40 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "21.5"
+story_title: "重写五个节点的 node.yaml 配置"
+gate: "PASS"
+status_reason: "All 65 tests pass, NodeLoader correctly loads all 5 nodes with new BMM-aligned task and deliverable format. Deprecated fields (description, questions, dependencies) successfully removed from all node.yaml files."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 65
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+    ac_gaps: []
+
+# NFR Validation
+nfr_validation:
+  security: { status: PASS, notes: "No security changes in this story" }
+  performance: { status: PASS, notes: "No performance impact" }
+  reliability: { status: PASS, notes: "No reliability impact" }
+  maintainability: { status: PASS, notes: "New format improves maintainability with consistent structure" }
+
+# Recommendations
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding integration tests for full pipeline loading"
+      refs: ["tests/integration/test_node_pipeline.py"]

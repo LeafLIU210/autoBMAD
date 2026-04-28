@@ -1,0 +1,40 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision
+# Story: 22.3 - Implement _format_task_section()
+
+schema: 1
+story: "22.3"
+story_title: "Implement _format_task_section()"
+gate: "PASS"
+status_reason: "All acceptance criteria implemented correctly, all 6 unit tests passing, type checking and linting clean."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Issues - none found
+top_issues: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Quality gate evidence
+evidence:
+  tests_reviewed: 6
+  tests_passed: 6
+  tests_failed: 0
+  type_check: "PASS (0 errors, 0 warnings)"
+  lint_check: "PASS (all checks passed)"
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]  # All 5 ACs covered by tests
+    ac_gaps: []
+
+# Implementation verified
+verification:
+  implementation_file: "autoBMAD/docuswarm/agents/independent.py"
+  implementation_method: "_format_task_section"
+  test_file: "tests/agents/test_system_prompt_sections.py"
+  test_class: "TestTaskSectionFormatting"
+  coverage: "100% of _format_task_section() function covered"

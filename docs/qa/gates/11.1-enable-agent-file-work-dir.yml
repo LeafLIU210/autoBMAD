@@ -1,0 +1,63 @@
+# QA Gate - Story 11.1
+# Enable agent_file and work_dir on IndependentAgent
+
+story_id: "11.1"
+story_title: "Enable agent_file and work_dir on IndependentAgent"
+epic: "11"
+status: "PASS"
+
+decision: "PASS"
+decision_rationale: |
+  All quality gates pass after fix. The implementation correctly:
+  - Creates a new KimiSessionManager instance with work_dir set on the constructor
+  - Passes agent_file to create_session() for tool registration
+  - All acceptance criteria are met
+
+gate_date: "2026-02-23"
+reviewed_by: "Quinn (Test Architect)"
+
+quality_checks:
+  document_completeness:
+    status: "PASS"
+    score: 100
+    notes: |
+      - Story title and status present
+      - All acceptance criteria checked
+      - All tasks/subtasks completed
+      - File list provided
+      - Change log updated
+      - Testing section has unit, integration, and manual tests defined
+
+  tool_validation:
+    - tool: "BasedPyright (Type Checking)"
+      target: "0 errors"
+      result: "PASS"
+      details: |
+        Type checking passes with 0 errors on independent.py
+        (52 errors exist in other unrelated files, but not in story-related code)
+
+    - tool: "Ruff (Linting)"
+      target: "0 errors"
+      result: "PASS"
+      details: "All checks passed on story-related files"
+
+    - tool: "Unit Tests"
+      target: "All tests pass"
+      result: "PASS"
+      details: "37 tests passed, 16 skipped (skipped tests are SDK mock-related, not story-specific)"
+
+fix_applied:
+  date: "2026-02-23"
+  description: |
+    Implemented Option 1: Create a new KimiSessionManager instance per pipeline execution with work_dir.
+    - Modified execute() to create a new KimiSessionManager with the correct work_dir
+    - Removed invalid work_dir parameter from create_session() call
+    - Pass agent_file to create_session() as intended
+
+issues:
+  critical: []
+
+recommendations: []
+
+next_steps:
+  - "Story ready for completion"

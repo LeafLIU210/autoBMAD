@@ -378,6 +378,20 @@ class PipelineError(DocuSwarmError):
         return self._context.get("current_state")
 
 
+class OrchestratorError(DocuSwarmError):
+    """Base exception for orchestrator errors.
+
+    This exception serves as the base class for all orchestrator-related
+    errors, providing a common exception type for pipeline orchestration
+    failures.
+
+    Example:
+        >>> raise OrchestratorError("Pipeline execution failed")
+    """
+
+    pass
+
+
 class ContextIsolationError(DocuSwarmError):
     """Raised when context isolation principles are violated.
 
@@ -480,17 +494,6 @@ class ContextIsolationError(DocuSwarmError):
         return self._context.get("resource")
 
 
-class AgentError(DocuSwarmError):
-    """Raised when an agent operation fails.
-
-    This exception is kept for backward compatibility with existing code.
-    For new code, consider using more specific exceptions like LLMError
-    or PipelineError depending on the failure mode.
-    """
-
-    pass
-
-
 class NodeExecutionError(PipelineError):
     """Raised when a node execution fails.
 
@@ -509,13 +512,283 @@ class NodeExecutionError(PipelineError):
     pass
 
 
-class ValidationError(DocuSwarmError):
-    """Raised when data validation fails.
+class ContextValidationError(OrchestratorError):
+    """Raised when context validation fails.
 
-    This exception is kept for backward compatibility with existing code.
+    This exception is used when the context provided to the pipeline
+    does not meet validation requirements. This can include:
+    - Missing required fields
+    - Invalid field types or values
+    - Insufficient context for pipeline execution
+
+    Attributes:
+        validation_errors: List of specific validation error messages.
+
+    Example:
+        >>> raise ContextValidationError(
+        ...     "Context validation failed",
+        ...     validation_errors=["Missing required field 'subject'"]
+        ... )
     """
 
-    pass
+    def __init__(
+        self,
+        message: str | None = None,
+        context: dict[str, Any] | None = None,
+        *,
+        validation_errors: list[str] | None = None,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """Initialize ContextValidationError.
+
+        Args:
+            message: The error message.
+            context: Optional context dictionary.
+            validation_errors: List of specific validation error messages.
+            **kwargs: Additional context fields.
+        """
+        super().__init__(message, context, **kwargs)
+        if validation_errors is not None:
+            self._context["validation_errors"] = validation_errors
+
+    @property
+    def validation_errors(self) -> list[str] | None:
+        """Get the list of validation errors."""
+        return self._context.get("validation_errors")
+
+
+class FileToolError(DocuSwarmError):
+    """Raised when a file tool operation fails.
+
+    This exception serves as the base class for all file tool-related errors,
+    providing a common exception type for file reading and listing operations.
+
+    Attributes:
+        file_path: Path to the file that caused the error.
+        operation: The operation being performed (e.g., 'read', 'list').
+
+    Example:
+        >>> raise FileToolError(
+        ...     "File operation failed",
+        ...     file_path="/docs/file.txt",
+        ...     operation="read"
+        ... )
+    """
+
+    def __init__(
+        self,
+        message: str | None = None,
+        context: dict[str, Any] | None = None,
+        *,
+        file_path: str | None = None,
+        operation: str | None = None,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """Initialize FileToolError.
+
+        Args:
+            message: The error message.
+            context: Optional context dictionary.
+            file_path: Path to the file that caused the error.
+            operation: The operation being performed.
+            **kwargs: Additional context fields.
+        """
+        super().__init__(message, context, **kwargs)
+        if file_path is not None:
+            self._context["file_path"] = file_path
+        if operation is not None:
+            self._context["operation"] = operation
+
+    @property
+    def file_path(self) -> str | None:
+        """Get the file path that caused the error."""
+        return self._context.get("file_path")
+
+    @property
+    def operation(self) -> str | None:
+        """Get the operation being performed."""
+        return self._context.get("operation")
+
+
+class PathNotAllowedError(FileToolError):
+    """Raised when a path is outside allowed directories.
+
+    This exception enforces the security boundary for file operations,
+    preventing path traversal attacks and unauthorized access attempts.
+
+    Attributes:
+        requested_path: The path that was requested.
+        allowed_dirs: List of directories that are allowed to be accessed.
+
+    Example:
+        >>> raise PathNotAllowedError(
+        ...     "Path not in allowed directories",
+        ...     requested_path="/etc/passwd",
+        ...     allowed_dirs=["/docs", "/docs/research"]
+        ... )
+    """
+
+    def __init__(
+        self,
+        message: str | None = None,
+        context: dict[str, Any] | None = None,
+        *,
+        requested_path: str | None = None,
+        allowed_dirs: list[str] | None = None,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """Initialize PathNotAllowedError.
+
+        Args:
+            message: The error message.
+            context: Optional context dictionary.
+            requested_path: The path that was requested.
+            allowed_dirs: List of allowed directories.
+            **kwargs: Additional context fields.
+        """
+        if message is None and requested_path is not None:
+            message = f"Path not in allowed directories: {requested_path}"
+
+        super().__init__(message, context, **kwargs)
+        if requested_path is not None:
+            self._context["requested_path"] = requested_path
+        if allowed_dirs is not None:
+            self._context["allowed_dirs"] = allowed_dirs
+
+    @property
+    def requested_path(self) -> str | None:
+        """Get the requested path."""
+        return self._context.get("requested_path")
+
+    @property
+    def allowed_dirs(self) -> list[str]:
+        """Get the list of allowed directories."""
+        return self._context.get("allowed_dirs", [])
+
+    @override
+    def __str__(self) -> str:
+        """Return formatted error message with allowed directories."""
+        base_msg = self._message
+        allowed = self.allowed_dirs
+        if allowed:
+            allowed_str = ", ".join(f"'{d}'" for d in allowed)
+            return f"{base_msg}. Allowed directories: [{allowed_str}]"
+        return base_msg
+
+
+class FileTooLargeError(FileToolError):
+    """Raised when a file exceeds the size limit.
+
+    This exception prevents memory issues when attempting to read
+    excessively large files.
+
+    Attributes:
+        file_path: Path to the file that exceeded the limit.
+        file_size: Actual size of the file in characters.
+        max_size: Maximum allowed size in characters.
+
+    Example:
+        >>> raise FileTooLargeError(
+        ...     "File exceeds size limit",
+        ...     file_path="/docs/large.txt",
+        ...     file_size=100000,
+        ...     max_size=50000
+        ... )
+    """
+
+    def __init__(
+        self,
+        message: str | None = None,
+        context: dict[str, Any] | None = None,
+        *,
+        file_path: str | None = None,
+        file_size: int | None = None,
+        max_size: int | None = None,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """Initialize FileTooLargeError.
+
+        Args:
+            message: The error message.
+            context: Optional context dictionary.
+            file_path: Path to the file.
+            file_size: Actual size of the file.
+            max_size: Maximum allowed size.
+            **kwargs: Additional context fields.
+        """
+        if message is None and file_size is not None and max_size is not None:
+            message = f"File size ({file_size}) exceeds maximum allowed ({max_size})"
+
+        super().__init__(message, context, **kwargs)
+        if file_path is not None:
+            self._context["file_path"] = file_path
+        if file_size is not None:
+            self._context["file_size"] = file_size
+        if max_size is not None:
+            self._context["max_size"] = max_size
+
+    @property
+    def file_size(self) -> int | None:
+        """Get the file size."""
+        return self._context.get("file_size")
+
+    @property
+    def max_size(self) -> int | None:
+        """Get the maximum allowed size."""
+        return self._context.get("max_size")
+
+
+class SearchToolError(DocuSwarmError):
+    """Raised when a search tool operation fails.
+
+    This exception serves as the base class for all search tool-related errors,
+    providing a common exception type for grep and glob search operations.
+
+    Attributes:
+        search_dirs: List of directories being searched.
+        operation: The operation being performed (e.g., 'grep', 'glob').
+
+    Example:
+        >>> raise SearchToolError(
+        ...     "Search operation failed",
+        ...     search_dirs=["/docs"],
+        ...     operation="grep"
+        ... )
+    """
+
+    def __init__(
+        self,
+        message: str | None = None,
+        context: dict[str, Any] | None = None,
+        *,
+        search_dirs: list[str] | None = None,
+        operation: str | None = None,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """Initialize SearchToolError.
+
+        Args:
+            message: The error message.
+            context: Optional context dictionary.
+            search_dirs: List of directories being searched.
+            operation: The operation being performed.
+            **kwargs: Additional context fields.
+        """
+        super().__init__(message, context, **kwargs)
+        if search_dirs is not None:
+            self._context["search_dirs"] = search_dirs
+        if operation is not None:
+            self._context["operation"] = operation
+
+    @property
+    def search_dirs(self) -> list[str] | None:
+        """Get the search directories."""
+        return self._context.get("search_dirs")
+
+    @property
+    def operation(self) -> str | None:
+        """Get the operation being performed."""
+        return self._context.get("operation")
 
 
 # Define public API
@@ -527,6 +800,10 @@ __all__ = [
     "PipelineError",
     "NodeExecutionError",
     "ContextIsolationError",
-    "AgentError",
-    "ValidationError",
+    "ContextValidationError",
+    "OrchestratorError",
+    "FileToolError",
+    "PathNotAllowedError",
+    "FileTooLargeError",
+    "SearchToolError",
 ]

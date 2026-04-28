@@ -1,0 +1,50 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "3.9"
+story_title: "Per-Node Run Tracking"
+gate: "PASS"
+status_reason: "Story implementation is complete with all acceptance criteria met. NodeRunTracker class implemented with generate_run_id(), list_runs(), get_latest_run() methods. 26 unit tests passing with 91% coverage on run_tracker.py module. All code passes Ruff linting."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-20T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_score: 100
+
+evidence:
+  tests_reviewed: 26
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+  validation:
+    - "run_id generation produces 8-character UUID prefix"
+    - "Multiple runs tracked independently in database"
+    - "list_runs() method supports pagination with limit parameter"
+    - "get_latest_run() method supports optional context_hash filter"
+    - "Run metadata includes run_id, node_id, context_hash, start_time, end_time, status"
+    - "Run results persist with each run (deliverable, questions, evaluation)"
+    - "All 26 unit tests passing"
+    - "Ruff linting: All checks passed"
+
+nfr_validation:
+  security: { status: PASS, notes: "No security concerns - run tracking is internal functionality" }
+  performance: { status: PASS, notes: "Database indexes on node_id and context_hash ensure query performance" }
+  reliability: { status: PASS, notes: "Run tracking integrates with checkpoint system for persistence" }
+  maintainability: { status: PASS, notes: "Clean NodeRunTracker class with clear separation of concerns" }
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding run retention policy automation to clean up runs older than 30 days"
+      refs: ["docuswarm/node_execution/run_tracker.py"]
+    - action: "Consider adding run archival for historical analysis"
+      refs: ["docuswarm/node_execution/run_tracker.py"]

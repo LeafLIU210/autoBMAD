@@ -1,0 +1,42 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "35.6"
+story_title: "Add Change History Table in StateManager (P2)"
+gate: "PASS"
+status_reason: "All quality checks passed. 24/24 tests passed with 100% success rate. BasedPyright shows 0 errors/warnings, Ruff linting clean. All acceptance criteria met including schema migration, history recording, atomic transactions, and query filtering."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T16:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 24
+  tests_passed: 24
+  basedpyright_errors: 0
+  basedpyright_warnings: 0
+  ruff_issues: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+nfr_validation:
+  reliability: { status: PASS, notes: "Transaction safety verified, atomic update + history recording" }
+  maintainability: { status: PASS, notes: "Clean separation of concerns with _record_context_history() method" }
+  testability: { status: PASS, notes: "Comprehensive 24-test suite covers all operations and edge cases" }
+  performance: { status: PASS, notes: "Indexed columns for efficient querying, minimal overhead verified" }
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding pagination for get_context_history() when dealing with large history datasets"
+      refs: ["autoBMAD/docuswarm/storage/state_manager.py:get_context_history"]
+    - action: "Monitor history table growth and consider archival strategy for old records in production"
+      refs: ["docs/stories/35.6.md"]

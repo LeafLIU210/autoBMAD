@@ -1,0 +1,84 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "16.1"
+story_title: "SDKResult 数据类"
+gate: "PASS"
+status_reason: "All acceptance criteria met - SDKResult dataclass properly defined with all required fields, is_success() method implemented correctly, exception hierarchy established, all tests pass with 100% coverage."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver:
+  active: false
+
+top_issues: []
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_metrics:
+  document_completeness: 100
+  tests_passed: 100
+  test_coverage: 100
+  lint_errors: 0
+  type_errors: 0
+  type_warnings: 0
+
+tool_results:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 0
+    details: "Type checking passed with 0 errors, 0 warnings"
+  ruff:
+    status: PASS
+    errors: 0
+    warnings: 0
+    details: "Linting passed with 0 errors"
+  pytest:
+    status: PASS
+    tests_passed: 100
+    coverage: 100
+    details: "All 19 tests passing with 100% coverage on claude_sdk_wrapper.py"
+
+acceptance_criteria_verification:
+  - criterion: "SDKResult dataclass is defined with all required fields"
+    status: PASS
+  - criterion: "Contains success: bool field"
+    status: PASS
+  - criterion: "Contains content: str | None field"
+    status: PASS
+  - criterion: "Contains error: str | None field"
+    status: PASS
+  - criterion: "Contains duration: float field"
+    status: PASS
+  - criterion: "Contains messages: list[Any] field"
+    status: PASS
+  - criterion: "Contains tool_calls: list[dict[str, Any]] field"
+    status: PASS
+  - criterion: "Implements is_success() method returning True only when success=True AND content is not None"
+    status: PASS
+  - criterion: "Defines SDKError exception class as base exception"
+    status: PASS
+  - criterion: "Defines SDKNotAvailableError exception class inheriting from SDKError"
+    status: PASS
+  - criterion: "Uses @dataclass decorator with appropriate field defaults"
+    status: PASS
+  - criterion: "File is created at llm/claude_sdk_wrapper.py"
+    status: PASS
+
+notes: |
+  - Implementation follows Ralph's principles: DRY, KISS, YAGNI, Occam's Razor
+  - Uses field(default_factory=list) for mutable default fields to avoid shared state bugs
+  - is_success() method correctly returns False if content is None, even if success is True
+  - Exception hierarchy is simple and appropriate: SDKError as base, SDKNotAvailableError for specific scenarios
+  - Module exports properly configured in llm/__init__.py
+
+recommendations:
+  future: []

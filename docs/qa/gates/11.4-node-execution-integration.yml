@@ -1,0 +1,33 @@
+# QA Gate Decision - Story 11.4
+
+## Story Information
+- **Story**: 11.4 - Integrate node_execution into Pipeline Graph
+- **Status**: PASS
+- **Review Date**: 2026-02-23
+
+## Acceptance Criteria Status
+- [x] `create_pipeline_graph()` accepts optional `session_manager` parameter
+- [x] When `session_manager` provided, uses `_create_integrated_node_executor()`
+- [x] Falls back to default executor when `session_manager` is `None`
+- [x] `_create_integrated_node_executor()` calls `create_node_executor()`
+- [x] State conversion: PipelineState → NodeRunState → PipelineState
+- [x] `orchestrator.py` passes session_manager to `create_pipeline_graph()`
+- [x] File output via `FileStorage.save_deliverable()`
+
+## Test Results
+- **Unit Tests**: 31/31 PASS ✓
+- **Type Checking**: PASS (0 errors, 2 minor warnings)
+- **Linting**: PASS
+
+## Fixes Applied
+- **FileStorage Parameter Fix**: Changed `node_id=node_id` to `node_type=node_id` and `deliverable=deliverable` to `content=deliverable` in `_save_deliverable_async()` function
+- **Content Conversion**: Added logic to convert dict deliverable to string content (extracts from "content" or "markdown" key, or falls back to str())
+
+## Recommendation
+**Status**: PASS
+
+All acceptance criteria have been met:
+- All 31 unit tests pass
+- Type checking passes with 0 errors
+- Linting passes
+- The integration with node_execution is complete and functional

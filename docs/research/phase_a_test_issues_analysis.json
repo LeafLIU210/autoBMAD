@@ -1,0 +1,73 @@
+{
+  "title": "Phase A 测试环境权限问题深度研究报告",
+  "description": "针对 Finding P1-3 的测试权限问题分析和修复建议",
+  "timestamp": "2026-04-04",
+  "findings": {
+    "temp_permissions": {
+      "system_temp": "C:\\Users\\Administrator\\AppData\\Local\\Temp",
+      "temp_writable": true,
+      "pytest_basetemp": null,
+      "conftest_exists": true
+    },
+    "pytest_collection": {
+      "collection_success": true,
+      "stdout": "tests/architecture/test_p0_2_execution_trunk_retirement.py: 8\ntests/architecture/test_p0_3_async_sync_contract.py: 8\ntests/cleanup/test_models_removed.py: 4\ntests/cleanup/test_static_checks.py: 4\ntests/e2e/test_pipeline_orchestrator_after_retirement.py: 2\ntests/integration/test_orchestrator_migration.py: 3\ntests/integration/test_pipeline_service_migration.py: 2\ntests/unit/docuswarm/llm/test_session_manager_cleanup.py: 4\ntests/unit/docuswarm/nodes/test_dual_agent_cleanup.py: 3\ntests/unit/docuswarm/pipeline/test_escalation_migration.py: 3\ntests/unit/docuswarm/storage/test_state_manager_migration.py: 3\ntests/unit/docuswarm/test_config_cleanup.py: 6\n\n=============================== tests coverage ================================\n______________ coverage: platform win32, python 3.12.10-final-0 _______________\n\nName                                                            Stmts   Miss  Cover   Missing\n---------------------------------------------------------------------------------------------\nautoBMAD\\docuswarm\\__init__.py                                     13      7    46%   26-34\nautoBMAD\\docuswarm\\__main__.py                                      1      1     0%   6\nautoBMAD\\docuswarm\\agents\\__init__.py                               4      4     0%   3-17\nautoBMAD\\docuswarm\\agents\\base.py                                  15     15     0%   11-74\nautoBMAD\\docuswarm\\agents\\evaluator.py                            197    197     0%   14-699\nautoBMAD\\docuswarm\\agents\\evaluator_config\\__init__.py              3      3     0%   4-18\nautoBMAD\\docuswarm\\agents\\evaluator_config\\criteria_loader.py      80     80     0%   14-244\nautoBMAD\\docuswarm\\agents\\evaluator_config\\schemas.py              17     17     0%   9-82\nautoBMAD\\docuswarm\\agents\\independent.py                          226    226     0%   15-859\nautoBMAD\\docuswarm\\agents\\persona.py                               93     93     0%   9-286\nautoBMAD\\docuswarm\\cli\\__init__.py                                  2      2    ",
+      "stderr": "",
+      "test_count": 0,
+      "error_patterns": []
+    },
+    "architecture_tests": {
+      "returncode": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "failures": [
+        "FAILED tests/architecture/test_p0_3_async_sync_contract.py::test_no_run_async_bridge_anywhere"
+      ]
+    },
+    "coverage_analysis": {
+      "hotspots": [
+        {
+          "module": "autoBMAD/docuswarm/cli/services/pipeline_service.py",
+          "coverage": 66
+        },
+        {
+          "module": "autoBMAD/docuswarm/node_execution/executor.py",
+          "coverage": 107
+        }
+      ],
+      "coverage_command": "coverage report -m autoBMAD/docuswarm/pipeline/orchestrator.py autoBMAD/docuswarm/cli/services/pipeline_service.py autoBMAD/docuswarm/nodes/dual_agent.py autoBMAD/docuswarm/storage/state_manager.py autoBMAD/docuswarm/node_execution/executor.py autoBMAD/docuswarm/context/validator.py autoBMAD/docuswarm/llm/session_manager.py"
+    }
+  },
+  "recommendations": {
+    "temp_permission_fixes": [
+      {
+        "option": "配置 basetemp",
+        "command": "pytest --basetemp=./.pytest-temp",
+        "description": "使用项目内临时目录避免权限问题"
+      },
+      {
+        "option": "环境变量",
+        "command": "set PYTEST_DEBUG_TEMPROOT=./tmp",
+        "description": "设置 pytest 临时根目录 (Windows)"
+      },
+      {
+        "option": "清理残留目录",
+        "command": "rmdir /s /q %TEMP%\\pytest-of-*",
+        "description": "手动清理残留临时目录"
+      }
+    ],
+    "smoke_tests_to_add": [
+      "tests/smoke/test_start_pipeline.py - 主启动路径",
+      "tests/smoke/test_resume_pipeline.py - 恢复路径",
+      "tests/smoke/test_cancel_pipeline.py - 取消路径",
+      "tests/smoke/test_escalation.py - 升级路径"
+    ],
+    "coverage_thresholds": {
+      "pipeline/orchestrator.py": "50%",
+      "storage/state_manager.py": "40%",
+      "nodes/dual_agent.py": "40%",
+      "node_execution/executor.py": "30%"
+    }
+  }
+}

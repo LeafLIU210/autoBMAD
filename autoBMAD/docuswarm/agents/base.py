@@ -16,10 +16,15 @@ from typing import TYPE_CHECKING, Any
 import structlog
 from structlog.stdlib import BoundLogger
 
-if TYPE_CHECKING:
-    from autoBMAD.docuswarm.config import Config as AgentConfig
+from autoBMAD.docuswarm.llm.session_manager import SessionManager
 
-from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+if TYPE_CHECKING:
+    from autoBMAD.docuswarm.config import Config as _Config
+
+    AgentConfig = _Config
+else:
+    # Runtime import to avoid circular imports
+    from autoBMAD.docuswarm.config import Config as AgentConfig
 
 
 class BaseAgent(ABC):
@@ -34,22 +39,22 @@ class BaseAgent(ABC):
 
     Attributes:
         config: Agent configuration object.
-        session_manager: KimiSessionManager for SDK interactions.
+        session_manager: SessionManager for SDK interactions.
     """
 
     def __init__(
         self,
         config: AgentConfig,
-        session_manager: KimiSessionManager | None = None,
+        session_manager: SessionManager | None = None,
     ) -> None:
         """Initialize the BaseAgent with config and session manager.
 
         Args:
             config: Agent configuration object containing settings.
-            session_manager: KimiSessionManager for SDK interactions.
+            session_manager: SessionManager for SDK interactions.
         """
         self.config = config
-        self.session_manager: KimiSessionManager | None = session_manager
+        self.session_manager: SessionManager | None = session_manager
 
         if session_manager is None:
             raise ValueError("session_manager must be provided")

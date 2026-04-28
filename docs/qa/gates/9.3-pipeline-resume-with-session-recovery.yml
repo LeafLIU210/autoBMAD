@@ -1,0 +1,86 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision for Story 9.3
+
+schema: 1
+story: "9.3"
+story_title: "Pipeline Resume with Session Recovery"
+gate: "PASS"
+status_reason: "All quality gates passed. Type checking passes with 0 errors (2 warnings for defensive unreachable code), linting passes with all checks, and 26 unit tests pass with 62% coverage on the pipeline module."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-21T12:00:00Z"
+
+# Fixes applied
+fixes_applied:
+  - id: "FIX-001"
+    severity: high
+    finding: "Type error in clear_current_node_session_id() - Cannot delete required TypedDict key"
+    fix: "Changed from `del result['current_node_session_id']` to `result['current_node_session_id'] = None`"
+    status: fixed
+
+  - id: "FIX-002"
+    severity: low
+    finding: "Unused import 'pathlib.Path' in orchestrator.py"
+    fix: "Removed unused import"
+    status: fixed
+
+  - id: "FIX-003"
+    severity: low
+    finding: "Unreachable code warnings in state.py"
+    fix: "Added defensive checks with type: ignore comments for unreachable code"
+    status: fixed
+
+# Acceptance criteria verification
+evidence:
+  evidence:
+    tests_reviewed: 26
+    tests_passed: 26
+    tests_failed: 0
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5]
+      ac_gaps: []
+
+# Risk summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Acceptance Criteria Status
+ac_status:
+  - id: 1
+    criterion: "Pipeline orchestrator stores current node's session_id in state"
+    status: PASS
+    notes: "current_node_session_id field added to PipelineState"
+  - id: 2
+    criterion: "On resume, retrieves last node from LangGraph checkpoint"
+    status: PASS
+    notes: "resume_pipeline() retrieves checkpoint_state and gets current_node"
+  - id: 3
+    criterion: "Attempts SDK session resume for the last node"
+    status: PASS
+    notes: "_attempt_session_resume() method implemented"
+  - id: 4
+    criterion: "Falls back to node restart if session not found"
+    status: PASS
+    notes: "_restart_node() fallback method implemented"
+  - id: 5
+    criterion: "Pipeline continues from the interrupted node forward"
+    status: PASS
+    notes: "State restored from checkpoint and execution continues"
+
+# Tool validation results
+tool_validation:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 2
+    notes: "Warnings are for defensive unreachable code patterns"
+  ruff:
+    status: PASS
+    errors: 0
+  pytest:
+    status: PASS
+    passed: 26
+    failed: 0

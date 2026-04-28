@@ -4,8 +4,11 @@ This module defines the state schemas for LangGraph pipeline orchestration,
 compatible with SqliteSaver checkpointing.
 """
 
-from datetime import UTC
+from datetime import datetime, timedelta, timezone
 from typing import Any, TypedDict
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 
 # Pipeline-level status values
 PENDING = "pending"
@@ -65,6 +68,7 @@ class PipelineState(TypedDict):
     subject_context: dict[str, Any]
     current_node: str | None
     completed_nodes: list[str]
+    failed_nodes: list[str]  # P0-F1: Track failed nodes
     deliverables: dict[str, dict[str, Any]]
     questions: dict[str, list[dict[str, Any]]]
     evaluations: dict[str, dict[str, Any]]
@@ -75,14 +79,23 @@ class PipelineState(TypedDict):
     status: str
     error: dict[str, Any] | None
     shared_context: dict[str, Any]  # P1-1: Cross-node shared context
+    # NEW: Document summary cache - set once at pipeline start, read-only after
+    docs_context_summary: list[dict[str, Any]]
 
 
-def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> PipelineState:
+def create_initial_state(
+    pipeline_id: str,
+    subject_context: dict[str, Any],
+    docs_context_summary: list[dict[str, Any]] | None = None,
+) -> PipelineState:
     """Create an initial PipelineState with default values.
 
     Args:
         pipeline_id: Unique identifier for the pipeline
         subject_context: Context information about the subject being processed
+        docs_context_summary: Optional list of document summaries for cross-node sharing.
+            Each summary is a dict containing document metadata like path, title,
+            and content summary. Defaults to empty list if not provided.
 
     Returns:
         A new PipelineState with all fields initialized to defaults
@@ -97,6 +110,7 @@ def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> P
         subject_context=subject_context,
         current_node=None,
         completed_nodes=[],
+        failed_nodes=[],  # P0-F1: Initialize failed_nodes
         deliverables={},
         questions={},
         evaluations={},
@@ -107,6 +121,8 @@ def create_initial_state(pipeline_id: str, subject_context: dict[str, Any]) -> P
         status=PENDING,
         error=None,
         shared_context={},  # P1-1: Initialize shared_context
+        docs_context_summary=docs_context_summary
+        or [],  # Story 37.2: Use provided summary or empty list
     )
 
 
@@ -472,7 +488,7 @@ def update_session_metadata(
     result["session_metadata"][key] = {
         "session_id": session_id,
         "mode": mode,
-        "created_at": datetime.now(UTC).isoformat(),
+        "created_at": datetime.now(_BEIJING_TZ).isoformat(),
     }
 
     return result

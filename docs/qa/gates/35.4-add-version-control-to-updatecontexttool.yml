@@ -1,0 +1,47 @@
+schema: 1
+story: "35.4"
+story_title: "Add Version Control to UpdateContextTool"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Version control correctly increments _metadata.version on each operation, updates ISO timestamp, returns formatted version string in ToolResult, and maintains backward compatibility with legacy shared_context."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T10:45:00Z"
+waiver: { active: false }
+top_issues: []
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+gate_checks:
+  - id: "35.4.1"
+    description: "_metadata initialized with version: 0 and updated_at: null if not exists"
+    status: "passed"
+  - id: "35.4.2"
+    description: "Version increments by 1 on every successful set, append, or remove operation"
+    status: "passed"
+  - id: "35.4.3"
+    description: "updated_at set to current UTC ISO timestamp on every update"
+    status: "passed"
+  - id: "35.4.4"
+    description: "ToolResult returns version and timestamp fields"
+    status: "passed"
+  - id: "35.4.5"
+    description: "Version format follows pattern v{version}_{timestamp_ms}"
+    status: "passed"
+  - id: "35.4.6"
+    description: "Backward compatible - existing shared_context without _metadata works correctly"
+    status: "passed"
+  - id: "35.4.7"
+    description: "Unit tests cover all operation types (set, append, remove)"
+    status: "passed"
+  - id: "35.4.8"
+    description: "All tests pass with comprehensive coverage"
+    status: "passed"
+evidence:
+  tests_reviewed: 22
+  tests_passed: 22
+  type_check_errors: 0
+  lint_errors: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []

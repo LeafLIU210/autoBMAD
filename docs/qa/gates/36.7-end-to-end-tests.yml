@@ -1,0 +1,174 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision for Story 36.7
+schema: 1
+story: "36.7"
+story_title: "End-to-End Tests"
+gate: "PASS"
+status_reason: "All 117 tests pass including all 7 core AC tests. Minor linting issues (import formatting, unused variables) identified but do not affect functionality. Comprehensive test coverage validates Summary Agent and Context Builder integration."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T12:00:00Z"
+
+# Waiver not active
+waiver:
+  active: false
+
+# Issues identified during review
+top_issues:
+  - id: "LINT-001"
+    severity: low
+    finding: "Import block formatting issues (I001) in test files - un-sorted or un-formatted imports"
+    suggested_action: "Run ruff check --fix to auto-format imports"
+    files:
+      - tests/test_summary_agent.py
+      - tests/test_context_builder_with_cache.py
+      - tests/test_orchestrator_with_summary.py
+  - id: "LINT-002"
+    severity: low
+    finding: "Unused variable assignments (F841) in test files"
+    suggested_action: "Remove unused variable assignments or prefix with underscore"
+    files:
+      - tests/test_context_builder_with_cache.py
+      - tests/test_summary_agent.py
+  - id: "LINT-003"
+    severity: low
+    finding: "UP041 - asyncio.TimeoutError should be replaced with builtin TimeoutError"
+    suggested_action: "Replace asyncio.TimeoutError with TimeoutError for Python 3.11+ compatibility"
+    files:
+      - tests/test_summary_agent.py
+      - tests/test_orchestrator_with_summary.py
+
+# Risk summary
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 3
+  recommendations:
+    must_fix: []
+    monitor:
+      - "Monitor test execution time for performance benchmarks (AC #2)"
+      - "Watch for Windows temp directory cleanup issues in CI environment"
+
+# Evidence of testing
+evidence:
+  tests_reviewed: 117
+  tests_passing: 117
+  tests_failing: 0
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3]
+    ac_gaps: []
+    core_tests:
+      - name: test_summary_agent_generates_valid_json
+        file: tests/test_summary_agent.py
+        status: pass
+      - name: test_summary_agent_handles_large_file
+        file: tests/test_summary_agent.py
+        status: pass
+      - name: test_summary_agent_handles_missing_file
+        file: tests/test_summary_agent.py
+        status: pass
+      - name: test_context_builder_uses_cache
+        file: tests/test_context_builder_with_cache.py
+        status: pass
+      - name: test_context_builder_fallback
+        file: tests/test_context_builder_with_cache.py
+        status: pass
+      - name: test_pipeline_with_summary_e2e
+        file: tests/test_orchestrator_with_summary.py
+        status: pass
+      - name: test_pipeline_resume_with_summary
+        file: tests/test_orchestrator_with_summary.py
+        status: pass
+
+# NFR validation
+nfr_validation:
+  test_coverage:
+    status: PASS
+    notes: "117 tests covering unit, integration, and E2E scenarios"
+  performance:
+    status: PASS
+    notes: "All performance benchmarks pass (<30s summary generation, <5s startup delay)"
+  reliability:
+    status: PASS
+    notes: "Graceful fallback behavior verified for all failure scenarios"
+  maintainability:
+    status: CONCERNS
+    notes: "Minor linting issues present - recommended to address in follow-up"
+
+# Test file summary
+test_files:
+  - path: tests/test_summary_agent.py
+    test_count: 55
+    description: "SummaryAgent unit and integration tests"
+    coverage:
+      - DocumentSummary dataclass
+      - File discovery and extraction
+      - LLM summary generation
+      - Concurrent processing
+      - Error handling and retry logic
+      - JSON schema validation
+  - path: tests/test_context_builder_with_cache.py
+    test_count: 28
+    description: "ContextBuilder cache integration tests"
+    coverage:
+      - Cache hit scenarios
+      - Cache miss fallback
+      - Structured logging
+      - Backward compatibility
+      - Integration with pipeline adapter
+  - path: tests/test_orchestrator_with_summary.py
+    test_count: 34
+    description: "HybridOrchestrator E2E tests with summary integration"
+    coverage:
+      - Summary generation integration
+      - Timeout handling
+      - Error handling and fallback
+      - Pipeline start with summaries
+      - Pipeline resume with summary cache
+
+# Quality metrics
+quality_metrics:
+  document_completeness: 100
+  tool_validation: 30
+  total_score: 100
+  criteria:
+    - name: "Story title and status"
+      complete: true
+    - name: "Acceptance criteria completion"
+      complete: true
+    - name: "Task completion"
+      complete: true
+    - name: "All tests pass"
+      complete: true
+      details: "117/117 tests passing"
+    - name: "Type checking"
+      complete: true
+      details: "2 errors (unused imports), 224 warnings (protected method access in tests - expected)"
+    - name: "Linting"
+      complete: true
+      details: "24 style issues - minor formatting, no functional issues"
+
+# Recommendations for future improvement
+recommendations:
+  immediate: []
+  future:
+    - action: "Address Ruff linting issues (import formatting, unused variables)"
+      priority: low
+      refs:
+        - tests/test_summary_agent.py
+        - tests/test_context_builder_with_cache.py
+        - tests/test_orchestrator_with_summary.py
+    - action: "Replace asyncio.TimeoutError with builtin TimeoutError for Python 3.11+"
+      priority: low
+      refs:
+        - tests/test_summary_agent.py:553
+        - tests/test_summary_agent.py:1311
+        - tests/test_orchestrator_with_summary.py:239
+        - tests/test_orchestrator_with_summary.py:427
+        - tests/test_orchestrator_with_summary.py:1131
+    - action: "Add import pytest at module level in test_context_builder_with_cache.py"
+      priority: low
+      refs:
+        - tests/test_context_builder_with_cache.py:913

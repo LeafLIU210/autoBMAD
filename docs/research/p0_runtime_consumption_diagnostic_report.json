@@ -1,0 +1,31 @@
+[
+  {
+    "issue": "mcp_key_naming_conflict",
+    "error": "'str' object has no attribute 'lower()'"
+  },
+  {
+    "issue": "tool_permissions_propagation_loss",
+    "node_id": "analyst",
+    "config_builtin_tools": [
+      "Read",
+      "Glob"
+    ],
+    "reconstructed_builtin_tools": [],
+    "has_loss": true
+  },
+  {
+    "issue": "directory_resolution_baseline",
+    "current_path": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docs",
+    "current_exists": false,
+    "correct_path": "D:\\GITHUB\\DocuSwarm\\docs",
+    "correct_exists": true
+  },
+  {
+    "issue": "evaluator_threshold_not_consumed",
+    "error": "type object 'EvaluatorAgent' has no attribute 'APPROVAL_THRESHOLD'"
+  },
+  {
+    "issue": "allowed_tools_generation",
+    "error": "'gbk' codec can't encode character '\\u2713' in position 4: illegal multibyte sequence"
+  }
+]

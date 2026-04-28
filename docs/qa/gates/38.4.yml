@@ -1,0 +1,97 @@
+# Quality Gate: 38.4
+# Story: IndependentAgent System Prompt Update
+# Powered by BMAD™ Core
+
+schema: 1
+story: "38.4"
+story_title: "IndependentAgent System Prompt Update"
+gate: "PASS"
+status_reason: "All 5 acceptance criteria completed. All 29 tests pass with 100% success rate. Ruff linting passes. System prompt now includes explicit submit_execution_report instructions, tool call sequence documentation, and priority enum documentation."
+reviewer: "James (Dev Agent)"
+updated: "2026-04-07T20:00:00Z"
+
+# Waiver not needed
+waiver:
+  active: false
+
+# AC Verification Results
+acceptance_criteria:
+  - id: AC1
+    description: "系统提示中包含明确指引：必须先调用 `create_deliverable`，再调用 `submit_execution_report`"
+    status: "PASS"
+    verification: "Code review confirms system prompt includes 'Step 1: Create Deliverable' and 'Step 2: Submit Execution Report (MANDATORY)' sections at lines 148-179"
+
+  - id: AC2
+    description: "指引中包含 `file_path` 和 `sha256` 使用说明（从 `create_deliverable` 返回值获取）"
+    status: "PASS"
+    verification: "System prompt includes explicit instructions to use EXACT file_path and sha256 from create_deliverable result in submit_execution_report"
+
+  - id: AC3
+    description: "至少提供一个工具调用序列示例（示例格式：create_deliverable → submit_execution_report）"
+    status: "PASS"
+    verification: "Complete tool call sequence example provided showing step-by-step execution with sample inputs and outputs"
+
+  - id: AC4
+    description: "提示中说明 `questions[].priority` 的三个合法枚举值（blocking/clarifying/optional）"
+    status: "PASS"
+    verification: "Priority enum table documents all three values with descriptions: blocking (must answer before proceeding), clarifying (help refine), optional (nice-to-have)"
+
+  - id: AC5
+    description: "更新不破坏现有系统提示结构（追加方式，不替换）"
+    status: "PASS"
+    verification: "Implementation appends to existing instructions section; persona section preserved via PersonaLoader.format_system_prompt()"
+
+# Test Results
+test_results:
+  total_tests: 29
+  passed: 29
+  failed: 0
+  skipped: 0
+  coverage: "Validated by test_story_38_4_system_prompt_update.py"
+
+# Quality Checks
+quality_checks:
+  - check: "Ruff Linting"
+    status: "PASS"
+    details: "All checks passed"
+
+  - check: "BasedPyright Type Check"
+    status: "CONCERNS"
+    details: "2 pre-existing errors not related to Story 38.4"
+
+  - check: "Unit Tests"
+    status: "PASS"
+    details: "29/29 tests passing for Story 38.4"
+
+  - check: "Integration Tests"
+    status: "PASS"
+    details: "46/46 Story 38.3 tests still passing (backward compatibility)"
+
+# No issues blocking release
+top_issues: []
+
+# Risk Assessment
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Evidence
+evidence:
+  tests_reviewed: 29
+  files_modified:
+    - "autoBMAD/docuswarm/agents/independent.py"
+    - "tests/test_story_38_4_system_prompt_update.py"
+  ac_covered: [1, 2, 3, 4, 5]
+  ac_gaps: []
+
+# Sign-off
+sign_off:
+  qa_engineer: "James (Dev Agent)"
+  review_date: "2026-04-07"
+  next_review: "N/A - Story complete"

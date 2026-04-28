@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-03-28T23:29:10.921349",
+  "summary": {
+    "total_findings": 6,
+    "p0_confirmed": 2,
+    "p1_confirmed": 2,
+    "p2_confirmed": 1,
+    "overall_health": 78.95
+  },
+  "findings": [
+    {
+      "id": "1",
+      "severity": "P0",
+      "title": "Structured 执行路径会丢失交付物契约",
+      "status": "PARTIAL",
+      "evidence": [
+        {
+          "check": "isolation.py builds deliverable_requirements",
+          "status": "PASS",
+          "detail": "build_independent_input() 正确构建 deliverable_requirements"
+        },
+        {
+          "check": "independent.py passes deliverable_requirements to context",
+          "status": "UNCLEAR",
+          "detail": "代码中包含 deliverable_requirements 但需进一步验证传递路径"
+        },
+        {
+          "check": "contract_builder reads deliverable_requirements from context",
+          "status": "PASS",
+          "detail": "_build_deliverable_section() 尝试从 context 读取"
+        }
+      ],
+      "recommendations": [
+        "在 IndependentAgent.execute_with_input() 中直接使用 agent_input['deliverable_requirements']",
+        "或让 NodePromptContractBuilder._build_deliverable_section() 改为从 NodeLoader.load(node_id) 读取"
+      ],
+      "code_snippets": [
+        {
+          "file": "autoBMAD/docuswarm/agents/independent.py",
+          "lines": "656-666",
+          "issue": "未传递 deliverable_requirements"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "severity": "P0",
+      "title": "BMAD 技能注入没有进入主执行链",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "check": "SkillInjector exists",
+          "status": "PASS",
+          "detail": "SkillInjector 类存在且有 build_skill_section 方法"
+        },
+        {
+          "check": "PromptTemplateEngine exists",
+          "status": "PASS",
+          "detail": "PromptTemplateEngine 类存在"
+        },
+        {
+          "check": "Main execution chain includes skill injection",
+          "status": "FAIL",
+          "detail": "主执行链未调用 SkillInjector"
+        },
+        {
+          "check": "Contract builder includes skills",
+          "status": "FAIL",
+          "detail": "contract_builder 未包含技能章节"
+        }
+      ],
+      "recommendations": [
+        "在 NodePromptContractBuilder 内显式接入 SkillInjector"
+      ],
+      "code_snippets": []
+    },
+    {
+      "id": "3",
+      "severity": "P0",
+      "title": "criteria_loader.py 仍读取废弃的 thresholds",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "check": "CriteriaLoader reads correct field",
+          "status": "FAIL",
+          "detail": "CriteriaLoader 仍读取废弃的 'thresholds' 而非 'threshold'"
+        },
+        {
+          "check": "Config files use v2 'threshold' field",
+          "status": "PASS",
+          "detail": "找到 5 个节点使用 'threshold', 0 个节点使用 'thresholds'"
+        },
+        {
+          "check": "NodeLoader reads threshold",
+          "status": "PASS",
+          "detail": "NodeLoader 包含 threshold 读取逻辑"
+        }
+      ],
+      "recommendations": [
+        "将 criteria_loader.py 升级为优先读 'threshold'，兼容读 'thresholds'"
+      ],
+      "code_snippets": [
+        {
+          "file": "autoBMAD/docuswarm/agents/evaluator_config/criteria_loader.py",
+          "lines": "104-105",
+          "issue": "读取 thresholds 而非 threshold"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "severity": "P1",
+      "title": "ContextValidator 的节点级规则注册与实际校验实例分裂",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "check": "NodeLoader registers to singleton",
+          "status": "PASS",
+          "detail": "NodeLoader 使用 get_instance() 并调用 load_node_rules"
+        },
+        {
+          "check": "isolation.py creates fresh instance",
+          "status": "FAIL",
+          "detail": "isolation.py 直接创建新实例而非使用 singleton"
+        },
+        {
+          "check": "independent.py creates fresh instance",
+          "status": "FAIL",
+          "detail": "independent.py 直接创建新实例"
+        },
+        {
+          "check": "evaluator.py creates fresh instance",
+          "status": "FAIL",
+          "detail": "evaluator.py 直接创建新实例"
+        }
+      ],
+      "recommendations": [
+        "全仓统一使用 ContextValidator.get_instance()"
+      ],
+      "code_snippets": [
+        {
+          "file": "autoBMAD/docuswarm/context/isolation.py",
+          "lines": "90-95",
+          "issue": "直接创建 ContextValidator() 而非 get_instance()"
+        },
+        {
+          "file": "autoBMAD/docuswarm/agents/independent.py",
+          "issue": "直接创建 ContextValidator() 实例"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "severity": "P1",
+      "title": "节点配置检查器对语义不一致过于乐观",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "check": "architect node.yaml sections",
+          "status": "INFO",
+          "detail": "node.yaml 定义 4 个 sections: ['architecture', 'api_design', 'data_model', 'security']"
+        },
+        {
+          "check": "architect persona.json sections",
+          "status": "INFO",
+          "detail": "persona.json 定义 9 个 sections: ['system_overview', 'architectural_pattern', 'component_diagram', 'data_model', 'api_design', 'security', 'scalability', 'integration_points', 'technology_stack']"
+        },
+        {
+          "check": "Sections consistency between node.yaml and persona.json",
+          "status": "FAIL",
+          "detail": "不匹配: node.yaml 有 4 个, persona.json 有 9 个"
+        },
+        {
+          "check": "Checker includes semantic validation",
+          "status": "PASS",
+          "detail": "检查器包含语义一致性检查"
+        }
+      ],
+      "recommendations": [
+        "将跨文件语义一致性纳入 node_config_completeness_checker 得分",
+        "architect 节点的 sections 不匹配应至少降低 compliance 分"
+      ],
+      "code_snippets": [
+        {
+          "file": "autoBMAD/nodes/architect/node.yaml",
+          "lines": "22-29",
+          "issue": "required_sections: ['architecture', 'api_design', 'data_model', 'security']"
+        },
+        {
+          "file": "autoBMAD/nodes/architect/persona.json",
+          "lines": "45-57",
+          "issue": "output_format.sections: ['system_overview', 'architectural_pattern', 'component_diagram', 'data_model', 'api_design', 'security', 'scalability', 'integration_points', 'technology_stack']"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "severity": "P2",
+      "title": "SessionManager.allowed_dirs 属性存在未定义字段访问",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "check": "allowed_dirs property accesses _allowed_dirs",
+          "status": "CONFIRMED",
+          "detail": "allowed_dirs 属性访问未定义的 _allowed_dirs"
+        },
+        {
+          "check": "__init__ defines _allowed_dirs",
+          "status": "FAIL",
+          "detail": "__init__ 中未定义 _allowed_dirs，会导致 AttributeError"
+        }
+      ],
+      "recommendations": [
+        "直接删除该兼容属性 allowed_dirs",
+        "或在 __init__ 中显式保存 allowed_dirs"
+      ],
+      "code_snippets": [
+        {
+          "file": "autoBMAD/docuswarm/llm/session_manager.py",
+          "lines": "128-131",
+          "issue": "return self._file_dirs or self._allowed_dirs"
+        }
+      ]
+    }
+  ]
+}

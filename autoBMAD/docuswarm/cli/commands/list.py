@@ -23,7 +23,7 @@ console = Console()
 def list_pipelines(status_filter: str | None) -> None:
     """Show all pipelines with their status, optionally filtered by status."""
     service = PipelineService()
-    
+
     try:
         pipelines = service.list_pipelines(status=status_filter)
 

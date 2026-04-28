@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any
 
 from autoBMAD.docuswarm.exceptions import ContextIsolationError
 from autoBMAD.docuswarm.node_execution.contracts import (
@@ -21,6 +21,10 @@ from autoBMAD.docuswarm.node_execution.contracts import (
     NodeExecutionContext,
 )
 from autoBMAD.docuswarm.utils.logging import get_logger
+
+# Import for type hints only to avoid circular imports
+if TYPE_CHECKING:
+    from autoBMAD.docuswarm.context.validator import ContextValidator
 
 # Private fields that must never be exposed to Evaluator agent
 PRIVATE_FIELDS: list[str] = [
@@ -62,9 +66,34 @@ class ContextManager:
     # Private fields that must not be exposed to Evaluator
     PRIVATE_FIELDS: list[str] = PRIVATE_FIELDS
 
-    def __init__(self) -> None:
-        """Initialize ContextManager with logger."""
+    def __init__(self, validator: ContextValidator | None = None) -> None:
+        """Initialize ContextManager with logger and optional validator.
+
+        Args:
+            validator: Optional ContextValidator instance. If not provided,
+                a new one will be created for isolation validation.
+        """
         self._logger = get_logger(__name__)
+        self._validator: ContextValidator | None = validator
+        self._validator_initialized = validator is not None
+
+    @property
+    def _validator_instance(self) -> ContextValidator:
+        """Get the validator instance, creating it lazily if needed.
+
+        This property defers the import of ContextValidator until first use,
+        avoiding circular import issues at module load time.
+
+        Returns:
+            ContextValidator instance.
+        """
+        if not self._validator_initialized or self._validator is None:
+            # Delayed import to avoid circular imports at module level
+            from autoBMAD.docuswarm.context.validator import ContextValidator
+
+            self._validator = ContextValidator()
+            self._validator_initialized = True
+        return self._validator
 
     # ==== Single Context Protocol: 新方法 ====
     def build_independent_input(
@@ -74,44 +103,79 @@ class ContextManager:
     ) -> IndependentAgentInput:
         """构建 IndependentAgent 的输入。
 
-        从 NodeExecutionContext 中提取必要字段，组装为 AgentInput。
+        从 NodeExecutionContext 和 NodeConfig 中提取必要字段，组装为 AgentInput。
+        任务相关字段从 node_config 读取（单来源原则），不再从 context 重复传递。
 
         Args:
-            execution_context: 统一的节点执行上下文
+            execution_context: 统一的节点执行上下文（仅含运行时字段）
             iteration_feedback: 可选的迭代反馈
 
         Returns:
             IndependentAgentInput 结构
         """
+        # 从 node_config 加载任务字段（单来源原则）
+        from autoBMAD.nodes.loader import NodeLoader
+
+        node_id = execution_context.get("node_id")
+        if not node_id:
+            raise ValueError("node_id is required in execution_context")
+
+        node_config = NodeLoader.load(node_id)
+
         # 构建原始上下文摘要
-        original = execution_context["original_context"]
+        original = execution_context.get("original_context", {})
         summary = _extract_original_context_summary(original)
 
         # 构建上游交付物摘要
         chained_summary: list[dict[str, Any]] = []
-        for item in execution_context["chained_deliverables"]:
+        for item in execution_context.get("chained_deliverables", []):
             deliverable = item.get("deliverable", {})
             chained_summary.append(
                 {
                     "node_id": item.get("node_id"),
                     "title": deliverable.get("title", "Untitled"),
-                    "summary": deliverable.get("summary", "")[:200],  # P0-3: Use summary
+                    "summary": deliverable.get("summary", "")[:200],
                 }
             )
+
+        # 构建交付物要求
+        deliverable_reqs: dict[str, Any] = {}
+        if node_config.deliverable.required_sections:
+            deliverable_reqs["required_sections"] = node_config.deliverable.required_sections
+        if (
+            hasattr(node_config.deliverable, "template_title")
+            and node_config.deliverable.template_title
+        ):
+            deliverable_reqs["template_title"] = node_config.deliverable.template_title
+        if (
+            hasattr(node_config.deliverable, "output_filename")
+            and node_config.deliverable.output_filename
+        ):
+            deliverable_reqs["output_filename"] = node_config.deliverable.output_filename
+        if (
+            hasattr(node_config.deliverable, "format_hints")
+            and node_config.deliverable.format_hints
+        ):
+            deliverable_reqs["format_hints"] = node_config.deliverable.format_hints
+        if "template_title" not in deliverable_reqs:
+            deliverable_reqs["template_title"] = node_config.deliverable_type
 
         # P1-1: Get shared_context from execution_context
         shared_context = execution_context.get("shared_context", {})
 
+        # F4: Get docs_context from execution_context
+        docs_context = execution_context.get("docs_context", [])
+
         return IndependentAgentInput(
-            task_name=execution_context["task_name"],
-            task_description=execution_context["task_description"],
-            role_supplement=execution_context["role_supplement"],
-            deliverable_requirements=execution_context["deliverable_requirements"],
+            task_name=node_config.task.name,
+            task_description=node_config.task.description,
+            role_supplement=node_config.task.role_supplement,
+            deliverable_requirements=deliverable_reqs,
             original_context_summary=summary,
             chained_deliverables_summary=chained_summary,
             iteration_feedback=iteration_feedback,
-            persona_context={},  # 由 IndependentAgent 自行加载
-            shared_context=shared_context,  # P1-1: Pass shared_context
+            shared_context=shared_context,
+            docs_context=docs_context,  # F4: 传递 docs_context
         )
 
     def build_evaluator_input(
@@ -154,13 +218,24 @@ class ContextManager:
         original_context = execution_context.get("original_context", {})
         original_summary = _extract_original_context_summary(original_context)
 
+        # Story 25.3: Load criteria directly from NodeLoader instead of context
+        node_id = execution_context.get("node_id")
+        if not node_id:
+            raise ValueError("node_id is required in execution_context")
+
+        # Lazy import to avoid circular imports
+        from autoBMAD.nodes.loader import NodeLoader
+
+        node_config = NodeLoader.load(node_id)
+        criteria = node_config.evaluator.criteria if node_config.evaluator else []
+
         return EvaluatorAgentInput(
-            task_name=execution_context["task_name"],
-            task_description=execution_context["task_description"],
-            original_context_summary=original_summary,  # P0-2
+            task_name=node_config.task.name,
+            task_description=node_config.task.description,
+            original_context_summary=original_summary,
             deliverable_artifact=deliverable,
             deliverable_body=deliverable_body,
-            criteria=execution_context.get("evaluator_criteria", []),
+            criteria=criteria,
         )
 
     # ==== 旧方法：保持向后兼容 ====
@@ -225,9 +300,18 @@ class ContextManager:
             access_level="restricted",
         )
 
-        # Validate deliverable doesn't contain private fields
+        # Validate deliverable doesn't contain private fields using ContextValidator
         if deliverable is not None:
-            self._validate_no_private_fields(deliverable, "deliverable")
+            result = self._validator_instance.validate_isolation(deliverable)
+            if not result.valid:
+                # Build error message from validation issues
+                issues_str = "; ".join(f"{issue.field}: {issue.message}" for issue in result.issues)
+                raise ContextIsolationError(
+                    f"Private fields found in deliverable: {issues_str}",
+                    violation_type="private_field_leak",
+                    resource=result.issues[0].field if result.issues else "unknown",
+                    target_context="evaluator",
+                )
 
         context: dict[str, Any] = {
             "subject_context": subject_context,
@@ -237,59 +321,6 @@ class ContextManager:
         }
 
         return context
-
-    def _validate_no_private_fields(
-        self,
-        data: dict[str, Any],
-        context_name: str,
-    ) -> None:
-        """Validate that no private fields are present in the data.
-
-        Performs deep inspection to detect private fields at any nesting level.
-
-        Args:
-            data: The data dictionary to validate.
-            context_name: Name of the context being validated (for error messages).
-
-        Raises:
-            ContextIsolationError: If any private field is detected.
-        """
-        _check_for_private_fields(data, context_name)
-
-
-def _check_for_private_fields(
-    data: Any,
-    context_name: str,
-    private_fields: list[str] = PRIVATE_FIELDS,
-) -> None:
-    """Recursively check for private fields in data structure.
-
-    Args:
-        data: The data to check (can be dict, list, or primitive).
-        context_name: Name of context for error messages.
-        private_fields: List of private field names to check for.
-
-    Raises:
-        ContextIsolationError: If a private field is found.
-    """
-    if isinstance(data, dict):
-        # Check each key in the dictionary
-        for key, value in data.items():
-            if cast(str, key) in private_fields:
-                raise ContextIsolationError(
-                    f"Private field '{key}' found in {context_name}. "
-                    + f"Private fields {private_fields} are not allowed in evaluator context.",
-                    violation_type="private_field_leak",
-                    resource=cast(str, key),
-                    target_context=context_name,
-                )
-            # Recursively check nested values
-            _check_for_private_fields(value, context_name, private_fields)
-    elif isinstance(data, list):
-        # Check each item in the list
-        for item in data:
-            _check_for_private_fields(item, context_name, private_fields)
-    # Primitive types (str, int, float, bool, None) don't need checking
 
 
 def _extract_original_context_summary(original_context: Any) -> str:

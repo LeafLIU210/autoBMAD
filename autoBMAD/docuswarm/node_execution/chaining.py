@@ -45,7 +45,7 @@ class ContextChainer:
         """
         self._state_manager = state_manager
 
-    async def get_chained_deliverables(
+    def get_chained_deliverables(
         self,
         node_id: str,
         context_hash: str,
@@ -90,9 +90,7 @@ class ContextChainer:
         for pred_id in predecessor_ids:
             try:
                 # Query the state manager for the latest successful run
-                run_result = await self._state_manager.get_latest_successful_run(
-                    pred_id, context_hash
-                )
+                run_result = self._state_manager.get_latest_successful_run(pred_id, context_hash)
 
                 if run_result is not None and run_result.get("deliverable") is not None:
                     # Inject deliverable with proper key naming

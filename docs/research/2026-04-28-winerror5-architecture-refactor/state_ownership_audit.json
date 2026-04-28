@@ -1,0 +1,8 @@
+{
+  "db_path": "docuswarm.db",
+  "checkpoint_table_exists": true,
+  "pipelines_count": 28,
+  "checkpoints_count": 138,
+  "inconsistency_cases": [],
+  "ownership_violations": []
+}

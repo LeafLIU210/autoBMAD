@@ -1,29 +1,32 @@
 """Hybrid Orchestrator for pipeline execution - Story 3.5.
 
 This module provides the HybridOrchestrator class that combines:
-- LLM-based context validation (Kimi Instant)
+- LLM-based context validation (Kimi Instant) via ContextValidator
 - Rule-based dependency checking
 - LangGraph StateGraph with SqliteSaver for checkpoint/resume
 """
 
 from __future__ import annotations
 
-import json
+import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import structlog
 from kaos.path import KaosPath
-from kimi_agent_sdk import Message
 
-from autoBMAD.docuswarm.llm.response import extract_text_from_messages
-from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+from autoBMAD.docuswarm.agents.summary import DocumentSummary, SummaryAgent
+from autoBMAD.docuswarm.context import ContextValidator
+from autoBMAD.docuswarm.exceptions import ContextValidationError, OrchestratorError
+from autoBMAD.docuswarm.llm.session_manager import SessionManager
 from autoBMAD.docuswarm.pipeline.graph import (
     PIPELINE_NODES,
     create_pipeline_graph,
 )
 from autoBMAD.docuswarm.pipeline.state import (
     CANCELLED,
+    COMPLETED,
+    FAILED,
     PAUSED,
     RUNNING,
     create_initial_state,
@@ -42,48 +45,10 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-# Context validation prompt template
-CONTEXT_VALIDATION_PROMPT = """You are a technical context validator. Analyze the context and output ONLY a JSON object.
-
-**Context to validate:**
-{subject_context}
-
-**Validation rules:**
-1. Check if there's a clear objective (what to create)
-2. Check if scope is defined (requirements stated)
-3. Check if there's sufficient detail to start
-
-**Output format (respond with ONLY this JSON, no markdown blocks, no other text):**
-
-{{
-  "valid": true,
-  "reason": "Brief validation reason",
-  "missing_info": []
-}}
-
-**Important:**
-- Do NOT call any tools
-- Do NOT use markdown code blocks
-- Output ONLY the JSON object
-- Use lowercase true/false for booleans
-"""
-
 # Decision outcomes
 DECISION_PROCEED = "proceed"
 DECISION_PAUSE = "pause"
 DECISION_HALT = "halt"
-
-
-class OrchestratorError(Exception):
-    """Base exception for orchestrator errors."""
-
-    pass
-
-
-class ContextValidationError(OrchestratorError):
-    """Raised when context validation fails."""
-
-    pass
 
 
 class DependencyError(OrchestratorError):
@@ -117,7 +82,7 @@ class HybridOrchestrator:
     Args:
         db_path: Path to the SQLite database for state persistence.
         checkpointer: Optional SqliteSaver checkpointer. If not provided, creates one.
-        session_manager: Optional KimiSessionManager for session resume and LLM calls. If not provided, creates one.
+        session_manager: Optional SessionManager for session resume and LLM calls. If not provided, creates one.
         work_dir: Optional working directory for sessions. Defaults to current directory.
 
     Example:
@@ -130,20 +95,26 @@ class HybridOrchestrator:
         self,
         db_path: str | None = None,
         checkpointer: BaseCheckpointSaver[Any] | SqliteSaver | None = None,
-        session_manager: KimiSessionManager | None = None,
+        session_manager: SessionManager | None = None,
         work_dir: str | None = None,
         api_key: str | None = None,
         base_url: str | None = None,
+        context_validator: ContextValidator | None = None,
+        config: Any | None = None,
     ) -> None:
         """Initialize HybridOrchestrator.
 
         Args:
             db_path: Path to SQLite database. Defaults to "docuswarm.db".
             checkpointer: Optional checkpointer for LangGraph.
-            session_manager: Optional KimiSessionManager for session resume and LLM calls.
+            session_manager: Optional SessionManager for session resume and LLM calls.
             work_dir: Optional working directory for sessions.
             api_key: Optional Kimi API key (from .env or environment).
             base_url: Optional Kimi API base URL (from .env or environment).
+            context_validator: Optional ContextValidator for context validation.
+                If not provided, creates one with the session_manager.
+            config: Optional configuration object for agents.
+                If not provided, a default config will be created when needed.
         """
         self._db_path = db_path or "docuswarm.db"
         self._checkpointer = checkpointer
@@ -157,9 +128,16 @@ class HybridOrchestrator:
             self._work_dir = work_dir
         self._api_key = api_key
         self._base_url = base_url
+        self._config = config
 
         # Initialize state manager for pipeline metadata
         self._state_manager = StateManager(db_path=self._db_path)
+
+        # Initialize context validator (injected or created)
+        if context_validator is not None:
+            self._context_validator = context_validator
+        else:
+            self._context_validator = ContextValidator(session_manager=session_manager)
 
         logger.info(
             "hybrid_orchestrator_initialized",
@@ -168,21 +146,39 @@ class HybridOrchestrator:
         )
 
     @property
-    def session_manager(self) -> KimiSessionManager | None:
+    def session_manager(self) -> SessionManager | None:
         """Get the session manager instance."""
         return self._session_manager
+
+    def _determine_final_status(self, result: dict[str, Any]) -> str:
+        """Determine pipeline final status from graph result.
+
+        P0-F1: Checks for failed_nodes or error in result to avoid
+        falsely marking a pipeline as completed when nodes failed.
+
+        Args:
+            result: The state dict returned by graph.ainvoke().
+
+        Returns:
+            "completed" if no failures, "failed" otherwise.
+        """
+        failed_nodes = result.get("failed_nodes", [])
+        error = result.get("error")
+        if failed_nodes or error:
+            return FAILED
+        return COMPLETED
 
     def _get_or_create_session_manager(
         self,
         pipeline_id: str | None = None,
-    ) -> KimiSessionManager:
+    ) -> SessionManager:
         """Get existing session manager or create a new one.
 
         Args:
             pipeline_id: Optional pipeline ID for pipeline-specific work_dir.
 
         Returns:
-            KimiSessionManager instance.
+            SessionManager instance.
 
         Raises:
             OrchestratorError: If session manager cannot be created.
@@ -199,10 +195,9 @@ class HybridOrchestrator:
                 # Global work_dir (never falls back to cwd)
                 work_dir = KaosPath(self._work_dir)
 
-            session_manager = KimiSessionManager(
+            session_manager = SessionManager(
                 work_dir=work_dir,
-                api_key=self._api_key,
-                base_url=self._base_url,
+                config=None,  # Credentials are now read from environment by Config
             )
 
             # Only cache global session_manager
@@ -259,89 +254,77 @@ class HybridOrchestrator:
 
         return AsyncSqliteSaver(conn=aconn)
 
-    async def _validate_context(
+    async def _summarize_referenced_documents(
         self,
         subject_context: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Validate subject context using LLM (Kimi Instant).
+        repo_root: Path,
+        session_manager: SessionManager,
+        timeout: int = 120,
+    ) -> list[dict[str, Any]]:
+        """Run SummaryAgent with timeout protection.
+
+        Generates document summaries for files referenced in subject_context.
+        Returns empty list on timeout or error to allow pipeline to continue
+        without cached summaries (nodes will use fallback processing).
 
         Args:
-            subject_context: The context dictionary to validate.
+            subject_context: Context information containing document references.
+            repo_root: Root directory for file discovery.
+            session_manager: SessionManager for LLM interactions.
+            timeout: Maximum time in seconds to wait for summary generation.
+                Defaults to 120 seconds.
 
         Returns:
-            Validation result with valid, reason, and missing_info fields.
-
-        Raises:
-            ContextValidationError: If validation fails.
+            List of document summary dictionaries, or empty list on failure.
         """
-        logger.info("validating_context", context=subject_context)
-
-        # Get or create session manager
-        session_manager = self._get_or_create_session_manager()
-
         try:
-            # Format the prompt with subject context
-            context_str = json.dumps(subject_context, indent=2)
-            prompt = CONTEXT_VALIDATION_PROMPT.format(subject_context=context_str)
+            # Get or create config for SummaryAgent
+            agent_config = self._config
+            if agent_config is None:
+                from autoBMAD.docuswarm.config import Config
 
-            # Call LLM with instant mode using session_manager
-            messages: list[Message] = await session_manager.single_prompt(
-                prompt=prompt,
-                mode="agent",
-                yolo=True,
+                agent_config = Config()
+
+            # Instantiate SummaryAgent with config, session_manager, and project_root
+            summary_agent = SummaryAgent(
+                config=agent_config,
+                session_manager=session_manager,
+                project_root=repo_root,
             )
 
-            # Parse the response
-            try:
-                # Extract content from messages using unified utility
-                content = extract_text_from_messages(messages)
+            # Wrap summarize_context call with asyncio.wait_for() for timeout handling
+            result = await asyncio.wait_for(
+                summary_agent.summarize_context(subject_context),
+                timeout=timeout,
+            )
 
-                if not content:
-                    raise ValueError("Empty response from LLM")
+            # F5: Convert DocumentSummary objects to dicts for PipelineState storage
+            docs_context_summary = [d.to_dict() for d in result]
 
-                # Extract JSON from response content
-                content = content.strip()
-                # Handle potential markdown code blocks
-                if content.startswith("```json"):
-                    content = content[7:]
-                if content.startswith("```"):
-                    content = content[3:]
-                if content.endswith("```"):
-                    content = content[:-3]
+            # Structured logging: documents_summarized count and total_tokens
+            total_tokens = sum(d.get("llm_tokens_used", 0) for d in docs_context_summary)
+            logger.info(
+                "documents_summarized",
+                count=len(docs_context_summary),
+                total_tokens=total_tokens,
+            )
 
-                result = json.loads(content.strip())
+            return docs_context_summary
 
-                logger.info(
-                    "context_validation_complete",
-                    valid=result.get("valid"),
-                    reason=result.get("reason"),
-                )
-
-                return result
-
-            except (json.JSONDecodeError, ValueError) as e:
-                # Default to "empty" for logging if content wasn't set
-                content_str = ""
-                logger.error(
-                    "failed_to_parse_validation_response",
-                    content=content_str,
-                    error=str(e),
-                )
-                # Default to valid if we can't parse - fail open for robustness
-                return {
-                    "valid": True,
-                    "reason": "Could not parse validation response, defaulting to valid",
-                    "missing_info": [],
-                }
+        except TimeoutError:
+            logger.warning(
+                "summary_generation_timeout",
+                timeout_seconds=timeout,
+            )
+            return []
 
         except Exception as e:
-            logger.warning("context_validation_skipped", error=str(e))
-            # Fail open - allow pipeline to proceed if LLM is unavailable
-            return {
-                "valid": True,
-                "reason": f"LLM validation failed: {e}, defaulting to valid",
-                "missing_info": [],
-            }
+            logger.error(
+                "summary_generation_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return []
 
     def _check_dependencies(
         self,
@@ -424,16 +407,8 @@ class HybridOrchestrator:
         """
         logger.info("starting_pipeline", subject_context=subject_context)
 
-        # Step 1: Validate context using LLM
-        validation_result = await self._validate_context(subject_context)
-
-        if not validation_result.get("valid", False):
-            error_msg = (
-                f"Context validation failed: {validation_result.get('reason', 'Unknown reason')}. "
-                f"Missing info: {validation_result.get('missing_info', [])}"
-            )
-            logger.error("context_validation_failed", result=validation_result)
-            raise ContextValidationError(error_msg)
+        # Step 1: Validate context using LLM (delegates to ContextValidator)
+        await self._context_validator.validate_context_with_llm(subject_context)
 
         # Step 2: Create pipeline in database
         subject = subject_context.get("subject", "Untitled")
@@ -446,10 +421,9 @@ class HybridOrchestrator:
         final_pipeline_id = pipeline_id or db_pipeline_id
 
         # Step 3: Update status to running
-        _ = self._state_manager.update_pipeline_status(
+        _ = await self._state_manager.update_pipeline_state(
             final_pipeline_id,
-            status=RUNNING,
-            current_node=PIPELINE_NODES[0],  # Start with first node
+            {"status": RUNNING, "current_node": PIPELINE_NODES[0]},  # Start with first node
         )
 
         # Step 4: Set logging context for this pipeline
@@ -464,25 +438,37 @@ class HybridOrchestrator:
             pipeline_id=final_pipeline_id,
         )
 
+        # Step 4.6: Generate document summaries before graph execution (Story 36.3)
+        # This allows all pipeline nodes to reuse cached summaries instead of
+        # redundantly reading and processing documents, improving performance.
+        session_manager = self._get_or_create_session_manager()
+        docs_context_summary = await self._summarize_referenced_documents(
+            subject_context=subject_context,
+            repo_root=Path(self._work_dir).parent,  # Project root
+            session_manager=session_manager,
+        )
+
         # Step 5: Create and execute the pipeline graph
         try:
             # Generate thread ID from pipeline ID
             thread_id = generate_thread_id(final_pipeline_id)
             config = create_checkpoint_config(thread_id)
 
-            # Create initial state
-            initial_state = create_initial_state(final_pipeline_id, subject_context)
+            # Create initial state with docs_context_summary (Story 36.3)
+            initial_state = create_initial_state(
+                final_pipeline_id,
+                subject_context,
+                docs_context_summary=docs_context_summary,
+            )
 
             # Create pipeline graph with checkpointer
             checkpointer = self._checkpointer
             if checkpointer is None:
                 checkpointer = await self._create_checkpointer()
 
-            # Get session_manager for integrated node execution (Story 11.4)
-            session_manager = self._get_or_create_session_manager()
+            # session_manager already obtained in Step 4.6
 
             graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
-                db_path=self._db_path,
                 checkpointer=checkpointer,
                 session_manager=session_manager,
             )
@@ -490,12 +476,12 @@ class HybridOrchestrator:
             # Execute the graph
             result: dict[str, Any] = await graph.ainvoke(initial_state, config)
 
-            # Update status to completed and sync current_node from final state
+            # P0-F1: Determine final status based on result, not blindly completed
+            final_status = self._determine_final_status(result)
             final_current_node = result.get("current_node", "po")
-            _ = self._state_manager.update_pipeline_status(
+            await self._state_manager.update_pipeline_state(
                 final_pipeline_id,
-                status="completed",  # type: ignore[arg-type]
-                current_node=final_current_node,
+                {"status": final_status, "current_node": final_current_node},
             )
 
             logger.info(
@@ -508,9 +494,9 @@ class HybridOrchestrator:
 
         except Exception as e:
             logger.error("pipeline_execution_error", error=str(e))
-            _ = self._state_manager.update_pipeline_status(
+            _ = await self._state_manager.update_pipeline_state(
                 final_pipeline_id,
-                status="failed",  # type: ignore[arg-type]
+                {"status": "failed"},
             )
             raise
 
@@ -551,6 +537,25 @@ class HybridOrchestrator:
         last_node = checkpoint_state.get("current_node")
         session_id = checkpoint_state.get("current_node_session_id")
 
+        # Story 37.6: Extract docs_context_summary from checkpoint state for resume
+        # This preserves the cached document summary across pipeline resume operations
+        docs_context_summary = checkpoint_state.get("docs_context_summary", [])
+
+        # Log warning if docs_context_summary is missing from checkpoint (backward compatibility)
+        # Empty list indicates missing or uninitialized summary - context_builder will rebuild from disk
+        if not docs_context_summary:
+            logger.warning(
+                "docs_context_summary_missing_from_checkpoint",
+                pipeline_id=pipeline_id,
+                fallback_behavior="context_builder will rebuild from disk",
+            )
+        else:
+            logger.info(
+                "docs_context_summary_restored_from_checkpoint",
+                pipeline_id=pipeline_id,
+                summary_count=len(docs_context_summary),
+            )
+
         logger.info(
             "resume_pipeline_checking_session",
             pipeline_id=pipeline_id,
@@ -559,9 +564,9 @@ class HybridOrchestrator:
         )
 
         # Update status to running
-        _ = self._state_manager.update_pipeline_status(
+        await self._state_manager.update_pipeline_state(
             pipeline_id,
-            status=RUNNING,
+            {"status": RUNNING},
         )
 
         try:
@@ -589,7 +594,6 @@ class HybridOrchestrator:
             session_manager = self._get_or_create_session_manager()
 
             graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
-                db_path=self._db_path,
                 checkpointer=checkpointer,
                 session_manager=session_manager,
             )
@@ -611,6 +615,9 @@ class HybridOrchestrator:
             initial_state["session_metadata"] = checkpoint_state.get("session_metadata", {})
             initial_state["current_node_session_id"] = session_id if session_resumed else None
             initial_state["status"] = RUNNING
+            # Story 37.6: Restore docs_context_summary from checkpoint to preserve cache across resume
+            # This ensures pipeline resume uses the cached summary instead of rebuilding from disk
+            initial_state["docs_context_summary"] = docs_context_summary
 
             logger.info(
                 "resume_pipeline_executing",
@@ -623,10 +630,11 @@ class HybridOrchestrator:
             # Execute from checkpoint
             result: dict[str, Any] = await graph.ainvoke(initial_state, config)
 
-            # Update status
-            _ = self._state_manager.update_pipeline_status(
+            # P0-F1: Determine final status based on result
+            final_status = self._determine_final_status(result)
+            await self._state_manager.update_pipeline_state(
                 pipeline_id,
-                status="completed",  # type: ignore[arg-type]
+                {"status": final_status},
             )
 
             logger.info(
@@ -640,9 +648,9 @@ class HybridOrchestrator:
 
         except Exception as e:
             logger.error("pipeline_resume_error", error=str(e))
-            _ = self._state_manager.update_pipeline_status(
+            await self._state_manager.update_pipeline_state(
                 pipeline_id,
-                status="failed",  # type: ignore[arg-type]
+                {"status": "failed"},
             )
             raise
 
@@ -715,10 +723,9 @@ class HybridOrchestrator:
         ]
 
         # Update status to running
-        _ = self._state_manager.update_pipeline_status(
+        await self._state_manager.update_pipeline_state(
             pipeline_id,
-            status=RUNNING,
-            current_node=node_id,
+            {"status": RUNNING, "current_node": node_id},
         )
 
         try:
@@ -736,7 +743,6 @@ class HybridOrchestrator:
             session_manager = self._get_or_create_session_manager()
 
             graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
-                db_path=self._db_path,
                 checkpointer=checkpointer,
                 session_manager=session_manager,
             )
@@ -764,10 +770,11 @@ class HybridOrchestrator:
             # Execute from restart node
             result: dict[str, Any] = await graph.ainvoke(initial_state, config)
 
-            # Update status
-            _ = self._state_manager.update_pipeline_status(
+            # P0-F1: Determine final status based on result
+            final_status = self._determine_final_status(result)
+            await self._state_manager.update_pipeline_state(
                 pipeline_id,
-                status="completed",  # type: ignore[arg-type]
+                {"status": final_status},
             )
 
             logger.info(
@@ -781,9 +788,9 @@ class HybridOrchestrator:
 
         except Exception as e:
             logger.error("pipeline_restart_from_node_error", error=str(e))
-            _ = self._state_manager.update_pipeline_status(
+            await self._state_manager.update_pipeline_state(
                 pipeline_id,
-                status="failed",  # type: ignore[arg-type]
+                {"status": "failed"},
             )
             raise
 
@@ -884,7 +891,6 @@ class HybridOrchestrator:
         session_manager = self._get_or_create_session_manager()
 
         graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
-            db_path=self._db_path,
             checkpointer=checkpointer,
             session_manager=session_manager,
         )
@@ -944,9 +950,9 @@ class HybridOrchestrator:
             raise PipelineNotFoundError(f"Pipeline not found: {pipeline_id}")
 
         # Update status to paused
-        _ = self._state_manager.update_pipeline_status(
+        await self._state_manager.update_pipeline_state(
             pipeline_id,
-            status=PAUSED,
+            {"status": PAUSED},
         )
 
         logger.info("pipeline_paused", pipeline_id=pipeline_id)
@@ -1038,10 +1044,12 @@ class HybridOrchestrator:
             return False
 
         # Update pipeline status to CANCELLED
-        self._state_manager.update_pipeline_status(
+        await self._state_manager.update_pipeline_state(
             pipeline_id,
-            status=CANCELLED,
-            current_node=current_node,  # Preserve current_node for debugging
+            {
+                "status": CANCELLED,
+                "current_node": current_node,
+            },  # Preserve current_node for debugging
         )
 
         logger.info(

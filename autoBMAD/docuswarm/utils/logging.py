@@ -13,12 +13,12 @@ import json
 import logging
 import logging.handlers
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Protocol, cast
 
 import structlog
-from structlog.processors import JSONRenderer, TimeStamper
+from structlog.processors import JSONRenderer
 from structlog.stdlib import BoundLogger
 from structlog.types import EventDict
 
@@ -33,6 +33,22 @@ class _Processor(Protocol):
         event_dict: EventDict,
     ) -> EventDict: ...
 
+
+class _BeijingTimeStamper:
+    """Custom structlog processor that stamps events with Beijing time (GMT+8)."""
+
+    def __call__(
+        self,
+        _logger: BoundLogger,
+        _method: str,
+        event_dict: EventDict,
+    ) -> EventDict:
+        event_dict["timestamp"] = datetime.now(BEIJING_TZ).isoformat()
+        return event_dict
+
+
+# Beijing timezone (UTC+8)
+BEIJING_TZ = timezone(timedelta(hours=8))
 
 # Default sensitive keys to filter
 DEFAULT_SENSITIVE_KEYS = [
@@ -65,6 +81,23 @@ _backup_count: int = 5
 _sensitive_keys: list[str] = []
 
 
+import re
+
+# Patterns for content-level redaction inside line_preview
+_LINE_REDACTION_PATTERNS = [
+    re.compile(r"sk-[a-zA-Z0-9_-]+"),
+    re.compile(r"Bearer\s+\S+"),
+    re.compile(r"(?i)(api_key|token|secret|password)\s*=\s*\S+"),
+]
+
+
+def _redact_line_content(line: str) -> str:
+    """Redact sensitive patterns inside a line string."""
+    for pattern in _LINE_REDACTION_PATTERNS:
+        line = pattern.sub("[REDACTED]", line)
+    return line
+
+
 def _redact_sensitive_fields(
     _logger: BoundLogger,
     _method: str,
@@ -80,6 +113,10 @@ def _redact_sensitive_fields(
             if sensitive in key_lower:
                 redacted[key] = "[REDACTED]"
                 break
+    # Content-level redaction for line_preview (stderr callback)
+    line_preview = redacted.get("line_preview")
+    if isinstance(line_preview, str):
+        redacted["line_preview"] = _redact_line_content(line_preview)
     return redacted
 
 
@@ -112,7 +149,7 @@ def _write_to_file(event_dict: EventDict) -> None:
         message_val: object = cast(object, event_dict.get("message", ""))
         message = str(event_val) if event_val is not None else str(message_val)
 
-        timestamp = datetime.now(UTC).isoformat()
+        timestamp = datetime.now(BEIJING_TZ).isoformat()
 
         if _json_mode:
             log_entry = {
@@ -137,7 +174,23 @@ def _write_to_file(event_dict: EventDict) -> None:
                     log_entry[key_str] = value_obj
             line = json.dumps(log_entry)
         else:
-            line = f'{timestamp} [{level}] run_id={run_id} node_id={node_id} message="{message}"\n'
+            extra_parts = []
+            for key, value in event_dict.items():
+                key_str: str = str(key)
+                if key_str not in [
+                    "event",
+                    "level",
+                    "run_id",
+                    "node_id",
+                    "timestamp",
+                    "message",
+                ]:
+                    extra_parts.append(f"{key_str}={value}")
+            extra = " ".join(extra_parts)
+            if extra:
+                line = f'{timestamp} [{level}] run_id={run_id} node_id={node_id} message="{message}" {extra}\n'
+            else:
+                line = f'{timestamp} [{level}] run_id={run_id} node_id={node_id} message="{message}"\n'
 
         # Use the rotating file handler
         _log_file_handler.emit(logging.makeLogRecord({"msg": line}))
@@ -203,8 +256,8 @@ def configure_logging(
     log_directory = log_dir if log_dir else Path("./logs")
     log_directory.mkdir(parents=True, exist_ok=True)
 
-    # Create date-based log filename
-    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
+    # Create date-based log filename (using Beijing time)
+    date_str = datetime.now(BEIJING_TZ).strftime("%Y-%m-%d")
     _log_file = log_directory / f"docuswarm-{date_str}.log"
 
     # Create rotating file handler
@@ -226,7 +279,7 @@ def configure_logging(
         _redact_sensitive_fields,
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
-        TimeStamper(fmt="iso", utc=True),
+        _BeijingTimeStamper(),
         _FileWriterProcessor(),  # Write to file
     ]
 

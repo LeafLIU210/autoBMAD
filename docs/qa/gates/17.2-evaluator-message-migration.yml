@@ -1,0 +1,41 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "17.2"
+story_title: "EvaluatorAgent Message Migration"
+gate: "PASS"
+status_reason: "All quality gates passed - type checking (0 errors), linting (0 errors), and unit tests (14 passed)"
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+# Always present but only active when WAIVED
+waiver: { active: false }
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues: []
+
+# Risk summary (from risk-profile task if run)
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Quality evidence
+evidence:
+  evidence:
+    tests_reviewed: 14
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]  # All ACs covered
+
+# Tool validation results
+tool_validation:
+  basedpyright:
+    status: PASS
+    result: "0 errors, 0 warnings, 0 notes"
+  ruff:
+    status: PASS
+    result: "0 errors"
+  pytest:
+    status: PASS
+    result: "14 tests passed"

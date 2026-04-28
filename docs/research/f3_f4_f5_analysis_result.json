@@ -1,0 +1,151 @@
+{
+  "issues": [
+    {
+      "issue_id": "F3-002",
+      "severity": "high",
+      "title": "MCP create_deliverable schema 未暴露 multi-document 参数",
+      "description": "LLM 无法通过 MCP 工具调用传递 document_index/document_total/document_type 参数",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\create_deliverable_sdk.py:243",
+      "evidence": [
+        "Schema 只包含 title, content, metadata"
+      ],
+      "recommendation": "在 MCP tool schema 中添加 multi-document 参数定义"
+    },
+    {
+      "issue_id": "F3-003",
+      "severity": "high",
+      "title": "submit_execution_report schema 只支持单 deliverable",
+      "description": "无法通过 submit_execution_report 报告多个文档",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\tools\\create_deliverable_sdk.py:288",
+      "evidence": [
+        "Schema 定义了单个 deliverable 对象，而非数组"
+      ],
+      "recommendation": "修改 schema 支持 deliverables 数组"
+    },
+    {
+      "issue_id": "F3-004",
+      "severity": "high",
+      "title": "IndependentAgent 只提取单个 execution report",
+      "description": "_extract_submit_report_result 方法只返回第一个找到的报告，无法处理多文档场景",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py:545",
+      "evidence": [
+        "方法返回单个 report 对象"
+      ],
+      "recommendation": "修改方法返回 report 列表"
+    },
+    {
+      "issue_id": "F3-005",
+      "severity": "high",
+      "title": "DualAgentNode 只维护单个 final_deliverable",
+      "description": "运行时态只支持单个 deliverable，无法存储多文档结果",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\nodes\\dual_agent.py:286",
+      "evidence": [
+        "final_deliverable: dict[str, Any] = {}"
+      ],
+      "recommendation": "改为 list[dict] 或添加 multi-document 包装结构"
+    },
+    {
+      "issue_id": "F4-003",
+      "severity": "high",
+      "title": "ContextManager.build_independent_input 丢弃 docs_context",
+      "description": "方法从 execution_context 读取数据，但未将 docs_context 放入返回的 IndependentAgentInput",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\context\\isolation.py:120",
+      "evidence": [
+        "方法返回 IndependentAgentInput 不包含 docs_context"
+      ],
+      "recommendation": "在方法中添加 docs_context 到返回字典"
+    },
+    {
+      "issue_id": "F4-004",
+      "severity": "high",
+      "title": "IndependentAgent.execute_with_input 强制 docs_context 为空列表",
+      "description": "方法重建 NodeExecutionContext 时将 docs_context 强制设为空列表，丢弃已注入的摘要",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\independent.py:924",
+      "evidence": [
+        "docs_context: list[dict[str, Any]] = []"
+      ],
+      "recommendation": "从 agent_input 读取 docs_context 并传递"
+    },
+    {
+      "issue_id": "F5-001",
+      "severity": "medium",
+      "title": "PipelineState.docs_context_summary 类型声明不明确",
+      "description": "声明类型为 list[dict[str,，期望 list[dict[str, Any]]",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\pipeline\\state.py:79",
+      "evidence": [
+        "声明: docs_context_summary: list[dict[str,"
+      ],
+      "recommendation": "明确声明为 list[dict[str, Any]]"
+    },
+    {
+      "issue_id": "F5-002",
+      "severity": "high",
+      "title": "SummaryAgent 返回类型与 PipelineState 声明不一致",
+      "description": "SummaryAgent.summarize_context 返回 list[DocumentSummary]，但 PipelineState 期望 list[dict[str, Any]]",
+      "location": "D:\\GITHUB\\DocuSwarm\\autoBMAD\\docuswarm\\agents\\summary.py:564",
+      "evidence": [
+        "SummaryAgent 返回: list[DocumentSummary]",
+        "PipelineState 期望: list[dict[str, Any]]"
+      ],
+      "recommendation": "统一类型：要么 SummaryAgent 返回 list[dict]（调用 to_dict()），要么修改 PipelineState 声明"
+    }
+  ],
+  "data_flows": [
+    {
+      "source": "LLM (multi-document intent)",
+      "sink": "NodeResult.deliverable",
+      "path": [
+        "MCP create_deliverable tool",
+        "CreateDeliverableSDKTool",
+        "IndependentAgent._parse_response",
+        "DualAgentNode.execute"
+      ],
+      "status": "broken"
+    },
+    {
+      "source": "PipelineState.docs_context_summary",
+      "sink": "IndependentAgent Prompt",
+      "path": [
+        "PipelineAdapter.convert_pipeline_to_node_state",
+        "context_file (accumulated)",
+        "_execute_node (executor.py)",
+        "context_builder.build",
+        "NodeExecutionContext.docs_context",
+        "ContextManager.build_independent_input",
+        "IndependentAgentInput",
+        "IndependentAgent.execute_with_input",
+        "NodeExecutionContext (rebuild)",
+        "contract_builder.build_independent_contract"
+      ],
+      "status": "broken"
+    },
+    {
+      "source": "SummaryAgent.summarize_context",
+      "sink": "PipelineState.docs_context_summary",
+      "path": [
+        "Orchestrator._summarize_referenced_documents",
+        "create_initial_state",
+        "PipelineState (LangGraph checkpoint)"
+      ],
+      "status": "partial"
+    }
+  ],
+  "summary": {
+    "total_issues": 8,
+    "severity_breakdown": {
+      "critical": 0,
+      "high": 7,
+      "medium": 1,
+      "low": 0
+    },
+    "data_flows": {
+      "total": 3,
+      "broken": 2,
+      "partial": 1,
+      "intact": 0
+    },
+    "f3_status": "未实现端到端",
+    "f4_status": "数据流断裂",
+    "f5_status": "类型不一致"
+  }
+}

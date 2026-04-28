@@ -1,0 +1,55 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "34.6"
+story_title: "Add Tool Availability Logging in SessionManager"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Implementation includes structured logging in create_session() and single_prompt() methods, covering MCP server counts, allowed tools list, and file/search permission directories. All 21 new tests pass, type checking shows 0 errors, and linting passes."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T10:45:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 22
+  tests_passed: 22
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3]
+    ac_gaps: []
+
+tool_validation:
+  basedpyright: { status: PASS, errors: 0, warnings: 4 }
+  ruff: { status: PASS, errors: 0 }
+  pytest: { status: PASS, passed: 22, failed: 0 }
+
+nfr_validation:
+  security: { status: PASS, notes: "No sensitive data logged; only tool configuration metadata" }
+  performance: { status: PASS, notes: "Logging is O(1) with minimal overhead" }
+  reliability: { status: PASS, notes: "Defensive checks for None values and attribute existence" }
+  maintainability: { status: PASS, notes: "Consistent structlog format, well-tested" }
+
+implementation_summary:
+  files_modified:
+    - path: "autoBMAD/docuswarm/llm/session_manager.py"
+      changes: "Added tools_configured info logging in create_session() and single_prompt() methods"
+  files_added:
+    - path: "tests/test_session_manager_tool_logging.py"
+      purpose: "Comprehensive test suite with 21 tests for tool logging functionality"
+  acceptance_criteria_verification:
+    - ac: 1
+      verified: true
+      notes: "tools_configured log includes mcp_servers count and allowed_tools list"
+    - ac: 2
+      verified: true
+      notes: "file_dirs and search_dirs from NodeToolPermissions are logged"
+    - ac: 3
+      verified: true
+      notes: "All logging uses structlog with key-value pairs for structured output"

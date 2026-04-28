@@ -1,0 +1,298 @@
+{
+  "title": "Phase B 测试缺口深度分析报告",
+  "description": "针对 Finding P1-3 的测试覆盖分析和补充计划",
+  "timestamp": "2026-04-04",
+  "findings": {
+    "existing_tests": {
+      "total_test_files": 12,
+      "test_files": [
+        "tests\\architecture\\test_p0_2_execution_trunk_retirement.py",
+        "tests\\architecture\\test_p0_3_async_sync_contract.py",
+        "tests\\cleanup\\test_models_removed.py",
+        "tests\\cleanup\\test_static_checks.py",
+        "tests\\e2e\\test_pipeline_orchestrator_after_retirement.py",
+        "tests\\integration\\test_orchestrator_migration.py",
+        "tests\\integration\\test_pipeline_service_migration.py",
+        "tests\\unit\\docuswarm\\test_config_cleanup.py",
+        "tests\\unit\\docuswarm\\llm\\test_session_manager_cleanup.py",
+        "tests\\unit\\docuswarm\\nodes\\test_dual_agent_cleanup.py",
+        "tests\\unit\\docuswarm\\pipeline\\test_escalation_migration.py",
+        "tests\\unit\\docuswarm\\storage\\test_state_manager_migration.py"
+      ],
+      "orchestrator_tests": [
+        "tests\\e2e\\test_pipeline_orchestrator_after_retirement.py",
+        "tests\\integration\\test_orchestrator_migration.py"
+      ],
+      "pipeline_service_tests": [
+        "tests\\e2e\\test_pipeline_orchestrator_after_retirement.py",
+        "tests\\integration\\test_pipeline_service_migration.py",
+        "tests\\unit\\docuswarm\\pipeline\\test_escalation_migration.py"
+      ],
+      "dual_agent_tests": [
+        "tests\\architecture\\test_p0_2_execution_trunk_retirement.py",
+        "tests\\unit\\docuswarm\\nodes\\test_dual_agent_cleanup.py"
+      ],
+      "escalation_tests": [
+        "tests\\unit\\docuswarm\\pipeline\\test_escalation_migration.py"
+      ]
+    },
+    "orchestrator_paths": {
+      "file": "autoBMAD/docuswarm/pipeline/orchestrator.py",
+      "main_methods": [
+        {
+          "name": "start_pipeline",
+          "line": 288,
+          "is_async": true,
+          "complexity": "低"
+        },
+        {
+          "name": "resume_pipeline",
+          "line": 399,
+          "is_async": true,
+          "complexity": "低"
+        },
+        {
+          "name": "restart_from_node",
+          "line": 530,
+          "is_async": true,
+          "complexity": "中"
+        }
+      ],
+      "methods_needing_tests": []
+    },
+    "pipeline_service": {
+      "file": "autoBMAD/docuswarm/cli/services/pipeline_service.py",
+      "methods": [
+        {
+          "name": "start",
+          "line": 58,
+          "is_async": true
+        },
+        {
+          "name": "status",
+          "line": 93,
+          "is_async": false
+        },
+        {
+          "name": "resume",
+          "line": 104,
+          "is_async": true
+        },
+        {
+          "name": "restart_from_node",
+          "line": 116,
+          "is_async": true
+        },
+        {
+          "name": "cancel",
+          "line": 129,
+          "is_async": false
+        },
+        {
+          "name": "list_pipelines",
+          "line": 152,
+          "is_async": false
+        },
+        {
+          "name": "cancel_all",
+          "line": 163,
+          "is_async": false
+        }
+      ]
+    },
+    "escalation": {
+      "file": "autoBMAD/docuswarm/pipeline/escalation.py",
+      "methods": [
+        {
+          "name": "escalate",
+          "line": 119,
+          "is_async": true
+        },
+        {
+          "name": "resolve",
+          "line": 179,
+          "is_async": true
+        }
+      ],
+      "critical_paths": [
+        "escalate",
+        "resolve"
+      ]
+    }
+  },
+  "smoke_test_specs": {
+    "test_start_pipeline": {
+      "file": "tests/smoke/test_start_pipeline.py",
+      "description": "测试主启动路径",
+      "scenarios": [
+        {
+          "name": "正常启动",
+          "setup": "创建有效上下文文件",
+          "action": "调用 orchestrator.start_pipeline()",
+          "expected": "返回 pipeline_id, 状态为 running 或 completed"
+        },
+        {
+          "name": "无效上下文",
+          "setup": "创建无效上下文文件",
+          "action": "调用 start_pipeline()",
+          "expected": "抛出 ContextValidationError"
+        },
+        {
+          "name": "自定义 pipeline_id",
+          "setup": "提供自定义 pipeline_id",
+          "action": "调用 start_pipeline(pipeline_id='custom-id')",
+          "expected": "使用自定义 ID 创建 pipeline"
+        }
+      ],
+      "mocks_needed": [
+        "StateManager",
+        "ContextValidator",
+        "SessionManager",
+        "LangGraph checkpointer"
+      ]
+    },
+    "test_resume_pipeline": {
+      "file": "tests/smoke/test_resume_pipeline.py",
+      "description": "测试恢复路径",
+      "scenarios": [
+        {
+          "name": "正常恢复",
+          "setup": "创建 paused 状态的 pipeline",
+          "action": "调用 orchestrator.resume_pipeline()",
+          "expected": "pipeline 恢复执行，返回最终状态"
+        },
+        {
+          "name": "已完成的 pipeline",
+          "setup": "创建 completed 状态的 pipeline",
+          "action": "调用 resume_pipeline()",
+          "expected": "抛出 PipelineAlreadyCompletedError"
+        },
+        {
+          "name": "不存在的 pipeline",
+          "setup": "使用不存在的 pipeline_id",
+          "action": "调用 resume_pipeline()",
+          "expected": "抛出 PipelineNotFoundError"
+        }
+      ],
+      "mocks_needed": [
+        "StateManager (已有 paused 状态)",
+        "Checkpoint 恢复"
+      ]
+    },
+    "test_cancel_pipeline": {
+      "file": "tests/smoke/test_cancel_pipeline.py",
+      "description": "测试取消路径",
+      "scenarios": [
+        {
+          "name": "正常取消",
+          "setup": "创建 running 状态的 pipeline",
+          "action": "调用 PipelineService.cancel()",
+          "expected": "状态变为 cancelled"
+        },
+        {
+          "name": "取消已完成 pipeline",
+          "setup": "创建 completed 状态的 pipeline",
+          "action": "调用 cancel()",
+          "expected": "抛出 ValueError"
+        },
+        {
+          "name": "批量取消",
+          "setup": "创建多个 running pipeline",
+          "action": "调用 PipelineService.cancel_all()",
+          "expected": "所有 pipeline 状态变为 cancelled"
+        }
+      ],
+      "mocks_needed": [
+        "StateManager (返回各种状态)"
+      ]
+    },
+    "test_escalation": {
+      "file": "tests/smoke/test_escalation.py",
+      "description": "测试升级路径",
+      "scenarios": [
+        {
+          "name": "触发升级",
+          "setup": "配置低质量阈值，模拟 BLOCKED 节点",
+          "action": "节点执行达到阈值",
+          "expected": "调用 EscalationHandler.escalate(), 状态变为 paused"
+        },
+        {
+          "name": "解决升级",
+          "setup": "创建 escalated 状态的 pipeline",
+          "action": "调用 EscalationHandler.resolve()",
+          "expected": "pipeline 可恢复执行"
+        }
+      ],
+      "mocks_needed": [
+        "EscalationHandler",
+        "StateManager",
+        "QualityGate"
+      ],
+      "note": "需要确保 escalate() 被 await"
+    }
+  },
+  "implementation_plan": {
+    "phase_b_test_tasks": [
+      {
+        "priority": "P0",
+        "file": "tests/smoke/test_start_pipeline.py",
+        "estimated_effort": "4 小时",
+        "dependencies": [
+          "修复 orchestrator.py asyncio.run 问题"
+        ],
+        "key_assertions": [
+          "assert pipeline_id is not None",
+          "assert status in ['running', 'completed']",
+          "mock_context_validator.validate_context_with_llm.assert_called_once()"
+        ]
+      },
+      {
+        "priority": "P0",
+        "file": "tests/smoke/test_resume_pipeline.py",
+        "estimated_effort": "3 小时",
+        "dependencies": [
+          "修复 orchestrator.py asyncio.run 问题"
+        ],
+        "key_assertions": [
+          "assert result['status'] == 'completed'",
+          "mock_checkpoint.get_latest.assert_called()"
+        ]
+      },
+      {
+        "priority": "P1",
+        "file": "tests/smoke/test_cancel_pipeline.py",
+        "estimated_effort": "2 小时",
+        "dependencies": [
+          "移除 _run_async bridge"
+        ],
+        "key_assertions": [
+          "assert cancelled is True",
+          "assert pipeline['status'] == 'cancelled'"
+        ]
+      },
+      {
+        "priority": "P1",
+        "file": "tests/smoke/test_escalation.py",
+        "estimated_effort": "4 小时",
+        "dependencies": [
+          "修复 dual_agent.py escalate await 问题"
+        ],
+        "key_assertions": [
+          "mock_escalation_handler.escalate.assert_awaited_once()",
+          "assert escalation_record.status == 'pending'"
+        ]
+      }
+    ],
+    "common_fixtures": [
+      "tests/conftest.py: mock_state_manager",
+      "tests/conftest.py: mock_context_validator",
+      "tests/conftest.py: mock_session_manager",
+      "tests/conftest.py: mock_checkpointer"
+    ],
+    "verification": [
+      "pytest tests/smoke/ -v 应该全部通过",
+      "coverage run -m pytest tests/smoke/",
+      "coverage report -m autoBMAD/docuswarm/pipeline/orchestrator.py 应该 > 40%"
+    ]
+  }
+}

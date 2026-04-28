@@ -1,0 +1,44 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "13.6"
+story_title: "Orchestrator 集成"
+gate: "PASS"
+status_reason: "All acceptance criteria met: ContextValidator integration complete with lazy loading, fail_open support, proper error handling, and warning logs for fallback. All 27 tests pass, type checking passes, and linting passes."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+# Tool validation results
+tool_validation:
+  basedpyright:
+    status: PASS
+    result: "0 errors, 0 warnings, 0 notes"
+  ruff:
+    status: PASS
+    result: "All checks passed"
+  pytest:
+    status: PASS
+    result: "27 tests passed, 67% coverage on orchestrator.py"
+
+# Evidence
+evidence:
+  tests_reviewed: 27
+  ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+  ac_gaps: []
+  implementation_verified:
+    - "Old _validate_context method removed (~83 lines)"
+    - "Added _context_validator lazy loading attribute"
+    - "Added _get_context_validator method"
+    - "start_pipeline uses validator.validate()"
+    - "fail_open parameter added to __init__"
+    - "ContextValidationError raised on failure"
+    - "Warning logged when fallback_used=True"

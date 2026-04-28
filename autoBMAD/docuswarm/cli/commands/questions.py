@@ -22,7 +22,7 @@ console = Console()
 )
 def questions(pipeline_id: str, run_id: str | None) -> None:
     """List all unanswered questions for the specified pipeline.
-    
+
     Displays questions sorted by priority: blocking (red), clarifying (yellow), optional (dimmed).
     """
     try:

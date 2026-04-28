@@ -31,15 +31,15 @@ console = Console()
 )
 def resume(pipeline_id: str, node_id: str | None, force: bool) -> None:
     """Resume an interrupted pipeline from its last checkpoint.
-    
+
     Use --node to restart from a specific node instead of resuming.
     Use --force to resume a running pipeline.
     """
     service = PipelineService()
-    
+
     try:
         pipeline = service.status(pipeline_id)
-        
+
         if pipeline is None:
             console.print(f"[red]Error: Pipeline not found: {pipeline_id}[/red]")
             raise click.ClickException(f"Pipeline not found: {pipeline_id}")

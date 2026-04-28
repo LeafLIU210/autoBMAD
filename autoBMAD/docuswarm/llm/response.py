@@ -137,180 +137,10 @@ def extract_json_from_markdown(text: str) -> dict[str, Any]:
     raise ResponseParseError("No valid JSON found in markdown code blocks")
 
 
-def validate_independent_output(data: dict[str, Any]) -> None:
-    """
-    Validate Independent Agent output against schema.
-
-    Schema:
-        - deliverable: {title: str, content: str, file_path: str, sha256: str, metadata: dict}
-        - questions: List[{priority: str, question: str, context: str}]
-        - private_reasoning: Optional[str]
-
-    P0 Single Truth: file_path and sha256 are now included in deliverable.
-
-    Args:
-        data: Output from Independent Agent
-
-    Raises:
-        ValidationError: If validation fails
-    """
-    # Validate deliverable (required)
-    if "deliverable" not in data:
-        raise ValidationError("deliverable: required field missing")
-
-    deliverable: dict[str, Any] = data["deliverable"]
-
-    # Validate deliverable.title (required, must be string)
-    if "title" not in deliverable:
-        raise ValidationError("deliverable.title: required field missing")
-    if not isinstance(deliverable["title"], str):
-        raise ValidationError("deliverable.title: must be a string")
-
-    # P0-3: Validate file_path (now REQUIRED)
-    if "file_path" not in deliverable:
-        raise ValidationError("deliverable.file_path: required field missing")
-    if not isinstance(deliverable["file_path"], str):
-        raise ValidationError("deliverable.file_path: must be a string")
-
-    # P0-3: Validate sha256 (now REQUIRED)
-    if "sha256" not in deliverable:
-        raise ValidationError("deliverable.sha256: required field missing")
-    if not isinstance(deliverable["sha256"], str):
-        raise ValidationError("deliverable.sha256: must be a string")
-
-    # P0-3: Validate summary (preferred over content)
-    if "summary" in deliverable and not isinstance(deliverable["summary"], str):
-        raise ValidationError("deliverable.summary: must be a string")
-
-    # P0-3: content is now optional (deprecated, use summary instead)
-    if "content" in deliverable and not isinstance(deliverable["content"], str):
-        raise ValidationError("deliverable.content: must be a string")
-
-    # Validate deliverable.metadata (optional, but if present must be dict)
-    if "metadata" in deliverable and not isinstance(deliverable["metadata"], dict):
-        raise ValidationError("deliverable.metadata: must be a dict")
-
-    # Validate questions (required)
-    if "questions" not in data:
-        raise ValidationError("questions: required field missing")
-    if not isinstance(data["questions"], list):
-        raise ValidationError("questions: must be a list")
-
-    valid_priorities = {"blocking", "clarifying", "optional"}
-
-    questions: list[dict[str, Any]] = cast("list[dict[str, Any]]", data["questions"])
-    for i, question_dict in enumerate(questions):
-        # Validate priority (required)
-        if "priority" not in question_dict:
-            raise ValidationError(f"questions[{i}].priority: required field missing")
-        if question_dict["priority"] not in valid_priorities:
-            raise ValidationError(
-                f"questions[{i}].priority: invalid value '{question_dict['priority']}'. Must be one of: {', '.join(valid_priorities)}"
-            )
-
-        # Validate question (required, must be string)
-        if "question" not in question_dict:
-            raise ValidationError(f"questions[{i}].question: required field missing")
-        if not isinstance(question_dict["question"], str):
-            raise ValidationError(f"questions[{i}].question: must be a string")
-
-        # Validate context (required, must be string)
-        if "context" not in question_dict:
-            raise ValidationError(f"questions[{i}].context: required field missing")
-        if not isinstance(question_dict["context"], str):
-            raise ValidationError(f"questions[{i}].context: must be a string")
-
-    # Validate private_reasoning (optional, but if present must be string)
-    if "private_reasoning" in data and data["private_reasoning"] is not None:
-        if not isinstance(data["private_reasoning"], str):
-            raise ValidationError("private_reasoning: must be a string")
-
-
-def validate_evaluator_output(data: dict[str, Any]) -> None:
-    """
-    Validate Evaluator Agent output against schema.
-
-    Schema:
-        - criterion_scores: Dict[str, float] (values 0.0-1.0)
-        - alignment_score: float (0.0-1.0)
-        - verdict: Literal["APPROVED", "NEEDS_REVISION", "BLOCKED"]
-        - issues_found: List[str]
-        - suggestions: List[str]
-
-    Args:
-        data: Output from Evaluator Agent
-
-    Raises:
-        ValidationError: If validation fails
-    """
-    valid_verdicts = {"APPROVED", "NEEDS_REVISION", "BLOCKED"}
-
-    # Validate criterion_scores (required, must be dict)
-    if "criterion_scores" not in data:
-        raise ValidationError("criterion_scores: required field missing")
-    if not isinstance(data["criterion_scores"], dict):
-        raise ValidationError("criterion_scores: must be a dict")
-
-    criterion_scores: dict[str, float] = cast("dict[str, float]", data["criterion_scores"])
-    for key, value in criterion_scores.items():
-        # Validation: ensure value is a number
-        if not isinstance(value, int | float):  # pyright: ignore[reportUnnecessaryIsInstance]
-            raise ValidationError(
-                f"criterion_scores['{key}']: must be a number, got {type(value).__name__}"
-            )
-        # Validation: ensure value is in valid range
-        if not (0.0 <= value <= 1.0):
-            raise ValidationError(
-                f"criterion_scores['{key}']: must be between 0.0 and 1.0, got {value}"
-            )
-
-    # Validate alignment_score (required, must be number)
-    if "alignment_score" not in data:
-        raise ValidationError("alignment_score: required field missing")
-    if not isinstance(data["alignment_score"], int | float):
-        raise ValidationError("alignment_score: must be a number")
-    if not (0.0 <= data["alignment_score"] <= 1.0):
-        raise ValidationError(
-            f"alignment_score: must be between 0.0 and 1.0, got {data['alignment_score']}"
-        )
-
-    # Validate verdict (required, must be one of valid values)
-    if "verdict" not in data:
-        raise ValidationError("verdict: required field missing")
-    if data["verdict"] not in valid_verdicts:
-        raise ValidationError(
-            f"verdict: invalid value '{data['verdict']}'. Must be one of: APPROVED, NEEDS_REVISION, BLOCKED"
-        )
-
-    # Validate issues_found (required, must be list of strings)
-    if "issues_found" not in data:
-        raise ValidationError("issues_found: required field missing")
-    if not isinstance(data["issues_found"], list):
-        raise ValidationError("issues_found: must be a list")
-    issues_found: list[str] = cast("list[str]", data["issues_found"])
-    # Validation: ensure list contains strings
-    for i, issue in enumerate(issues_found):
-        if not isinstance(issue, str):  # pyright: ignore[reportUnnecessaryIsInstance]
-            raise ValidationError(f"issues_found[{i}]: must be a string")
-
-    # Validate suggestions (required, must be list of strings)
-    if "suggestions" not in data:
-        raise ValidationError("suggestions: required field missing")
-    if not isinstance(data["suggestions"], list):
-        raise ValidationError("suggestions: must be a list")
-    suggestions: list[str] = cast("list[str]", data["suggestions"])
-    # Validation: ensure list contains strings
-    for i, suggestion in enumerate(suggestions):
-        if not isinstance(suggestion, str):  # pyright: ignore[reportUnnecessaryIsInstance]
-            raise ValidationError(f"suggestions[{i}]: must be a string")
-
-
 __all__ = [
     "extract_json",
     "extract_json_from_markdown",
     "extract_text_from_messages",
-    "validate_independent_output",
-    "validate_evaluator_output",
     "ResponseParseError",
     "ValidationError",
 ]
@@ -318,6 +148,9 @@ __all__ = [
 
 def extract_text_from_messages(messages: list[MessageLike]) -> str:
     """Extract text content from the last assistant Message.
+
+    Fix: 使用 isinstance 判断 AssistantMessage，而非 role 属性。
+    官方文档推荐模式：isinstance(msg, AssistantMessage)。
 
     Handles all content types returned by Kimi SDK:
     - list[ContentPart]: Multiple content parts (text, thinking, media)
@@ -342,23 +175,60 @@ def extract_text_from_messages(messages: list[MessageLike]) -> str:
 
     logger.debug("extract_text_debug", total_messages=len(messages))
 
+    # Try to import SDK types for isinstance checks
+    try:
+        from claude_agent_sdk.types import AssistantMessage, TextBlock
+
+        sdk_types_available = True
+    except ImportError:
+        sdk_types_available = False
+        AssistantMessage = None  # type: ignore[misc]
+        TextBlock = None  # type: ignore[misc]
+
     for idx, msg in enumerate(reversed(messages)):
-        msg_role: str = getattr(msg, "role", "")
-        msg_content: Any = getattr(msg, "content", None)
+        # Fix: Handle both dict and object type messages
+        if isinstance(msg, dict):
+            msg_content: Any = msg.get("content")
+        else:
+            msg_content = getattr(msg, "content", None)
+
+        # Fix: 优先使用 isinstance 检查，fallback 到 role 字符串和 duck typing
+        is_assistant = False
+        if sdk_types_available and AssistantMessage is not None:
+            is_assistant = isinstance(msg, AssistantMessage)
+
+        # Fallback: 如果 isinstance 检查失败，尝试 role 属性（兼容旧格式）
+        if not is_assistant:
+            # Handle dict type messages (legacy format)
+            if isinstance(msg, dict):
+                is_assistant = msg.get("role") == "assistant"
+            else:
+                is_assistant = getattr(msg, "role", "") == "assistant"
+
+        # Fix: 额外的 fallback - 通过 duck typing 识别 AssistantMessage
+        # AssistantMessage 有 content 和 model 属性，但没有 subtype (SystemMessage 有)
+        if not is_assistant and hasattr(msg, "content"):
+            # 如果有 model 属性，很可能是 AssistantMessage
+            if hasattr(msg, "model"):
+                is_assistant = True
+            # 如果类名包含 AssistantMessage
+            elif "AssistantMessage" in type(msg).__name__:
+                is_assistant = True
+
+        msg_role = getattr(msg, "role", "unknown") if hasattr(msg, "role") else "(no role attr)"
+
         logger.debug(
             "message_analysis",
             idx=idx,
-            has_role=hasattr(msg, "role"),
+            msg_type=type(msg).__name__,
+            is_assistant=is_assistant,
+            role_attr=msg_role,
             has_content=hasattr(msg, "content"),
-            role=msg_role,
             content_type=type(msg_content).__name__,
         )
 
-        if not hasattr(msg, "role") or not hasattr(msg, "content"):
-            continue
-
-        if msg_role != "assistant":
-            logger.debug("skip_message", reason=f"not_assistant_role={msg_role}")
+        if not is_assistant:
+            logger.debug("skip_message", reason="not_assistant")
             continue
 
         # Check content after extracting - allow empty list to pass through
@@ -390,26 +260,46 @@ def extract_text_from_messages(messages: list[MessageLike]) -> str:
             logger.debug("string_content", length=len(content_raw))
             return content_raw
 
-        # Case B: list[ContentPart] - iterate and extract ALL text (including thinking)
+        # Case B: list[ContentPart] - iterate and extract text
         if hasattr(content_raw, "__iter__") and not isinstance(content_raw, str):
             text_parts: list[str] = []
             for part_idx, part in enumerate(content_raw):
-                part_typed: ContentPartLike = part  # type: ignore[assignment]
+                # Fix: Handle dict type content parts (legacy format)
+                if isinstance(part, dict):
+                    if part.get("type") == "text":
+                        part_text = part.get("text", "")
+                        text_parts.append(part_text)
+                        logger.debug("extracted_text_from_dict", text_length=len(part_text))
+                    continue
+
                 logger.debug(
                     "content_part_analysis",
                     part_idx=part_idx,
                     part_type=type(part).__name__,
                     has_text=hasattr(part, "text"),
-                    has_type_attr=hasattr(part, "type"),
-                    type_value=getattr(part, "type", None),
                 )
-                # Extract text from any part that has text attribute
-                if hasattr(part, "text"):
-                    part_text: str = part_typed.text
-                    text_parts.append(part_text)
-                    logger.debug("extracted_text_from_part", text_length=len(part_text))
-                elif isinstance(part, str):
+
+                # Fix: 使用 isinstance 检查 TextBlock，而非 type 属性
+                if sdk_types_available and TextBlock is not None:
+                    if isinstance(part, TextBlock):
+                        part_text: str = part.text
+                        text_parts.append(part_text)
+                        logger.debug("extracted_text_from_textblock", text_length=len(part_text))
+                    elif hasattr(part, "text"):
+                        # Fallback for other objects with text attribute
+                        part_text = part.text
+                        text_parts.append(part_text)
+                        logger.debug("extracted_text_from_part", text_length=len(part_text))
+                else:
+                    # Fallback: extract text from any part that has text attribute
+                    if hasattr(part, "text"):
+                        part_text = part.text
+                        text_parts.append(part_text)
+                        logger.debug("extracted_text_from_part", text_length=len(part_text))
+
+                if isinstance(part, str):
                     text_parts.append(part)
+
             combined: str = "".join(text_parts)
             logger.debug("combined_text", length=len(combined))
             if combined:
@@ -429,5 +319,27 @@ def extract_text_from_messages(messages: list[MessageLike]) -> str:
         content_raw_str: str = content_raw  # type: ignore[assignment]
         return str(content_raw_str)
 
-    logger.debug("no_text_extracted")
+    # P2 Fix: 升级为 warning 并包含诊断信息
+    role_list = []
+    assistant_found = False
+    for msg in messages:
+        if sdk_types_available and AssistantMessage is not None:
+            if isinstance(msg, AssistantMessage):
+                assistant_found = True
+                role_list.append("assistant(via isinstance)")
+            else:
+                role_list.append(getattr(msg, "role", type(msg).__name__))
+        else:
+            role = getattr(msg, "role", "unknown")
+            role_list.append(role)
+            if role == "assistant":
+                assistant_found = True
+
+    logger.warning(
+        "no_text_extracted",
+        message_count=len(messages),
+        role_list=role_list,
+        has_assistant_message=assistant_found,
+        hint="Check if LLM returned valid assistant messages with text content",
+    )
     return ""

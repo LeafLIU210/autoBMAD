@@ -1,0 +1,58 @@
+{
+  "session_manager_responsibilities": [
+    "Construct ClaudeAgentOptions (SDK-specific)",
+    "Create MCP servers",
+    "Generate allowed_tools list",
+    "Inject Skills setting_sources",
+    "Instantiate ClaudeSDKClient",
+    "Register stderr callback",
+    "Process kill fallback"
+  ],
+  "direct_sdk_imports_in_nodes": [
+    "tools\\agent_sdk_capability_auditor.py",
+    "tools\\architecture_analyzer.py",
+    "tools\\kimi_message_probe.py",
+    "tools\\transport_hardening_research_tool.py",
+    "tools\\winerror5_architecture_research_tool.py",
+    "autoBMAD\\epic_automation\\epic_driver.py",
+    "autoBMAD\\epic_automation\\sdk_wrapper.py",
+    "autoBMAD\\docuswarm\\tools\\create_deliverable_sdk.py",
+    "autoBMAD\\docuswarm\\tools\\file_tools_sdk.py",
+    "autoBMAD\\docuswarm\\tools\\search_tools_sdk.py",
+    "autoBMAD\\docuswarm\\tools\\update_context_sdk.py"
+  ],
+  "boundary_violations": [
+    {
+      "id": "R1-001",
+      "severity": "HIGH",
+      "category": "provider_responsibility_bloat",
+      "title": "SessionManager carries too many responsibilities",
+      "detail": "SessionManager currently handles 7 distinct concerns: Construct ClaudeAgentOptions (SDK-specific), Create MCP servers, Generate allowed_tools list, Inject Skills setting_sources, Instantiate ClaudeSDKClient, Register stderr callback, Process kill fallback. This violates single-responsibility and causes transport failures to propagate directly to every business node.",
+      "evidence": [
+        "session_manager.py: _create_options builds SDK-specific options dict",
+        "session_manager.py: create_session instantiates ClaudeSDKClient directly",
+        "session_manager.py: _build_allowed_tools mixes builtin + MCP + Skill logic"
+      ],
+      "file_path": "",
+      "line_hint": "",
+      "recommendation": "Extract ClaudeOptionsFactory, ClaudeSessionFactory, ClaudeTransportMonitor."
+    }
+  ],
+  "recommended_protocol": {
+    "AgentRuntime": {
+      "methods": [
+        "preflight",
+        "create_session",
+        "close_all"
+      ],
+      "purpose": "Isolate business nodes from transport details"
+    },
+    "AgentSession": {
+      "methods": [
+        "prompt",
+        "close"
+      ],
+      "purpose": "Per-session abstraction"
+    }
+  }
+}

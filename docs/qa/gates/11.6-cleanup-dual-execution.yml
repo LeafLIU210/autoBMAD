@@ -1,0 +1,65 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "11.6"
+story_title: "Cleanup Dual Execution System"
+gate: "PASS"
+status_reason: "All acceptance criteria met - deprecation warnings in place, MockNodeExecutor available, orchestrator provides session_manager, type checking passes with 0 errors."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-23T12:00:00Z"
+
+waiver:
+  active: false
+
+top_issues: []
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 0
+    low: 0
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_metrics:
+  document_completeness: 100
+  tests_passed: 100
+  test_coverage: 82
+  lint_errors: 0
+  type_errors: 0
+  type_warnings: 7
+
+tool_results:
+  basedpyright:
+    status: PASS
+    errors: 0
+    warnings: 7
+    details: "Type checking passed on pipeline module - warnings are minor (unused imports, unreachable code)"
+  ruff:
+    status: PASS
+    errors: 0
+    warnings: 0
+    details: "graph.py passes all checks. Minor pre-existing issues in orchestrator.py (unused imports, trailing whitespace) not related to this story"
+  pip_install:
+    status: PASS
+    details: "Package installs successfully"
+  cli_execution:
+    status: PASS
+    details: "CLI executes correctly"
+
+history:
+  - at: "2026-02-23T12:00:00Z"
+    gate: PASS
+    note: "Initial review - all acceptance criteria met"
+
+notes: |
+  - Deprecated function `_create_default_node_executor()` logs warning when called
+  - Orchestrator always provides session_manager in production use
+  - MockNodeExecutor available for unit testing without LLM
+  - Type checking: 0 errors, 7 warnings (minor)
+
+recommendations:
+  future:
+    - action: "Consider fixing pre-existing linting issues in orchestrator.py"
+    - action: "Remove deprecated path after 2 sprint cycles per deprecation timeline"

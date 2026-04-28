@@ -1,0 +1,39 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision: Story 26.5
+# Generated: 2026-03-27
+
+schema: 1
+story: "26.5"
+story_title: "architect 节点配置 v2 升级"
+gate: "PASS"
+status_reason: "All acceptance criteria satisfied. 66/66 tests pass. NodeLoader verification confirms task.name='create-system-architecture-document', schema_version='2.0', evaluator threshold=0.75. Completeness score: 100%."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-27T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 66
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  configuration: { status: PASS, notes: "Schema v2 configuration correctly implemented" }
+  testability: { status: PASS, notes: "66 comprehensive unit tests cover all acceptance criteria" }
+  maintainability: { status: PASS, notes: "100% completeness score on node config checker" }
+  reliability: { status: PASS, notes: "NodeLoader correctly loads all v2 fields" }
+
+history:
+  - at: "2026-03-27T00:00:00Z"
+    gate: PASS
+    note: "Initial QA review - all criteria met, 66 tests pass, 100% completeness"

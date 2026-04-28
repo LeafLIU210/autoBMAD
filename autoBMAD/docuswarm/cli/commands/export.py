@@ -49,7 +49,9 @@ def export(
         md_files = list(pipeline_source.glob("*.md"))
 
         if not md_files:
-            console.print(f"[yellow]Warning: No deliverables found for pipeline '{pipeline_id}'[/yellow]")
+            console.print(
+                f"[yellow]Warning: No deliverables found for pipeline '{pipeline_id}'[/yellow]"
+            )
 
         exported_count = 0
         for md_file in md_files:

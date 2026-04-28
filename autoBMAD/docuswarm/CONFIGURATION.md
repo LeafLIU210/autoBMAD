@@ -1,17 +1,17 @@
 # DocuSwarm 配置说明
 
-## Kimi API 配置
+## Anthropic API 配置
 
-DocuSwarm 使用 Kimi Agent SDK 与 Kimi K2.5 API 进行交互。配置方式支持两种方式：
+DocuSwarm 使用 Anthropic API 与 Claude 模型进行交互。配置方式支持两种方式：
 
 ### 方式 1：环境变量（推荐）
 
 在项目根目录的 `.env` 文件中配置：
 
 ```env
-# Kimi API 配置
-KIMI_API_KEY=your-api-key-here
-KIMI_BASE_URL=https://api.kimi.com/coding/
+# Anthropic API 配置
+ANTHROPIC_API_KEY=your-api-key-here
+ANTHROPIC_BASE_URL=https://api.anthropic.com/v1/
 ```
 
 ### 方式 2：系统环境变量（回退方式）
@@ -19,8 +19,8 @@ KIMI_BASE_URL=https://api.kimi.com/coding/
 如果 `.env` 文件不存在或未设置，系统会尝试从系统环境变量读取：
 
 ```bash
-export KIMI_API_KEY=your-api-key-here
-export KIMI_BASE_URL=https://api.kimi.com/coding/
+export ANTHROPIC_API_KEY=your-api-key-here
+export ANTHROPIC_BASE_URL=https://api.anthropic.com/v1/
 ```
 
 ## 配置优先级
@@ -34,64 +34,58 @@ export KIMI_BASE_URL=https://api.kimi.com/coding/
 ### 示例：base_url 配置优先级
 
 ```python
-# 优先级 1: 环境变量 KIMI_BASE_URL
-KIMI_BASE_URL=https://custom-api.example.com/v1
+# 优先级 1: 环境变量 ANTHROPIC_BASE_URL
+ANTHROPIC_BASE_URL=https://custom-api.example.com/v1
 
 # 优先级 2: YAML 配置
 # config/docuswarm.yaml
-base_url: https://api.kimi.com/coding/
+base_url: https://api.anthropic.com/v1/
 
 # 优先级 3: 默认值
-DEFAULT_BASE_URL = "https://api.kimi.com/coding/"
+DEFAULT_BASE_URL = "https://api.anthropic.com/v1/"
 ```
 
-## 自定义 Kimi API Endpoint
+## 自定义 Anthropic API Endpoint
 
-如果需要使用自定义的 Kimi API endpoint（例如私有部署或镜像地址），只需设置 `KIMI_BASE_URL` 环境变量：
+如果需要使用自定义的 Anthropic API endpoint（例如私有部署或镜像地址），只需设置 `ANTHROPIC_BASE_URL` 环境变量：
 
 ### 在 .env 文件中
 
 ```env
-KIMI_API_KEY=your-api-key
-KIMI_BASE_URL=https://your-custom-endpoint.com/v1
+ANTHROPIC_API_KEY=your-api-key
+ANTHROPIC_BASE_URL=https://your-custom-endpoint.com/v1
 ```
 
 ### 在命令行中
 
 ```bash
 # Linux/macOS
-export KIMI_BASE_URL=https://your-custom-endpoint.com/v1
+export ANTHROPIC_BASE_URL=https://your-custom-endpoint.com/v1
 python -m autoBMAD.docuswarm start -c context.md
 
 # Windows PowerShell
-$env:KIMI_BASE_URL="https://your-custom-endpoint.com/v1"
+$env:ANTHROPIC_BASE_URL="https://your-custom-endpoint.com/v1"
 python -m autoBMAD.docuswarm start -c context.md
 ```
 
 ## SDK Config 对象
 
-内部实现中，`KimiSessionManager` 会自动将 `KIMI_API_KEY` 和 `KIMI_BASE_URL` 转换为 SDK 的 `Config` 对象：
+内部实现中，`SessionManager` 会自动将 `ANTHROPIC_API_KEY` 和 `ANTHROPIC_BASE_URL` 转换为 SDK 配置：
 
 ```python
-from kimi_agent_sdk import Config
+from autoBMAD.docuswarm.config import load_config
 
-config = Config(
-    providers={
-        "kimi": {
-            "type": "kimi",
-            "base_url": os.environ.get("KIMI_BASE_URL", "https://api.kimi.com/coding/"),
-            "api_key": os.environ.get("KIMI_API_KEY"),
-        }
-    }
-)
+config = load_config()
+# config.api_key 来自 ANTHROPIC_API_KEY
+# config.base_url 来自 ANTHROPIC_BASE_URL 或默认值
 ```
 
 ## 配置验证
 
 启动时，系统会验证必需的配置：
 
-- ✅ `KIMI_API_KEY` **必需** - 如果未设置会抛出 `ConfigurationError`
-- ✅ `KIMI_BASE_URL` **可选** - 如果未设置使用默认值 `https://api.kimi.com/coding/`
+- ✅ `ANTHROPIC_API_KEY` **必需** - 如果未设置会抛出 `ConfigurationError`
+- ✅ `ANTHROPIC_BASE_URL` **可选** - 如果未设置使用默认值 `https://api.anthropic.com/v1/`
 
 ## 完整配置示例
 
@@ -99,10 +93,10 @@ config = Config(
 
 ```env
 # =============================================================================
-# REQUIRED - Kimi API 配置
+# REQUIRED - Anthropic API 配置
 # =============================================================================
-KIMI_API_KEY=your-kimi-api-key-here
-KIMI_BASE_URL=https://api.kimi.com/coding/
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+ANTHROPIC_BASE_URL=https://api.anthropic.com/v1/
 
 # =============================================================================
 # OPTIONAL - DocuSwarm 配置
@@ -133,23 +127,23 @@ EPIC_TEST_DIR=tests
 
 ## 故障排查
 
-### 错误：ConfigurationError: KIMI_API_KEY is required
+### 错误：ConfigurationError: ANTHROPIC_API_KEY is required
 
-**原因**：未设置 `KIMI_API_KEY` 环境变量。
+**原因**：未设置 `ANTHROPIC_API_KEY` 环境变量。
 
 **解决方案**：
 1. 确保 `.env` 文件存在于项目根目录
-2. 检查 `.env` 文件中是否包含 `KIMI_API_KEY=your-api-key`
+2. 检查 `.env` 文件中是否包含 `ANTHROPIC_API_KEY=your-api-key`
 3. 验证 API Key 格式正确
 
 ### 错误：Connection refused / API endpoint not reachable
 
-**原因**：`KIMI_BASE_URL` 配置错误或网络问题。
+**原因**：`ANTHROPIC_BASE_URL` 配置错误或网络问题。
 
 **解决方案**：
-1. 检查 `KIMI_BASE_URL` 是否正确
+1. 检查 `ANTHROPIC_BASE_URL` 是否正确
 2. 验证网络连接
-3. 尝试使用默认的 `https://api.kimi.com/coding/`
+3. 尝试使用默认的 `https://api.anthropic.com/v1/`
 
 ### 验证配置
 
@@ -167,5 +161,5 @@ print(f"Output Dir: {config.output_dir}")
 
 ## 相关文档
 
-- [Kimi Agent SDK 配置文档](https://moonshotai.github.io/kimi-cli/en/configuration/config-files.html)
+- [Anthropic API 文档](https://docs.anthropic.com/)
 - [README.md - 配置说明](./README.md#配置说明)

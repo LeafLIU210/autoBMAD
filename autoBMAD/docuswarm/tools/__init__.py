@@ -10,6 +10,7 @@ Available Tools:
     - CreateDeliverableTool: Create node deliverable documents
     - UpdateContextTool: Update shared context with persistence
     - CreateDocumentSetTool: Create multiple related documents
+    - File Tools: Secure file reading with MCP server support
 
 Available Adapters:
     - sdk_adapter: SDK boundary adaptation (ToolResult <-> ToolOk/ToolError)
@@ -30,10 +31,18 @@ from autoBMAD.docuswarm.tools.create_document_set import (
     CreateDocumentSetTool,
     create_document_set,
 )
+from autoBMAD.docuswarm.tools.file_tools import (
+    ALLOWED_EXTENSIONS,
+    BLOCKED_EXTENSIONS,
+    BLOCKED_PATTERNS,
+    MAX_FILE_SIZE,
+    PathValidator,
+    create_file_read_server,
+    list_documents,
+    read_document,
+)
 from autoBMAD.docuswarm.tools.sdk_adapter import (
-    adapt_from_sdk,
     adapt_result_to_metadata,
-    adapt_to_sdk,
 )
 from autoBMAD.docuswarm.tools.tool_registry import ToolRegistry
 from autoBMAD.docuswarm.tools.tool_result import ToolResult
@@ -48,6 +57,15 @@ __all__ = [
     "CreateDeliverableTool",
     "CreateDocumentSetTool",
     "UpdateContextTool",
+    # 文件工具
+    "PathValidator",
+    "read_document",
+    "list_documents",
+    "create_file_read_server",
+    "MAX_FILE_SIZE",
+    "ALLOWED_EXTENSIONS",
+    "BLOCKED_PATTERNS",
+    "BLOCKED_EXTENSIONS",
     # 参数类型
     "CreateDeliverableParams",
     "CreateDocumentSetParams",
@@ -57,8 +75,6 @@ __all__ = [
     "create_document_set",
     "update_context",
     # SDK适配层
-    "adapt_to_sdk",
-    "adapt_from_sdk",
     "adapt_result_to_metadata",
     # 包装器基类
     "ToolResultCallableTool",

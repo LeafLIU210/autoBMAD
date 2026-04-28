@@ -1,0 +1,80 @@
+story_id: "27.6"
+story_name: "ValidationRuleRegistry 配置加载"
+status: "PASSED"
+
+test_coverage:
+  unit_tests:
+    - test_file: "tests/unit/context/test_validation_rule_registry.py"
+      test_count: 43
+      coverage_target: "autoBMAD.docuswarm.context.validator"
+      features_tested:
+        - "DEFAULT_VALIDATION_RULES constant definition"
+        - "ValidationRuleRegistry thread safety with threading.Lock"
+        - "ValidationRuleRegistry.get_rules() with shallow merge"
+        - "ValidationRuleRegistry.has_rules() helper method"
+        - "ContextValidator.get_instance() singleton pattern"
+        - "NodeLoader.load() validation rule extraction"
+        - "Hot reloading support"
+        - "Default rule fallback behavior"
+        - "Backwards compatibility"
+  integration_tests:
+    - "End-to-end validation loading from node.yaml"
+    - "ContextValidator integration with IndependentOutputValidationStrategy"
+  all_tests_pass: true
+  total_tests: 247
+
+acceptance_criteria_verification:
+  - criteria: "NodeLoader.load_node extracts validation block from node.yaml"
+    status: "PASSED"
+    evidence: "NodeLoader.load() extracts validation_rules from node_config and calls ContextValidator.get_instance().load_node_rules()"
+  - criteria: "ContextValidator.load_node_rules stores rules in ValidationRuleRegistry"
+    status: "PASSED"
+    evidence: "ContextValidator.load_node_rules delegates to registry.register()"
+  - criteria: "Registry get_rules returns merged configuration with defaults"
+    status: "PASSED"
+    evidence: "get_rules() performs shallow merge: {**DEFAULT_VALIDATION_RULES, **node_rules}"
+  - criteria: "Thread safety with threading.Lock"
+    status: "PASSED"
+    evidence: "ValidationRuleRegistry uses self._lock for all operations"
+  - criteria: "Hot reloading support"
+    status: "PASSED"
+    evidence: "register() overwrites existing rules; NodeLoader re-registers on each load()"
+  - criteria: "Comprehensive test coverage"
+    status: "PASSED"
+    evidence: "43 dedicated tests + 247 total context tests passing"
+
+implementation_summary:
+  files_modified:
+    - path: "autoBMAD/docuswarm/context/validator.py"
+      changes:
+        - "Added DEFAULT_VALIDATION_RULES constant"
+        - "Enhanced ValidationRuleRegistry with threading.Lock"
+        - "Added get_rules() method with shallow merge"
+        - "Added has_rules() helper method"
+        - "Added ContextValidator.get_instance() singleton"
+        - "Updated validate_independent_output and validate_evaluator_output to use get_rules()"
+    - path: "autoBMAD/docuswarm/context/__init__.py"
+      changes:
+        - "Added DEFAULT_VALIDATION_RULES to exports"
+    - path: "autoBMAD/nodes/loader.py"
+      changes:
+        - "Added ContextValidator import at module level"
+        - "Added validation rule extraction in load() method"
+        - "Added logging import and logger for error handling"
+
+default_validation_rules:
+  min_word_count: 100
+  required_sections: ["analysis"]
+  allow_empty_output: false
+
+notes:
+  - "Shallow merge strategy: node-specific rules override defaults"
+  - "Singleton pattern ensures global access to shared validator instance"
+  - "Thread-safe double-checked locking for singleton creation"
+  - "Backwards compatible: existing get() method returns raw rules"
+  - "Graceful degradation: logs warning if ContextValidator fails"
+
+verified_by:
+  date: "2026-03-27"
+  command: "pytest -v --tb=short --cov=autoBMAD.docuswarm.context tests/unit/context/"
+  result: "247 passed"

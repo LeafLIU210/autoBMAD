@@ -6,19 +6,28 @@ NodeExecutionContext instances from node configurations and runtime state.
 Based on: P0 Single Context Protocol Implementation Design
 """
 
+from __future__ import annotations
+
+import re
+from pathlib import Path
 from typing import Any
 
-from autoBMAD.docuswarm.nodes.loader import NodeConfig, NodeLoader
+import structlog
 
-from .contracts import DeliverableRequirements, NodeExecutionContext
+from autoBMAD.nodes.loader import NodeLoader
+
+from .contracts import NodeExecutionContext
+
+logger = structlog.get_logger(__name__)
+
+# Constants for reference document resolution
+ALLOWED_REF_EXTENSIONS = frozenset([".md", ".txt", ".yaml", ".yml", ".json"])
+MAX_DOC_CONTENT_LENGTH = 10000
+TRUNCATION_NOTICE = "\n\n[内容已截断]"
 
 
 class NodeExecutionContextBuilder:
-    """
-    构建统一的 NodeExecutionContext。
-
-    兼容旧 node.yaml schema，同时支持未来新 schema。
-    """
+    """Builds unified NodeExecutionContext from node configurations."""
 
     def __init__(self, loader: NodeLoader | None = None) -> None:
         self.loader = loader or NodeLoader()
@@ -31,84 +40,138 @@ class NodeExecutionContextBuilder:
         chained_deliverables: list[dict[str, Any]] | None = None,
         shared_context: dict[str, Any] | None = None,
         iteration_feedback: dict[str, Any] | None = None,
+        repo_root: Path | None = None,
     ) -> NodeExecutionContext:
-        """
-        构建 NodeExecutionContext。
+        """Build NodeExecutionContext with runtime fields only.
 
         Args:
-            pipeline_id: 流水线ID
-            node_id: 节点ID
-            original_context: 原始上下文（用户输入）
-            chained_deliverables: 链式上游交付物
-            shared_context: 共享上下文
-            iteration_feedback: 迭代反馈
-
-        Returns:
-            完整的 NodeExecutionContext
+            pipeline_id: Pipeline identifier
+            node_id: Node identifier
+            original_context: Original context from pipeline/prompt
+            chained_deliverables: Optional upstream deliverables
+            shared_context: Optional shared context across nodes
+            iteration_feedback: Optional feedback from previous iteration
+            repo_root: Optional repository root path for resolving reference docs
         """
-        # 1. 加载节点配置
         node_config = self.loader.load(node_id)
 
-        # 2. 构建 DeliverableRequirements
-        deliverable_reqs = self._build_deliverable_requirements(node_config)
+        # Resolve reference documents - prioritize cached summary, fallback to disk
+        docs_context: list[dict[str, Any]] = []
 
-        # 3. 组装上下文
+        # NEW: Prioritize cached summary (injected by PipelineAdapter)
+        if "docs_context_summary" in original_context and original_context["docs_context_summary"]:
+            docs_context = original_context["docs_context_summary"]
+            logger.info(
+                "using_cached_docs_summary",
+                node_id=node_id,
+                count=len(docs_context),
+            )
+        elif repo_root is not None:
+            # Fallback: rare case when no cache available
+            docs_context = self._resolve_reference_docs(original_context, node_id, repo_root)
+            logger.warning(
+                "missing_cached_docs_summary_using_fallback",
+                node_id=node_id,
+                count=len(docs_context),
+            )
+
         return NodeExecutionContext(
             pipeline_id=pipeline_id,
             node_id=node_id,
             node_name=node_config.name,
             node_order=node_config.sequence,
-            # 任务契约 - 从 task 部分读取
-            task_name=node_config.task.get("name", node_config.name),
-            task_description=node_config.description or node_config.task.get("description", ""),
-            role_supplement=node_config.task.get("role_supplement", ""),
-            # 交付物契约
-            deliverable_type=node_config.deliverable_type,
-            deliverable_requirements=deliverable_reqs,
-            # 上下文数据
             original_context=original_context,
             chained_deliverables=chained_deliverables or [],
             shared_context=shared_context or {},
-            # 迭代状态
             iteration_feedback=iteration_feedback,
-            # 扩展上下文（默认空，由上层填充）
-            docs_context=[],
-            evaluator_criteria=node_config.evaluator.get("criteria", []),
+            docs_context=docs_context,
         )
 
-    def _build_deliverable_requirements(
+    def _resolve_reference_docs(
         self,
-        node_config: NodeConfig,
-    ) -> DeliverableRequirements:
+        original_context: dict[str, Any],
+        node_id: str,
+        repo_root: Path,
+    ) -> list[dict[str, Any]]:
+        """Extract and read referenced documents from original_context.
+
+        Search strategy:
+        1. Extract filenames from content field (backtick format and bare filenames)
+        2. Recursively search in docs/ directory
+        3. For same-named files, prefer shallowest path
+        4. Truncate content exceeding MAX_DOC_CONTENT_LENGTH
+
+        Args:
+            original_context: Original context dictionary
+            node_id: Node ID (for logging/permissions)
+            repo_root: Repository root path
+
+        Returns:
+            List of referenced documents, each with filename, path, content
         """
-        从 NodeConfig 构建 DeliverableRequirements。
+        content = original_context.get("content", "")
+        if not content:
+            return []
 
-        从 deliverable 部分读取:
-        - required_sections
-        - template_title
-        - output_filename
-        - format_hints
-        """
-        reqs: DeliverableRequirements = {}
+        # Extract filenames: backtick format `filename.md` and bare filenames
+        patterns = [
+            r"`([^`]+\.(?:md|txt|yaml|yml|json))`",  # backtick format
+            r"\b([\w.-]+\.(?:md|txt|yaml|yml|json))\b",  # bare filename
+        ]
 
-        # 从 node_config 的 deliverable 字段提取
-        if node_config.deliverable:
-            if "required_sections" in node_config.deliverable:
-                reqs["required_sections"] = node_config.deliverable["required_sections"]
-            if "template_title" in node_config.deliverable:
-                reqs["template_title"] = node_config.deliverable["template_title"]
-            if "output_filename" in node_config.deliverable:
-                reqs["output_filename"] = node_config.deliverable["output_filename"]
-            if "format_hints" in node_config.deliverable:
-                reqs["format_hints"] = node_config.deliverable["format_hints"]
+        referenced_files: set[str] = set()
+        for pattern in patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            # Filter to only allowed extensions
+            for match in matches:
+                match_lower = match.lower()
+                if any(match_lower.endswith(ext) for ext in ALLOWED_REF_EXTENSIONS):
+                    referenced_files.add(match)
 
-        # 默认 template_title (回退到 deliverable_type)
-        if "template_title" not in reqs:
-            reqs["template_title"] = node_config.deliverable_type
+        if not referenced_files:
+            return []
 
-        return reqs
+        # Search in docs/ directory recursively
+        docs_dir = repo_root / "docs"
+        if not docs_dir.exists():
+            return []
+
+        docs_context: list[dict[str, Any]] = []
+
+        for filename in referenced_files:
+            # Find all matching files (sorted by path depth, shallow first)
+            candidates = sorted(docs_dir.rglob(filename), key=lambda p: len(p.parts))
+
+            for candidate in candidates:
+                if not candidate.is_file():
+                    continue
+
+                # Check extension is allowed
+                if candidate.suffix.lower() not in ALLOWED_REF_EXTENSIONS:
+                    continue
+
+                try:
+                    file_content = candidate.read_text(encoding="utf-8")
+
+                    # Truncate protection
+                    if len(file_content) > MAX_DOC_CONTENT_LENGTH:
+                        file_content = file_content[:MAX_DOC_CONTENT_LENGTH] + TRUNCATION_NOTICE
+
+                    docs_context.append(
+                        {
+                            "filename": filename,
+                            "path": candidate.relative_to(repo_root).as_posix(),
+                            "content": file_content,
+                        }
+                    )
+                    break  # Found shallowest version, stop
+
+                except (OSError, UnicodeDecodeError):
+                    continue  # Read failed, try next
+
+        return docs_context
 
 
 def create_context_builder(loader: NodeLoader | None = None) -> NodeExecutionContextBuilder:
-    """工厂函数，创建 NodeExecutionContextBuilder 实例。"""
+    """Factory function to create NodeExecutionContextBuilder instance."""
     return NodeExecutionContextBuilder(loader=loader)

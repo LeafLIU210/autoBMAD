@@ -1,0 +1,56 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "5.5"
+story_title: "Force Completion Logic"
+gate: "PASS"
+status_reason: "All quality gates pass. Unit tests (31), integration tests (8), and linting all pass. Type checking tool unavailable in environment but code follows proper patterns. Implementation matches acceptance criteria."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-02-20T00:00:00Z"
+
+waiver:
+  active: false
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_gates:
+  - tool: "Ruff (Linting)"
+    status: "PASS"
+    details: "All checks passed on force_completion.py"
+  - tool: "Pytest (Unit Tests)"
+    status: "PASS"
+    details: "31 unit tests passed in 1.04s"
+  - tool: "Pytest (Integration Tests)"
+    status: "PASS"
+    details: "8 integration tests passed in 0.80s"
+  - tool: "BasedPyright (Type Checking)"
+    status: "WAIVED"
+    details: "Module not available in virtual environment"
+
+acceptance_criteria_coverage:
+  - ac: "Force complete if score ≥ escalation threshold"
+    status: "COVERED"
+    evidence: "ForceCompletionHandler.should_force_complete() checks iteration >= max_iterations AND alignment_score >= escalation_threshold"
+  - ac: "Generate warning for force completion"
+    status: "COVERED"
+    evidence: "create_force_completion() generates detailed warning with node_id, scores, thresholds, and unresolved issues"
+  - ac: "Record force completion in metadata"
+    status: "COVERED"
+    evidence: "NodeRunMetrics.force_completed field tracks force completion state, stored in node_run_results"
+  - ac: "User notified of quality concern"
+    status: "COVERED"
+    evidence: "Warning logged at WARNING level via structlog with full force completion details"
+
+evidence:
+  tests_reviewed: 39
+  risks_identified: 0
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider adding e2e tests for force completion in full pipeline context"

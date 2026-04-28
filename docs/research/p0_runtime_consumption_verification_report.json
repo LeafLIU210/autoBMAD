@@ -1,0 +1,33 @@
+[
+  {
+    "check": "mcp_key_naming",
+    "status": "PASS",
+    "file_key": "docuswarm-files-analyst",
+    "search_key": "docuswarm-search-analyst"
+  },
+  {
+    "check": "session_manager_params",
+    "status": "PASS",
+    "has_tool_permissions": true
+  },
+  {
+    "check": "evaluator_thresholds",
+    "status": "PASS",
+    "uses_instance_thresholds": true
+  },
+  {
+    "check": "max_iterations_loading",
+    "status": "PASS",
+    "loads_from_config": true
+  },
+  {
+    "check": "executor_repo_root",
+    "status": "PASS",
+    "uses_repo_root": true
+  },
+  {
+    "check": "independent_agent_permissions",
+    "status": "PASS",
+    "passes_full_permissions": true
+  }
+]

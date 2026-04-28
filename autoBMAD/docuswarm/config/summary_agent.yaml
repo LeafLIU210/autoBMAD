@@ -1,0 +1,97 @@
+# Summary Agent Configuration
+# Story 36.2: Create Summary Agent Configuration
+# Location: autoBMAD/docuswarm/config/summary_agent.yaml
+# Description: Central YAML configuration for Summary Agent behavior
+
+version: "1.0"
+
+# =============================================================================
+# Agent Metadata
+# =============================================================================
+agent_metadata:
+  agent_id: "summary_agent"
+  name: "Summary Agent"
+  description: "Generates structured LLM summaries of referenced documents for context enhancement"
+  version: "1.0"
+
+# =============================================================================
+# LLM Configuration
+# =============================================================================
+# Type: Type of LLM provider (anthropic, openai, etc.)
+# Mode: SDK mode (agent, yolo, etc.)
+llm_config:
+  type: "anthropic"
+  mode: "agent"
+  temperature: 0.3  # Lower for deterministic output
+  max_tokens: 1000
+  model: "claude-3-5-sonnet-20241022"
+
+# =============================================================================
+# Tools Configuration
+# =============================================================================
+# List of allowed builtin tools for this agent
+tools:
+  allowed_builtin_tools:
+    - "ListDocuments"
+    - "ReadDocument"
+
+# =============================================================================
+# Performance Settings
+# =============================================================================
+# Controls for concurrent processing and resource limits
+performance:
+  # Maximum number of documents processed simultaneously (concurrency limit)
+  max_concurrent_documents: 3
+  # Number of documents to process in a single batch
+  batch_size: 10
+  # Timeout per document in seconds
+  timeout_per_document_seconds: 30
+  # Maximum retry attempts for failed LLM calls
+  max_retries: 2
+  # Maximum file size in bytes (500KB)
+  max_file_size_bytes: 512000
+
+# =============================================================================
+# Caching Configuration
+# =============================================================================
+# Document summary caching settings (for future implementation in Story 36.6+)
+caching:
+  # Enable/disable caching
+  enable: true
+  # Time-to-live in hours for cached summaries
+  ttl_hours: 24
+  # Invalidate cache when source document changes
+  invalidate_on_doc_change: true
+  # Cache storage backend (memory, sqlite, redis)
+  backend: "memory"
+
+# =============================================================================
+# File Discovery Settings
+# =============================================================================
+file_discovery:
+  # Search directories (relative to project root)
+  search_dirs:
+    - "docs"
+  # Allowed file extensions
+  allowed_extensions:
+    - ".md"
+    - ".txt"
+    - ".yaml"
+    - ".yml"
+    - ".json"
+  # Prefer shallowest path when multiple files have same name
+  prefer_shallowest_path: true
+  # Critical file pattern (processed sequentially before normal files)
+  critical_file_pattern: "requirement"
+
+# =============================================================================
+# Output Schema Configuration
+# =============================================================================
+output_schema:
+  required_fields:
+    - "summary"
+    - "key_points"
+    - "structure"
+  structure_fields:
+    - "sections"
+    - "concepts"

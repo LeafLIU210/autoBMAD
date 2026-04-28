@@ -1,11 +1,14 @@
 """Checkpoint storage for LangGraph state persistence."""
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, cast
 
 import aiosqlite
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
@@ -121,7 +124,7 @@ class CheckpointManager:
             "thread_id": thread_id,
             "pipeline_id": pipeline_id,
             "state": state,
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(_BEIJING_TZ).isoformat(),
         }
 
     async def list_checkpoints(
@@ -158,7 +161,7 @@ class CheckpointManager:
                     "checkpoint_id": checkpoint_id,
                     "thread_id": thread_id,
                     "pipeline_id": pipeline_id,
-                    "timestamp": datetime.now(UTC).isoformat(),
+                    "timestamp": datetime.now(_BEIJING_TZ).isoformat(),
                 }
             )
 

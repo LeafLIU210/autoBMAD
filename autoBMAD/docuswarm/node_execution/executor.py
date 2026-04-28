@@ -8,15 +8,20 @@ This module provides the create_node_executor factory function that:
 - Handles iteration counting and status transitions
 """
 
+from __future__ import annotations
+
 import copy
 from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 
-from autoBMAD.docuswarm.config import Config
-from autoBMAD.docuswarm.llm.session_manager import KimiSessionManager
+if TYPE_CHECKING:
+    from autoBMAD.docuswarm.config import Config
+
+    ConfigType = Config  # type alias for proper type recognition
+from autoBMAD.docuswarm.llm.session_manager import SessionManager
 from autoBMAD.docuswarm.node_execution.state import (
     BLOCKED,
     COMPLETED,
@@ -32,7 +37,7 @@ logger = structlog.get_logger(__name__)
 
 def create_node_executor(
     node_id: str,
-    session_manager: KimiSessionManager,
+    session_manager: SessionManager,
 ) -> Callable[[NodeRunState], Coroutine[Any, Any, NodeRunState]]:
     """Create a node executor function for LangGraph single-node execution.
 
@@ -46,7 +51,7 @@ def create_node_executor(
 
     Args:
         node_id: The node identifier (e.g., 'analyst', 'pm', 'ux', 'architect', 'po')
-        session_manager: KimiSessionManager for SDK interactions.
+        session_manager: SessionManager for SDK interactions.
 
     Returns:
         An async function that accepts NodeRunState and returns updated NodeRunState
@@ -75,7 +80,7 @@ def create_node_executor(
 async def _execute_node(
     state: NodeRunState,
     node_id: str,
-    session_manager: KimiSessionManager,
+    session_manager: SessionManager,
     logger: Any,
 ) -> NodeRunState:
     """Execute a node and update NodeRunState.
@@ -113,6 +118,13 @@ async def _execute_node(
         # 解析原始上下文
         original_context = _parse_original_context(state.get("context_file", ""))
 
+        # P0 Fix: Use repo root for reference doc resolution and project_root
+        # Path: autoBMAD/docuswarm/node_execution/executor.py
+        # -> parent.parent.parent = autoBMAD
+        # -> parent.parent = repo root (correct for node config paths)
+        auto_bmad_root = Path(__file__).parent.parent.parent.resolve()
+        repo_root = auto_bmad_root.parent if auto_bmad_root.name == "autoBMAD" else auto_bmad_root
+
         # 构建统一的执行上下文
         execution_context = context_builder.build(
             pipeline_id=pipeline_id,
@@ -120,27 +132,23 @@ async def _execute_node(
             original_context=original_context,
             chained_deliverables=_extract_chained_deliverables(state),
             shared_context=state.get("shared_context", {}),
+            repo_root=repo_root,
         )
 
         logger.debug(
             "execution_context_built",
             node_id=node_id,
-            task_name=execution_context["task_name"],
+            node_name=execution_context.get("node_name", ""),
         )
 
         # Create DualAgentNode instance
         config = _get_config()
 
-        # Get project_root from the location of this module
-        # This ensures the correct path to nodes/ directory
-        # Path: autoBMAD/docuswarm/node_execution/executor.py -> parent.parent.parent = autoBMAD root
-        project_root = Path(__file__).parent.parent.parent.resolve()
-
         node = create_dual_agent_node(
             config=config,
             session_manager=session_manager,
             node_id=node_id,
-            project_root=project_root,
+            project_root=auto_bmad_root,
         )
 
         # ==== Single Context Protocol: 直接传入 execution_context ====
@@ -201,6 +209,28 @@ async def _execute_node(
             status=new_state["status"],
             verdict=verdict,
         )
+
+        # ===== Story 35.1: Refresh shared_context from DB =====
+        # After node execution, refresh shared_context from DB to capture
+        # any updates made by tools (e.g., update_context tool writes directly to DB)
+        try:
+            latest_state = _refresh_shared_context_from_db(pipeline_id, session_manager, logger)
+            if latest_state is not None:
+                new_state["shared_context"] = latest_state
+                logger.debug(
+                    "shared_context_refreshed_from_db",
+                    node_id=node_id,
+                    pipeline_id=pipeline_id,
+                )
+        except Exception as refresh_error:
+            # Fallback: use in-memory version (already set in new_state)
+            logger.warning(
+                "shared_context_refresh_failed_using_in_memory",
+                node_id=node_id,
+                pipeline_id=pipeline_id,
+                error=str(refresh_error),
+            )
+        # ===== End Story 35.1 =====
 
     except Exception as e:
         logger.error(
@@ -311,7 +341,7 @@ def _extract_original_context_content(data: dict[str, Any]) -> str:
     return ""
 
 
-def _get_config() -> Config:
+def _get_config() -> ConfigType:
     """Get the application config.
 
     Loads configuration from .env file and YAML with proper precedence.
@@ -322,6 +352,124 @@ def _get_config() -> Config:
     from autoBMAD.docuswarm.config import load_config
 
     return load_config()
+
+
+def _refresh_shared_context_from_db(
+    pipeline_id: str,
+    session_manager: SessionManager,
+    logger: Any,
+) -> dict[str, Any] | None:
+    """Refresh shared_context from database.
+
+    This helper function fetches the latest pipeline state from the database
+    and extracts the shared_context field. It handles JSON parsing and
+    error conditions gracefully.
+
+    Args:
+        pipeline_id: The pipeline ID to fetch state for.
+        session_manager: SessionManager instance with StateManager access.
+        logger: Logger instance for debug/warning messages.
+
+    Returns:
+        The refreshed shared_context dict, or None if refresh fails.
+
+    Note:
+        This is part of Story 35.1 to ensure subsequent nodes receive
+        the most up-to-date shared context data after tool writes.
+    """
+    import json
+
+    try:
+        # Get latest state from database via StateManager
+        # StateManager is accessible through session_manager's storage
+        state_manager = _get_state_manager_from_session(session_manager)
+
+        if state_manager is None:
+            logger.debug("state_manager_not_available_for_refresh", pipeline_id=pipeline_id)
+            return None
+
+        latest_pipeline = state_manager.get_pipeline(pipeline_id)
+
+        if latest_pipeline is None:
+            logger.debug("pipeline_not_found_in_db", pipeline_id=pipeline_id)
+            return None
+
+        # Extract shared_context from the flattened state fields
+        # StateManager.get_pipeline() already parses state_json and flattens fields
+        shared_context = latest_pipeline.get("shared_context")
+
+        if shared_context is None:
+            logger.debug("shared_context_not_found_in_db_state", pipeline_id=pipeline_id)
+            return {}
+
+        if not isinstance(shared_context, dict):
+            logger.warning(
+                "shared_context_is_not_dict",
+                pipeline_id=pipeline_id,
+                type=type(shared_context).__name__,
+            )
+            return None
+
+        return shared_context
+
+    except json.JSONDecodeError as e:
+        logger.warning(
+            "json_decode_error_refreshing_shared_context",
+            pipeline_id=pipeline_id,
+            error=str(e),
+        )
+        return None
+    except Exception as e:
+        logger.warning(
+            "error_refreshing_shared_context_from_db",
+            pipeline_id=pipeline_id,
+            error_type=type(e).__name__,
+            error=str(e),
+        )
+        return None
+
+
+def _get_state_manager_from_session(
+    session_manager: SessionManager,
+) -> Any | None:
+    """Get StateManager instance from SessionManager.
+
+    Uses duck typing to check if session_manager itself has get_pipeline method,
+    or extracts StateManager from known attributes.
+
+    Args:
+        session_manager: The SessionManager instance (may actually be StateManager in tests).
+
+    Returns:
+        StateManager if available, None otherwise.
+    """
+    # Duck typing: check if session_manager itself has get_pipeline method
+    # This handles both real StateManager and mocks in tests
+    get_pipeline_method = getattr(session_manager, "get_pipeline", None)
+    if callable(get_pipeline_method):
+        # It's already a StateManager or compatible object
+        return session_manager
+
+    # SessionManager may have a _state_manager attribute
+    if hasattr(session_manager, "_state_manager"):
+        state_manager = session_manager._state_manager
+        # Duck typing: check if it has get_pipeline method
+        if callable(getattr(state_manager, "get_pipeline", None)):
+            return state_manager
+
+    # Try to get from storage attribute
+    if hasattr(session_manager, "storage"):
+        storage = session_manager.storage
+        if callable(getattr(storage, "get_pipeline", None)):
+            return storage
+
+    # Try to get from state_manager attribute (different name)
+    if hasattr(session_manager, "state_manager"):
+        sm = session_manager.state_manager
+        if callable(getattr(sm, "get_pipeline", None)):
+            return sm
+
+    return None
 
 
 __all__ = [

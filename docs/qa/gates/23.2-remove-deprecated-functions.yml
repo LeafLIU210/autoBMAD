@@ -1,0 +1,42 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "23.2"
+story_title: "移除 graph.py 废弃函数"
+gate: "PASS"
+status_reason: "All deprecated functions removed, session_manager is now required, type checking passes with 0 errors, and all 651 tests pass."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  evidence:
+    tests_reviewed: 651
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3]
+      ac_gaps: []
+
+verification_details:
+  - check: "Deprecated function _create_default_node_executor removed"
+    result: PASS
+  - check: "Deprecated function create_enhanced_node_executor removed"
+    result: PASS
+  - check: "session_manager parameter is now required"
+    result: PASS
+  - check: "No fallback logic for None session_manager"
+    result: PASS
+  - check: "basedpyright type check"
+    result: PASS
+    details: "0 errors, 0 warnings"
+  - check: "Test suite execution"
+    result: PASS
+    details: "651 passed, 2 skipped"

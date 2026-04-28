@@ -1,0 +1,48 @@
+# <!-- Powered by BMAD Core -->
+# Quality Gate: 33.8 - System Prompt Guidance for Document Counts
+
+schema: 1
+story: "33.8"
+story_title: "System Prompt Guidance for Document Counts"
+gate: "PASS"
+status_reason: "All acceptance criteria met. Implementation adds dynamic document count guidance based on max_deliverables configuration. 24/24 tests pass with 52% coverage on new functionality. Type checking clean. Minor style notes: 3 UP037 quoted annotation warnings (acceptable due to TYPE_CHECKING pattern)."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 24
+  tests_passed: 24
+  type_check_errors: 0
+  type_check_warnings: 0
+  lint_errors: 3
+  lint_error_details:
+    - code: UP037
+      count: 3
+      description: "Quoted type annotations in method signatures"
+      severity: low
+      note: "Required due to TYPE_CHECKING imports - functionality unaffected"
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+nfr_validation:
+  security: { status: PASS, notes: "No security concerns" }
+  performance: { status: PASS, notes: "Minimal overhead from config loading" }
+  reliability: { status: PASS, notes: "Graceful fallbacks for missing/invalid config" }
+  maintainability: { status: PASS, notes: "Well-documented, single-responsibility methods" }
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Consider removing quoted annotations when TYPE_CHECKING imports can be made unconditional"
+      refs: ["autoBMAD/docuswarm/prompts/contract_builder.py:96,288,351"]

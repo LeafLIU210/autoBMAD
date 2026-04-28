@@ -1,0 +1,49 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "33.2"
+story_title: "Add max_deliverables Validation to Validator"
+gate: "PASS"
+status_reason: "All 35 new tests pass, 185 existing tests pass with no regressions. Document completeness 100%. Pre-existing test failure in test_tool_permissions.py is unrelated to this story's changes."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T12:30:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 35
+  new_tests_passed: 35
+  existing_tests_passed: 185
+  test_file: tests/test_max_deliverables_validation.py
+  regressions: 0
+
+trace:
+  ac_covered: [1, 2, 3, 4, 5, 6, 7]
+  ac_gaps: []
+
+notes: |
+  Implementation Review:
+  - NodeDeliverableConfig extended with max_deliverables field (default=1)
+  - MaxDeliverablesValidationStrategy implemented following existing Strategy pattern
+  - validate_max_deliverables() method added to ContextValidator
+  - Document count detection uses document_total field from deliverable metadata
+  - Clear error messages include node name, actual count, and max allowed
+  - All existing validation rules remain unchanged (additive implementation)
+  - Backward compatibility preserved with default value of 1
+
+  Quality Metrics:
+  - Type checking: Minor pre-existing warnings (not related to new code)
+  - Linting: Pre-existing W293 and B904 issues (non-critical)
+  - Test coverage: Comprehensive (35 new tests covering all scenarios)
+
+  Files Modified:
+  - autoBMAD/nodes/loader.py (NodeDeliverableConfig extension)
+  - autoBMAD/docuswarm/context/validator.py (validation strategy)
+  - tests/test_max_deliverables_validation.py (new test suite)

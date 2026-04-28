@@ -1,7 +1,7 @@
 # 常用命令速查
 
-**版本**: 1.0
-**最后更新**: 2026-01-22
+**版本**: 2.1
+**最后更新**: 2026-04-05
 
 ---
 
@@ -20,10 +20,10 @@
 ### 虚拟环境
 ```bash
 # 激活虚拟环境 (Windows)
-.venv\Scripts\activate
+venv\Scripts\activate
 
 # 激活虚拟环境 (Linux/macOS)
-source .venv/bin/activate
+source venv/bin/activate
 
 # 安装依赖
 pip install -r requirements.txt
@@ -91,7 +91,7 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
 ### 类型检查
 ```bash
 # BasedPyright类型检查
-basedpyright src/
+basedpyright autoBMAD/
 
 # 通过autoBMAD工作流自动执行
 python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
@@ -100,28 +100,28 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md
 ### 代码风格
 ```bash
 # 检查代码风格
-ruff check src/
+ruff check autoBMAD/
 
 # 自动修复
-ruff check --fix src/
+ruff check --fix autoBMAD/
 
 # 格式化代码
-ruff format src/
+ruff format autoBMAD/
 
 # 检查导入排序
-isort src/ tests/
+ruff check --select I autoBMAD/
 ```
 
 ### Black格式化
 ```bash
-# 格式化代码
-black src/ tests/
+# 格式化代码 (如果使用black)
+black autoBMAD/ tests/
 
 # 检查但不修改
-black --check src/ tests/
+black --check autoBMAD/ tests/
 
 # 显示差异
-black --diff src/ tests/
+black --diff autoBMAD/ tests/
 ```
 
 ### 自动化修复
@@ -264,11 +264,11 @@ pip install -e .
 #### 虚拟环境问题
 ```bash
 # 删除虚拟环境
-rm -rf .venv/  # Linux/macOS
-rmdir /s .venv  # Windows
+rm -rf venv/  # Linux/macOS
+rmdir /s venv  # Windows
 
 # 重新创建
-python -m venv .venv
+python -m venv venv
 ```
 
 #### 导入错误
@@ -297,18 +297,18 @@ pytest -m "not slow"
 ### 日常开发
 ```bash
 # 1. 激活环境
-.venv\Scripts\activate  # Windows
-source .venv/bin/activate  # Linux/macOS
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/macOS
 
 # 2. 运行测试
 pytest -v
 
 # 3. 代码格式化
-ruff check --fix src/
-ruff format src/
+ruff check --fix autoBMAD/
+ruff format autoBMAD/
 
 # 4. 类型检查
-basedpyright src/
+basedpyright autoBMAD/
 
 # 5. 提交前检查
 pre-commit run --all-files

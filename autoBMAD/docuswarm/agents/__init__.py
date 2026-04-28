@@ -13,6 +13,13 @@ from autoBMAD.docuswarm.agents.independent import (
     IndependentAgentError,
     create_independent_agent,
 )
+from autoBMAD.docuswarm.agents.summary import (
+    DocumentSummary,
+    LLMSummaryError,
+    SummaryAgent,
+    SummaryAgentError,
+    create_summary_agent,
+)
 
 __all__ = [
     "BaseAgent",
@@ -24,4 +31,9 @@ __all__ = [
     "CriteriaLoadError",
     "EvaluationError",
     "create_evaluator_agent",
+    "SummaryAgent",
+    "DocumentSummary",
+    "SummaryAgentError",
+    "LLMSummaryError",
+    "create_summary_agent",
 ]

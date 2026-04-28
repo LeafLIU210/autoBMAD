@@ -14,9 +14,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any
+
+# Beijing timezone (UTC+8)
+_BEIJING_TZ = timezone(timedelta(hours=8))
 
 if TYPE_CHECKING:
     from autoBMAD.docuswarm.storage.state_manager import StateManager
@@ -147,7 +150,7 @@ class QuestionHandler:
                 question_text=q_data["question_text"],
                 priority=priority,
                 context=q_data.get("context", {}),
-                created_at=datetime.now(),
+                created_at=datetime.now(_BEIJING_TZ),
             )
 
             self._questions[pipeline_id].append(question)
@@ -228,7 +231,7 @@ class QuestionHandler:
             raise ValueError(f"Question not found: {question_id}")
 
         question.answer = answer
-        question.answered_at = datetime.now()
+        question.answered_at = datetime.now(_BEIJING_TZ)
 
         logger.info(f"Answered question {question_id} for pipeline {pipeline_id}")
 

@@ -1,0 +1,78 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "22.2"
+story_title: "实现 _format_persona_section()"
+gate: "PASS"
+status_reason: "All quality gates passed: ruff (all checks passed), pytest (15 tests passed). Implementation matches all acceptance criteria."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-03-02T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_score: 100
+
+evidence:
+  evidence:
+    tests_reviewed: 15
+    risks_identified: 0
+    trace:
+      ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      ac_gaps: []
+
+verification:
+  basedpyright:
+    status: NOT_RUN
+    errors: 0
+    warnings: 0
+    notes: "pyright not available in venv, verified via ruff only"
+
+  ruff:
+    status: PASS
+    file: "autoBMAD/docuswarm/agents/independent.py"
+
+  pytest:
+    status: PASS
+    tests_run: 15
+    tests_passed: 15
+    tests_failed: 0
+    files:
+      - "tests/unit/test_independent_agent_persona_section.py"
+
+implementation_verification:
+  ac1_header_format: "PASS - Returns '# Persona: {name}' header (line 101)"
+  ac2_role_format: "PASS - Returns '**Role**: {role}' line (line 102)"
+  ac3_identity_section: "PASS - Contains '## Identity' section with identity text (lines 104-105)"
+  ac4_communication_style_section: "PASS - Contains '## Communication Style' section when communication_style is set (lines 96-99)"
+  ac5_expertise_section: "PASS - Contains '## Expertise' section with bullet list (lines 107-108)"
+  ac6_principles_section: "PASS - Contains '## Guiding Principles' section with bullet list (lines 110-111)"
+  ac7_conditional_communication_style: "PASS - Omits Communication Style section when empty (line 95: if persona.communication_style)"
+  ac8_static_method: "PASS - Method is a @staticmethod (line 82)"
+  ac9_edge_cases: "PASS - Handles empty expertise and principles lists gracefully (lines 91-92)"
+
+acceptance_criteria_review:
+  - ac: "AC1: Header format '# Persona: {name}'"
+    status: PASS
+  - ac: "AC2: Role format '**Role**: {role}'"
+    status: PASS
+  - ac: "AC3: Identity section with identity text"
+    status: PASS
+  - ac: "AC4: Communication Style section when populated"
+    status: PASS
+  - ac: "AC5: Expertise section with bullet list"
+    status: PASS
+  - ac: "AC6: Guiding Principles section with bullet list"
+    status: PASS
+  - ac: "AC7: Omit Communication Style when empty"
+    status: PASS
+  - ac: "AC8: Static method in IndependentAgent class"
+    status: PASS
+  - ac: "AC9: Handle empty expertise/principles lists"
+    status: PASS

@@ -1,0 +1,114 @@
+{
+  "title": "P0-3 同步/异步契约不一致深度分析报告",
+  "findings": {
+    "state_manager_contract": {
+      "found": true,
+      "is_async": false,
+      "line": 874,
+      "file": "autoBMAD\\docuswarm\\storage\\state_manager.py"
+    },
+    "chaining_awaits": {
+      "file": "autoBMAD\\docuswarm\\node_execution\\chaining.py",
+      "total_awaits": 1,
+      "violations": [
+        {
+          "line": 93,
+          "target_type": "Call",
+          "func_name": "get_latest_successful_run",
+          "receiver": "_state_manager"
+        }
+      ]
+    },
+    "pipeline_graph_bridges": {
+      "file": "autoBMAD\\docuswarm\\pipeline\\graph.py",
+      "event_loop_calls": [
+        {
+          "line": 135,
+          "call": "_run_async",
+          "full": "Name(id='_run_async', ctx=Load())"
+        },
+        {
+          "line": 94,
+          "call": "run",
+          "full": "Attribute(value=Name(id='asyncio', ctx=Load()), attr='run', ctx=Load())"
+        },
+        {
+          "line": 296,
+          "call": "run_until_complete",
+          "full": "Attribute(value=Name(id='loop', ctx=Load()), attr='run_until_complete', ctx=Load())"
+        },
+        {
+          "line": 313,
+          "call": "run",
+          "full": "Attribute(value=Name(id='asyncio', ctx=Load()), attr='run', ctx=Load())"
+        }
+      ],
+      "_run_async_details": [
+        {
+          "line": 103,
+          "type": "future.result"
+        },
+        {
+          "line": 94,
+          "type": "asyncio.run"
+        }
+      ],
+      "run_until_complete_in_create_pipeline_graph": [
+        296
+      ]
+    },
+    "flow_bridges": {
+      "file": "autoBMAD\\docuswarm\\node_execution\\flow.py",
+      "event_loop_calls": [
+        {
+          "line": 108,
+          "call": "_run_async",
+          "full": "Name(id='_run_async', ctx=Load())"
+        },
+        {
+          "line": 57,
+          "call": "run",
+          "full": "Attribute(value=Name(id='asyncio', ctx=Load()), attr='run', ctx=Load())"
+        }
+      ],
+      "total_awaits": 9,
+      "sample_awaits": [
+        {
+          "line": 177,
+          "target_type": "Call",
+          "func_name": "get_chained_deliverables",
+          "receiver": "chainer"
+        },
+        {
+          "line": 278,
+          "target_type": "Call",
+          "func_name": "_load_context_file_async"
+        },
+        {
+          "line": 283,
+          "target_type": "Call",
+          "func_name": "get_chained_context"
+        },
+        {
+          "line": 344,
+          "target_type": "Call",
+          "func_name": "export_output"
+        },
+        {
+          "line": 84,
+          "target_type": "Call",
+          "func_name": "read",
+          "receiver": "f"
+        }
+      ]
+    },
+    "all_sync_await_violations": [
+      {
+        "file": "autoBMAD\\docuswarm\\node_execution\\chaining.py",
+        "line": 93,
+        "method": "get_latest_successful_run"
+      }
+    ],
+    "run_until_complete_in_async": []
+  }
+}

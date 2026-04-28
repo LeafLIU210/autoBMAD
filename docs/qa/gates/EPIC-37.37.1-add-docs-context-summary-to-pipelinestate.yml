@@ -1,0 +1,41 @@
+# <!-- Powered by BMAD™ Core -->
+# Quality Gate Decision for Story 37.1
+schema: 1
+story: "EPIC-37.37.1"
+story_title: "Add docs_context_summary to PipelineState TypedDict"
+gate: "PASS"
+status_reason: "All acceptance criteria met. BasedPyright reports 0 errors, 0 warnings. All 13 unit tests pass. Field properly placed after shared_context with descriptive comment. Backward compatibility maintained."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-04-07T00:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+evidence:
+  tests_reviewed: 13
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+tool_validation:
+  basedpyright: { status: PASS, errors: 0, warnings: 0 }
+  pytest: { status: PASS, passed: 13, failed: 0 }
+
+nfr_validation:
+  type_safety: { status: PASS, notes: "Type checking passes with 0 errors" }
+  backward_compatibility: { status: PASS, notes: "Existing code continues to work without changes" }
+  testability: { status: PASS, notes: "13 comprehensive unit tests cover all scenarios" }
+  maintainability: { status: PASS, notes: "Clear field naming and documentation" }
+
+history:
+  - at: "2026-04-07T00:00:00Z"
+    gate: PASS
+    note: "Initial review - all acceptance criteria met, type checking passes, all tests pass"

@@ -1,0 +1,18 @@
+{
+  "platform": "win32",
+  "cli_path": "C:\\Users\\Administrator\\.local\\bin\\claude.exe",
+  "direct_cli_ok": true,
+  "direct_cli_version": "2.1.92 (Claude Code)",
+  "subprocess_popen_ok": true,
+  "subprocess_popen_error": "",
+  "anyio_open_process_ok": false,
+  "anyio_open_process_error": "EndOfStream: ",
+  "sdk_connect_ok": true,
+  "sdk_connect_error": "",
+  "diagnosis": "CRITICAL: Direct CLI and subprocess.Popen succeed, but anyio.open_process fails. This matches the WinError 5 pattern observed in production.",
+  "recommendations": [
+    "Implement runtime preflight before pipeline start to detect anyio spawn failure early.",
+    "Consider using subprocess.Popen wrapper as fallback transport on Windows.",
+    "Investigate Windows-specific anyio backend (trio vs asyncio) behavior."
+  ]
+}

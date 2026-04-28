@@ -1,0 +1,951 @@
+{
+  "title": "Phase B 文档/配置口径漂移深度研究报告",
+  "description": "针对 Finding P1-2 的文档一致性分析和修复计划",
+  "timestamp": "2026-04-04",
+  "findings": {
+    "file_analysis": {
+      "autoBMAD/docuswarm/README.md": {
+        "file": "autoBMAD\\docuswarm\\README.md",
+        "total_lines": 1273,
+        "deprecated_occurrences": [
+          {
+            "line": 41,
+            "column": 13,
+            "match": "KimiSessionManager",
+            "replacement": "SessionManager",
+            "context": "- **会话管理**：`KimiSessionManager` 管理 LLM 会话",
+            "in_code_block": false
+          },
+          {
+            "line": 81,
+            "column": 9,
+            "match": "KimiSessionManager",
+            "replacement": "SessionManager",
+            "context": "│   ├── KimiSessionManager (会话管理器)",
+            "in_code_block": true
+          },
+          {
+            "line": 112,
+            "column": 1,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "KIMI_API_KEY=your_kimi_api_key_here",
+            "in_code_block": true
+          },
+          {
+            "line": 115,
+            "column": 1,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "KIMI_BASE_URL=https://api.kimi.com/coding/",
+            "in_code_block": true
+          },
+          {
+            "line": 496,
+            "column": 4,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "| `KIMI_API_KEY` | ✅ | 无 | Kimi API 密钥（必须设置） |",
+            "in_code_block": false
+          },
+          {
+            "line": 497,
+            "column": 4,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "| `KIMI_BASE_URL` | ❌ | `https://api.kimi.com/coding/` | Kimi API Base URL |",
+            "in_code_block": false
+          },
+          {
+            "line": 509,
+            "column": 6,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "# 注意：KIMI_API_KEY 必须通过环境变量设置，不应写入此文件",
+            "in_code_block": true
+          },
+          {
+            "line": 526,
+            "column": 4,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "- `KIMI_API_KEY` 不应写入 YAML 文件，必须通过环境变量设置",
+            "in_code_block": false
+          },
+          {
+            "line": 763,
+            "column": 31,
+            "match": "KimiSessionManager",
+            "replacement": "SessionManager",
+            "context": "│   ├── session_manager.py  # KimiSessionManager",
+            "in_code_block": true
+          },
+          {
+            "line": 1017,
+            "column": 21,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "ConfigurationError: KIMI_API_KEY is required. Please set it in your .env file or as an environment variable.",
+            "in_code_block": true
+          },
+          {
+            "line": 1021,
+            "column": 22,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "- 确保 `.env` 文件存在且包含 `KIMI_API_KEY`",
+            "in_code_block": false
+          },
+          {
+            "line": 1022,
+            "column": 23,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "- 检查环境变量是否正确设置：`echo $KIMI_API_KEY` (Linux/Mac) 或 `echo %KIMI_API_KEY%` (Windows)",
+            "in_code_block": false
+          },
+          {
+            "line": 1022,
+            "column": 58,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "- 检查环境变量是否正确设置：`echo $KIMI_API_KEY` (Linux/Mac) 或 `echo %KIMI_API_KEY%` (Windows)",
+            "in_code_block": false
+          },
+          {
+            "line": 1096,
+            "column": 26,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "- **Authentication**：检查 `KIMI_API_KEY` 是否有效且未过期",
+            "in_code_block": false
+          },
+          {
+            "line": 1097,
+            "column": 24,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "- **Network**：检查网络连接和 `KIMI_BASE_URL` 配置",
+            "in_code_block": false
+          }
+        ],
+        "correct_occurrences": [
+          {
+            "line": 41,
+            "column": 17,
+            "match": "SessionManager",
+            "context": "- **会话管理**：`KimiSessionManager` 管理 LLM 会话"
+          },
+          {
+            "line": 81,
+            "column": 13,
+            "match": "SessionManager",
+            "context": "│   ├── KimiSessionManager (会话管理器)"
+          },
+          {
+            "line": 763,
+            "column": 35,
+            "match": "SessionManager",
+            "context": "│   ├── session_manager.py  # KimiSessionManager"
+          }
+        ],
+        "code_blocks": [
+          {
+            "start": 55,
+            "end": 88,
+            "content": "DocuSwarm\n├── Pipeline (流水线编排)\n│   ├── HybridOrchestrator (混合编排器)\n│   ├── PipelineState (流水线状态)\n│   ├── StateGraph (LangGraph 状态图)\n│   ├── VerdictDeterminer (质量判定器)\n│   └── QuestionHandler (问题处理器)\n│\n├── Nodes (节点系统)\n│   └── DualAgentNode (双 Agent 节点)\n│       ├── IndependentAgent (独立 Agent)\n│       └── EvaluatorAgent (评估 Agent)\n│\n├── Context (上下文管理)\n│   ├── ContextManager (上下文管理器)\n│   ├── ContextFilter (上下文过滤器)\n│   └── IsolationAuditLogger (隔离审计日志)\n│\n├── Storage (存储层)\n│   ├── StateManager (状态管理器)\n│   ├── CheckpointManager (检查点管理器)\n│   ├── FileStorage (文件存储)\n│   └── Database (数据库操作)\n│\n├── LLM (LLM 集成)\n│   ├── KimiSessionManager (会话管理器)\n│   ├── ResponseParser (响应解析器)\n│   └── ModeMapper (模式映射器)\n│\n└── Tools (工具函数)\n    ├── create_deliverable (创建交付物)\n    └── update_context (更新上下文)",
+            "has_deprecated": false
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "content": "pip install -r requirements.txt",
+            "has_deprecated": false
+          },
+          {
+            "start": 110,
+            "end": 122,
+            "content": "# 必需：Kimi API Key\nKIMI_API_KEY=your_kimi_api_key_here\n\n# 可选：Kimi API Base URL (默认: https://api.kimi.com/coding/)\nKIMI_BASE_URL=https://api.kimi.com/coding/\n\n# 可选配置\nDOCUSWARM_DB_PATH=docuswarm.db\nDOCUSWARM_OUTPUT_DIR=output\nDOCUSWARM_LOG_LEVEL=INFO\nDOCUSWARM_MAX_ITERATIONS=100",
+            "has_deprecated": false
+          },
+          {
+            "start": 126,
+            "end": 128,
+            "content": "python -m autoBMAD.docuswarm --version",
+            "has_deprecated": false
+          },
+          {
+            "start": 134,
+            "end": 143,
+            "content": "python -m autoBMAD.docuswarm [OPTIONS] COMMAND [ARGS]\n\nOPTIONS:\n  -v, --verbose              启用详细调试输出\n  --log-level TEXT           设置日志级别 (DEBUG|INFO|WARNING|ERROR)\n  --log-file PATH            日志文件目录 (默认: ./logs)\n  --json-log                 使用 JSON 格式输出日志\n  --version                  显示版本信息",
+            "has_deprecated": false
+          },
+          {
+            "start": 151,
+            "end": 153,
+            "content": "python -m autoBMAD.docuswarm start --context <context_file>",
+            "has_deprecated": false
+          },
+          {
+            "start": 156,
+            "end": 159,
+            "content": "python -m autoBMAD.docuswarm start -c docs/epics/EPIC-01.md\npython -m autoBMAD.docuswarm start -c docs/proposal.md",
+            "has_deprecated": false
+          },
+          {
+            "start": 162,
+            "end": 166,
+            "content": "+ Pipeline started: abc123xyz\n  Subject: EPIC-01\n  Context: docs/epics/EPIC-01.md",
+            "has_deprecated": false
+          },
+          {
+            "start": 172,
+            "end": 174,
+            "content": "python -m autoBMAD.docuswarm status <pipeline_id>",
+            "has_deprecated": false
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "content": "python -m autoBMAD.docuswarm status abc123xyz\npython -m autoBMAD.docuswarm status pipeline-1771949849410-4aba545c",
+            "has_deprecated": false
+          },
+          {
+            "start": 183,
+            "end": 207,
+            "content": "Pipeline Status: abc123xyz\n┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┓\n┃ Property     ┃ Value                ┃\n┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━┩\n│ Pipeline ID  │ abc123xyz            │\n│ Subject      │ EPIC-01              │\n│ Status       │ running              │\n│ Created At   │ 2026-02-21 10:30:00  │\n│ Updated At   │ 2026-02-21 10:35:00  │\n└──────────────┴──────────────────────┘\n\nNode Status\n┏━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━┓\n┃ Node     ┃ Status       ┃ Iteration ┃\n┡━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━┩\n│ analyst  │ ✓ Completed  │ 3         │\n│ pm       │ → Running    │ 1         │\n│ ux       │ ○ Pending    │ -         │\n│ architect│ ○ Pending    │ -         │\n│ po       │ ○ Pending    │ -         │\n└──────────┴──────────────┴───────────┘\n\nCurrent Node: pm",
+            "has_deprecated": false
+          },
+          {
+            "start": 213,
+            "end": 222,
+            "content": "# 从检查点恢复\npython -m autoBMAD.docuswarm resume <pipeline_id>\n\n# 从指定节点重新开始\npython -m autoBMAD.docuswarm resume <pipeline_id> --node <node_id>\n\n# 强制恢复（即使流水线正在运行）\npython -m autoBMAD.docuswarm resume <pipeline_id> --force",
+            "has_deprecated": false
+          },
+          {
+            "start": 225,
+            "end": 234,
+            "content": "# 常规恢复\npython -m autoBMAD.docuswarm resume abc123xyz\n\n# 从 ux 节点重新开始\npython -m autoBMAD.docuswarm resume abc123xyz --node ux\n\n# 强制恢复\npython -m autoBMAD.docuswarm resume abc123xyz -f",
+            "has_deprecated": false
+          },
+          {
+            "start": 242,
+            "end": 244,
+            "content": "python -m autoBMAD.docuswarm list-pipelines [--status STATUS]",
+            "has_deprecated": false
+          },
+          {
+            "start": 247,
+            "end": 253,
+            "content": "# 列出所有流水线\npython -m autoBMAD.docuswarm list-pipelines\n\n# 仅列出运行中的流水线\npython -m autoBMAD.docuswarm list-pipelines --status running",
+            "has_deprecated": false
+          },
+          {
+            "start": 261,
+            "end": 263,
+            "content": "python -m autoBMAD.docuswarm cancel <pipeline_id>",
+            "has_deprecated": false
+          },
+          {
+            "start": 267,
+            "end": 269,
+            "content": "python -m autoBMAD.docuswarm cancel-all [--status STATUS] [--confirm]",
+            "has_deprecated": false
+          },
+          {
+            "start": 272,
+            "end": 281,
+            "content": "# 取消特定流水线\npython -m autoBMAD.docuswarm cancel pipeline-1771816177098-8ccefbd8\n\n# 取消所有 pending 的流水线（需要确认）\npython -m autoBMAD.docuswarm cancel-all --status pending\n\n# 取消所有流水线（跳过确认）\npython -m autoBMAD.docuswarm cancel-all --confirm",
+            "has_deprecated": false
+          },
+          {
+            "start": 289,
+            "end": 291,
+            "content": "python -m autoBMAD.docuswarm clean [OPTIONS]",
+            "has_deprecated": false
+          },
+          {
+            "start": 299,
+            "end": 308,
+            "content": "# 删除所有 cancelled 的流水线（需要确认）\npython -m autoBMAD.docuswarm clean --status cancelled\n\n# 删除所有 failed 的流水线（跳过确认）\npython -m autoBMAD.docuswarm clean --status failed --confirm\n\n# 删除 7 天前的 completed 流水线\npython -m autoBMAD.docuswarm clean --status completed --older-than-days 7",
+            "has_deprecated": false
+          },
+          {
+            "start": 318,
+            "end": 320,
+            "content": "python -m autoBMAD.docuswarm questions <pipeline_id> [--run RUN_ID]",
+            "has_deprecated": false
+          },
+          {
+            "start": 324,
+            "end": 328,
+            "content": "python -m autoBMAD.docuswarm answer <question_id> <answer>\n# 或使用选项\npython -m autoBMAD.docuswarm answer <question_id> --text \"答案内容\"",
+            "has_deprecated": false
+          },
+          {
+            "start": 331,
+            "end": 337,
+            "content": "# 查看问题\npython -m autoBMAD.docuswarm questions abc123xyz\n\n# 回答问题\npython -m autoBMAD.docuswarm answer abc123xyz_analyst_0 \"使用 React + TypeScript\"",
+            "has_deprecated": false
+          },
+          {
+            "start": 348,
+            "end": 350,
+            "content": "python -m autoBMAD.docuswarm export <pipeline_id> [output_dir] [OPTIONS]",
+            "has_deprecated": false
+          },
+          {
+            "start": 357,
+            "end": 363,
+            "content": "# 导出到当前目录\npython -m autoBMAD.docuswarm export abc123xyz\n\n# 导出到指定目录并包含元数据\npython -m autoBMAD.docuswarm export abc123xyz -o ./deliverables --include-metadata",
+            "has_deprecated": false
+          },
+          {
+            "start": 369,
+            "end": 382,
+            "content": "# 1. 启动新流水线\npython -m autoBMAD.docuswarm start -c docs/proposal.md\n\n# 2. 查看状态\npython -m autoBMAD.docuswarm status <pipeline_id>\n\n# 3. 如果需要，回答问题\npython -m autoBMAD.docuswarm questions <pipeline_id>\npython -m autoBMAD.docuswarm answer <question_id> \"答案内容\"\n\n# 4. 导出结果\npython -m autoBMAD.docuswarm export <pipeline_id> -o ./output",
+            "has_deprecated": false
+          },
+          {
+            "start": 386,
+            "end": 398,
+            "content": "# 1. 查看所有流水线\npython -m autoBMAD.docuswarm list-pipelines\n\n# 2. 取消所有 pending 的流水线\npython -m autoBMAD.docuswarm cancel-all --status pending --confirm\n\n# 3. 清理已取消的流水线\npython -m autoBMAD.docuswarm clean --status cancelled --confirm\n\n# 4. 清理失败的流水线\npython -m autoBMAD.docuswarm clean --status failed --confirm",
+            "has_deprecated": false
+          },
+          {
+            "start": 402,
+            "end": 412,
+            "content": "# 每周执行：清理旧数据\npython -m autoBMAD.docuswarm clean --status cancelled --confirm\npython -m autoBMAD.docuswarm clean --status failed --confirm\n\n# 每月执行：清理过旧的已完成流水线（保留30天）\npython -m autoBMAD.docuswarm clean --status completed --older-than-days 30 --confirm\n\n# 备份数据库\ncp docuswarm.db docuswarm.db.backup-$(date +%Y%m%d)",
+            "has_deprecated": false
+          },
+          {
+            "start": 418,
+            "end": 439,
+            "content": "graph TB\n    Start[开始] --> Init[创建流水线]\n    Init --> Analyst[Analyst 节点]\n    Analyst --> PM[PM 节点]\n    PM --> UX[UX 节点]\n    UX --> Architect[Architect 节点]\n    Architect --> PO[PO 节点]\n    PO --> Complete[完成]\n    \n    Analyst -.->|阻塞问题| Pause1[暂停等待回答]\n    PM -.->|阻塞问题| Pause2[暂停等待回答]\n    UX -.->|阻塞问题| Pause3[暂停等待回答]\n    Architect -.->|阻塞问题| Pause4[暂停等待回答]\n    PO -.->|阻塞问题| Pause5[暂停等待回答]\n    \n    Pause1 -.->|回答后| Analyst\n    Pause2 -.->|回答后| PM\n    Pause3 -.->|回答后| UX\n    Pause4 -.->|回答后| Architect\n    Pause5 -.->|回答后| PO",
+            "has_deprecated": false
+          },
+          {
+            "start": 445,
+            "end": 462,
+            "content": "graph TB\n    NodeStart[节点开始] --> IndAgent[Independent Agent 执行]\n    IndAgent --> CreateOutput[创建交付物 + 问题]\n    CreateOutput --> Filter[过滤 private_reasoning]\n    Filter --> Evaluator[Evaluator Agent 评估]\n    Evaluator --> CheckVerdict{评估结果?}\n    \n    CheckVerdict -->|APPROVED| NodeEnd[节点完成]\n    CheckVerdict -->|NEEDS_REVISION| CheckIter{达到最大迭代?}\n    CheckVerdict -->|REJECTED| CheckIter\n    \n    CheckIter -->|否| Feedback[传递反馈]\n    Feedback --> IndAgent\n    \n    CheckIter -->|是| ForceComplete[强制完成]\n    ForceComplete --> NodeEnd",
+            "has_deprecated": false
+          },
+          {
+            "start": 507,
+            "end": 523,
+            "content": "# Kimi API 配置\n# 注意：KIMI_API_KEY 必须通过环境变量设置，不应写入此文件\nbase_url: https://api.kimi.com/coding/\n\n# 数据库配置\ndb_path: docuswarm.db\n\n# 输出目录\noutput_dir: output\n\n# 日志级别（DEBUG, INFO, WARNING, ERROR）\nlog_level: INFO\n\n# 最大迭代次数\nmax_iterations: 100",
+            "has_deprecated": false
+          },
+          {
+            "start": 539,
+            "end": 545,
+            "content": "node_id: analyst\nname: Business Analyst\ndescription: Analyzes requirements and creates user stories\nmax_iterations: 10\nquality_threshold: 80",
+            "has_deprecated": false
+          },
+          {
+            "start": 549,
+            "end": 572,
+            "content": "{\n  \"role\": \"Business Analyst\",\n  \"background\": \"Experienced in requirements analysis and user story creation\",\n  \"expertise\": [\n    \"Requirements gathering\",\n    \"User story writing\",\n    \"Acceptance criteria definition\"\n  ],\n  \"guidelines\": [\n    \"Focus on user needs and business value\",\n    \"Write clear and testable acceptance criteria\",\n    \"Consider edge cases and error scenarios\"\n  ],\n  \"output_format\": {\n    \"type\": \"markdown\",\n    \"structure\": [\n      \"Executive Summary\",\n      \"User Stories\",\n      \"Acceptance Criteria\"\n    ]\n  }\n}",
+            "has_deprecated": false
+          },
+          {
+            "start": 576,
+            "end": 607,
+            "content": "criteria:\n  completeness:\n    weight: 0.3\n    description: \"Are all requirements clearly defined?\"\n    evaluation_points:\n      - \"All user stories have acceptance criteria\"\n      - \"Edge cases are considered\"\n      - \"Dependencies are identified\"\n  \n  clarity:\n    weight: 0.3\n    description: \"Is the document easy to understand?\"\n    evaluation_points:\n      - \"Language is clear and concise\"\n      - \"Technical jargon is explained\"\n      - \"Examples are provided where needed\"\n  \n  feasibility:\n    weight: 0.4\n    description: \"Are the requirements technically feasible?\"\n    evaluation_points:\n      - \"Requirements are realistic\"\n      - \"Technical constraints are acknowledged\"\n      - \"Implementation approach is sound\"\n\nscoring:\n  excellent: 90\n  good: 75\n  acceptable: 60\n  needs_revision: 50",
+            "has_deprecated": false
+          },
+          {
+            "start": 623,
+            "end": 633,
+            "content": "pending → running → completed\n               ↓\n            paused (有阻塞问题)\n               ↓\n            running (问题回答后)\n               ↓\n            failed (执行出错)\n               ↓\n          cancelled (手动取消)",
+            "has_deprecated": false
+          },
+          {
+            "start": 660,
+            "end": 670,
+            "content": "# 查看隔离审计日志\nfrom autoBMAD.docuswarm.context.audit import IsolationAuditLogger\n\naudit_logger = IsolationAuditLogger()\naudit_logger.log_isolation_boundary(\n    node_id=\"analyst\",\n    agent_type=\"evaluator\",\n    context_keys=[\"filtered_keys\"]\n)",
+            "has_deprecated": false
+          },
+          {
+            "start": 676,
+            "end": 681,
+            "content": "class QuestionPriority:\n    BLOCKING = \"blocking\"       # 阻塞问题：必须回答\n    CLARIFYING = \"clarifying\"   # 澄清问题：建议回答\n    OPTIONAL = \"optional\"       # 可选问题：可跳过",
+            "has_deprecated": false
+          },
+          {
+            "start": 704,
+            "end": 710,
+            "content": "# 系统自动处理恢复流程\n# 1. 从 SqliteSaver 加载最后一个检查点\n# 2. 恢复 PipelineState（包括所有字段）\n# 3. 恢复会话 ID（如果有未完成的会话）\n# 4. 从 current_node 继续执行",
+            "has_deprecated": false
+          },
+          {
+            "start": 721,
+            "end": 730,
+            "content": "@dataclass\nclass ForceCompletion:\n    node_id: str\n    iteration: int\n    reason: str\n    timestamp: datetime\n    final_score: float\n    threshold: float",
+            "has_deprecated": false
+          },
+          {
+            "start": 745,
+            "end": 824,
+            "content": "autoBMAD/docuswarm/\n├── agents/              # Agent 实现\n│   ├── configs/         # Agent 配置文件\n│   │   └── independent_agent.yaml\n│   ├── evaluator_config/  # Evaluator 配置加载器\n│   │   ├── criteria_loader.py\n│   │   └── schemas.py\n│   ├── base.py          # BaseAgent 基类\n│   ├── independent.py   # IndependentAgent\n│   ├── evaluator.py     # EvaluatorAgent\n│   └── persona.py       # PersonaLoader\n├── context/             # 上下文管理\n│   ├── isolation.py     # ContextManager\n│   ├── filter.py        # ContextFilter\n│   ├── audit.py         # IsolationAuditLogger\n│   └── memory.py        # ContextMemory\n├── llm/                 # LLM 集成\n│   ├── session_manager.py  # KimiSessionManager\n│   ├── response.py         # ResponseParser\n│   ├── approval.py         # ApprovalSystem\n│   ├── mode_mapper.py      # ModeMapper\n│   └── config.py           # LLM 配置\n├── nodes/               # 节点系统\n│   ├── dual_agent.py    # DualAgentNode\n│   ├── iteration.py     # IterationController\n│   └── loader.py        # NodeConfigLoader\n├── node_execution/      # 节点执行系统\n│   ├── executor.py      # NodeExecutor\n│   ├── flow.py          # ExecutionFlow\n│   ├── state.py         # ExecutionState\n│   ├── metrics.py       # MetricsCollector\n│   ├── escalation.py    # EscalationHandler\n│   ├── chaining.py      # NodeChaining\n│   ├── graph.py         # ExecutionGraph\n│   ├── validator.py     # ContextValidator\n│   └── run_tracker.py   # RunTracker\n├── pipeline/            # 流水线编排\n│   ├── orchestrator.py  # HybridOrchestrator\n│   ├── state.py         # PipelineState & 状态常量\n│   ├── graph.py         # LangGraph 图定义\n│   ├── quality.py       # VerdictDeterminer\n│   ├── escalation.py    # EscalationHandler\n│   ├── questions.py     # QuestionHandler\n│   ├── transitions.py   # StateTransitions\n│   ├── metrics.py       # PipelineMetrics\n│   └── force_completion.py  # ForceCompletion\n├── prompts/             # 提示词模板\n│   ├── templates/       # YAML 模板文件\n│   │   ├── independent_agent.yaml\n│   │   └── evaluator_agent.yaml\n│   ├── template_loader.py  # 模板加载器\n│   ├── validator.py        # 模板验证器\n│   ├── independent_agent.py  # Independent Agent 提示词\n│   └── evaluator_agent.py    # Evaluator Agent 提示词\n├── storage/             # 存储层\n│   ├── state_manager.py    # StateManager\n│   ├── checkpoints.py      # CheckpointManager\n│   ├── database.py         # Database 操作\n│   └── files.py            # FileStorage\n├── tools/               # 工具函数\n│   ├── protocols.py         # 工具协议定义\n│   ├── create_deliverable.py  # 创建交付物工具\n│   └── update_context.py      # 更新上下文工具\n├── utils/               # 工具类\n│   ├── logging.py       # 日志配置\n│   └── session_ids.py   # Session ID 管理\n├── tests/               # 测试文件\n│   ├── unit/            # 单元测试\n│   ├── integration/     # 集成测试\n│   ├── cli/             # CLI 测试\n│   └── conftest.py      # Pytest 配置\n├── config.py            # 配置管理\n├── exceptions.py        # 异常定义\n├── main.py              # CLI 入口\n├── __main__.py          # 模块入口\n├── __init__.py          # 包初始化\n├── docuswarm.yaml       # YAML 配置文件\n└── pytest.ini           # Pytest 配置",
+            "has_deprecated": false
+          },
+          {
+            "start": 830,
+            "end": 832,
+            "content": "mkdir -p nodes/my_node",
+            "has_deprecated": false
+          },
+          {
+            "start": 837,
+            "end": 843,
+            "content": "node_id: my_node\nname: My Custom Node\ndescription: Description of what this node does\nmax_iterations: 10\nquality_threshold: 80",
+            "has_deprecated": false
+          },
+          {
+            "start": 846,
+            "end": 857,
+            "content": "{\n  \"role\": \"My Role\",\n  \"background\": \"Background description\",\n  \"expertise\": [\"Skill 1\", \"Skill 2\"],\n  \"guidelines\": [\"Guideline 1\", \"Guideline 2\"],\n  \"output_format\": {\n    \"type\": \"markdown\",\n    \"structure\": [\"Section 1\", \"Section 2\"]\n  }\n}",
+            "has_deprecated": false
+          },
+          {
+            "start": 860,
+            "end": 874,
+            "content": "criteria:\n  quality:\n    weight: 1.0\n    description: \"Quality criteria\"\n    evaluation_points:\n      - \"Point 1\"\n      - \"Point 2\"\n\nscoring:\n  excellent: 90\n  good: 75\n  acceptable: 60\n  needs_revision: 50",
+            "has_deprecated": false
+          },
+          {
+            "start": 880,
+            "end": 890,
+            "content": "# Pipeline node order - must execute in sequence\nPIPELINE_NODES: list[str] = [\n    \"analyst\",\n    \"pm\",\n    \"ux\",\n    \"architect\",\n    \"po\",\n    \"my_node\",  # 新增节点\n]",
+            "has_deprecated": false
+          },
+          {
+            "start": 894,
+            "end": 897,
+            "content": "# 启动流水线，系统会自动加载新节点配置\npython -m autoBMAD.docuswarm start -c context.md",
+            "has_deprecated": false
+          },
+          {
+            "start": 903,
+            "end": 921,
+            "content": "# tools/my_tool.py\nfrom kimi_agent_sdk import tool\nfrom typing import Any\n\n@tool\ndef my_custom_tool(param: str) -> dict[str, Any]:\n    \"\"\"My custom tool description.\n    \n    Args:\n        param: Parameter description\n        \n    Returns:\n        Tool execution result\n    \"\"\"\n    # 工具实现\n    result = f\"Processed: {param}\"\n    return {\"status\": \"success\", \"result\": result}",
+            "has_deprecated": false
+          },
+          {
+            "start": 925,
+            "end": 931,
+            "content": "# agents/configs/independent_agent.yaml\ntools:\n  - autoBMAD.docuswarm.tools.create_deliverable.create_deliverable\n  - autoBMAD.docuswarm.tools.update_context.update_context\n  - autoBMAD.docuswarm.tools.my_tool.my_custom_tool  # 新增工具",
+            "has_deprecated": false
+          },
+          {
+            "start": 943,
+            "end": 953,
+            "content": "from autoBMAD.docuswarm.utils.logging import configure_logging\nfrom pathlib import Path\n\n# 配置日志\nlogger = configure_logging(\n    log_level=\"DEBUG\",\n    log_dir=Path(\"./logs\"),\n    json_format=False  # True 启用 JSON 格式\n)",
+            "has_deprecated": false
+          },
+          {
+            "start": 957,
+            "end": 969,
+            "content": "# 启用详细输出（DEBUG 级别）\npython -m autoBMAD.docuswarm -v start -c context.md\n\n# 指定日志级别\npython -m autoBMAD.docuswarm --log-level DEBUG start -c context.md\n\n# 指定日志目录\npython -m autoBMAD.docuswarm --log-file ./my-logs start -c context.md\n\n# 使用 JSON 格式日志\npython -m autoBMAD.docuswarm --json-log start -c context.md",
+            "has_deprecated": false
+          },
+          {
+            "start": 973,
+            "end": 985,
+            "content": "# 标准日志\ntail -f logs/docuswarm.log\n\n# JSON 格式日志（使用 jq 美化）\ntail -f logs/docuswarm.json | jq .\n\n# 过滤特定级别的日志\ngrep \"ERROR\" logs/docuswarm.log\n\n# 查看特定流水线的日志\ngrep \"pipeline-abc123\" logs/docuswarm.log",
+            "has_deprecated": false
+          },
+          {
+            "start": 990,
+            "end": 992,
+            "content": "python -m autoBMAD.docuswarm -v start -c context.md",
+            "has_deprecated": false
+          },
+          {
+            "start": 995,
+            "end": 1000,
+            "content": "from autoBMAD.docuswarm.context.audit import IsolationAuditLogger\n\naudit_logger = IsolationAuditLogger()\naudit_logger.get_audit_trail(node_id=\"analyst\")",
+            "has_deprecated": false
+          },
+          {
+            "start": 1003,
+            "end": 1007,
+            "content": "sqlite3 docuswarm.db\n.tables\nSELECT * FROM checkpoints WHERE thread_id = 'your_pipeline_id';",
+            "has_deprecated": false
+          },
+          {
+            "start": 1016,
+            "end": 1018,
+            "content": "ConfigurationError: KIMI_API_KEY is required. Please set it in your .env file or as an environment variable.",
+            "has_deprecated": false
+          },
+          {
+            "start": 1029,
+            "end": 1031,
+            "content": "PipelineNotFoundError: Pipeline not found: abc123xyz",
+            "has_deprecated": false
+          },
+          {
+            "start": 1042,
+            "end": 1046,
+            "content": "FileNotFoundError: Node configuration not found: nodes/analyst/node.yaml\n# 或\nValidationError: Invalid persona format",
+            "has_deprecated": false
+          },
+          {
+            "start": 1059,
+            "end": 1061,
+            "content": "ContextIsolationError: Context isolation violation detected",
+            "has_deprecated": false
+          },
+          {
+            "start": 1072,
+            "end": 1074,
+            "content": "sqlite3.OperationalError: database is locked",
+            "has_deprecated": false
+          },
+          {
+            "start": 1081,
+            "end": 1083,
+            "content": "  sqlite3 docuswarm.db \"PRAGMA journal_mode=WAL;\"",
+            "has_deprecated": false
+          },
+          {
+            "start": 1088,
+            "end": 1092,
+            "content": "LLMError: API rate limit exceeded\n# 或\nLLMError: Authentication failed",
+            "has_deprecated": false
+          },
+          {
+            "start": 1099,
+            "end": 1106,
+            "content": "  try:\n      # ... LLM 调用\n  except LLMError as e:\n      print(f\"Error: {e}\")\n      print(f\"Context: {e.context}\")\n      print(f\"Raw response: {e.raw_response}\")",
+            "has_deprecated": false
+          },
+          {
+            "start": 1112,
+            "end": 1114,
+            "content": "python -m autoBMAD.docuswarm status <pipeline_id> -v",
+            "has_deprecated": false
+          },
+          {
+            "start": 1118,
+            "end": 1124,
+            "content": "from autoBMAD.docuswarm.storage.state_manager import StateManager\n\nstate_manager = StateManager()\npipeline = state_manager.get_pipeline(\"pipeline_id\")\nprint(json.dumps(pipeline, indent=2))",
+            "has_deprecated": false
+          },
+          {
+            "start": 1128,
+            "end": 1135,
+            "content": "from autoBMAD.docuswarm.storage.state_manager import StateManager\n\nstate_manager = StateManager()\nresults = state_manager.get_node_results(\"pipeline_id\", \"analyst\")\nfor result in results:\n    print(f\"Iteration {result['iteration']}: {result['status']}\")",
+            "has_deprecated": false
+          },
+          {
+            "start": 1141,
+            "end": 1150,
+            "content": "-- 启用 WAL 模式\nPRAGMA journal_mode=WAL;\n\n-- 设置缓存大小\nPRAGMA cache_size=-64000;\n\n-- 优化同步模式\nPRAGMA synchronous=NORMAL;",
+            "has_deprecated": false
+          },
+          {
+            "start": 1154,
+            "end": 1161,
+            "content": "# 使用连接池\nfrom autoBMAD.docuswarm.storage.database import get_connection\n\nwith get_connection() as conn:\n    # 执行数据库操作\n    pass",
+            "has_deprecated": false
+          },
+          {
+            "start": 1193,
+            "end": 1200,
+            "content": "  # 每周清理一次 cancelled 和 failed 的流水线\n  python -m autoBMAD.docuswarm clean --status cancelled --confirm\n  python -m autoBMAD.docuswarm clean --status failed --confirm\n  \n  # 每月清理 30 天前的 completed 流水线\n  python -m autoBMAD.docuswarm clean --status completed --older-than-days 30 --confirm",
+            "has_deprecated": false
+          },
+          {
+            "start": 1209,
+            "end": 1215,
+            "content": "# 备份数据库\ncp docuswarm.db docuswarm.db.backup\n\n# 备份输出目录\ntar -czf output-backup.tar.gz output/",
+            "has_deprecated": false
+          },
+          {
+            "start": 1239,
+            "end": 1251,
+            "content": "# 运行所有测试\npytest\n\n# 运行特定测试文件\npytest tests/unit/test_cli.py\n\n# 运行带覆盖率报告\npytest --cov=autoBMAD.docuswarm --cov-report=html\n\n# 查看覆盖率报告\nopen htmlcov/index.html",
+            "has_deprecated": false
+          }
+        ],
+        "migration_examples": []
+      },
+      "autoBMAD/docuswarm/CONFIGURATION.md": {
+        "file": "autoBMAD\\docuswarm\\CONFIGURATION.md",
+        "total_lines": 172,
+        "deprecated_occurrences": [
+          {
+            "line": 13,
+            "column": 1,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "KIMI_API_KEY=your-api-key-here",
+            "in_code_block": true
+          },
+          {
+            "line": 14,
+            "column": 1,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "KIMI_BASE_URL=https://api.kimi.com/coding/",
+            "in_code_block": true
+          },
+          {
+            "line": 22,
+            "column": 8,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "export KIMI_API_KEY=your-api-key-here",
+            "in_code_block": true
+          },
+          {
+            "line": 23,
+            "column": 8,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "export KIMI_BASE_URL=https://api.kimi.com/coding/",
+            "in_code_block": true
+          },
+          {
+            "line": 37,
+            "column": 15,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "# 优先级 1: 环境变量 KIMI_BASE_URL",
+            "in_code_block": true
+          },
+          {
+            "line": 38,
+            "column": 1,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "KIMI_BASE_URL=https://custom-api.example.com/v1",
+            "in_code_block": true
+          },
+          {
+            "line": 50,
+            "column": 49,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "如果需要使用自定义的 Kimi API endpoint（例如私有部署或镜像地址），只需设置 `KIMI_BASE_URL` 环境变量：",
+            "in_code_block": false
+          },
+          {
+            "line": 55,
+            "column": 1,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "KIMI_API_KEY=your-api-key",
+            "in_code_block": true
+          },
+          {
+            "line": 56,
+            "column": 1,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "KIMI_BASE_URL=https://your-custom-endpoint.com/v1",
+            "in_code_block": true
+          },
+          {
+            "line": 63,
+            "column": 8,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "export KIMI_BASE_URL=https://your-custom-endpoint.com/v1",
+            "in_code_block": true
+          },
+          {
+            "line": 67,
+            "column": 6,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "$env:KIMI_BASE_URL=\"https://your-custom-endpoint.com/v1\"",
+            "in_code_block": true
+          },
+          {
+            "line": 73,
+            "column": 34,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "内部实现中，`KimiSessionManager` 会自动将 `KIMI_API_KEY` 和 `KIMI_BASE_URL` 转换为 SDK 的 `Config` 对象：",
+            "in_code_block": false
+          },
+          {
+            "line": 73,
+            "column": 51,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "内部实现中，`KimiSessionManager` 会自动将 `KIMI_API_KEY` 和 `KIMI_BASE_URL` 转换为 SDK 的 `Config` 对象：",
+            "in_code_block": false
+          },
+          {
+            "line": 73,
+            "column": 8,
+            "match": "KimiSessionManager",
+            "replacement": "SessionManager",
+            "context": "内部实现中，`KimiSessionManager` 会自动将 `KIMI_API_KEY` 和 `KIMI_BASE_URL` 转换为 SDK 的 `Config` 对象：",
+            "in_code_block": false
+          },
+          {
+            "line": 82,
+            "column": 41,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "\"base_url\": os.environ.get(\"KIMI_BASE_URL\", \"https://api.kimi.com/coding/\"),",
+            "in_code_block": true
+          },
+          {
+            "line": 83,
+            "column": 40,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "\"api_key\": os.environ.get(\"KIMI_API_KEY\"),",
+            "in_code_block": true
+          },
+          {
+            "line": 93,
+            "column": 6,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "- ✅ `KIMI_API_KEY` **必需** - 如果未设置会抛出 `ConfigurationError`",
+            "in_code_block": false
+          },
+          {
+            "line": 94,
+            "column": 6,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "- ✅ `KIMI_BASE_URL` **可选** - 如果未设置使用默认值 `https://api.kimi.com/coding/`",
+            "in_code_block": false
+          },
+          {
+            "line": 104,
+            "column": 1,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "KIMI_API_KEY=your-kimi-api-key-here",
+            "in_code_block": true
+          },
+          {
+            "line": 105,
+            "column": 1,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "KIMI_BASE_URL=https://api.kimi.com/coding/",
+            "in_code_block": true
+          },
+          {
+            "line": 136,
+            "column": 28,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "### 错误：ConfigurationError: KIMI_API_KEY is required",
+            "in_code_block": false
+          },
+          {
+            "line": 138,
+            "column": 13,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "**原因**：未设置 `KIMI_API_KEY` 环境变量。",
+            "in_code_block": false
+          },
+          {
+            "line": 142,
+            "column": 23,
+            "match": "KIMI_API_KEY",
+            "replacement": "ANTHROPIC_API_KEY",
+            "context": "2. 检查 `.env` 文件中是否包含 `KIMI_API_KEY=your-api-key`",
+            "in_code_block": false
+          },
+          {
+            "line": 147,
+            "column": 9,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "**原因**：`KIMI_BASE_URL` 配置错误或网络问题。",
+            "in_code_block": false
+          },
+          {
+            "line": 150,
+            "column": 8,
+            "match": "KIMI_BASE_URL",
+            "replacement": "ANTHROPIC_BASE_URL",
+            "context": "1. 检查 `KIMI_BASE_URL` 是否正确",
+            "in_code_block": false
+          }
+        ],
+        "correct_occurrences": [
+          {
+            "line": 73,
+            "column": 12,
+            "match": "SessionManager",
+            "context": "内部实现中，`KimiSessionManager` 会自动将 `KIMI_API_KEY` 和 `KIMI_BASE_URL` 转换为 SDK 的 `Config` 对象："
+          }
+        ],
+        "code_blocks": [
+          {
+            "start": 11,
+            "end": 15,
+            "content": "# Kimi API 配置\nKIMI_API_KEY=your-api-key-here\nKIMI_BASE_URL=https://api.kimi.com/coding/",
+            "has_deprecated": false
+          },
+          {
+            "start": 21,
+            "end": 24,
+            "content": "export KIMI_API_KEY=your-api-key-here\nexport KIMI_BASE_URL=https://api.kimi.com/coding/",
+            "has_deprecated": false
+          },
+          {
+            "start": 36,
+            "end": 46,
+            "content": "# 优先级 1: 环境变量 KIMI_BASE_URL\nKIMI_BASE_URL=https://custom-api.example.com/v1\n\n# 优先级 2: YAML 配置\n# config/docuswarm.yaml\nbase_url: https://api.kimi.com/coding/\n\n# 优先级 3: 默认值\nDEFAULT_BASE_URL = \"https://api.kimi.com/coding/\"",
+            "has_deprecated": false
+          },
+          {
+            "start": 54,
+            "end": 57,
+            "content": "KIMI_API_KEY=your-api-key\nKIMI_BASE_URL=https://your-custom-endpoint.com/v1",
+            "has_deprecated": false
+          },
+          {
+            "start": 61,
+            "end": 69,
+            "content": "# Linux/macOS\nexport KIMI_BASE_URL=https://your-custom-endpoint.com/v1\npython -m autoBMAD.docuswarm start -c context.md\n\n# Windows PowerShell\n$env:KIMI_BASE_URL=\"https://your-custom-endpoint.com/v1\"\npython -m autoBMAD.docuswarm start -c context.md",
+            "has_deprecated": false
+          },
+          {
+            "start": 75,
+            "end": 87,
+            "content": "from kimi_agent_sdk import Config\n\nconfig = Config(\n    providers={\n        \"kimi\": {\n            \"type\": \"kimi\",\n            \"base_url\": os.environ.get(\"KIMI_BASE_URL\", \"https://api.kimi.com/coding/\"),\n            \"api_key\": os.environ.get(\"KIMI_API_KEY\"),\n        }\n    }\n)",
+            "has_deprecated": false
+          },
+          {
+            "start": 100,
+            "end": 132,
+            "content": "# =============================================================================\n# REQUIRED - Kimi API 配置\n# =============================================================================\nKIMI_API_KEY=your-kimi-api-key-here\nKIMI_BASE_URL=https://api.kimi.com/coding/\n\n# =============================================================================\n# OPTIONAL - DocuSwarm 配置\n# =============================================================================\n\n# 数据库路径 (默认: docuswarm.db)\nDOCUSWARM_DB_PATH=docuswarm.db\n\n# 输出目录 (默认: output)\nDOCUSWARM_OUTPUT_DIR=output\n\n# 日志级别 (默认: INFO, 选项: DEBUG, INFO, WARNING, ERROR)\nDOCUSWARM_LOG_LEVEL=INFO\n\n# 最大迭代次数 (默认: 100)\nDOCUSWARM_MAX_ITERATIONS=100\n\n# =============================================================================\n# EPIC AUTOMATION - autoBMAD 配置\n# =============================================================================\n\n# 源代码目录 (默认: \"src\", DocuSwarm: \"docuswarm\")\nEPIC_SOURCE_DIR=docuswarm\n\n# 测试目录 (默认: \"tests\")\nEPIC_TEST_DIR=tests",
+            "has_deprecated": false
+          },
+          {
+            "start": 158,
+            "end": 166,
+            "content": "from autoBMAD.docuswarm.config import load_config\n\nconfig = load_config()\nprint(f\"API Key: {config.api_key[:10]}...\")  # 只显示前10个字符\nprint(f\"Base URL: {config.base_url}\")\nprint(f\"DB Path: {config.db_path}\")\nprint(f\"Output Dir: {config.output_dir}\")",
+            "has_deprecated": false
+          }
+        ],
+        "migration_examples": []
+      }
+    },
+    "config_implementation": {
+      "file": "autoBMAD/docuswarm/config.py",
+      "env_vars_found": [
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_BASE_URL"
+      ],
+      "uses_anthropic": true,
+      "uses_kimi": false
+    },
+    "prd_consistency": {
+      "file": "docs/PRD.md",
+      "anthropic_mentions": 9,
+      "kimi_mentions": 5,
+      "consistent": false
+    }
+  },
+  "migration_patches": {
+    "patches": [
+      {
+        "file": "autoBMAD/docuswarm/README.md",
+        "changes": [
+          {
+            "from": "KIMI_API_KEY",
+            "to": "ANTHROPIC_API_KEY",
+            "occurrences": 9
+          },
+          {
+            "from": "KIMI_BASE_URL",
+            "to": "ANTHROPIC_BASE_URL",
+            "occurrences": 3
+          },
+          {
+            "from": "KimiSessionManager",
+            "to": "SessionManager",
+            "occurrences": 3
+          }
+        ]
+      },
+      {
+        "file": "autoBMAD/docuswarm/CONFIGURATION.md",
+        "changes": [
+          {
+            "from": "KIMI_API_KEY",
+            "to": "ANTHROPIC_API_KEY",
+            "occurrences": 10
+          },
+          {
+            "from": "KIMI_BASE_URL",
+            "to": "ANTHROPIC_BASE_URL",
+            "occurrences": 14
+          },
+          {
+            "from": "KimiSessionManager",
+            "to": "SessionManager",
+            "occurrences": 1
+          }
+        ]
+      }
+    ]
+  },
+  "update_plan": {
+    "phase_b_tasks": [
+      {
+        "priority": "P0",
+        "task": "更新 README.md",
+        "changes": [
+          "将所有 KIMI_API_KEY 替换为 ANTHROPIC_API_KEY",
+          "将所有 KIMI_BASE_URL 替换为 ANTHROPIC_BASE_URL",
+          "将所有 KimiSessionManager 替换为 SessionManager",
+          "更新配置示例代码块"
+        ],
+        "estimated_time": "30 分钟"
+      },
+      {
+        "priority": "P0",
+        "task": "更新 CONFIGURATION.md",
+        "changes": [
+          "替换所有环境变量引用",
+          "更新配置示例",
+          "更新故障排除部分"
+        ],
+        "estimated_time": "45 分钟"
+      },
+      {
+        "priority": "P1",
+        "task": "验证 PRD.md 一致性",
+        "changes": [
+          "确认 PRD.md 使用 ANTHROPIC_* 而非 KIMI_*"
+        ],
+        "estimated_time": "10 分钟"
+      },
+      {
+        "priority": "P1",
+        "task": "添加迁移说明",
+        "changes": [
+          "添加从 KIMI_* 到 ANTHROPIC_* 的迁移指南",
+          "说明 SessionManager 的变化"
+        ],
+        "estimated_time": "20 分钟"
+      }
+    ],
+    "verification_checklist": [
+      "grep -r 'KIMI_API_KEY' autoBMAD/docuswarm/*.md 应该无结果",
+      "grep -r 'KIMI_BASE_URL' autoBMAD/docuswarm/*.md 应该无结果",
+      "grep -r 'KimiSessionManager' autoBMAD/docuswarm/*.md 应该无结果",
+      "grep -r 'ANTHROPIC_API_KEY' autoBMAD/docuswarm/README.md 应该命中",
+      "grep -r 'SessionManager' autoBMAD/docuswarm/README.md 应该命中"
+    ]
+  }
+}
