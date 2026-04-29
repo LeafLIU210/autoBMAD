@@ -65,6 +65,7 @@ class NodeToolFilter:
         node_id: str,
         tool_permissions: NodeToolPermissions | None = None,
         output_dir: str | None = None,
+        db_path: str | None = None,  # H1 Fix: pass configured DB path
     ) -> None:
         """Initialize NodeToolFilter.
 
@@ -74,12 +75,14 @@ class NodeToolFilter:
                                      Defaults to empty permissions if None.
             output_dir: Output directory for deliverable files.
                        If set, a deliverable MCP server will be created.
+            db_path: Optional database path for shared_context MCP server.
         """
         from autoBMAD.nodes.loader import NodeToolPermissions
 
         self.node_id = node_id
         self.tool_permissions = tool_permissions or NodeToolPermissions()
         self.output_dir = output_dir
+        self.db_path = db_path
 
     @classmethod
     def from_node_config(cls, config: NodeConfig) -> NodeToolFilter:
@@ -178,7 +181,9 @@ class NodeToolFilter:
         logger.debug(f"Node {self.node_id} has {len(tools)} allowed tools: {tools}")
         return tools
 
-    def create_mcp_servers(self, pipeline_id: str | None = None) -> dict[str, Any]:
+    def create_mcp_servers(
+        self, pipeline_id: str | None = None, db_path: str | None = None
+    ) -> dict[str, Any]:
         """Create SDK MCP servers based on configured permissions.
 
         This method creates and returns SDK MCP server dicts for file reading
@@ -188,6 +193,7 @@ class NodeToolFilter:
         Args:
             pipeline_id: Optional pipeline ID for shared context server.
                 Required when shared_context is enabled.
+            db_path: Optional database path for shared_context MCP server.
 
         Returns:
             Dict mapping server names to SDK MCP server dicts.
@@ -260,11 +266,13 @@ class NodeToolFilter:
         if pipeline_id and self.tool_permissions.shared_context.enabled:
             try:
                 # F5 Fix: 传递 allowed_keys 到 update_context server
+                # H1 Fix: 传递 db_path 避免写入默认数据库
                 update_server = create_update_context_server(
                     pipeline_id=pipeline_id,
                     node_id=self.node_id,
                     allowed_operations=self.tool_permissions.shared_context.operations,
                     allowed_keys=self.tool_permissions.shared_context.allowed_keys,  # F5 Fix
+                    db_path=db_path or self.db_path,  # H1 Fix
                 )
                 server_name = update_server["name"]
                 # P0 Fix: Extract the actual SDK server config for mcp_servers

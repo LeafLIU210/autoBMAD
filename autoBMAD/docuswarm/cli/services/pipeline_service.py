@@ -31,14 +31,14 @@ class PipelineService:
         self._db_path = db_path or str(config.db_path)
         self._state_manager = StateManager(db_path=self._db_path)
 
-    async def start(self, context_file: str) -> str:
+    async def start(self, context_file: str) -> dict[str, Any]:
         """Start a new pipeline.
 
         Args:
             context_file: Path to the context file.
 
         Returns:
-            The pipeline ID.
+            Dict with pipeline_id, status, failed_nodes, error.
 
         Raises:
             FileNotFoundError: If context file doesn't exist.
@@ -72,7 +72,10 @@ class PipelineService:
             session_manager=session_manager,
         )
 
-        return await orchestrator.start_pipeline(subject_context)
+        try:
+            return await orchestrator.start_pipeline(subject_context)
+        finally:
+            await session_manager.close_all()
 
     def status(self, pipeline_id: str) -> dict[str, Any] | None:
         """Get pipeline status.

@@ -902,7 +902,7 @@ python -m autoBMAD.docuswarm start -c context.md
 
 ```python
 # tools/my_tool.py
-from kimi_agent_sdk import tool
+from claude_agent_sdk import tool
 from typing import Any
 
 @tool
@@ -1256,14 +1256,14 @@ open htmlcov/index.html
 
 ## 联系方式
 
-- 项目主页：https://github.com/your-org/DocuSwarm
-- 问题反馈：https://github.com/your-org/DocuSwarm/issues
+- 项目主页：https://github.com/LeafLIU210/autoBMAD
+- 问题反馈：https://github.com/LeafLIU210/autoBMAD/issues
 - 文档：https://docuswarm.readthedocs.io
 
 ---
 
-**版本**：1.0.0  
-**最后更新**：2026-02-24
+**版本**：1.1.0  
+**最后更新**：2026-04-28
 
 ## 相关文档
 

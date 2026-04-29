@@ -1,19 +1,19 @@
 # DocuSwarm Multi-Agent Orchestration System
 # Production Dependencies
-# Updated: 2026-03-02
-# Project: DocuSwarm v2.0 (claude-agent-sdk architecture)
-# Python: >=3.12.10
+# Updated: 2026-04-28
+# Project: DocuSwarm v1.0.0 (Anthropic Claude architecture)
+# Python: >=3.12
 
 # === Core Framework ===
 # LangGraph - State machine for multi-agent workflows
 langgraph>=0.2.50,<0.3.0
 langgraph-checkpoint-sqlite>=2.0.4,<3.0.0
 
-# LangChain - LLM integration framework (core only)
+# LangChain - LLM integration framework
 langchain>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
 
-# claude-agent-sdk - Claude SDK for Kimi Code API
-# Note: Uses Kimi Code API OpenAI-compatible endpoint
+# claude-agent-sdk - Anthropic Claude Agent SDK
 claude-agent-sdk>=0.1.0,<0.2.0
 
 # === Configuration & Data ===
@@ -27,14 +27,11 @@ pydantic>=2.0.0,<3.0.0
 python-dotenv>=1.0.0,<2.0.0
 
 # === Database ===
-# SQLite is built-in to Python (no separate install)
-# Using WAL mode for state persistence
+# Async SQLite for state persistence (WAL mode)
+aiosqlite>=0.19.0,<1.0.0
 
 # === Logging ===
-# Zero-configuration logging with color output
-loguru>=0.7.0,<0.8.0
-
-# Structured logging for agent/session lifecycle
+# Structured logging
 structlog>=24.0.0,<25.0.0
 
 # === CLI & UI ===
@@ -44,6 +41,6 @@ click>=8.1.0,<9.0.0
 # Rich terminal output
 rich==14.2.0
 
-# === Async & IO ===
+# === Async IO ===
 # Async file operations
 aiofiles>=24.0.0,<26.0.0

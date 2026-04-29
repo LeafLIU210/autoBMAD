@@ -1,7 +1,7 @@
 # DocuSwarm Development Dependencies
-# Updated: 2026-03-25
-# Project: DocuSwarm v2.0 (claude-agent-sdk architecture)
-# Python: >=3.12.10
+# Updated: 2026-04-28
+# Project: DocuSwarm v1.0.0 (Anthropic Claude architecture)
+# Python: >=3.12
 
 # ========== Production Dependencies ==========
 -r requirements.txt
@@ -19,7 +19,10 @@ pytest-cov>=4.0.0,<5.0.0
 pytest-timeout>=2.1.0,<3.0.0
 
 # Mock objects
-pytest-mock>=3.11.0,<4.0.0
+pytest-mock>=3.12.0,<4.0.0
+
+# Runtime type checking
+typeguard>=4.0.0,<5.0.0
 
 # ========== Code Quality ==========
 # Fast Python linter and formatter
@@ -28,6 +31,8 @@ ruff>=0.5.0,<0.6.0
 # Type checking (enhanced Pyright)
 basedpyright>=1.1.0,<2.0.0
 
-# ========== AI Agent SDK ==========
-# Claude Agent SDK for AI-powered automation (autoBMAD)
-claude-agent-sdk>=0.1.38
+# Code formatter
+black>=24.0.0,<25.0.0
+
+# Pre-commit hooks
+pre-commit>=3.6.0,<4.0.0

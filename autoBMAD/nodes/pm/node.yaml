@@ -16,6 +16,10 @@ deliverable:
     - acceptance_criteria
     - timeline
     - risks
+task:
+  name: PM
+  description: Project Manager - skilled in planning, executing, and delivering projects on time and within budget
+  role_supplement: Focus on completeness and clarity of requirements
 agent:
   type: independent
   model: sonnet

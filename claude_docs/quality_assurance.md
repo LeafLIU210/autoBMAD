@@ -397,13 +397,13 @@ autoBMAD系统集成了完整的质量保证流程：
 python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
 # 单独运行BasedPyright
-basedpyright src/
+basedpyright autoBMAD/
 
 # 单独运行Ruff检查
-ruff check --fix src/
+ruff check --fix autoBMAD/
 
 # 单独运行Ruff格式化
-ruff format src/
+ruff format autoBMAD/
 ```
 
 #### 报告示例
@@ -432,7 +432,7 @@ ruff format src/
 1. **测试覆盖**:
    - 单元测试覆盖率
    - 集成测试覆盖率
-   - GUI测试覆盖率
+   - 异步测试覆盖率
 
 2. **测试健康度**:
    - 通过率: >95%
@@ -450,7 +450,7 @@ ruff format src/
 pytest tests/ -v
 
 # 2. 生成覆盖率报告
-pytest tests/ --cov=src --cov-report=html
+pytest tests/ --cov=autoBMAD/docuswarm --cov-report=html
 
 # 3. 运行特定测试文件
 pytest tests/test_my_feature.py -v

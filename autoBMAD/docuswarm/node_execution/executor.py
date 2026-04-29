@@ -148,7 +148,7 @@ async def _execute_node(
             config=config,
             session_manager=session_manager,
             node_id=node_id,
-            project_root=auto_bmad_root,
+            project_root=repo_root,
         )
 
         # ==== Single Context Protocol: 直接传入 execution_context ====
@@ -263,8 +263,12 @@ def _parse_original_context(context_file: str) -> dict[str, Any]:
     raw_text = context_file
     context_path = Path(context_file)
 
-    if context_path.exists() and context_path.is_file():
-        raw_text = context_path.read_text(encoding="utf-8")
+    try:
+        if context_path.exists() and context_path.is_file():
+            raw_text = context_path.read_text(encoding="utf-8")
+    except OSError:
+        # Path too long or invalid, treat as raw content
+        pass
 
     try:
         data = json.loads(raw_text)

@@ -13,9 +13,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import structlog
-from kaos.path import KaosPath
 
-from autoBMAD.docuswarm.agents.summary import DocumentSummary, SummaryAgent
+from autoBMAD.docuswarm.agents.summary import SummaryAgent
 from autoBMAD.docuswarm.context import ContextValidator
 from autoBMAD.docuswarm.exceptions import ContextValidationError, OrchestratorError
 from autoBMAD.docuswarm.llm.session_manager import SessionManager
@@ -116,14 +115,24 @@ class HybridOrchestrator:
             config: Optional configuration object for agents.
                 If not provided, a default config will be created when needed.
         """
+        # Ensure .env is loaded before any SDK operations
+        from autoBMAD.docuswarm.config import load_config as _load_config
+
+        _ = _load_config()
+
         self._db_path = db_path or "docuswarm.db"
         self._checkpointer = checkpointer
         self._session_manager = session_manager
-        # Initialize work_dir, default to autoBMAD/output
+        # Initialize work_dir, default to project_root/output
         if work_dir is None:
-            # Calculate autoBMAD root: orchestrator.py → pipeline/ → docuswarm/ → autoBMAD/
-            autoBMAD_root = Path(__file__).parent.parent.parent.resolve()
-            self._work_dir = str(autoBMAD_root / "output")
+            # Calculate project root: navigate up until we find .git or pyproject.toml
+            current = Path(__file__).resolve().parent
+            project_root = current
+            while project_root.parent != project_root:
+                if (project_root / ".git").exists() or (project_root / "pyproject.toml").exists():
+                    break
+                project_root = project_root.parent
+            self._work_dir = str(project_root / "output")
         else:
             self._work_dir = work_dir
         self._api_key = api_key
@@ -190,14 +199,15 @@ class HybridOrchestrator:
         try:
             if pipeline_id:
                 # Pipeline-specific work_dir
-                work_dir = KaosPath(str(Path(self._work_dir) / pipeline_id))
+                work_dir = Path(self._work_dir) / pipeline_id
             else:
                 # Global work_dir (never falls back to cwd)
-                work_dir = KaosPath(self._work_dir)
+                work_dir = Path(self._work_dir)
 
             session_manager = SessionManager(
                 work_dir=work_dir,
                 config=None,  # Credentials are now read from environment by Config
+                db_path=self._state_manager.db_path,  # H1 Fix: 传递数据库路径
             )
 
             # Only cache global session_manager
@@ -387,7 +397,7 @@ class HybridOrchestrator:
         self,
         subject_context: dict[str, Any],
         pipeline_id: str | None = None,
-    ) -> str:
+    ) -> dict[str, Any]:
         """Start a new pipeline with validated context.
 
         This method:
@@ -400,7 +410,7 @@ class HybridOrchestrator:
             pipeline_id: Optional custom pipeline ID. If not provided, generates one.
 
         Returns:
-            The pipeline ID.
+            Dict with pipeline_id, status, failed_nodes, error, completed_nodes, deliverables.
 
         Raises:
             ContextValidationError: If context validation fails.
@@ -439,8 +449,6 @@ class HybridOrchestrator:
         )
 
         # Step 4.6: Generate document summaries before graph execution (Story 36.3)
-        # This allows all pipeline nodes to reuse cached summaries instead of
-        # redundantly reading and processing documents, improving performance.
         session_manager = self._get_or_create_session_manager()
         docs_context_summary = await self._summarize_referenced_documents(
             subject_context=subject_context,
@@ -466,8 +474,6 @@ class HybridOrchestrator:
             if checkpointer is None:
                 checkpointer = await self._create_checkpointer()
 
-            # session_manager already obtained in Step 4.6
-
             graph: Runnable[dict[str, Any], dict[str, Any]] = create_pipeline_graph(
                 checkpointer=checkpointer,
                 session_manager=session_manager,
@@ -479,9 +485,12 @@ class HybridOrchestrator:
             # P0-F1: Determine final status based on result, not blindly completed
             final_status = self._determine_final_status(result)
             final_current_node = result.get("current_node", "po")
+            # H2 Fix: Persist the FULL result state back to StateManager
+            result["status"] = final_status
+            result["current_node"] = final_current_node
             await self._state_manager.update_pipeline_state(
                 final_pipeline_id,
-                {"status": final_status, "current_node": final_current_node},
+                result,
             )
 
             logger.info(
@@ -490,7 +499,15 @@ class HybridOrchestrator:
                 result=result,
             )
 
-            return final_pipeline_id
+            # P1 Fix: Return full status dict instead of just pipeline_id
+            return {
+                "pipeline_id": final_pipeline_id,
+                "status": final_status,
+                "failed_nodes": result.get("failed_nodes", []),
+                "error": result.get("error"),
+                "completed_nodes": result.get("completed_nodes", []),
+                "deliverables": result.get("deliverables", {}),
+            }
 
         except Exception as e:
             logger.error("pipeline_execution_error", error=str(e))
@@ -498,7 +515,21 @@ class HybridOrchestrator:
                 final_pipeline_id,
                 {"status": "failed"},
             )
-            raise
+            return {
+                "pipeline_id": final_pipeline_id,
+                "status": FAILED,
+                "failed_nodes": [],
+                "error": {"message": str(e), "type": type(e).__name__},
+                "completed_nodes": [],
+                "deliverables": {},
+            }
+        finally:
+            # Close checkpointer connection to prevent process hang
+            if checkpointer is not None and hasattr(checkpointer, "conn"):
+                try:
+                    await checkpointer.conn.close()
+                except Exception:
+                    pass
 
     async def resume_pipeline(self, pipeline_id: str) -> dict[str, Any]:
         """Resume a paused pipeline from its last checkpoint with session recovery.

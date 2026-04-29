@@ -1,14 +1,32 @@
-# Ignore nul file (Windows reserved name)
-nul
+# ========== DocuSwarm Runtime ==========
+# SQLite databases (runtime state)
+docuswarm.db
+docuswarm.db-wal
+docuswarm.db-shm
+progress.db
+progress.db-wal
+progress.db-shm
+*.db-journal
 
-# Virtual environments
+# Pipeline output
+output/
+
+# Log files
+logs/
+*.log
+
+# Pytest temp directory (basetemp config)
+.pytest-temp/
+
+# ========== Virtual Environments ==========
 .venv/
 venv/
 env/
 ENV/
-.env/
+env.bak/
+venv.bak/
 
-# Python
+# ========== Python ==========
 __pycache__/
 *.py[cod]
 *$py.class
@@ -31,15 +49,7 @@ wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
+# ========== Testing & Coverage ==========
 htmlcov/
 .tox/
 .coverage
@@ -51,92 +61,27 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
+# ========== Type Checking & Linting ==========
 .mypy_cache/
 .dmypy.json
 dmypy.json
-
-# Pyre type checker
 .pyre/
+.ruff_cache/
 
-# PyQt
-*.pyc
-*.pyo
-*.pyd
-.QtWebEngineProcess
-*.swp
-.swo
-
-# Build
-build/
+# ========== Build ==========
+*.manifest
+*.spec
 .nuitka/
 *.build/
 
-# IDE
+# ========== IDE ==========
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# ========== OS ==========
 .DS_Store
 .DS_Store?
 ._*
@@ -145,8 +90,29 @@ build/
 ehthumbs.db
 Thumbs.db
 
+# ========== Environment ==========
+.env
+
+# ========== Tools ==========
 # Byterover
 .brv/
 
-.ruff_cache/
-.pytest_cache/*
+# Jupyter
+.ipynb_checkpoints
+
+# Sphinx
+docs/_build/
+
+# Windows reserved name
+nul
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Translations
+*.mo
+*.pot
+
+# pyenv
+.python-version

@@ -14,6 +14,10 @@ deliverable:
     - visual_design
     - accessibility
     - usability_testing_plan
+task:
+  name: UX
+  description: User Experience Designer - creates intuitive, accessible, and delightful user interfaces
+  role_supplement: Focus on actionability and clarity of design
 agent:
   type: independent
   model: sonnet

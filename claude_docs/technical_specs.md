@@ -45,15 +45,15 @@
   - 输出解析器
   - 异步支持
 
-#### Kimi K2.5 (主要LLM提供商)
-- **提供商**: Moonshot AI
-- **集成方式**: claude-agent-sdk（通过 Kimi Code API OpenAI 兼容接口）
-- **上下文窗口**: 256K tokens
-- **链接**: [Kimi API](https://platform.moonshot.cn/)
+#### Anthropic Claude (主要LLM提供商)
+- **提供商**: Anthropic
+- **集成方式**: claude-agent-sdk (Anthropic 官方 SDK)
+- **上下文窗口**: 200K tokens
+- **链接**: [Anthropic API](https://docs.anthropic.com/)
 
 #### claude-agent-sdk (LLM集成SDK)
 - **版本**: >=0.1.0,<0.2.0
-- **用途**: Claude Agent SDK，通过 Kimi Code API OpenAI 兼容接口调用 Kimi K2.5
+- **用途**: Anthropic Claude Agent SDK
 - **核心能力**:
   - `query()` — 无状态查询 API
   - `ClaudeAgentOptions` — 配置选项
@@ -91,7 +91,7 @@
 #### kimi-agent-sdk (已移除)
 - **状态**: 已由 claude-agent-sdk 完全替代
 - **迁移完成**: 2026-04-05
-- **替代方案**: claude-agent-sdk 通过 Kimi Code API OpenAI 兼容接口调用 Kimi K2.5
+- ****替代方案**: claude-agent-sdk (Anthropic 官方 SDK)
 
 #### pyyaml
 - **版本**: >=6.0.0
@@ -118,15 +118,15 @@
   - 配置隔离
   - 安全凭据管理
 
-#### loguru
-- **版本**: >=0.7.0
-- **用途**: 日志处理
+#### structlog
+- **版本**: >=24.0.0
+- **用途**: 结构化日志处理
 - **特性**:
-  - 零配置日志记录
-  - 彩色输出
-  - 自动日志轮转
-  - 异常捕获
-  - 异步日志
+  - 结构化日志输出
+  - JSON格式日志
+  - 处理器链式配置
+  - 上下文绑定
+  - 线程安全
 
 ### 1.3 开发依赖
 
@@ -189,7 +189,7 @@ pydantic>=2.0.0
 python-dotenv>=1.0.0
 
 # === Logging ===
-loguru>=0.7.0
+structlog>=24.0.0
 structlog>=24.0.0
 
 # === CLI & UI ===
@@ -248,7 +248,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
-    "loguru>=0.7.0",
+    "structlog>=24.0.0",
     "rich>=13.0.0",
     "click>=8.1.0",
     "structlog>=24.0.0",
@@ -318,7 +318,7 @@ timeout = 120
 filterwarnings =
     error
     ignore::UserWarning
-    ignore::DeprecationWarning:pytest_qt.qtbot
+    ignore::DeprecationWarning
 markers =
     slow: marks tests as slow (deselect with '-m "not slow"')
     gui: marks tests as GUI tests
@@ -396,7 +396,7 @@ Thumbs.db
 *.log
 logs/
 
-# PySide6
+# Generated files
 resource_rc.py
 ```
 
@@ -467,7 +467,7 @@ class UserService:
 
 ```json
 {
-    "include": ["src/**/*"],
+    "include": ["autoBMAD/**/*"],
     "exclude": ["tests/**/*", "build/**/*"],
     "report": {
         "enable": true,
@@ -558,7 +558,7 @@ echo "运行类型检查..."
 basedpyright-workflow check
 
 echo "检查代码风格..."
-ruff check --fix src/
+ruff check --fix autoBMAD/
 
 echo "运行测试..."
 pytest tests/
@@ -574,135 +574,24 @@ pytest tests/
 
 - name: Run Ruff
   run: |
-    ruff check src/
-    ruff format --check src/
+    ruff check autoBMAD/
+    ruff format --check autoBMAD/
 ```
 
 ---
 
 ## 4. 打包和部署
 
-### 4.1 使用Nuitka构建
+### 4.1 运行方式
 
-#### 构建目录结构
-```
-build/
-├── build.py               # 一键构建脚本
-├── build.spec             # Nuitka参数配置
-├── app.ico                # Windows程序图标
-└── version_info.py        # Windows版本信息（FILEVERSION等）
-```
+DocuSwarm 作为 CLI 工具运行，无需打包构建：
 
-#### build.py
-```python
-#!/usr/bin/env python3
-"""一键构建脚本"""
-
-import subprocess
-import sys
-from pathlib import Path
-
-def build():
-    """执行Nuitka构建"""
-    print("开始构建...")
-
-    # 执行Nuitka构建
-    result = subprocess.run([
-        sys.executable, "-m", "nuitka",
-        "--onefile",
-        "--windows-disable-console",
-        "--windows-icon-from-ico=build/app.ico",
-        "--company-name=Your Company",
-        "--file-description=My Qt Application",
-        "--product-name=My Qt App",
-        "--product-version=1.0.0",
-        "src/my_qt_app/__main__.py"
-    ], check=True)
-
-    print("构建完成！")
-
-if __name__ == "__main__":
-    build()
-```
-
-#### build.spec
-```python
-# -*- mode: python ; coding: utf-8 -*-
-
-block_cipher = None
-
-a = Analysis(
-    ['src/my_qt_app/__main__.py'],
-    pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=[
-        'PySide6.QtCore',
-        'PySide6.QtWidgets',
-        'PySide6.QtGui',
-    ],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
-    name='MyQtApp',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,
-    disable_windowed_traceback=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon='build/app.ico',
-)
-```
-
-#### version_info.py
-```python
-# Windows版本信息
-# FILEVERSION & PRODUCTVERSION format: major,minor,patch,build
-
-VERSION_INFO = {
-    "version": "1.0.0.0",
-    "company_name": "Your Company",
-    "file_description": "My Qt Application",
-    "internal_name": "MyQtApp",
-    "legal_copyright": "Copyright © 2024 Your Company",
-    "original_filename": "MyQtApp.exe",
-    "product_name": "My Qt App",
-    "product_version": "1.0.0.0",
-}
-```
-
-#### 构建命令
 ```bash
-# 安装Nuitka
-pip install nuitka
+# 直接运行
+python -m autoBMAD.docuswarm --help
 
-# 执行构建
-python build/build.py
-
-# 或使用spec文件
-python -m nuitka --onefile build/build.spec
+# 启动流水线
+python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
 ```
 
 ### 4.2 输出结构
@@ -768,7 +657,7 @@ pre-commit run --all-files
 #### VS Code设置 (.vscode/settings.json)
 ```json
 {
-    "python.defaultInterpreterPath": "./venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
     "python.linting.enabled": true,
     "python.linting.ruffEnabled": true,
     "python.linting.pyrightEnabled": true,
@@ -794,7 +683,7 @@ pre-commit run --all-files
 
 ```json
 {
-    "include": ["src/**/*"],
+    "include": ["autoBMAD/**/*"],
     "exclude": ["tests/**/*", "build/**/*", "dist/**/*", "venv/**/*"],
     "report": {
         "enable": true,
@@ -876,13 +765,13 @@ extend-exclude = '''
 #### 使用示例
 ```bash
 # 格式化所有文件
-black src/ tests/
+ruff format autoBMAD/ tests/
 
 # 检查但不修改
-black --check src/ tests/
+ruff format --check autoBMAD/ tests/
 
 # 显示差异
-black --diff src/ tests/
+ruff format --diff autoBMAD/ tests/
 ```
 
 ### 7.2 isort配置
@@ -898,13 +787,13 @@ line_length = 88
 #### 使用示例
 ```bash
 # 排序导入
-isort src/ tests/
+ruff check --select I --fix autoBMAD/ tests/
 
 # 检查但不修改
-isort --check-only src/ tests/
+ruff check --select I autoBMAD/ tests/
 
 # 显示差异
-isort --diff src/ tests/
+ruff check --select I --diff autoBMAD/ tests/
 ```
 
 ---
@@ -914,14 +803,14 @@ isort --diff src/ tests/
 ### 8.1 虚拟环境信息
 
 - **Python版本**: 3.12.10+
-- **环境路径**: `./venv/`
+- **环境路径**: `./.venv/`
 
 ### 8.2 使用方法
 
 #### 激活虚拟环境
 ```cmd
 # Windows
-venv\Scripts\activate
+.venv\Scripts\activate
 ```
 
 #### 安装依赖包
@@ -968,8 +857,8 @@ from Project_recorder.services.config_service import ConfigService
 from ..services.config_service import ConfigService
 
 # ✅ 正确示例
-from services.config_service import ConfigService
-from ui.widgets.button import CustomButton
+from autoBMAD.docuswarm.pipeline.orchestrator import HybridOrchestrator
+from autoBMAD.docuswarm.nodes.dual_agent import DualAgentNode
 ```
 
 #### 导入顺序规范
@@ -980,13 +869,13 @@ import sys
 from pathlib import Path
 
 # 2. 第三方库导入
-from PySide6.QtWidgets import QWidget
+from autoBMAD.docuswarm.config import DocuSwarmConfig
 import pytest
 
 # 3. 本地应用/库导入（使用绝对导入）
-from services.config_service import ConfigService
-from ui.widgets.button import CustomButton
-from core.recorder import Recorder
+from autoBMAD.docuswarm.pipeline.orchestrator import HybridOrchestrator
+from autoBMAD.docuswarm.nodes.dual_agent import DualAgentNode
+from autoBMAD.docuswarm.storage.state_manager import StateManager
 ```
 
 ### 9.2 字符编码要求

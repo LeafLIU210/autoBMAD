@@ -29,24 +29,45 @@ DEFAULT_MAX_ITERATIONS = 100
 DEFAULT_BASE_URL = "https://api.anthropic.com/v1/"
 
 
+def _find_project_root() -> Path:
+    """Find project root by looking for .git or pyproject.toml."""
+    current = Path(__file__).resolve().parent
+    while current.parent != current:
+        if (current / ".git").exists() or (current / "pyproject.toml").exists():
+            return current
+        current = current.parent
+    return Path.cwd()
+
+
 def load_dotenv(env_path: Path | str | None = None) -> Path:
     """Load environment variables from .env file.
 
     Args:
-        env_path: Path to .env file. If None, looks for .env in project root.
+        env_path: Path to .env file. If None, looks for .env in project root
+            and current working directory.
 
     Returns:
         Path to the .env file that was loaded (empty Path if not found).
     """
-    if env_path is None:
-        env_path = Path(".env")
-    else:
+    if env_path is not None:
         env_path = Path(env_path)
+        if env_path.exists():
+            _ = dotenv_load_dotenv(env_path, override=True)
+            return env_path
+        return Path("")
 
-    if env_path.exists():
-        # Use override=True to ensure the loaded values replace any existing env vars
-        _ = dotenv_load_dotenv(env_path, override=True)
-        return env_path
+    # Try current working directory first
+    cwd_env = Path(".env")
+    if cwd_env.exists():
+        _ = dotenv_load_dotenv(cwd_env, override=True)
+        return cwd_env.resolve()
+
+    # Fall back to project root
+    project_root = _find_project_root()
+    root_env = project_root / ".env"
+    if root_env.exists():
+        _ = dotenv_load_dotenv(root_env, override=True)
+        return root_env.resolve()
 
     return Path("")
 
@@ -199,8 +220,20 @@ def load_config(
 
     # Determine YAML path
     if yaml_path is None:
-        # YAML config file in same directory as config.py
-        yaml_path = Path(__file__).parent / "docuswarm.yaml"
+        # 1. Package default location (same directory as config.py)
+        package_yaml = Path(__file__).parent / "docuswarm.yaml"
+        if package_yaml.exists():
+            yaml_path = package_yaml
+        else:
+            # 2. Search project root (anchor at .git or pyproject.toml)
+            current = Path(__file__).resolve().parent
+            repo_root = current
+            while repo_root.parent != repo_root:
+                if (repo_root / ".git").exists() or (repo_root / "pyproject.toml").exists():
+                    break
+                repo_root = repo_root.parent
+            root_yaml = repo_root / "docuswarm.yaml"
+            yaml_path = root_yaml if root_yaml.exists() else package_yaml
 
     # Create config from env and yaml
     return Config.from_env_and_yaml(yaml_path=yaml_path)

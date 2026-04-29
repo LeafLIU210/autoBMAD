@@ -19,6 +19,7 @@ Features:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -75,6 +76,15 @@ class StateManager:
         """
         return self._db
 
+    @property
+    def db_path(self) -> str:
+        """Get the resolved database file path.
+
+        Returns:
+            The resolved path to the SQLite database file.
+        """
+        return self._db.db_path
+
     @staticmethod
     def _generate_pipeline_id() -> str:
         """Generate a unique pipeline ID.
@@ -110,6 +120,7 @@ class StateManager:
         """Create an initial PipelineState with default values.
 
         This is a local copy to avoid import chain issues.
+        Keep in sync with pipeline.state.create_initial_state.
 
         Args:
             pipeline_id: Unique identifier for the pipeline
@@ -123,6 +134,7 @@ class StateManager:
             "subject_context": subject_context,
             "current_node": None,
             "completed_nodes": [],
+            "failed_nodes": [],  # P0-F1: Initialize failed_nodes
             "deliverables": {},
             "questions": {},
             "evaluations": {},
@@ -133,18 +145,21 @@ class StateManager:
             "status": "pending",
             "error": None,
             "shared_context": {},
+            "docs_context_summary": [],  # Story 37.2: Initialize docs_context_summary
         }
 
     def create_pipeline(
         self,
         subject: str,
         subject_context: dict[str, Any] | None = None,
+        pipeline_id: str | None = None,
     ) -> str:
         """Create a new pipeline with pending status.
 
         Args:
             subject: The subject/topic for the pipeline.
             subject_context: Optional context dictionary to store as JSON.
+            pipeline_id: Optional explicit pipeline ID. If provided, used as primary key.
 
         Returns:
             The newly created pipeline ID.
@@ -152,9 +167,9 @@ class StateManager:
         Raises:
             StorageError: If pipeline creation fails.
         """
-        pipeline_id = self._generate_pipeline_id()
+        final_pipeline_id = pipeline_id or self._generate_pipeline_id()
         # Create complete PipelineState (F1: state_json as single source of truth)
-        initial_state = self._create_initial_state(pipeline_id, subject_context or {})
+        initial_state = self._create_initial_state(final_pipeline_id, subject_context or {})
         state_json = json.dumps(initial_state)
 
         try:
@@ -162,16 +177,16 @@ class StateManager:
                 _ = conn.execute(
                     "INSERT INTO pipelines (pipeline_id, subject, status, state_json) "
                     + "VALUES (?, ?, ?, ?)",
-                    (pipeline_id, subject, "pending", state_json),
+                    (final_pipeline_id, subject, "pending", state_json),
                 )
         except Exception as e:
             raise StorageError(
                 f"Failed to create pipeline: {e}",
                 operation_type="create",
-                pipeline_id=pipeline_id,
+                pipeline_id=final_pipeline_id,
             ) from e
 
-        return pipeline_id
+        return final_pipeline_id
 
     def _verify_state_consistency(self, pipeline_id: str) -> dict[str, Any] | None:
         """运行时一致性检查 - P0 新增
@@ -375,6 +390,8 @@ class StateManager:
                     "subject": row["subject"],
                     "created_at": row["created_at"],
                     "updated_at": row["updated_at"],
+                    # P0 Fix: Include raw state snapshot for CLI/status commands
+                    "state": state,
                     # Flattened state fields for easier access
                     "status": state.get("status", row["status"]),
                     "current_node": state.get("current_node", row["current_node"]),
@@ -582,6 +599,23 @@ class StateManager:
         Raises:
             StorageError: If pipeline not found or update fails.
         """
+        # H5 Fix: Wrap synchronous SQLite I/O in asyncio.to_thread
+        return await asyncio.to_thread(
+            self._update_shared_context_sync,
+            pipeline_id,
+            update,
+            operation,
+            key_path,
+        )
+
+    def _update_shared_context_sync(
+        self,
+        pipeline_id: str,
+        update: Any,
+        operation: str = "set",
+        key_path: str | None = None,
+    ) -> dict[str, Any]:
+        """Synchronous implementation of update_shared_context."""
         # Check if pipeline exists
         if not self._pipeline_exists(pipeline_id):
             raise StorageError(
@@ -810,6 +844,17 @@ class StateManager:
         Raises:
             StorageError: If pipeline not found or update fails.
         """
+        # H5 Fix: Wrap synchronous SQLite I/O in asyncio.to_thread
+        return await asyncio.to_thread(
+            self._update_pipeline_state_sync, pipeline_id, state_update
+        )
+
+    def _update_pipeline_state_sync(
+        self,
+        pipeline_id: str,
+        state_update: dict[str, Any],
+    ) -> bool:
+        """Synchronous implementation of update_pipeline_state."""
         # Check if pipeline exists
         if not self._pipeline_exists(pipeline_id):
             raise StorageError(
@@ -844,10 +889,13 @@ class StateManager:
 
                 # Write back to database
                 updated_state_json = json.dumps(current_state)
+                # P0 Fix: Synchronize top-level columns with state_json
+                top_status = current_state.get("status")
+                top_current_node = current_state.get("current_node")
                 conn.execute(
-                    "UPDATE pipelines SET state_json = ?, "
+                    "UPDATE pipelines SET state_json = ?, status = ?, current_node = ?, "
                     + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
-                    (updated_state_json, pipeline_id),
+                    (updated_state_json, top_status, top_current_node, pipeline_id),
                 )
 
             return True

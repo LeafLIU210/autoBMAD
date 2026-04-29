@@ -23,7 +23,7 @@ DocuSwarm/                     # 项目根目录
 │   │   │   ├── audit.py       # IsolationAuditLogger
 │   │   │   └── memory.py      # ContextMemory
 │   │   ├── llm/               # LLM 集成
-│   │   │   ├── session_manager.py  # KimiSessionManager
+│   │   │   ├── session_manager.py  # SessionManager
 │   │   │   ├── response.py    # ResponseParser
 │   │   │   ├── mode_mapper.py # ModeMapper
 │   │   │   └── claude_sdk_wrapper.py  # Claude SDK 封装
@@ -175,7 +175,7 @@ DocuSwarm/                     # 项目根目录
 DocuSwarm 多 Agent 文档编排系统核心代码，包含：
 - **agents/**: Independent Agent 和 Evaluator Agent 实现
 - **context/**: 三层上下文隔离机制
-- **llm/**: claude-agent-sdk 集成 (Kimi K2.5 via Kimi Code API)
+- **llm/**: claude-agent-sdk 集成 (Anthropic Claude API)
 - **pipeline/**: LangGraph 流水线编排
 - **storage/**: SQLite 状态持久化
 - **tools/**: Agent 可调用的工具函数
@@ -214,7 +214,7 @@ Epic 自动化工作流系统，包含：
 环境变量文件（不提交到 Git）：
 ```env
 ANTHROPIC_API_KEY=your_api_key_here
-ANTHROPIC_BASE_URL=https://api.kimi.com/coding/
+# ANTHROPIC_BASE_URL=https://custom-api-url/
 ```
 
 ### requirements.txt / requirements-dev.txt

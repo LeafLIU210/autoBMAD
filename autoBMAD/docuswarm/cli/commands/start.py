@@ -26,9 +26,25 @@ def start(context_file: str) -> None:
     service = PipelineService()
 
     try:
-        pipeline_id = asyncio.run(service.start(context_file))
-        console.print(f"[green]+[/green] Pipeline started: [bold]{pipeline_id}[/bold]")
-        console.print(f"  Context: {context_file}")
+        result = asyncio.run(service.start(context_file))
+        status = result.get("status", "unknown")
+        pipeline_id = result.get("pipeline_id", "unknown")
+
+        if status == "failed":
+            failed_nodes = result.get("failed_nodes", [])
+            error = result.get("error", {})
+            console.print(f"[red]Pipeline failed[/red]: [bold]{pipeline_id}[/bold]")
+            if failed_nodes:
+                console.print(f"  Failed nodes: {', '.join(failed_nodes)}")
+            if error:
+                console.print(f"  Error: {error.get('message', 'Unknown error')}")
+            raise click.ClickException(f"Pipeline failed: {error.get('message', 'Unknown error')}")
+        else:
+            console.print(f"[green]+[/green] Pipeline started: [bold]{pipeline_id}[/bold]")
+            console.print(f"  Context: {context_file}")
+
+    except click.ClickException:
+        raise
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")
         raise click.ClickException(str(e)) from e

@@ -9,7 +9,6 @@ Provides a configurable approval handler for SDK tool calls that:
 
 Example:
     >>> from autoBMAD.docuswarm.llm.approval import DocuSwarmApprovalHandler
-    >>> from kimi_agent_sdk import ApprovalRequest
     >>>
     >>> handler = DocuSwarmApprovalHandler()
     >>> # Use handler.handle as the approval_handler_fn callback
@@ -21,12 +20,9 @@ Example:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any
 
 import structlog
-
-if TYPE_CHECKING:
-    from kimi_agent_sdk import ApprovalRequest
 
 # Default safe actions that are auto-approved
 DEFAULT_AUTO_APPROVE_ACTIONS: set[str] = {
@@ -75,7 +71,7 @@ class DocuSwarmApprovalHandler:
         auto_approve_actions: set[str] | None = None,
         reject_actions: set[str] | None = None,
         auto_approve_all: bool = False,
-        unknown_action_policy: str = "approve",
+        unknown_action_policy: str = "reject",  # M1 Fix: default to reject for least privilege
     ) -> None:
         """
         Initialize the DocuSwarmApprovalHandler.
@@ -88,7 +84,7 @@ class DocuSwarmApprovalHandler:
             auto_approve_all: If True, approve all actions without checking.
                 Use this for yolo mode. Defaults to False.
             unknown_action_policy: Policy for unknown actions.
-                Must be "approve" or "reject". Defaults to "approve".
+                Must be "approve" or "reject". Defaults to "reject" (M1 Fix).
         """
         self._auto_approve_actions = auto_approve_actions or DEFAULT_AUTO_APPROVE_ACTIONS.copy()
         self._reject_actions = reject_actions or DEFAULT_REJECT_ACTIONS.copy()
@@ -118,7 +114,7 @@ class DocuSwarmApprovalHandler:
         """Get whether yolo mode is enabled."""
         return self._auto_approve_all
 
-    def handle(self, request: ApprovalRequest) -> None:
+    def handle(self, request: Any) -> None:
         """
         Handle an approval request from the SDK.
 

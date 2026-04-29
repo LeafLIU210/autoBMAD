@@ -12,7 +12,7 @@ import hashlib
 import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from autoBMAD.docuswarm.tools.tool_result import ToolResult
 
@@ -131,11 +131,12 @@ SUBMIT_EXECUTION_REPORT_SCHEMA = {
 logger = logging.getLogger(__name__)
 
 
-def _slugify_filename(title: str) -> str:
+def _slugify_filename(title: str, fallback: str | None = None) -> str:
     """Convert title to a valid filename slug.
 
     Args:
         title: The deliverable title.
+        fallback: Optional fallback string if slug becomes empty.
 
     Returns:
         A slugified filename with .md extension.
@@ -145,6 +146,14 @@ def _slugify_filename(title: str) -> str:
     slug = re.sub(r"[^a-z0-9\-]", "", slug)
     slug = re.sub(r"-+", "-", slug)
     slug = slug.strip("-")
+    if not slug and fallback:
+        # H4 Fix: fallback to provided string (e.g., node_id + hash)
+        slug = fallback.lower().replace(" ", "-")
+        slug = re.sub(r"[^a-z0-9\-]", "", slug)
+        slug = re.sub(r"-+", "-", slug)
+        slug = slug.strip("-")
+    if not slug:
+        slug = "deliverable"
     return f"{slug}.md"
 
 
@@ -182,10 +191,20 @@ def create_deliverable(
         ToolResult with metadata on success, error on failure.
     """
     try:
-        filename = _slugify_filename(title)
+        # H4 Fix: use content hash as fallback for empty slug
+        content_hash = _compute_sha256(content)[:8]
+        filename = _slugify_filename(title, fallback=f"deliverable-{content_hash}")
         dir_path = Path(output_dir)
         dir_path.mkdir(parents=True, exist_ok=True)
         file_path = dir_path / filename
+
+        # H4 Fix: avoid overwriting existing files
+        if file_path.exists():
+            import time
+
+            timestamp = int(time.time())
+            stem = file_path.stem
+            file_path = dir_path / f"{stem}-{timestamp}{file_path.suffix}"
 
         # Write content to file (synchronous for MCP tool compatibility)
         file_path.write_text(content, encoding="utf-8")
@@ -195,7 +214,7 @@ def create_deliverable(
         word_count = _count_words(content)
         section_index = _extract_section_index(content)
 
-        result_metadata = {
+        result_metadata: dict[str, Any] = {
             "title": title,
             "file_path": str(file_path),
             "sha256": sha256_hash,
@@ -203,6 +222,12 @@ def create_deliverable(
             "section_index": section_index,
             "content_type": "markdown",
         }
+
+        # H4 Fix: merge filtered metadata into result
+        if metadata:
+            # Only merge safe scalar metadata to avoid polluting the result
+            safe_metadata = {k: v for k, v in metadata.items() if isinstance(v, str | int | float | bool | list)}
+            result_metadata.update(safe_metadata)
 
         return ToolResult(success=True, result=result_metadata)
 

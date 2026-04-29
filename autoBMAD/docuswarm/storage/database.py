@@ -90,9 +90,9 @@ class DatabaseManager:
             cls._instances.clear()
 
     @property
-    def db_path(self) -> Path:
-        """Get the database file path."""
-        return self._db_path
+    def db_path(self) -> str:
+        """Get the resolved database file path."""
+        return str(self._db_path.resolve())
 
     def _initialize(self) -> None:
         """Initialize the database with schema and pragmas.

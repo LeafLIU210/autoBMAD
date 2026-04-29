@@ -47,7 +47,7 @@ class UserRepository:
 **DocuSwarm 应用**:
 - 使用 LangGraph 而非自定义 NodeExecutor
 - 双代理模式 (Independent + Evaluator)
-- 单一 LLM 提供商 (Kimi K2.5 via claude-agent-sdk)
+- 单一 LLM 提供商 (Anthropic Claude via claude-agent-sdk)
 
 ### 1.2 DRY - Don't Repeat Yourself (不要重复你自己)
 

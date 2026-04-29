@@ -17,6 +17,10 @@ deliverable:
     - scalability
     - integration_points
     - technology_stack
+task:
+  name: Architect
+  description: Software Architect - designs scalable, maintainable, and robust systems
+  role_supplement: Focus on completeness and consistency of architecture
 agent:
   type: independent
   model: sonnet

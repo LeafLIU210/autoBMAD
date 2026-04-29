@@ -11,7 +11,7 @@
 2. [测试文件组织](#2-测试文件组织)
 3. [测试编写规范](#3-测试编写规范)
 4. [测试覆盖要求](#4-测试覆盖要求)
-5. [GUI测试](#5-gui测试)
+5. [异步测试](#5-异步测试)
 6. [测试工具](#6-测试工具)
 
 ---
@@ -46,15 +46,12 @@ tests/
 ├── conftest.py            # pytest全局fixture
 ├── fixtures/              # 测试固件（TDD关键）
 │   ├── __init__.py
-│   └── mock_qt_objects.py # Mock的Qt组件
+│   └── mock_data.py       # 测试模拟数据
 ├── unit/                  # 单元测试（无UI，快速）
 │   ├── test_models.py
 │   └── test_services.py
 ├── integration/           # 集成测试（含DB、文件）
 │   └── test_config.py
-└── gui/                   # GUI测试（用pytest-qt）
-    ├── __init__.py
-    └── test_main_window.py
 ```
 
 ---
@@ -108,34 +105,36 @@ class TestYourClass:
 
 ---
 
-## 5. GUI测试
+## 5. 异步测试
 
-### 5.1 pytest-qt插件
+### 5.1 pytest-asyncio
 
-为GUI组件测试使用`pytest-qt`插件。
+DocuSwarm 使用异步架构，测试中使用 `pytest-asyncio` 进行异步测试。
 
-### 5.2 GUI测试示例
+### 5.2 异步测试示例
 
 ```python
 import pytest
-from pytestqt.qtbot import QtBot
-from my_qt_app.ui.main_window import MainWindow
+from unittest.mock import AsyncMock, patch
+from autoBMAD.docuswarm.pipeline.orchestrator import HybridOrchestrator
 
-class TestMainWindow:
+class TestPipelineOrchestrator:
     @pytest.fixture
-    def main_window(self, qtbot):
-        """创建主窗口"""
-        window = MainWindow()
-        qtbot.addWidget(window)
-        return window
+    async def orchestrator(self):
+        """创建测试编排器"""
+        return HybridOrchestrator(config=test_config)
 
-    def test_button_click(self, qtbot, main_window):
-        """测试按钮点击"""
-        # 点击按钮
-        qtbot.mouseClick(main_window.pushButton, Qt.LeftButton)
+    @pytest.mark.asyncio
+    async def test_pipeline_start(self, orchestrator):
+        """测试流水线启动"""
+        # Arrange
+        context_file = "test-context.md"
 
-        # 验证结果
-        assert main_window.label.text() == "Button clicked"
+        # Act
+        result = await orchestrator.start(context_file)
+
+        # Assert
+        assert result.status == "running"
 ```
 
 ---
@@ -167,7 +166,7 @@ python run_tests.py
 使用pytest-cov生成代码覆盖率报告：
 
 ```bash
-pytest --cov=src --cov-report=html --cov-report=term
+pytest --cov=autoBMAD/docuswarm --cov-report=html --cov-report=term
 ```
 
 ---

@@ -57,11 +57,56 @@ class NodeDependenciesConfig:
     predecessors: list[str] = field(default_factory=list)
 
 
+class NodeValidationError(Exception):
+    """Raised when node configuration validation fails."""
+
+
+@dataclass
+class NodeFilePermissions:
+    """Configuration for file access permissions."""
+    allowed_read_dirs: list[str] = field(default_factory=list)
+    allowed_write_dirs: list[str] = field(default_factory=list)
+
+
+@dataclass
+class NodeSearchPermissions:
+    """Configuration for search permissions."""
+    search_dirs: list[str] = field(default_factory=list)
+
+
+@dataclass
+class NodeSkillsConfig:
+    """Configuration for skills introduction."""
+    sdk_native: bool = False
+    whitelist: list[str] = field(default_factory=list)
+    quick_reference_enabled: bool = False
+    quick_reference_include_descriptions: bool = False
+
+
+@dataclass
+class NodeSharedContextPermissions:
+    """Configuration for shared context permissions."""
+    enabled: bool = False
+    operations: list[str] = field(default_factory=list)
+    allowed_keys: list[str] = field(default_factory=list)
+
+
+@dataclass
+class NodeToolPermissions:
+    """Configuration for tool permissions."""
+    allowed_builtin_tools: list[str] = field(default_factory=list)
+    file_permissions: NodeFilePermissions = field(default_factory=NodeFilePermissions)
+    search_permissions: NodeSearchPermissions = field(default_factory=NodeSearchPermissions)
+    skills: NodeSkillsConfig = field(default_factory=NodeSkillsConfig)
+    shared_context: NodeSharedContextPermissions = field(default_factory=NodeSharedContextPermissions)
+
+
 @dataclass
 class NodeEvaluatorConfig:
     """Configuration for the evaluator agent."""
     criteria: list[dict[str, Any]] = field(default_factory=list)
     thresholds: dict[str, float] = field(default_factory=dict)
+    max_iterations: int = 3
 
 
 @dataclass
@@ -76,8 +121,10 @@ class NodeConfig:
     agent: NodeAgentConfig
     questions: NodeQuestionsConfig
     dependencies: NodeDependenciesConfig
+    task: NodeTaskConfig | None = None
     evaluator: NodeEvaluatorConfig | None = None
     persona: dict[str, Any] | None = None
+    tool_permissions: NodeToolPermissions | None = None
 
 
 class NodeLoader:
@@ -102,7 +149,7 @@ class NodeLoader:
         if cls._base_path is not None:
             return cls._base_path
         # Default to autoBMAD directory (parent of nodes/)
-        return Path(__file__).parent.parent / "autoBMAD"
+        return Path(__file__).parent.parent
 
     @classmethod
     def load(cls, node_id: str) -> NodeConfig:
@@ -286,10 +333,46 @@ class NodeLoader:
             predecessors=config.get("dependencies", [])
         )
 
+        # Build task config
+        task_data = config.get("task", {})
+        task_config = NodeTaskConfig(
+            name=task_data.get("name", config.get("name", "")),
+            description=task_data.get("description", config.get("description", "")),
+            role_supplement=task_data.get("role_supplement", ""),
+        )
+
         # Build evaluator config
         evaluator_config = NodeEvaluatorConfig(
             criteria=evaluator.get("criteria", []),
-            thresholds=evaluator.get("thresholds", {})
+            thresholds=evaluator.get("thresholds", {}),
+            max_iterations=evaluator.get("max_iterations", 3),
+        )
+
+        # Build tool permissions config
+        tools_data = config.get("tools", {})
+        skills_data = tools_data.get("skills", {})
+        skills_config = NodeSkillsConfig(
+            sdk_native=skills_data.get("sdk_native", False),
+            whitelist=skills_data.get("whitelist", []),
+            quick_reference_enabled=skills_data.get("quick_reference_enabled", False),
+            quick_reference_include_descriptions=skills_data.get("quick_reference_include_descriptions", False),
+        )
+        shared_context_data = tools_data.get("shared_context", {})
+        shared_context_config = NodeSharedContextPermissions(
+            enabled=shared_context_data.get("enabled", False),
+            operations=shared_context_data.get("operations", []),
+            allowed_keys=shared_context_data.get("allowed_keys", []),
+        )
+        tool_permissions = NodeToolPermissions(
+            allowed_builtin_tools=tools_data.get("allowed_builtin_tools", []),
+            file_permissions=NodeFilePermissions(
+                allowed_read_dirs=tools_data.get("file_permissions", {}).get("allowed_read_dirs", []),
+            ),
+            search_permissions=NodeSearchPermissions(
+                search_dirs=tools_data.get("search_permissions", {}).get("search_dirs", []),
+            ),
+            skills=skills_config,
+            shared_context=shared_context_config,
         )
 
         # Build main NodeConfig
@@ -303,6 +386,8 @@ class NodeLoader:
             agent=agent_config,
             questions=questions_config,
             dependencies=dependencies_config,
+            task=task_config,
             evaluator=evaluator_config,
-            persona=persona
+            persona=persona,
+            tool_permissions=tool_permissions,
         )

@@ -12,8 +12,8 @@ DocuSwarm 编排 5 个专业 Agent（Analyst、PM、UX Designer、Architect、PO
 
 架构基于：
 - **[LangGraph](https://langchain-ai.github.io/langgraph/)** - 多 Agent 工作流状态机
-- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Claude SDK（通过 Kimi Code API OpenAI 兼容接口）
-- **[Kimi K2.5](https://platform.moonshot.cn/)** - 大上下文窗口 LLM（256K tokens）
+- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Anthropic Claude Agent SDK
+- **[Anthropic Claude](https://docs.anthropic.com/)** - 大上下文窗口 LLM（200K tokens）
 - **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI 驱动的敏捷开发方法论
 - **上下文隔离** - 运行时访问控制 + 提示模板隔离 + 消息过滤
 
@@ -31,23 +31,23 @@ DocuSwarm 编排 5 个专业 Agent（Analyst、PM、UX Designer、Architect、PO
 ### Prerequisites
 
 - Python 3.12+
-- Anthropic API Key (或 Kimi Code API Key)
+- Anthropic API Key
 - Git
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd DocuSwarm
+   git clone https://github.com/LeafLIU210/autoBMAD.git
+   cd autoBMAD
    ```
 
 2. **Create virtual environment**
    ```bash
-   python -m venv venv
-   venv\Scripts\activate  # Windows
+   python -m venv .venv
+   # .venv\Scripts\activate  # Windows
    # or
-   source venv/bin/activate  # Linux/macOS
+   source .venv/bin/activate  # Linux/macOS/WSL
    ```
 
 3. **Install dependencies**
@@ -59,8 +59,8 @@ DocuSwarm 编排 5 个专业 Agent（Analyst、PM、UX Designer、Architect、PO
    ```bash
    # Create .env file
    echo "ANTHROPIC_API_KEY=your_api_key_here" > .env
-   # Optional: for Kimi Code API
-   echo "ANTHROPIC_BASE_URL=https://api.kimi.com/coding/" >> .env
+   # Optional: Custom API Base URL
+   # echo "ANTHROPIC_BASE_URL=https://custom-api-url/" >> .env
    ```
 
 5. **Verify installation**
@@ -74,7 +74,7 @@ Start a new pipeline with a context file:
 
 ```bash
 python -m autoBMAD.docuswarm start --context docs/examples/project-requirements.md
-python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
+source .venv/bin/activate && python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
 ```
 
 Check pipeline status:
@@ -133,7 +133,7 @@ State Management:
 ### Project Structure
 
 ```
-DocuSwarm/
+autoBMAD/
 ├── autoBMAD/                    # Main source code
 │   ├── docuswarm/              # DocuSwarm core system
 │   │   ├── agents/             # Agent implementations (Independent + Evaluator)
@@ -356,11 +356,11 @@ addopts = "--verbose"
 Create a `.env` file in the project root:
 
 ```bash
-# Required - Anthropic API Key (or Kimi Code API Key)
+# Required - Anthropic API Key
 ANTHROPIC_API_KEY=your_api_key_here
 
-# Optional - API Base URL (for Kimi Code API)
-ANTHROPIC_BASE_URL=https://api.kimi.com/coding/
+# Optional - Custom API Base URL
+# ANTHROPIC_BASE_URL=https://custom-api-url/
 
 # Optional - DocuSwarm Configuration
 DOCUSWARM_DB_PATH=docuswarm.db
@@ -514,17 +514,17 @@ sqlite3.OperationalError: database is locked
 
 ```bash
 # Recreate virtual environment (Windows)
-venv\Scripts\deactivate
-rmdir /s venv
-python -m venv venv
-venv\Scripts\activate
+.venv\Scripts\deactivate
+rmdir /s .venv
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
 
 # Recreate virtual environment (Linux/macOS)
 deactivate
-rm -rf venv
-python -m venv venv
-source venv/bin/activate
+rm -rf .venv
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 

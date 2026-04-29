@@ -15,6 +15,10 @@ deliverable:
     - prioritization_rationale
     - dependencies
     - release_plan
+task:
+  name: PO
+  description: Product Owner - drives product success through clear vision, prioritization, and stakeholder alignment
+  role_supplement: Focus on completeness and actionability of backlog
 agent:
   type: independent
   model: sonnet

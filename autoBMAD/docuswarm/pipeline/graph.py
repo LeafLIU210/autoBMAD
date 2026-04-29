@@ -130,11 +130,14 @@ def _create_integrated_node_executor(
                 error=str(e),
             )
             # P0-F1: Set error and failed_nodes on exception
+            result_state["status"] = "failed"
             result_state["deliverables"][node_id] = {}
             if "failed_nodes" not in result_state:
                 result_state["failed_nodes"] = []
             if node_id not in result_state["failed_nodes"]:
                 result_state["failed_nodes"] = result_state["failed_nodes"] + [node_id]
+            if not result_state.get("first_failed_node"):
+                result_state["first_failed_node"] = node_id
             result_state["error"] = {
                 "node_id": node_id,
                 "error_type": type(e).__name__,
@@ -143,13 +146,19 @@ def _create_integrated_node_executor(
             # Do NOT increment iteration or add to completed_nodes on error
             return result_state
 
-        # Increment iteration count for this node
-        current_iteration = result_state["node_iterations"].get(node_id, 0)
-        result_state["node_iterations"][node_id] = current_iteration + 1
-
-        # Add node to completed_nodes if not already there
-        if node_id not in result_state["completed_nodes"]:
-            result_state["completed_nodes"] = result_state["completed_nodes"] + [node_id]
+        # P0 Fix: Let PipelineAdapter be the single authority for completed_nodes/failed_nodes.
+        # Only increment iteration count here; state transitions are handled by PipelineAdapter.
+        node_status = executed_node_state.get("status", "")
+        if node_status != "failed":
+            current_iteration = result_state["node_iterations"].get(node_id, 0)
+            result_state["node_iterations"][node_id] = current_iteration + 1
+        else:
+            if "failed_nodes" not in result_state:
+                result_state["failed_nodes"] = []
+            if node_id not in result_state["failed_nodes"]:
+                result_state["failed_nodes"] = result_state["failed_nodes"] + [node_id]
+            if not result_state.get("first_failed_node"):
+                result_state["first_failed_node"] = node_id
 
         return result_state
 
@@ -221,21 +230,28 @@ def create_pipeline_graph(
     # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
     graph.add_node("__finalize__", finalize_executor)
 
-    # Add sequential edges: analyst → pm → ux → architect → po
-    # First, connect START to analyst
+    # P1 Fix: Add conditional edges for dependency failure short-circuit.
+    # If any node has failed, skip directly to finalize.
+    async def _route_after_node(state: dict[str, Any]) -> str:
+        if state.get("failed_nodes"):
+            return "__finalize__"
+        return "__continue__"
+
+    # Add conditional edges for each node
+    for i, node_id in enumerate(PIPELINE_NODES):
+        next_target = PIPELINE_NODES[i + 1] if i + 1 < len(PIPELINE_NODES) else "__finalize__"
+        # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
+        graph.add_conditional_edges(
+            node_id,
+            _route_after_node,
+            {"__finalize__": "__finalize__", "__continue__": next_target},
+        )
+
+    # Connect START to analyst
     # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
     graph.add_edge("__start__", "analyst")
 
-    # Connect each node to the next in sequence
-    for i in range(len(PIPELINE_NODES) - 1):
-        current_node = PIPELINE_NODES[i]
-        next_node = PIPELINE_NODES[i + 1]
-        # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
-        graph.add_edge(current_node, next_node)
-
-    # Connect po to finalize node, then finalize to END
-    # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
-    graph.add_edge("po", "__finalize__")
+    # Connect finalize to END
     # type: ignore[reportUnknownMemberType, reportUnusedCallResult]
     graph.add_edge("__finalize__", END)
 

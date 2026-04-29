@@ -11,7 +11,7 @@ from autoBMAD.docuswarm.nodes.iteration import (
     IterationHistory,
     NodeIterationState,
 )
-from autoBMAD.nodes.loader import NodeConfig, NodeLoader, NodeValidationError
+from autoBMAD.nodes.loader import NodeConfig, NodeLoader
 
 __all__ = [
     "DualAgentNode",
@@ -23,5 +23,4 @@ __all__ = [
     "NodeIterationState",
     "NodeConfig",
     "NodeLoader",
-    "NodeValidationError",
 ]

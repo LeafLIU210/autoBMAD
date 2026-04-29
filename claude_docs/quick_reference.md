@@ -20,10 +20,10 @@
 ### 虚拟环境
 ```bash
 # 激活虚拟环境 (Windows)
-venv\Scripts\activate
+.venv\Scripts\activate
 
 # 激活虚拟环境 (Linux/macOS)
-source venv/bin/activate
+source .venv/bin/activate
 
 # 安装依赖
 pip install -r requirements.txt
@@ -35,10 +35,10 @@ deactivate
 ### 运行应用
 ```bash
 # 作为模块运行
-python -m my_qt_app
+python -m autoBMAD.docuswarm --help
 
 # 直接运行
-python src/my_qt_app/__main__.py
+python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
 ```
 
 ---
@@ -63,10 +63,8 @@ pytest -v --tb=short -k "test_name"
 pytest -v --tb=short --maxfail=1
 
 # 生成覆盖率报告
-pytest --cov=src --cov-report=html --cov-report=term
+pytest --cov=autoBMAD/docuswarm --cov-report=html --cov-report=term
 
-# GUI测试
-pytest tests/gui/ -v
 ```
 
 ### Fixtest-Workflow
@@ -75,7 +73,7 @@ pytest tests/gui/ -v
 pytest tests/ -v
 
 # 生成覆盖率报告
-pytest tests/ --cov=src --cov-report=html
+pytest tests/ --cov=autoBMAD/docuswarm --cov-report=html
 
 # 运行特定测试
 pytest tests/test_specific.py -v
@@ -134,19 +132,18 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
 ## 4. 构建和部署
 
-### Nuitka构建
+### Pre-commit 检查
 ```bash
 # 使用构建脚本
 python build/build.py
 
 # 使用spec文件
-python -m nuitka --onefile build/build.spec
+pre-commit run --all-files
 
 # 启用控制台（调试用）
-python -m nuitka --onefile --windows-enable-console src/my_qt_app/__main__.py
 
 # 添加图标
-python -m nuitka --onefile --windows-icon-from-ico=build/app.ico src/my_qt_app/__main__.py
+
 ```
 
 ### Pre-commit钩子
@@ -264,11 +261,11 @@ pip install -e .
 #### 虚拟环境问题
 ```bash
 # 删除虚拟环境
-rm -rf venv/  # Linux/macOS
-rmdir /s venv  # Windows
+rm -rf .venv/  # Linux/macOS
+rmdir /s .venv  # Windows
 
 # 重新创建
-python -m venv venv
+python -m venv .venv
 ```
 
 #### 导入错误
@@ -297,8 +294,8 @@ pytest -m "not slow"
 ### 日常开发
 ```bash
 # 1. 激活环境
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/macOS
 
 # 2. 运行测试
 pytest -v

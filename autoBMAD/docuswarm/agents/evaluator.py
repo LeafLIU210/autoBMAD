@@ -128,7 +128,9 @@ class EvaluatorAgent(BaseAgent):
         )
 
     def _load_criteria(self) -> list[dict[str, Any]]:
-        """Load evaluation criteria from evaluator.yaml file.
+        """Load evaluation criteria from node configuration.
+
+        P2 Fix: Uses NodeLoader for unified path resolution.
 
         Returns:
             List of criteria dictionaries with name, description, and weight.
@@ -136,23 +138,15 @@ class EvaluatorAgent(BaseAgent):
         Raises:
             CriteriaLoadError: If criteria cannot be loaded or are invalid.
         """
-        criteria_path = self.project_root / "nodes" / self.node_id / "evaluator.yaml"
+        from autoBMAD.nodes.loader import NodeLoader
 
-        if not criteria_path.exists():
-            raise CriteriaLoadError(f"Criteria file not found: {criteria_path}")
+        node_config = NodeLoader.load(self.node_id)
+        evaluator = node_config.evaluator
 
-        try:
-            with open(criteria_path, encoding="utf-8") as f:
-                data: dict[str, Any] = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            raise CriteriaLoadError(f"Invalid YAML in criteria file: {e}") from e
-        except OSError as e:
-            raise CriteriaLoadError(f"Failed to read criteria file: {e}") from e
+        if evaluator is None:
+            raise CriteriaLoadError(f"No evaluator configuration for node '{self.node_id}'")
 
-        if not data or "criteria" not in data:
-            raise CriteriaLoadError("Criteria file must contain 'criteria' key")
-
-        criteria: list[dict[str, Any]] = data["criteria"]
+        criteria = evaluator.criteria
 
         if len(criteria) == 0:
             raise CriteriaLoadError("At least one criterion is required")
@@ -180,10 +174,10 @@ class EvaluatorAgent(BaseAgent):
         return criteria
 
     def _load_thresholds(self) -> dict[str, float]:
-        """Load evaluation thresholds from evaluator.yaml or node.yaml configuration.
+        """Load evaluation thresholds from node configuration.
 
-        P0 Fix: Load threshold configuration from node evaluator.yaml to ensure
-        runtime behavior matches node configuration.
+        P0 Fix: Uses NodeLoader for unified path resolution.
+        P0 Fix: Uses 'thresholds' (plural) field name consistent with dataclass.
 
         Returns:
             Dictionary with 'approval' and 'escalation' threshold values.
@@ -191,16 +185,14 @@ class EvaluatorAgent(BaseAgent):
         from autoBMAD.nodes.loader import NodeLoader
 
         try:
-            # Use NodeLoader to get full node configuration
-            # Need to ensure NodeLoader base path is set correctly
             node_config = NodeLoader.load(self.node_id)
 
-            if node_config.evaluator and node_config.evaluator.threshold:
+            if node_config.evaluator and node_config.evaluator.thresholds:
                 return {
-                    "approval": node_config.evaluator.threshold.get(
+                    "approval": node_config.evaluator.thresholds.get(
                         "approval", self.DEFAULT_APPROVAL_THRESHOLD
                     ),
-                    "escalation": node_config.evaluator.threshold.get(
+                    "escalation": node_config.evaluator.thresholds.get(
                         "escalation", self.DEFAULT_BLOCKED_THRESHOLD
                     ),
                 }

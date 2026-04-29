@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from claude_agent_sdk import McpSdkServerConfig
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +21,12 @@ def create_update_context_server(
     node_id: str,
     allowed_operations: list[str] | None = None,
     allowed_keys: list[str] | None = None,  # F5 Fix: 添加 allowed_keys 参数
+    db_path: str | None = None,  # H1 Fix: 传递配置的数据库路径
 ) -> dict[str, Any]:
     """Create an SDK MCP server for update_context tool.
 
     F5 Fix: 添加 allowed_keys 参数支持节点级白名单
+    H1 Fix: 传递 db_path 避免写入默认数据库
 
     This factory function creates an SDK MCP server configured with the
     update_context tool, scoped to the specified pipeline.
@@ -36,6 +38,7 @@ def create_update_context_server(
             Defaults to ["set", "append", "remove"].
         allowed_keys: Optional list of node-specific allowed key patterns.
             These are merged with the global whitelist.
+        db_path: Optional database path. If not provided, uses default "docuswarm.db".
 
     Returns:
         Dict with MCP SDK server configuration including name, transport, and server.
@@ -95,8 +98,9 @@ def create_update_context_server(
 
         try:
             # F5 Fix: 传递 allowed_keys 到 UpdateContextTool
+            # H1 Fix: 使用传入的 db_path 创建 StateManager
             tool = UpdateContextTool(
-                state_manager=StateManager(),
+                state_manager=StateManager(db_path=db_path) if db_path else StateManager(),
                 pipeline_id=pipeline_id,
                 allowed_keys=allowed_keys,
             )

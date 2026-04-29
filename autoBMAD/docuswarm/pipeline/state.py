@@ -282,35 +282,72 @@ def validate_deliverable_format(deliverable: object) -> bool:
     return isinstance(deliverable, dict)
 
 
-def finalize_pipeline_state(state: PipelineState) -> PipelineState:
-    """Finalize the pipeline state when all nodes have completed.
+class PipelineStateError(Exception):
+    """Raised when pipeline state invariants are violated."""
 
-    This function:
-    - Marks the pipeline status as completed
-    - Captures final state with all accumulated data
-    - Ensures all deliverables are preserved
+    pass
+
+
+def finalize_pipeline_state(state: PipelineState) -> PipelineState:
+    """Finalize the pipeline state based on actual execution results.
+
+    P0 Fix:
+    - If failed_nodes present → status='failed'
+    - If completed_nodes == all PIPELINE_NODES → status='completed'
+    - Validates state invariants before finalizing
+    - Raises PipelineStateError on invariant violation
 
     Args:
         state: The current PipelineState.
 
     Returns:
-        Updated PipelineState with completed status.
+        Updated PipelineState with correct final status.
 
-    Example:
-        >>> state = create_initial_state("pipeline-1", {"task": "Build X"})
-        >>> state["completed_nodes"] = ["analyst", "pm", "ux", "architect", "po"]
-        >>> finalized = finalize_pipeline_state(state)
-        >>> # finalized["status"] == "completed"
+    Raises:
+        PipelineStateError: If state invariants are violated.
     """
     import copy
 
     result = copy.deepcopy(state)
 
-    # Mark pipeline as completed
-    result["status"] = COMPLETED
+    # P0 Fix: Validate invariants before finalizing
+    completed = set(result.get("completed_nodes", []))
+    deliverable_keys = set(result.get("deliverables", {}).keys())
+    failed_nodes = set(result.get("failed_nodes", []))
 
-    # Preserve current_node (the last executed node) - do not clear it
-    # This allows users to see which node was last processed
+    # Invariant: completed_nodes must be subset of deliverables keys
+    if not completed.issubset(deliverable_keys):
+        raise PipelineStateError(
+            f"Invariant violation: completed_nodes {completed} not subset of "
+            f"deliverables keys {deliverable_keys}"
+        )
+
+    # Invariant: failed_nodes and completed_nodes must be disjoint
+    if failed_nodes & completed:
+        raise PipelineStateError(
+            f"Invariant violation: nodes in both failed_nodes and completed_nodes: "
+            f"{failed_nodes & completed}"
+        )
+
+    # P0 Fix: Determine final status based on actual results
+    if failed_nodes:
+        result["status"] = FAILED
+        if result.get("error") is None:
+            result["error"] = {
+                "message": f"Pipeline failed on nodes: {list(failed_nodes)}",
+                "type": "PipelineNodeFailure",
+                "failed_nodes": list(failed_nodes),
+            }
+    elif completed == set(PIPELINE_NODES):
+        result["status"] = COMPLETED
+    elif result.get("status") in (RUNNING, PENDING):
+        # Pipeline was interrupted or incomplete
+        result["status"] = FAILED
+        result["error"] = {
+            "message": f"Pipeline incomplete: completed {list(completed)}, expected {PIPELINE_NODES}",
+            "type": "PipelineIncomplete",
+        }
+    # else: preserve existing terminal status
 
     return result
 

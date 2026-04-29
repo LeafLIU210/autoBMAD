@@ -109,19 +109,21 @@ class PersonaLoader:
         project_root: Path | None = None,
         use_cache: bool = True,
     ) -> Persona:
-        """Load persona from JSON file for a given node.
+        """Load persona from node configuration for a given node.
+
+        P2 Fix: Delegates to NodeLoader for unified path resolution.
 
         Args:
             node_id: The node identifier (e.g., 'analyst', 'pm', 'ux', 'architect', 'po').
-            project_root: Root directory of the project. If None, uses cwd.
+            project_root: Deprecated, kept for backward compatibility. Ignored.
             use_cache: Whether to use cached persona if available.
 
         Returns:
-            Persona object loaded from the JSON file.
+            Persona object loaded from the node configuration.
 
         Raises:
-            FileNotFoundError: If persona file doesn't exist and no default available.
-            ValueError: If persona JSON is invalid or missing required fields.
+            FileNotFoundError: If persona data is not found in node config.
+            ValueError: If persona data is invalid or missing required fields.
         """
         # Determine cache key
         cache_key = node_id
@@ -131,48 +133,26 @@ class PersonaLoader:
             logger.debug("Using cached persona", node_id=node_id)
             return PersonaLoader._cache[cache_key]
 
-        # Determine project root
-        if project_root is None:
-            project_root = Path.cwd()
+        # P2 Fix: Use NodeLoader for unified path resolution
+        from autoBMAD.nodes.loader import NodeLoader
 
-        # Build path to persona file
-        persona_file = project_root / "nodes" / node_id / "persona.json"
+        node_config = NodeLoader.load(node_id)
+        persona_data = node_config.persona
 
-        # Try to load from file
-        try:
-            with open(persona_file, encoding="utf-8") as f:
-                data = cast(dict[str, Any], json.load(f))
-
-            logger.info("Loaded persona file", node_id=node_id, path=str(persona_file))
-
-        except FileNotFoundError:
-            # Log warning and return default persona
-            logger.warning(
-                "Persona file not found, using default",
-                node_id=node_id,
-                path=str(persona_file),
+        if not persona_data:
+            raise FileNotFoundError(
+                f"Persona data not found for node '{node_id}' in node configuration"
             )
-            persona = Persona.from_dict(DEFAULT_PERSONA)
-            PersonaLoader._cache[cache_key] = persona
-            return persona
 
-        except json.JSONDecodeError as e:
-            logger.error(
-                "Invalid JSON in persona file",
-                node_id=node_id,
-                path=str(persona_file),
-                error=str(e),
-            )
-            raise ValueError(f"Invalid JSON in persona file {persona_file}: {e}") from e
+        logger.info("Loaded persona from node config", node_id=node_id)
 
         # Parse and validate persona
         try:
-            persona = Persona.from_dict(data)
+            persona = Persona.from_dict(persona_data)
         except ValueError as e:
             logger.error(
                 "Invalid persona schema",
                 node_id=node_id,
-                path=str(persona_file),
                 error=str(e),
             )
             raise

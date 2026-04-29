@@ -533,8 +533,9 @@ class NodePromptContractBuilder:
         if docs:
             sections.append("\n## 引用文档")
             for doc in docs:
-                sections.append(f"\n### {doc['filename']}\n")
-                sections.append(doc["content"])
+                sections.append(f"\n### {doc.get('filename', 'unknown')}\n")
+                # SummaryAgent produces 'summary' field; fallback resolver produces 'content'
+                sections.append(doc.get("content") or doc.get("summary", ""))
 
         # 上游交付物摘要
         chained = context.get("chained_deliverables", [])

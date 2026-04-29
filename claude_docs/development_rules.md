@@ -29,8 +29,8 @@ from Project_recorder.services.config_service import ConfigService
 from ..services.config_service import ConfigService
 
 # ✅ 正确示例（绝对导入）
-from services.config_service import ConfigService
-from ui.widgets.button import CustomButton
+from autoBMAD.docuswarm.pipeline.orchestrator import HybridOrchestrator
+from autoBMAD.docuswarm.nodes.dual_agent import DualAgentNode
 ```
 
 #### 导入顺序规范
@@ -42,13 +42,13 @@ import sys
 from pathlib import Path
 
 # 2. 第三方库导入
-from PySide6.QtWidgets import QWidget
+from autoBMAD.docuswarm.config import DocuSwarmConfig
 import pytest
 
 # 3. 本地应用/库导入（使用绝对导入）
-from services.config_service import ConfigService
-from ui.widgets.button import CustomButton
-from core.recorder import Recorder
+from autoBMAD.docuswarm.pipeline.orchestrator import HybridOrchestrator
+from autoBMAD.docuswarm.nodes.dual_agent import DualAgentNode
+from autoBMAD.docuswarm.storage.state_manager import StateManager
 ```
 
 ### 1.2 字符编码要求
@@ -159,7 +159,7 @@ class UserService:
 
 ```json
 {
-    "include": ["src/**/*"],
+    "include": ["autoBMAD/**/*"],
     "exclude": ["tests/**/*", "build/**/*"],
     "report": {
         "enable": true,
@@ -210,13 +210,13 @@ ignore = [
 #### 执行命令
 ```bash
 # 检查代码风格
-ruff check src/
+ruff check autoBMAD/
 
 # 自动修复可修复的问题
-ruff check --fix src/
+ruff check --fix autoBMAD/
 
 # 格式化代码
-ruff format src/
+ruff format autoBMAD/
 ```
 
 ### 3.3 智能冲突解决
@@ -250,7 +250,7 @@ echo "运行类型检查..."
 basedpyright-workflow check
 
 echo "检查代码风格..."
-ruff check --fix src/
+ruff check --fix autoBMAD/
 
 echo "运行测试..."
 pytest tests/
@@ -266,8 +266,8 @@ pytest tests/
 
 - name: Run Ruff
   run: |
-    ruff check src/
-    ruff format --check src/
+    ruff check autoBMAD/
+    ruff format --check autoBMAD/
 ```
 
 ---

@@ -41,16 +41,12 @@ class CriteriaValidationError(Exception):
 
 
 class CriteriaLoader:
-    """Loader for evaluation criteria from YAML files.
+    """Loader for evaluation criteria from node configuration.
 
-    This class handles:
-    - Loading criteria from nodes/{node_id}/evaluator.yaml
-    - Validating weight sums (within tolerance)
-    - Validating threshold ranges
-    - Applying universal defaults with node-specific overrides
+    P2 Fix: Delegates to NodeLoader for unified path resolution.
 
     Attributes:
-        project_root: Root directory of the project.
+        project_root: Deprecated, kept for backward compatibility.
     """
 
     VALID_CRITERION_FIELDS = {"name", "description", "weight"}
@@ -59,12 +55,14 @@ class CriteriaLoader:
         """Initialize the criteria loader.
 
         Args:
-            project_root: Root directory of the project. If None, uses cwd.
+            project_root: Deprecated, kept for backward compatibility. Ignored.
         """
-        self.project_root = project_root or Path.cwd()
+        self.project_root = project_root
 
     def load(self, node_id: str) -> LoadedCriteria:
         """Load evaluation criteria for the specified node.
+
+        P2 Fix: Uses NodeLoader for unified path resolution.
 
         Args:
             node_id: The node identifier (e.g., 'analyst', 'pm', 'ux', 'architect', 'po').
@@ -76,35 +74,21 @@ class CriteriaLoader:
                 - node_id: The node identifier
 
         Raises:
-            FileNotFoundError: If the evaluator.yaml file doesn't exist.
+            FileNotFoundError: If the node configuration doesn't exist.
             CriteriaValidationError: If validation fails.
         """
-        criteria_path = self.project_root / "nodes" / node_id / "evaluator.yaml"
+        from autoBMAD.nodes.loader import NodeLoader
 
-        if not criteria_path.exists():
-            raise FileNotFoundError(
-                f"Criteria file not found: {criteria_path}. Expected at nodes/{node_id}/evaluator.yaml"
-            )
+        node_config = NodeLoader.load(node_id)
+        evaluator = node_config.evaluator
 
-        # Load YAML
-        try:
-            with open(criteria_path, encoding="utf-8") as f:
-                data: dict[str, Any] = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            raise CriteriaValidationError(f"Invalid YAML in criteria file: {e}") from e
-        except OSError as e:
-            raise CriteriaValidationError(f"Failed to read criteria file: {e}") from e
+        if evaluator is None:
+            raise CriteriaValidationError(f"No evaluator configuration for node '{node_id}'")
 
-        if not data:
-            raise CriteriaValidationError("Criteria file is empty")
-
-        # Validate and extract criteria
-        criteria = self._validate_criteria(cast(list[dict[str, Any]], data.get("criteria", [])))
-
-        # Validate and extract thresholds
-        # F3 Fix: 优先读取 v2 threshold（单数），兼容旧 thresholds（复数）
-        threshold_data = data.get("threshold") or data.get("thresholds", {})
-        thresholds = self._validate_thresholds(cast(dict[str, Any] | None, threshold_data))
+        criteria = self._validate_criteria(cast(list[dict[str, Any]], evaluator.criteria))
+        thresholds = self._validate_thresholds(
+            cast(dict[str, Any] | None, evaluator.thresholds)
+        )
 
         return {
             "criteria": criteria,

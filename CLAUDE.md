@@ -1,8 +1,8 @@
 # Claude Code 指导文档
 
 **项目名称**: DocuSwarm Multi-Agent Orchestration System
-**版本**: 3.1
-**最后更新**: 2026-04-05
+**版本**: 3.2
+**最后更新**: 2026-04-28
 
 ---
 
@@ -60,12 +60,12 @@ DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 - [TDD-04](docs/solution/TDD-04-ContextResolver-Refactor.md) - @路径注入系统
 - [TDD-05](docs/solution/TDD-05-SDKWrapper-Refactor.md) - SDK替换 (kimi→claude)
 
-### 1.3 项目依赖
+### 1.4 项目依赖
 
 核心技术栈:
 - **[LangGraph](https://langchain-ai.github.io/langgraph/)** - 状态机和工作流编排
-- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Claude Agent SDK（通过 Kimi Code API）
-- **[Kimi K2.5](https://platform.moonshot.cn/)** - 主要LLM提供商（256K上下文窗口）
+- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Anthropic Claude Agent SDK
+- **[Anthropic Claude](https://docs.anthropic.com/)** - 主要LLM提供商（200K上下文窗口）
 - **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - 方法论来源
 - **SQLite with WAL** - 状态持久化
 - **Python 3.12+** - 实现语言
@@ -94,27 +94,27 @@ DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 
 ### 2.2 重构与架构文档
 
-📋 **重构方案位于 `docs-test/solution/` 目录**：
+📋 **重构方案位于 `docs/solution/` 目录**：
 
 | 文档 | 描述 | 何时使用 |
 |------|------|----------|
-| **[solution/README.md](docs-test/solution/README.md)** | TDD重构方案总览和实施路线图 | 规划重构工作时 |
-| **[TDD-SDK-Migration](docs-test/solution/TDD-SDK-Migration-2026-03-25.md)** | SDK迁移方案 | kimi→claude迁移 |
+| **[solution/README.md](docs/solution/README.md)** | TDD重构方案总览和实施路线图 | 规划重构工作时 |
+| **[TDD-SDK-Migration](docs/solution/TDD-SDK-Migration-2026-03-25.md)** | SDK迁移方案 | kimi→claude迁移 |
 
-📊 **研究文档位于 `docs-test/research/` 目录**：
-
-| 文档 | 描述 | 何时使用 |
-|------|------|----------|
-| **[Context Refactor Overview](docs-test/research/2026-03-13-docuswarm-context-refactor-overview.md)** | 上下文重构概览 | 理解重构背景时 |
-| **[Dependency Drift](docs-test/research/dependency-drift-2026-03-25/README.md)** | 依赖漂移分析 | 了解SDK迁移时 |
-
-🏗️ **架构文档位于 `docs-test/architecture/` 目录**：
+📊 **研究文档位于 `docs/research/` 目录**：
 
 | 文档 | 描述 | 何时使用 |
 |------|------|----------|
-| **[Project Structure](docs-test/architecture/project-structure.md)** | 项目结构规范 | 理解项目布局时 |
-| **[Tech Stack](docs-test/architecture/tech-stack.md)** | 技术栈规范 | 理解技术选型时 |
-| **[Pipeline Architecture](docs-test/architecture/03_PIPELINE_ARCHITECTURE.md)** | 管道执行架构 | 理解节点执行时 |
+| **[Context Refactor Overview](docs/research/2026-03-13-docuswarm-context-refactor-overview.md)** | 上下文重构概览 | 理解重构背景时 |
+| **[Dependency Drift](docs/research/dependency-drift-2026-03-25/README.md)** | 依赖漂移分析 | 了解SDK迁移时 |
+
+🏗️ **架构文档位于 `docs/architecture/` 目录**：
+
+| 文档 | 描述 | 何时使用 |
+|------|------|----------|
+| **[Project Structure](docs/architecture/project-structure.md)** | 项目结构规范 | 理解项目布局时 |
+| **[Tech Stack](docs/architecture/tech-stack.md)** | 技术栈规范 | 理解技术选型时 |
+| **[Pipeline Architecture](docs/architecture/03_PIPELINE_ARCHITECTURE.md)** | 管道执行架构 | 理解节点执行时 |
 
 ### 2.3 核心目录结构
 
@@ -138,12 +138,15 @@ project/
 │   └── epic_automation/      # Epic自动化系统
 ├── nodes/                    # 节点配置（BMAD personas）
 ├── tests/                    # 测试代码
-├── docs/                     # 示例文档
-│   └── bubble-sort/          # Bubble Sort测试示例
-├── docs-test/                # 测试与架构文档 ⭐
+├── docs/                     # 项目文档 ⭐
 │   ├── architecture/         # 架构文档
 │   ├── research/             # 研究报告
-│   └── solution/             # TDD方案
+│   ├── solution/             # TDD方案
+│   ├── epics/                # Epic定义
+│   └── ...                   # 其他文档（PRD、设计、评估等）
+├── docs-test/                # 测试示例文档
+│   ├── bubble-sort/          # Bubble Sort示例
+│   └── calc-one-plus-one/    # 计算器示例
 ├── claude_docs/              # 开发规范文档 ⭐
 ├── pyproject.toml            # 项目配置
 └── README.md                 # 项目概览
@@ -290,8 +293,8 @@ autoBMAD系统可以作为Claude Code的Skill安装和使用：
 
 ```bash
 # 激活虚拟环境
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/macOS/WSL
 
 # 安装依赖
 pip install -r requirements.txt
@@ -307,28 +310,22 @@ python -m autoBMAD.docuswarm --help
 pytest -v --tb=short
 
 # 生成覆盖率报告
-pytest --cov=src --cov-report=html
-
-# GUI测试
-pytest tests/gui/ -v
+pytest --cov=autoBMAD/docuswarm --cov-report=html
 ```
 
 ### 6.3 代码质量
 
 ```bash
 # 类型检查
-basedpyright docuswarm/
+basedpyright autoBMAD/
 
 # 代码风格
-ruff check --fix docuswarm/
+ruff check --fix autoBMAD/
 ```
 
-### 6.4 构建
+### 6.4 代码检查
 
 ```bash
-# Nuitka构建
-python build/build.py
-
 # Pre-commit检查
 pre-commit run --all-files
 ```
@@ -396,6 +393,7 @@ Epic处理
 
 | 日期 | 版本 | 提交信息 | 变更内容 |
 |------|------|----------|----------|
+| 2026-04-28 | 3.2 | docs: 对齐更新全部文档至 autoBMAD/docuswarm 开发目标 | 移除Kimi引用、修复路径、更新依赖、重写SETUP.md |
 | 2026-04-05 | 3.1 | bd8b0f2d - refactor(docuswarm): 替换 Kimi API 为 Anthropic API 并清理遗留代码 | Kimi API 替换为 Anthropic API，遗留代码清理 |
 | 2026-03-02 | 3.0 | 22a59d34 - refactor(docuswarm): 完成SDK异常统一处理及消息格式切换 | SDK异常统一处理完成，消息格式切换 |
 | 2026-03-02 | 3.0 | docs: 对齐更新 README.md、CLAUDE.md 和 claude_docs 全部文档 | 文档对齐更新 |
@@ -411,7 +409,7 @@ Epic处理
 如需更详细的信息，请查阅 `claude_docs/` 目录中的专门文档：
 
 - **[开发规则](claude_docs/development_rules.md)** - 编码规范、导入规则、字符编码
-- **[测试指南](claude_docs/testing_guide.md)** - pytest实践、GUI测试、覆盖率
+- **[测试指南](claude_docs/testing_guide.md)** - pytest实践、覆盖率
 - **[技术规范](claude_docs/technical_specs.md)** - 依赖管理、配置文件、构建工具
 - **[项目结构](claude_docs/project_tree.md)** - 详细目录结构说明
 

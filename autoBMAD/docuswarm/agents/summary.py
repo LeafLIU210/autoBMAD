@@ -267,9 +267,16 @@ The response must be parseable by json.loads(). Do not include markdown formatti
         Returns:
             List of unique referenced filenames with allowed extensions.
         """
+        referenced_files: set[str] = set()
+
+        # P1 Fix: Include explicit context_file if provided
+        context_file = original_context.get("context_file")
+        if context_file:
+            referenced_files.add(str(context_file))
+
         content = original_context.get("content", "")
         if not content:
-            return []
+            return list(referenced_files)
 
         # Regex patterns for filename extraction
         patterns = [
@@ -280,7 +287,6 @@ The response must be parseable by json.loads(). Do not include markdown formatti
         # Use config values for allowed extensions
         allowed_extensions = frozenset(self.summary_config.file_discovery.allowed_extensions)
 
-        referenced_files: set[str] = set()
         for pattern in patterns:
             matches = re.findall(pattern, content, re.IGNORECASE)
             for match in matches:
@@ -307,8 +313,13 @@ The response must be parseable by json.loads(). Do not include markdown formatti
         if not docs_dir.exists():
             return None
 
-        # Find all matching files (sorted by path depth, shallow first)
-        candidates = sorted(docs_dir.rglob(filename), key=lambda p: len(p.parts))
+        # Handle relative paths (e.g., docs/calc-one-plus-one/calc-context.md)
+        filepath = self.project_root / filename
+        if filepath.exists() and filepath.is_file():
+            candidates = [filepath]
+        else:
+            # Find all matching files (sorted by path depth, shallow first)
+            candidates = sorted(docs_dir.rglob(Path(filename).name), key=lambda p: len(p.parts))
 
         for candidate in candidates:
             if not candidate.is_file():

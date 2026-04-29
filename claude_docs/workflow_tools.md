@@ -225,9 +225,9 @@ xcopy /E /I epic_automation \your\project\autoBMAD\epic_automation
 #### 2. 创建虚拟环境(推荐)
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate     # Windows
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
 ```
 
 #### 3. 安装依赖
@@ -332,7 +332,7 @@ project/
 ├── docs/
 │   └── epics/              # Epic文档
 │       └── my-epic.md
-├── src/                    # 源代码
+├── autoBMAD/               # 源代码
 ├── tests/                  # 测试代码
 └── pyproject.toml          # 项目配置
 ```
@@ -347,8 +347,8 @@ project/
 
 ```bash
 # 激活虚拟环境
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate     # Windows
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
 
 # 运行完整5阶段工作流
 python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --verbose
@@ -482,7 +482,7 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --retry-fai
 
 ```bash
 # 单独运行basedpyright检查
-basedpyright src/
+basedpyright autoBMAD/
 
 # 或通过autoBMAD工作流自动执行
 python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md
@@ -513,10 +513,10 @@ exclude = ["tests", "build"]
 
 ```bash
 # 检查并自动修复问题
-ruff check --fix src/
+ruff check --fix autoBMAD/
 
 # 格式化代码
-ruff format src/
+ruff format autoBMAD/
 
 # 或通过autoBMAD工作流自动执行
 python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md

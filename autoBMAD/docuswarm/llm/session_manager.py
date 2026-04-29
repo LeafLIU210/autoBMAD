@@ -16,6 +16,7 @@ Example:
 from __future__ import annotations
 
 import asyncio
+import os
 import types
 from collections.abc import AsyncIterator
 from contextlib import suppress
@@ -58,7 +59,7 @@ async def _close_client_with_process_fallback(
     # Attempt graceful disconnect with timeout
     try:
         await asyncio.wait_for(client.disconnect(), timeout=disconnect_timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         log.warning("disconnect_timeout", disconnect_timeout=disconnect_timeout)
     except Exception as e:
         log.warning("disconnect_error", error=str(e))
@@ -72,7 +73,7 @@ async def _close_client_with_process_fallback(
         try:
             process.kill()
             await asyncio.wait_for(process.wait(), timeout=kill_wait_timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             log.error("force_kill_wait_timeout")
         except Exception as e:
             log.error("force_kill_error", error=str(e))
@@ -115,6 +116,7 @@ class SessionManager:
         cwd: Path | None = None,
         output_dir: Path | None = None,
         pipeline_id: str | None = None,  # F2 Fix: 添加 pipeline_id 参数
+        db_path: str | None = None,  # H1 Fix: 传递数据库路径
     ) -> None:
         """
         Initialize the SessionManager.
@@ -130,6 +132,7 @@ class SessionManager:
             cwd: Working directory for SDK (should be repo root for import).
             output_dir: Directory for file output (e.g., output/pipeline_id).
             pipeline_id: Optional pipeline identifier for shared-context MCP server creation.
+            db_path: Optional database path for shared_context MCP server.
         """
         # Handle backward compatibility and new cwd/output_dir split
         # Convert string paths to Path objects
@@ -156,6 +159,7 @@ class SessionManager:
         self._file_dirs = file_dirs or []
         self._search_dirs = search_dirs or []
         self._pipeline_id = pipeline_id  # F2 Fix: 存储 pipeline_id
+        self._db_path = db_path  # H1 Fix: 存储 db_path
         self._active_clients: dict[str, ClaudeSDKClient] = {}
         # P0 Fix: 跟踪 wrapper 以在 close_all() 时同步 _closed 状态
         self._active_wrappers: dict[str, ClaudeSessionWrapper] = {}
@@ -261,7 +265,7 @@ class SessionManager:
         tools: list[str] = []
 
         # F1 Fix: Conditionally add "Skill" tool based on sdk_native setting
-        if (self._tool_permissions is not None and 
+        if (self._tool_permissions is not None and
             self._tool_permissions.skills.sdk_native):
             # Add "Skill" tool as first entry for SDK native skills priority
             tools.append("Skill")
@@ -281,6 +285,7 @@ class SessionManager:
                     node_id=self._node_id,
                     tool_permissions=self._tool_permissions,
                     output_dir=str(self._output_dir) if self._output_dir else None,
+                    db_path=self._db_path,  # H1 Fix: 传递 db_path
                 )
 
                 # Get MCP tool names (excluding builtin tools which we already added)
@@ -322,10 +327,30 @@ class SessionManager:
         options_dict: dict[str, Any] = {
             "cwd": self._cwd,  # FIX-2B: Use _cwd instead of _work_dir for SDK import
             "permission_mode": permission_mode,
+            # P0 Fix: Use --bare mode to force ANTHROPIC_API_KEY auth and skip OAuth/keychain
+            "extra_args": {"bare": None},
         }
 
+        # Pass API credentials to CLI subprocess via env
+        # This ensures ANTHROPIC_API_KEY and ANTHROPIC_BASE_URL are available
+        # to the bundled Claude Code CLI, enabling real-mode LLM execution.
+        env_vars: dict[str, str] = {}
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        base_url = os.environ.get("ANTHROPIC_BASE_URL")
+        if api_key:
+            env_vars["ANTHROPIC_API_KEY"] = api_key
+        if base_url:
+            env_vars["ANTHROPIC_BASE_URL"] = base_url
+        if env_vars:
+            options_dict["env"] = env_vars
+            self._logger.info(
+                "api_credentials_configured",
+                has_api_key=bool(api_key),
+                has_base_url=bool(base_url),
+            )
+
         # F1 Fix: Conditionally set setting_sources based on sdk_native setting
-        if (self._tool_permissions is not None and 
+        if (self._tool_permissions is not None and
             self._tool_permissions.skills.sdk_native):
             options_dict["setting_sources"] = ["project"]  # Enable SDK auto-discovery of skills
             self._logger.debug("setting_sources_enabled", node_id=self._node_id)
@@ -376,12 +401,17 @@ class SessionManager:
                     node_id=self._node_id,
                     tool_permissions=tool_permissions,
                     output_dir=str(self._output_dir),
+                    db_path=self._db_path,  # H1 Fix: 传递 db_path
                 )
 
                 # Create MCP servers for this node
                 try:
                     # F2 Fix: 传递 pipeline_id 以创建 shared-context server
-                    mcp_servers = node_filter.create_mcp_servers(pipeline_id=self._pipeline_id)
+                    # H1 Fix: 传递 db_path 避免写入默认数据库
+                    mcp_servers = node_filter.create_mcp_servers(
+                        pipeline_id=self._pipeline_id,
+                        db_path=self._db_path,
+                    )
                     if mcp_servers:
                         # SDK MCP servers are already returned as dict: {server_name: server_dict}
                         options_dict["mcp_servers"] = mcp_servers

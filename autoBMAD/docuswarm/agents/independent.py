@@ -1016,6 +1016,7 @@ Please create the deliverable based on the original context above. Reference spe
         # P0 Fix: Build complete NodeToolPermissions with allowed_builtin_tools
         # F1 Fix: Use dataclasses.replace to preserve skills and shared_context
         from dataclasses import replace
+
         from autoBMAD.nodes.loader import (
             NodeFilePermissions,
             NodeSearchPermissions,
@@ -1077,11 +1078,13 @@ Please create the deliverable based on the original context above. Reference spe
         tool_permissions: Any | None = None,
         pipeline_id: str | None = None,  # F2 Fix: 添加 pipeline_id 参数
         project_root: Path | None = None,  # F3 Fix: 添加 project_root 参数
+        db_path: str | None = None,  # H1 Fix: 传递数据库路径
     ):
         """Factory method for creating pipeline SessionManager - allows testing.
-        
+
         F2 Fix: 支持 pipeline_id 参数以创建 shared-context MCP server
         F3 Fix: 支持 project_root 参数以正确设置 SDK Skills 发现路径
+        H1 Fix: 支持 db_path 参数以写入配置的数据库
         """
         from autoBMAD.docuswarm.llm.session_manager import SessionManager
 
@@ -1096,6 +1099,7 @@ Please create the deliverable based on the original context above. Reference spe
             search_dirs=search_dirs,
             tool_permissions=tool_permissions,
             pipeline_id=pipeline_id,  # F2 Fix: 传递 pipeline_id
+            db_path=db_path,  # H1 Fix: 传递 db_path
         )
 
     def _build_user_message(
