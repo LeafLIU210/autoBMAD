@@ -136,7 +136,9 @@ class PathValidator:
             resolved_prefix = resolved_path.rstrip(os.sep) + os.sep
 
             if resolved_prefix.startswith(allowed_prefix) or resolved_path == allowed_dir:
-                return resolved_path
+                # Phase 4 Fix: Secondary check with resolve().is_relative_to()
+                if Path(resolved_path).resolve().is_relative_to(Path(allowed_dir).resolve()):
+                    return resolved_path
 
         # Path is outside allowed directories
         raise PathNotAllowedError(

@@ -27,22 +27,24 @@ export ANTHROPIC_BASE_URL=https://api.anthropic.com/v1/
 
 配置加载的优先级顺序（从高到低）：
 
-1. **环境变量** - 从 `.env` 文件或系统环境变量读取
-2. **YAML 配置** - 从 `config/docuswarm.yaml` 读取
-3. **默认值** - 代码中定义的默认配置
+1. **`.env` 文件** - 项目根目录或当前工作目录下的 `.env`（通过 `python-dotenv` 以 `override=True` 加载，会覆盖同名系统环境变量）
+2. **系统环境变量** - 未在 `.env` 中定义时从进程环境读取
+3. **默认值** - 代码中定义的内置默认配置
+
+> 注意：YAML 配置文件 `docuswarm.yaml` 已被移除，DocuSwarm 不再加载任何 YAML 形式的运行时配置。
 
 ### 示例：base_url 配置优先级
 
-```python
-# 优先级 1: 环境变量 ANTHROPIC_BASE_URL
+```bash
+# 优先级 1: .env 文件
+# .env
 ANTHROPIC_BASE_URL=https://custom-api.example.com/v1
 
-# 优先级 2: YAML 配置
-# config/docuswarm.yaml
-base_url: https://api.anthropic.com/v1/
+# 优先级 2: 系统环境变量
+export ANTHROPIC_BASE_URL=https://env.example.com/v1
 
 # 优先级 3: 默认值
-DEFAULT_BASE_URL = "https://api.anthropic.com/v1/"
+# DEFAULT_BASE_URL = "https://api.anthropic.com/v1/"
 ```
 
 ## 自定义 Anthropic API Endpoint

@@ -80,6 +80,10 @@ _backup_count: int = 5
 # Custom sensitive keys (set via configure_logging)
 _sensitive_keys: list[str] = []
 
+# Pipeline-specific log handlers cache: pipeline_id -> RotatingFileHandler
+_pipeline_log_handlers: dict[str, logging.handlers.RotatingFileHandler] = {}
+_pipeline_log_dir: Path | None = None  # set in configure_logging
+
 
 import re
 
@@ -129,8 +133,42 @@ def get_log_level() -> str:
     return os.environ.get("LOG_LEVEL", "INFO").upper()
 
 
+def _get_pipeline_handler(pipeline_id: str) -> logging.handlers.RotatingFileHandler | None:
+    """Lazily create (and cache) a RotatingFileHandler for a given pipeline_id.
+
+    The handler writes to ``<log_dir>/<sanitized_pipeline_id>.log`` with the same
+    rotation settings as the main log file. Returns None if logging has not been
+    configured yet (i.e. ``_pipeline_log_dir`` is unset).
+    """
+    if _pipeline_log_dir is None:
+        return None
+    handler = _pipeline_log_handlers.get(pipeline_id)
+    if handler is not None:
+        return handler
+    # Sanitize pipeline_id to prevent path traversal or invalid filename chars.
+    safe_id = re.sub(r"[^A-Za-z0-9_.\-]", "_", pipeline_id)
+    if not safe_id:
+        return None
+    path = _pipeline_log_dir / f"{safe_id}.log"
+    handler = logging.handlers.RotatingFileHandler(
+        filename=str(path),
+        maxBytes=_max_bytes,
+        backupCount=_backup_count,
+        encoding="utf-8",
+    )
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    _pipeline_log_handlers[pipeline_id] = handler
+    return handler
+
+
 def _write_to_file(event_dict: EventDict) -> None:
-    """Write log event to file using rotating file handler."""
+    """Write log event to file using rotating file handler(s).
+
+    Always writes to the main date-based log file. When the event carries a
+    non-empty ``run_id`` (pipeline_id), the same formatted line is also
+    written to a per-pipeline log file at ``logs/<pipeline_id>.log``.
+    """
     global _log_file_handler, _json_mode
 
     if _log_file_handler is None:
@@ -192,8 +230,16 @@ def _write_to_file(event_dict: EventDict) -> None:
             else:
                 line = f'{timestamp} [{level}] run_id={run_id} node_id={node_id} message="{message}"\n'
 
-        # Use the rotating file handler
-        _log_file_handler.emit(logging.makeLogRecord({"msg": line}))
+        record = logging.makeLogRecord({"msg": line})
+
+        # 1) Always write to the main (date-based) log file.
+        _log_file_handler.emit(record)
+
+        # 2) Additionally write to the per-pipeline log file when run_id is present.
+        if run_id and run_id != "-":
+            pipeline_handler = _get_pipeline_handler(run_id)
+            if pipeline_handler is not None:
+                pipeline_handler.emit(record)
     except Exception:
         # Silently ignore file write errors
         pass
@@ -229,7 +275,7 @@ def configure_logging(
         Configured structlog bound logger
     """
     global _logger, _configured, _log_file, _log_file_handler, _json_mode, _sensitive_keys
-    global _max_bytes, _backup_count
+    global _max_bytes, _backup_count, _pipeline_log_dir
 
     # If already configured, just return existing logger
     if _configured:
@@ -255,6 +301,9 @@ def configure_logging(
     # Determine log directory
     log_directory = log_dir if log_dir else Path("./logs")
     log_directory.mkdir(parents=True, exist_ok=True)
+
+    # Remember log directory for lazy per-pipeline handler creation
+    _pipeline_log_dir = log_directory
 
     # Create date-based log filename (using Beijing time)
     date_str = datetime.now(BEIJING_TZ).strftime("%Y-%m-%d")
@@ -424,12 +473,21 @@ def reset_logging() -> None:
 
     Useful for testing or reconfiguration.
     """
-    global _logger, _configured, _log_file, _log_file_handler
+    global _logger, _configured, _log_file, _log_file_handler, _pipeline_log_dir
 
     # Close the file handler
     if _log_file_handler is not None:
         _log_file_handler.close()
         _log_file_handler = None
+
+    # Close all per-pipeline file handlers to release file descriptors
+    for handler in list(_pipeline_log_handlers.values()):
+        try:
+            handler.close()
+        except Exception:
+            pass
+    _pipeline_log_handlers.clear()
+    _pipeline_log_dir = None
 
     _logger = None
     _configured = False

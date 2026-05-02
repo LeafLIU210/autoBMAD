@@ -45,7 +45,7 @@ performance:
   # Number of documents to process in a single batch
   batch_size: 10
   # Timeout per document in seconds
-  timeout_per_document_seconds: 30
+  timeout_per_document_seconds: 90
   # Maximum retry attempts for failed LLM calls
   max_retries: 2
   # Maximum file size in bytes (500KB)
@@ -54,10 +54,11 @@ performance:
 # =============================================================================
 # Caching Configuration
 # =============================================================================
-# Document summary caching settings (for future implementation in Story 36.6+)
+# Document summary caching settings (reserved_for_future: Story 36.6+)
+# Phase 3 Fix: Caching is not yet implemented in SummaryAgent code.
 caching:
   # Enable/disable caching
-  enable: true
+  enable: false
   # Time-to-live in hours for cached summaries
   ttl_hours: 24
   # Invalidate cache when source document changes

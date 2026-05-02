@@ -459,8 +459,8 @@ class NodePromptContractBuilder:
             if lookup_normalized in title or title in lookup_normalized:
                 return template
 
-        # 最后返回第一个模板作为兜底
-        return templates[0]
+        # After fix: return None instead of blindly returning templates[0]
+        return None
 
     def _format_template_sections(self, template_data: dict) -> str:
         """Format template sections into prompt text.
@@ -704,7 +704,7 @@ After executing tools, you MUST respond with ONLY this exact JSON structure:
   "questions": [
     {{
       "question": "Question text?",
-      "priority": "blocking | clarifying | optional",
+      "priority": "clarifying | optional",
       "context": "Context or rationale for this question"
     }}
   ],
@@ -718,7 +718,6 @@ After executing tools, you MUST respond with ONLY this exact JSON structure:
 - You MUST include "file_path" and "sha256" from the {tool_name} tool output
 
 **Question Priorities**:
-- **blocking**: Must be answered before proceeding
 - **clarifying**: Help refine the deliverable
 - **optional**: Nice-to-have for future consideration
 """

@@ -1,0 +1,539 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-30T11:46:21.028019+00:00",
+    "tool": "docuswarm_stall_deep_research.py",
+    "version": "1.0",
+    "based_on_evaluation": "2026-04-30-docuswarm-running-stall-log-review.md"
+  },
+  "executive_summary": {
+    "total_findings": 12,
+    "critical_count": 4,
+    "high_count": 3,
+    "medium_count": 5,
+    "confirmed_hypotheses": 3
+  },
+  "hypotheses": {
+    "H1": {
+      "statement": "pipeline 并非 SummaryAgent 阶段失败",
+      "status": "confirmed",
+      "evidence": [
+        "日志存在 summary_generation_complete success_count=1 failure_count=0",
+        "日志存在 node_execution_started analyst"
+      ]
+    },
+    "H2": {
+      "statement": "pipeline 停在 analyst IndependentAgent 的 SDK session 消息流阶段",
+      "status": "confirmed",
+      "evidence": [
+        "日志存在 session_created",
+        "日志存在 SDK llm_message_received 到 message 5",
+        "无 llm_prompt_complete",
+        "无工具调用、交付物、节点完成"
+      ]
+    },
+    "H3": {
+      "statement": "DB 的 running 状态已失真",
+      "status": "confirmed",
+      "evidence": [
+        "DB 存在 5 个 running pipeline",
+        "输出目录为空，node_results 为空",
+        "当前进程列表没有对应 DocuSwarm 运行进程",
+        "当前进程数: 1 个 docuswarm/claude 相关进程"
+      ]
+    }
+  },
+  "db_audit": {
+    "db_exists": true,
+    "db_path": "/home/leafliu/autoBMAD/docuswarm.db",
+    "pipeline_status_counts": {
+      "completed": 6,
+      "failed": 3,
+      "pending": 4,
+      "running": 5
+    },
+    "running_pipelines": [
+      {
+        "pipeline_id": "pipeline-1777548246143-43a13bf8",
+        "subject": "calc-context",
+        "current_node": "analyst",
+        "created_at": "2026-04-30 11:24:06",
+        "updated_at": "2026-04-30 11:24:06",
+        "state_json_current_node_session_id": null,
+        "state_json_session_ids": {},
+        "state_json_docs_context_summary_count": 0,
+        "node_runs_count": 0,
+        "node_results_count": 0,
+        "shared_context_history_count": 0
+      },
+      {
+        "pipeline_id": "pipeline-1777439345215-46a35fb3",
+        "subject": "calc-context",
+        "current_node": "analyst",
+        "created_at": "2026-04-29 05:09:05",
+        "updated_at": "2026-04-29 05:09:05",
+        "state_json_current_node_session_id": null,
+        "state_json_session_ids": {},
+        "state_json_docs_context_summary_count": 0,
+        "node_runs_count": 0,
+        "node_results_count": 0,
+        "shared_context_history_count": 0
+      },
+      {
+        "pipeline_id": "pipeline-1777437705338-d1843527",
+        "subject": "calc-context",
+        "current_node": "analyst",
+        "created_at": "2026-04-29 04:41:45",
+        "updated_at": "2026-04-29 04:41:45",
+        "state_json_current_node_session_id": null,
+        "state_json_session_ids": {},
+        "state_json_docs_context_summary_count": 0,
+        "node_runs_count": 0,
+        "node_results_count": 0,
+        "shared_context_history_count": 0
+      },
+      {
+        "pipeline_id": "pipeline-1777432796674-281acb43",
+        "subject": "calc-context",
+        "current_node": "analyst",
+        "created_at": "2026-04-29 03:19:56",
+        "updated_at": "2026-04-29 03:19:56",
+        "state_json_current_node_session_id": null,
+        "state_json_session_ids": {},
+        "state_json_docs_context_summary_count": 0,
+        "node_runs_count": 0,
+        "node_results_count": 0,
+        "shared_context_history_count": 0
+      },
+      {
+        "pipeline_id": "pipeline-1777432672599-6f044d0c",
+        "subject": "calc-context",
+        "current_node": "analyst",
+        "created_at": "2026-04-29 03:17:52",
+        "updated_at": "2026-04-29 03:17:52",
+        "state_json_current_node_session_id": null,
+        "state_json_session_ids": {},
+        "state_json_docs_context_summary_count": 0,
+        "node_runs_count": 0,
+        "node_results_count": 0,
+        "shared_context_history_count": 0
+      }
+    ],
+    "pipelines_columns": [
+      "pipeline_id",
+      "subject",
+      "status",
+      "current_node",
+      "state_json",
+      "created_at",
+      "updated_at"
+    ],
+    "missing_lease_fields": [
+      "owner_pid",
+      "host",
+      "last_heartbeat_at",
+      "last_event_at"
+    ]
+  },
+  "log_audit": {
+    "latest_log": "docuswarm-2026-04-30.log",
+    "latest_log_path": "/home/leafliu/autoBMAD/logs/docuswarm-2026-04-30.log",
+    "total_lines": 156,
+    "terminal_events_found": [],
+    "terminal_events_missing": [
+      "llm_prompt_complete",
+      "independent_agent_completed",
+      "node_execution_completed",
+      "pipeline_started",
+      "pipeline_execution_error",
+      "prompt_timeout",
+      "prompt_idle_exceeded"
+    ],
+    "last_10_lines": [
+      "2026-04-30T19:25:06.571211+08:00 [info] run_id=pipeline-1777548246143-43a13bf8 node_id=orchestrator message=\"llm_message_received\" component=ClaudeSessionWrapper session_id=session_5d79b774cc4f msg_type=UserMessage message_index=4 has_role=False",
+      "2026-04-30T19:25:06.571351+08:00 [debug] run_id=pipeline-1777548246143-43a13bf8 node_id=analyst message=\"llm_message_received\" agent=IndependentAgent message_index=4 msg_type=UserMessage has_role=False",
+      "2026-04-30T19:25:12.240948+08:00 [info] run_id=pipeline-1777548246143-43a13bf8 node_id=orchestrator message=\"llm_message_received\" component=ClaudeSessionWrapper session_id=session_5d79b774cc4f msg_type=AssistantMessage message_index=5 has_role=False",
+      "2026-04-30T19:25:12.241100+08:00 [debug] run_id=pipeline-1777548246143-43a13bf8 node_id=analyst message=\"llm_message_received\" agent=IndependentAgent message_index=5 msg_type=AssistantMessage has_role=False"
+    ],
+    "session_created_count": 1,
+    "output_pipeline_dirs": 2,
+    "empty_output_dirs": [
+      "pipeline-1777439345215-46a35fb3",
+      "pipeline-1777548246143-43a13bf8"
+    ]
+  },
+  "code_audit": {
+    "finalization_coverage": {
+      "orchestrator": {
+        "has_keyboard_interrupt": false,
+        "has_cancelled_error": false,
+        "has_sigterm": false,
+        "has_atexit": false
+      },
+      "cli_start": {
+        "has_keyboard_interrupt": false,
+        "has_cancelled_error": false,
+        "has_sigterm": false,
+        "has_atexit": false
+      },
+      "independent_agent": {
+        "has_keyboard_interrupt": false,
+        "has_cancelled_error": false,
+        "has_sigterm": false,
+        "has_atexit": false
+      },
+      "session_manager": {
+        "has_keyboard_interrupt": false,
+        "has_cancelled_error": true,
+        "has_sigterm": false,
+        "has_atexit": false
+      }
+    }
+  },
+  "findings": [
+    {
+      "id": "P0-1-CODE",
+      "category": "orchestrator",
+      "severity": "Critical",
+      "title": "orchestrator 只捕获 Exception，不处理 CancelledError/KeyboardInterrupt",
+      "detail": "start_pipeline() 的 try/except 只捕获 Exception，CancelledError 处理: False, KeyboardInterrupt 处理: False. 任何外部中断都会绕过 except 块，导致 DB 状态永久 running。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:512",
+          "type": "exception_handler",
+          "code": [
+            "512:         except Exception as e:",
+            "513:             logger.error(\"pipeline_execution_error\", error=str(e))",
+            "514:             _ = await self._state_manager.update_pipeline_state(",
+            "515:                 final_pipeline_id,",
+            "516:                 {\"status\": \"failed\"},",
+            "517:             )",
+            "518:             return {",
+            "519:                 \"pipeline_id\": final_pipeline_id,",
+            "520:                 \"status\": FAILED,",
+            "521:                 \"failed_nodes\": [],",
+            "522:                 \"error\": {\"message\": str(e), \"type\": type(e).__name__},",
+            "523:                 \"completed_nodes\": [],",
+            "524:                 \"deliverables\": {},",
+            "525:             }",
+            "526:         finally:",
+            "527:             # Close checkpointer connection to prevent process hang",
+            "528:             if checkpointer is not None and hasattr(checkpointer, \"conn\"):",
+            "529:                 try:",
+            "530:                     await checkpointer.conn.close()",
+            "531:                 except Exception:"
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py",
+          "type": "cancellation_coverage",
+          "has_cancelled_error_handler": false,
+          "has_keyboard_interrupt_handler": false
+        }
+      ],
+      "recommendation": "添加 except (asyncio.CancelledError, KeyboardInterrupt) 分支，持久化中断状态后再 re-raise。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P0-1-CLI",
+      "category": "cli",
+      "severity": "Critical",
+      "title": "CLI start 命令不捕获 KeyboardInterrupt",
+      "detail": "start.py 只捕获 Exception 和 FileNotFoundError，不包含 KeyboardInterrupt (False) 或 CancelledError (False). 用户按 Ctrl+C 时进程直接退出，不会更新 pipeline 状态。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/cli/commands/start.py",
+          "code": [
+            "",
+            "    except click.ClickException:",
+            "        raise",
+            "    except FileNotFoundError as e:",
+            "        console.print(f\"[red]Error: {e}[/red]\")",
+            "        raise click.ClickException(str(e)) from e",
+            "    except Exception as e:",
+            "        console.print(f\"[red]Error: Failed to start pipeline: {e}[/red]\")",
+            "        raise click.ClickException(f\"Failed to start pipeline: {e}\") from e",
+            ""
+          ]
+        }
+      ],
+      "recommendation": "在 CLI 层添加 KeyboardInterrupt 捕获，调用 StateManager 标记为 cancelled/interrupted。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P0-3",
+      "category": "resource_leak",
+      "severity": "High",
+      "title": "节点专用 SessionManager 在 finally 中不关闭",
+      "detail": "IndependentAgent.execute_with_input() 的 finally 只恢复 self.session_manager = original_session_manager，不调用 pipeline_session_manager.close_all() (False). 异常/取消路径会残留 SDK client/subprocess。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/agents/independent.py:1057",
+          "type": "finally_block",
+          "code": [
+            "1057:         finally:",
+            "1058:             # Restore original session_manager",
+            "1059:             self.session_manager = original_session_manager",
+            "1060: ",
+            "1061:         # Parse and validate response",
+            "1062:         output = self._parse_response(response)",
+            "1063: ",
+            "1064:         self.logger.info(",
+            "1065:             \"independent_agent_completed\",",
+            "1066:             deliverable_title=output.get(\"deliverable\", {}).get(\"title\", \"unknown\"),"
+          ]
+        }
+      ],
+      "recommendation": "在 finally 中添加 await pipeline_session_manager.close_all()。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P1-1",
+      "category": "llm",
+      "severity": "Medium-High",
+      "title": "single_prompt() 吞掉 CancelledError，返回空列表",
+      "detail": "session_manager.py 捕获 asyncio.CancelledError 后记录日志并返回 []，上层无法区分'调用被取消'和'模型空响应'，导致错误分类错误和可能的无意义重试。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/llm/session_manager.py:824",
+          "type": "cancelled_error_handler",
+          "code": [
+            "824:         except asyncio.CancelledError:",
+            "825:             self._logger.info(\"single_prompt_cancelled\")",
+            "826:             return []",
+            "827: ",
+            "828:         except LLMError:"
+          ]
+        }
+      ],
+      "recommendation": "默认重新抛出 CancelledError，或包装成带 api_error_type='CancelledError' 的 LLMError。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P1-2",
+      "category": "config",
+      "severity": "Medium",
+      "title": "SummaryAgent timeout_per_document_seconds 偏紧",
+      "detail": "当前 timeout_per_document_seconds=30, max_retries=2. 日志显示 1796 bytes 文件首次调用耗时 33.7s 被取消，第二次 18.1s 成功。30s 对网络波动和模型延迟偏紧，容易触发无意义重试。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/config/summary_agent.yaml",
+          "timeout": 30,
+          "max_retries": 2,
+          "config_snippet": "# Summary Agent Configuration\n# Story 36.2: Create Summary Agent Configuration\n# Location: autoBMAD/docuswarm/config/summary_agent.yaml\n# Description: Central YAML configuration for Summary Agent behavior\n\nversion: \"1.0\"\n\n# =============================================================================\n# Agent Metadata\n# =============================================================================\nagent_metadata:\n  agent_id: \"summary_agent\"\n  name: \"Summary Agent\"\n  description: \"Generates structu"
+        }
+      ],
+      "recommendation": "提升到 60-120s，或按内容长度动态计算；分离 timeout/cancelled/empty 的计数和告警。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P1-3",
+      "category": "state_sync",
+      "severity": "Medium",
+      "title": "docs_context_summary 没有在 graph 前同步到 StateManager",
+      "detail": "_summarize_referenced_documents() 返回 docs_context_summary 后，直接传入 graph initial_state，但没有调用 StateManager.update_pipeline_state() (True). graph 中途停止时，DB state_json.docs_context_summary 为空，resume/status/debug 丢失上下文。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:451-470",
+          "has_pre_graph_persistence": true
+        }
+      ],
+      "recommendation": "在 documents_summarized 日志后立即更新 StateManager 的 docs_context_summary 字段。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P2-1",
+      "category": "observability",
+      "severity": "Medium",
+      "title": "node_runs 与 node_results 未被当前执行链路使用",
+      "detail": "executor.py 中 node_runs 引用: False, save_node_result 调用: False. _execute_node() 只在内存 state 中更新，不写入 node_runs 表。DB 缺少'正在运行哪个节点、哪次迭代、开始时间、session id、最后事件'的事实记录。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/node_execution/executor.py",
+          "has_node_runs_reference": false,
+          "has_save_node_result": false
+        }
+      ],
+      "recommendation": "节点进入时创建 node_runs 记录，session 创建后更新 session_id，完成/失败/取消时更新状态。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "P0-2",
+      "category": "state_sync",
+      "severity": "High",
+      "title": "in-flight session 未持久化到 StateManager",
+      "detail": "IndependentAgent 创建 pipeline_session_manager 并生成 session，但 session_id 没有回写 pipeline state (False). DB current_node_session_id 为 null，resume 无法恢复 session，只能重跑节点。",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/agents/independent.py",
+          "has_session_id_persistence": false
+        }
+      ],
+      "recommendation": "session 创建成功后通过回调写入 current_node_session_id、session_ids、session_metadata。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "DB-AUDIT",
+      "category": "database",
+      "severity": "High",
+      "title": "数据库审计：存在 stale running pipeline 且缺少 lease/heartbeat 字段",
+      "detail": "发现 5 个 running pipeline(s). pipelines 表缺少字段: ['owner_pid', 'host', 'last_heartbeat_at', 'last_event_at']. 没有机制区分'真正运行中'和'已中断但状态未更新'。",
+      "evidence": [
+        {
+          "running_pipelines": [
+            {
+              "pipeline_id": "pipeline-1777548246143-43a13bf8",
+              "subject": "calc-context",
+              "current_node": "analyst",
+              "created_at": "2026-04-30 11:24:06",
+              "updated_at": "2026-04-30 11:24:06",
+              "state_json_current_node_session_id": null,
+              "state_json_session_ids": {},
+              "state_json_docs_context_summary_count": 0,
+              "node_runs_count": 0,
+              "node_results_count": 0,
+              "shared_context_history_count": 0
+            },
+            {
+              "pipeline_id": "pipeline-1777439345215-46a35fb3",
+              "subject": "calc-context",
+              "current_node": "analyst",
+              "created_at": "2026-04-29 05:09:05",
+              "updated_at": "2026-04-29 05:09:05",
+              "state_json_current_node_session_id": null,
+              "state_json_session_ids": {},
+              "state_json_docs_context_summary_count": 0,
+              "node_runs_count": 0,
+              "node_results_count": 0,
+              "shared_context_history_count": 0
+            },
+            {
+              "pipeline_id": "pipeline-1777437705338-d1843527",
+              "subject": "calc-context",
+              "current_node": "analyst",
+              "created_at": "2026-04-29 04:41:45",
+              "updated_at": "2026-04-29 04:41:45",
+              "state_json_current_node_session_id": null,
+              "state_json_session_ids": {},
+              "state_json_docs_context_summary_count": 0,
+              "node_runs_count": 0,
+              "node_results_count": 0,
+              "shared_context_history_count": 0
+            },
+            {
+              "pipeline_id": "pipeline-1777432796674-281acb43",
+              "subject": "calc-context",
+              "current_node": "analyst",
+              "created_at": "2026-04-29 03:19:56",
+              "updated_at": "2026-04-29 03:19:56",
+              "state_json_current_node_session_id": null,
+              "state_json_session_ids": {},
+              "state_json_docs_context_summary_count": 0,
+              "node_runs_count": 0,
+              "node_results_count": 0,
+              "shared_context_history_count": 0
+            },
+            {
+              "pipeline_id": "pipeline-1777432672599-6f044d0c",
+              "subject": "calc-context",
+              "current_node": "analyst",
+              "created_at": "2026-04-29 03:17:52",
+              "updated_at": "2026-04-29 03:17:52",
+              "state_json_current_node_session_id": null,
+              "state_json_session_ids": {},
+              "state_json_docs_context_summary_count": 0,
+              "node_runs_count": 0,
+              "node_results_count": 0,
+              "shared_context_history_count": 0
+            }
+          ],
+          "missing_columns": [
+            "owner_pid",
+            "host",
+            "last_heartbeat_at",
+            "last_event_at"
+          ]
+        }
+      ],
+      "recommendation": "添加 owner_pid, host, last_heartbeat_at, last_event_at 字段；实现 stale-running 检测。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "LOG-AUDIT",
+      "category": "logs",
+      "severity": "Critical",
+      "title": "日志审计：最新日志缺少所有 terminal completion 事件",
+      "detail": "日志文件 docuswarm-2026-04-30.log 共 156 行，找到 terminal 事件: [], 缺失: ['llm_prompt_complete', 'independent_agent_completed', 'node_execution_completed', 'pipeline_started', 'pipeline_execution_error', 'prompt_timeout', 'prompt_idle_exceeded']. 日志在 SDK message stream 中途停止，没有正常结束或失败记录。",
+      "evidence": [
+        {
+          "last_lines": [
+            "2026-04-30T19:25:06.571211+08:00 [info] run_id=pipeline-1777548246143-43a13bf8 node_id=orchestrator message=\"llm_message_received\" component=ClaudeSessionWrapper session_id=session_5d79b774cc4f msg_type=UserMessage message_index=4 has_role=False",
+            "2026-04-30T19:25:06.571351+08:00 [debug] run_id=pipeline-1777548246143-43a13bf8 node_id=analyst message=\"llm_message_received\" agent=IndependentAgent message_index=4 msg_type=UserMessage has_role=False",
+            "2026-04-30T19:25:12.240948+08:00 [info] run_id=pipeline-1777548246143-43a13bf8 node_id=orchestrator message=\"llm_message_received\" component=ClaudeSessionWrapper session_id=session_5d79b774cc4f msg_type=AssistantMessage message_index=5 has_role=False",
+            "2026-04-30T19:25:12.241100+08:00 [debug] run_id=pipeline-1777548246143-43a13bf8 node_id=analyst message=\"llm_message_received\" agent=IndependentAgent message_index=5 msg_type=AssistantMessage has_role=False"
+          ],
+          "session_created_lines": [
+            "2026-04-30T19:25:00.255314+08:00 [info] run_id=pipeline-1777548246143-43a13bf8 node_id=analyst message=\"session_created\" component=SessionManager cwd=/home/leafliu output_dir=/home/leafliu/autoBMAD/output/pipeline-1777548246143-43a13bf8 agent_file=/home/leafliu/autoBMAD/docuswarm/agents/configs/independent_agent.yaml pipeline_id=pipeline-1777548246143-43a13bf8 session_id=session_5d79b774cc4f mode=agent"
+          ]
+        }
+      ],
+      "recommendation": "添加 session/message 级别的 heartbeat 日志；在进程退出时强制 flush 日志并记录 finalization。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "OUTPUT-AUDIT",
+      "category": "filesystem",
+      "severity": "Medium",
+      "title": "输出目录审计：存在空的 pipeline 输出目录",
+      "detail": "发现 2 个空输出目录: ['pipeline-1777439345215-46a35fb3', 'pipeline-1777548246143-43a13bf8']... 说明 pipeline 已进入节点执行但没有产生交付物或写入任何文件。",
+      "evidence": [
+        {
+          "empty_dirs": [
+            "pipeline-1777439345215-46a35fb3",
+            "pipeline-1777548246143-43a13bf8"
+          ]
+        }
+      ],
+      "recommendation": "在节点开始时写入 .pipeline-meta 文件记录 session_id 和开始时间。",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ARCH-GAP",
+      "category": "architecture",
+      "severity": "Critical",
+      "title": "全链路缺少中断 finalization 机制",
+      "detail": "所有关键文件都不捕获 KeyboardInterrupt 或 SIGTERM，也不注册 atexit handler。进程被外部终止时，没有机制将 pipeline 状态从 running 更新为 cancelled/failed/interrupted。",
+      "evidence": [
+        {
+          "finalization_coverage": {
+            "orchestrator": {
+              "has_keyboard_interrupt": false,
+              "has_cancelled_error": false,
+              "has_sigterm": false,
+              "has_atexit": false
+            },
+            "cli_start": {
+              "has_keyboard_interrupt": false,
+              "has_cancelled_error": false,
+              "has_sigterm": false,
+              "has_atexit": false
+            },
+            "independent_agent": {
+              "has_keyboard_interrupt": false,
+              "has_cancelled_error": false,
+              "has_sigterm": false,
+              "has_atexit": false
+            },
+            "session_manager": {
+              "has_keyboard_interrupt": false,
+              "has_cancelled_error": true,
+              "has_sigterm": false,
+              "has_atexit": false
+            }
+          }
+        }
+      ],
+      "recommendation": "在 orchestrator 和 CLI 层添加中断处理；考虑注册 atexit handler 进行最终状态刷新。",
+      "hypothesis_status": "confirmed"
+    }
+  ]
+}

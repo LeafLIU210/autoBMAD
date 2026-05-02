@@ -583,7 +583,7 @@ class IndependentOutputValidationStrategy(ValidationStrategy):
     """
 
     # Valid question priorities
-    VALID_PRIORITIES: set[str] = {"blocking", "clarifying", "optional"}
+    VALID_PRIORITIES: set[str] = {"clarifying", "optional"}
 
     # Valid action values for submit_execution_report format
     VALID_ACTIONS: set[str] = {"create_deliverable"}

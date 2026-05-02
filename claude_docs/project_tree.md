@@ -1,7 +1,7 @@
 # DocuSwarm 项目结构说明
 
-**版本**: 2.1
-**最后更新**: 2026-04-05
+**版本**: 2.2
+**最后更新**: 2026-05-02
 **项目**: DocuSwarm Multi-Agent Orchestration System
 
 ---
@@ -25,58 +25,69 @@ DocuSwarm/                     # 项目根目录
 │   │   ├── llm/               # LLM 集成
 │   │   │   ├── session_manager.py  # SessionManager
 │   │   │   ├── response.py    # ResponseParser
+│   │   │   ├── approval.py    # ApprovalSystem
 │   │   │   ├── mode_mapper.py # ModeMapper
-│   │   │   └── claude_sdk_wrapper.py  # Claude SDK 封装
-│   │   ├── models/            # 数据模型
-│   │   │   ├── tool.py        # 工具定义
-│   │   │   └── tool_registry.py  # 工具注册表
+│   │   │   ├── tool_filter.py # ToolFilter
+│   │   │   └── config.py      # LLM 配置
 │   │   ├── nodes/             # 节点系统
 │   │   │   ├── dual_agent.py  # DualAgentNode
 │   │   │   ├── iteration.py   # IterationController
 │   │   │   └── loader.py      # NodeConfigLoader
 │   │   ├── node_execution/    # 节点执行系统
 │   │   │   ├── executor.py    # NodeExecutor
-│   │   │   ├── flow.py        # ExecutionFlow
+│   │   │   ├── pipeline_adapter.py  # PipelineAdapter
+│   │   │   ├── context_builder.py   # ContextBuilder
 │   │   │   ├── state.py       # ExecutionState
-│   │   │   ├── metrics.py     # MetricsCollector
-│   │   │   └── validator.py   # ContextValidator
+│   │   │   ├── metrics.py     # ExecutionMetrics
+│   │   │   ├── node_escalation.py   # EscalationHandler
+│   │   │   ├── run_tracker.py # RunTracker
+│   │   │   ├── chaining.py    # NodeChaining
+│   │   │   └── contracts.py   # ExecutionContracts
 │   │   ├── pipeline/          # 流水线编排
 │   │   │   ├── orchestrator.py   # HybridOrchestrator
 │   │   │   ├── state.py       # PipelineState
 │   │   │   ├── graph.py       # LangGraph 图定义
-│   │   │   ├── checkpoint_manager.py  # 检查点管理
-│   │   │   ├── context_validator.py   # 上下文验证
-│   │   │   └── quality.py     # VerdictDeterminer
+│   │   │   ├── quality.py     # VerdictDeterminer
+│   │   │   ├── questions.py   # QuestionHandler
+│   │   │   ├── transitions.py # StateTransitions
+│   │   │   ├── metrics.py     # PipelineMetrics
+│   │   │   ├── force_completion.py  # ForceCompletion
+│   │   │   ├── escalation.py  # EscalationHandler
+│   │   │   └── lease.py       # LeaseManager
 │   │   ├── prompts/           # 提示词模板
-│   │   │   ├── templates/     # YAML 模板文件
+│   │   │   ├── templates/     # YAML/Markdown 模板文件
 │   │   │   ├── template_loader.py
+│   │   │   ├── template_engine.py
+│   │   │   ├── contract_builder.py
+│   │   │   ├── skill_injector.py
+│   │   │   ├── validator.py
 │   │   │   ├── independent_agent.py
 │   │   │   └── evaluator_agent.py
 │   │   ├── storage/           # 存储层
 │   │   │   ├── state_manager.py
 │   │   │   ├── checkpoints.py
 │   │   │   ├── database.py
-│   │   │   └── files.py
+│   │   │   ├── files.py
+│   │   │   └── state_access.py
 │   │   ├── tools/             # 工具函数
-│   │   │   ├── create_deliverable.py
+│   │   │   ├── create_deliverable.py / create_deliverable_sdk.py
 │   │   │   ├── create_document_set.py
-│   │   │   ├── update_context.py
-│   │   │   ├── update_docs_file.py
-│   │   │   ├── read_docs_file.py
-│   │   │   ├── list_docs_files.py
-│   │   │   └── tool_result_extractor.py
+│   │   │   ├── update_context.py / update_context_sdk.py
+│   │   │   ├── file_tools.py / file_tools_sdk.py
+│   │   │   ├── search_tools.py / search_tools_sdk.py
+│   │   │   ├── tool_registry.py
+│   │   │   ├── tool_result.py
+│   │   │   ├── callable_tool_wrapper.py
+│   │   │   ├── sdk_adapter.py
+│   │   │   └── protocols.py
 │   │   ├── utils/             # 工具类
 │   │   │   ├── logging.py
-│   │   │   ├── session_ids.py
-│   │   │   └── context_resolver.py
-│   │   ├── tests/             # 测试文件
-│   │   │   ├── unit/          # 单元测试
-│   │   │   ├── integration/   # 集成测试
-│   │   │   ├── cli/           # CLI 测试
-│   │   │   └── conftest.py    # Pytest 配置
+│   │   │   └── session_ids.py
 │   │   ├── config.py          # 配置管理
 │   │   ├── exceptions.py      # 异常定义
-│   │   ├── main.py            # CLI 入口
+│   │   ├── public_api.py      # 稳定公共 API
+│   │   ├── __main__.py        # 模块入口
+│   │   ├── __init__.py        # 包初始化
 │   │   ├── README.md          # DocuSwarm 文档
 │   │   └── CONFIGURATION.md   # 配置说明
 │   │
@@ -131,37 +142,22 @@ DocuSwarm/                     # 项目根目录
 │   └── git-commit-trigger-update.md  # Git 提交触发更新
 │
 ├── docs/                      # 项目文档
-│   ├── architecture/          # 架构文档
-│   ├── epics/                 # Epic 文档
+│   ├── bubble-sort/           # Bubble Sort 示例
+│   ├── calc-one-plus-one/     # 计算器示例
 │   ├── evaluation/            # 评估报告
-│   ├── migration/             # 迁移文档
-│   ├── plan/                  # 计划文档 (PRD, UX)
-│   ├── qa/gates/              # QA 门控配置
-│   ├── reports/               # 研究报告
-│   ├── research/              # 研究文档
-│   ├── solution/              # TDD 解决方案
-│   └── stories/               # Story 文档
-│
-├── nodes/                     # 节点配置（根目录）
-│   ├── analyst/
-│   ├── pm/
-│   ├── ux/
-│   ├── architect/
-│   └── po/
+│   └── research/              # 研究文档
 │
 ├── scripts/                   # 脚本工具
-├── tests/                     # 根级测试目录
+├── tests/                     # 测试目录
 ├── output/                    # 输出目录
 ├── logs/                      # 日志目录
 ├── .bmad-core/               # BMAD 核心配置
-├── .agents/                   # Agent 配置
 │
 ├── README.md                  # 项目主文档
 ├── CLAUDE.md                  # Claude Code 指导文档
 ├── SETUP.md                   # 安装指南
 ├── pyproject.toml             # 项目配置
 ├── requirements.txt           # 生产依赖
-├── requirements-dev.txt       # 开发依赖
 ├── .env                       # 环境变量（不提交）
 ├── .gitignore                 # Git 忽略规则
 └── .pre-commit-config.yaml    # 预提交钩子
@@ -230,5 +226,6 @@ ANTHROPIC_API_KEY=your_api_key_here
 ---
 
 **版本历史**:
+- v2.2 (2026-05-02): 根据 autoBMAD/docuswarm 实际代码对齐更新目录结构
 - v2.0 (2026-03-02): 更新为 DocuSwarm 实际项目结构
 - v1.0 (2026-01-04): 初始版本

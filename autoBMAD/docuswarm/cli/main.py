@@ -11,13 +11,12 @@ import click
 
 from autoBMAD.docuswarm import __version__
 from autoBMAD.docuswarm.cli.commands import (
-    answer,
     cancel,
     cancel_all,
     clean,
+    diagnostics,
     export,
     list_pipelines,
-    questions,
     resume,
     start,
     status,
@@ -82,8 +81,7 @@ cli.add_command(cancel_all)
 cli.add_command(clean)
 cli.add_command(list_pipelines)
 cli.add_command(export)
-cli.add_command(questions)
-cli.add_command(answer)
+cli.add_command(diagnostics)
 
 if __name__ == "__main__":
     cli()

@@ -16,8 +16,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
-import yaml
-
 from autoBMAD.docuswarm.agents.evaluator_config.schemas import (
     DEFAULT_THRESHOLDS,
     WEIGHT_SUM_TOLERANCE,

@@ -165,11 +165,21 @@ class SessionManager:
         self._active_wrappers: dict[str, ClaudeSessionWrapper] = {}
         self._logger = logger.bind(
             component="SessionManager",
-            cwd=str(self._cwd),
+            repo_root=str(self._cwd),
+            package_root=str(self._cwd / "autoBMAD") if self._cwd else None,
+            sdk_cwd=str(self._cwd),
             output_dir=str(self._output_dir),
             agent_file=str(agent_file) if agent_file else None,
             node_id=node_id,
             pipeline_id=pipeline_id,  # F2 Fix: 记录 pipeline_id
+        )
+        # P1-2 Fix: log path resolution details for debugging
+        self._logger.info(
+            "session_manager_initialized",
+            repo_root=str(self._cwd),
+            package_root=str(self._cwd / "autoBMAD") if self._cwd else None,
+            sdk_cwd=str(self._cwd),
+            output_dir=str(self._output_dir),
         )
 
     def _stderr_callback(self, line: str) -> None:
@@ -823,7 +833,7 @@ class SessionManager:
 
         except asyncio.CancelledError:
             self._logger.info("single_prompt_cancelled")
-            return []
+            raise
 
         except LLMError:
             # Re-raise LLMError as-is (includes error_max_structured_output_retries)
@@ -1236,6 +1246,15 @@ class ClaudeSessionWrapper:
                             message_index=messages_received,
                             has_role=getattr(msg, "role", None) is not None,
                         )
+                        # P0-2 Fix: ResultMessage signals turn completion
+                        if isinstance(msg, ResultMessage):
+                            self._logger.info(
+                                "prompt_result_received",
+                                result=getattr(msg, "result", None),
+                                messages_received=messages_received,
+                            )
+                            yield msg
+                            break
                         yield msg
             except LLMError:
                 # P0 Fix: idle timeout 后主动清理 session

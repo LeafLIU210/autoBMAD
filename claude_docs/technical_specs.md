@@ -1,7 +1,7 @@
 # 技术规范详细说明 - DocuSwarm
 
-**版本**: 3.1
-**最后更新**: 2026-03-02
+**版本**: 3.2
+**最后更新**: 2026-05-02
 **项目**: DocuSwarm Multi-Agent Orchestration System (claude-agent-sdk architecture)
 
 ---
@@ -173,53 +173,58 @@
 ```txt
 # DocuSwarm Multi-Agent Orchestration System
 # Production Dependencies
-# Updated: 2026-03-02 (claude-agent-sdk architecture)
+# Updated: 2026-04-28 (claude-agent-sdk architecture)
+# Python: >=3.12
 
 # === Core Framework ===
-langgraph>=0.2.0
-langgraph-checkpoint-sqlite>=3.0.0
-langchain>=0.3.0
+langgraph>=0.2.50,<0.3.0
+langgraph-checkpoint-sqlite>=2.0.4,<3.0.0
+langchain>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
 
 # === LLM Integration ===
 claude-agent-sdk>=0.1.0,<0.2.0
 
 # === Configuration & Data ===
-PyYAML>=6.0.0
-pydantic>=2.0.0
-python-dotenv>=1.0.0
+PyYAML==6.0.3
+pydantic>=2.0.0,<3.0.0
+python-dotenv>=1.0.0,<2.0.0
+
+# === Database ===
+aiosqlite>=0.19.0,<1.0.0
 
 # === Logging ===
-structlog>=24.0.0
-structlog>=24.0.0
+structlog>=24.0.0,<25.0.0
 
 # === CLI & UI ===
-click>=8.1.0
-rich>=13.0.0
+click>=8.1.0,<9.0.0
+rich==14.2.0
 
-# === Async & IO ===
-aiofiles>=23.0.0
-watchfiles>=0.21.0
+# === Async IO ===
+aiofiles>=24.0.0,<26.0.0
 ```
 
 #### requirements-dev.txt (开发依赖)
 ```txt
 # DocuSwarm Development Dependencies
-# Updated: 2026-03-02 (claude-agent-sdk architecture)
+# Updated: 2026-04-28
 
 # ========== Production Dependencies ==========
 -r requirements.txt
 
 # ========== Testing Framework ==========
-pytest>=8.0.0
-pytest-asyncio>=0.23.0
-pytest-json-report>=1.5.0
-pytest-cov>=4.0.0
-pytest-timeout>=2.1.0
-pytest-mock>=3.11.0
+pytest>=8.0.0,<9.0.0
+pytest-asyncio>=0.23.0,<0.24.0
+pytest-cov>=4.0.0,<5.0.0
+pytest-timeout>=2.1.0,<3.0.0
+pytest-mock>=3.12.0,<4.0.0
+typeguard>=4.0.0,<5.0.0
 
 # ========== Code Quality ==========
-ruff>=0.5.0
-basedpyright>=1.1.0
+ruff>=0.5.0,<0.6.0
+basedpyright>=1.1.0,<2.0.0
+black>=24.0.0,<25.0.0
+pre-commit>=3.6.0,<4.0.0
 ```
 
 ---
@@ -231,62 +236,106 @@ basedpyright>=1.1.0
 DocuSwarm项目的核心配置文件：
 
 ```toml
-[project]
-name = "docuswarm"
-version = "1.0.0"
-description = "Multi-agent document orchestration system with BMAD methodology"
-requires-python = ">=3.12.10"
-authors = [
-    {name = "DocuSwarm Team"},
-]
-keywords = ["multi-agent", "LangGraph", "BMAD", "document-automation", "AI", "claude-agent-sdk"]
-dependencies = [
-    "langgraph>=0.2.0",
-    "langgraph-checkpoint-sqlite",
-    "langchain>=0.3.0",
-    "claude-agent-sdk>=0.1.0,<0.2.0",
-    "pyyaml>=6.0.0",
-    "pydantic>=2.0.0",
-    "python-dotenv>=1.0.0",
-    "structlog>=24.0.0",
-    "rich>=13.0.0",
-    "click>=8.1.0",
-    "structlog>=24.0.0",
-    "watchfiles>=0.21.0",
-    "aiofiles>=23.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-json-report>=1.5.0",
-    "pytest-cov>=4.0.0",
-    "pytest-timeout>=2.1.0",
-    "pytest-mock>=3.11.0",
-    "ruff>=0.5.0",
-    "basedpyright>=1.1.0",
-]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project]
+name = "docuswarm"
+version = "1.0.0"
+description = "Multi-agent document orchestration system with BMAD methodology"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "DocuSwarm Team"},
+]
+keywords = ["multi-agent", "LangGraph", "BMAD", "document-automation", "AI", "claude-agent-sdk"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "langgraph>=0.2.50,<0.3.0",
+    "langgraph-checkpoint-sqlite>=2.0.4,<3.0.0",
+    "langchain>=0.3.0,<0.4.0",
+    "langchain-core>=0.3.0,<0.4.0",
+    "claude-agent-sdk>=0.1.0,<0.2.0",
+    "pyyaml==6.0.3",
+    "pydantic>=2.0.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "rich==14.2.0",
+    "click>=8.1.0,<9.0.0",
+    "structlog>=24.0.0,<25.0.0",
+    "aiofiles>=24.0.0,<26.0.0",
+    "aiosqlite>=0.19.0,<1.0.0",
+]
+
+[project.scripts]
+docuswarm = "autoBMAD.docuswarm.cli.main:cli"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-asyncio>=0.23.0,<0.24.0",
+    "pytest-timeout>=2.1.0,<3.0.0",
+    "pytest-mock>=3.12.0,<4.0.0",
+    "typeguard>=4.0.0,<5.0.0",
+    "ruff>=0.5.0,<0.6.0",
+    "basedpyright>=1.1.0,<2.0.0",
+    "black>=24.0.0,<25.0.0",
+    "pre-commit>=3.6.0,<4.0.0",
+]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --strict-markers --cov=docuswarm --cov=nodes --cov-report=term-missing --cov-report=html --tb=short"
-pythonpath = ["."]
+addopts = "-ra -q --strict-markers --cov=autoBMAD.docuswarm --cov-report=term-missing --cov-report=html --tb=short --basetemp=.pytest-temp"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+pythonpath = [".", "autoBMAD"]
 timeout = 300
 markers = [
-    "slow: marks tests as slow",
-    "unit: marks tests as unit tests",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
     "e2e: marks tests as end-to-end tests",
     "agent: marks tests as agent-related tests",
     "pipeline: marks tests as pipeline tests",
     "smoke: marks tests as SDK smoke tests",
+    "llm: marks tests that require real LLM API calls",
+]
+
+[tool.coverage.run]
+source = ["autoBMAD.docuswarm"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
 ]
 
 [tool.ruff]
@@ -294,12 +343,39 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "C4", "UP"]
-ignore = ["E501", "B008"]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["B018", "B017"]
 
 [tool.basedpyright]
 pythonVersion = "3.12.10"
 reportMissingImports = false
+reportMissingModuleSource = false
+reportImplicitRelativeImport = false
+reportArgumentType = false
+reportAttributeAccessIssue = false
+reportExplicitAny = false
+reportUnannotatedClassAttribute = false
+reportAssignmentType = false
+reportAny = false
+reportMissingTypeStubs = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
 ```
 
 ### 2.2 pytest.ini
@@ -461,32 +537,13 @@ class UserService:
         return self._repository.get_by_id(user_id)
 ```
 
-2. **配置文件**:
-   - 项目根目录创建 `.bpr.json` 配置文件
-   - 定义检查范围和规则
-
-```json
-{
-    "include": ["autoBMAD/**/*"],
-    "exclude": ["tests/**/*", "build/**/*"],
-    "report": {
-        "enable": true,
-        "format": "json"
-    }
-}
-```
-
-3. **检查执行**:
+2. **检查执行**:
 ```bash
 # 运行类型检查
-cd basedpyright-workflow
-basedpyright-workflow check
+basedpyright autoBMAD/
 
-# 生成详细报告
-basedpyright-workflow report
-
-# 完整工作流
-basedpyright-workflow workflow
+# 生成详细报告（JSON 格式）
+basedpyright autoBMAD/ --outputjson
 ```
 
 ### 3.2 Ruff代码风格检查
@@ -527,9 +584,7 @@ ruff check --fix docuswarm/
 ruff format docuswarm/
 ```
 
-### 3.3 智能冲突解决
-
-BasedPyright-Workflow 提供智能冲突解决机制：
+### 3.3 冲突解决策略
 
 1. **优先级策略**:
    - 类型错误 (Type Error) > 代码风格 (Style)
@@ -541,13 +596,6 @@ BasedPyright-Workflow 提供智能冲突解决机制：
    - 然后处理代码风格问题
    - 避免重复修复
 
-3. **手动干预**:
-```powershell
-# 使用PowerShell脚本进行自动修复
-cd basedpyright-workflow
-.\fix_unified_errors_new.ps1
-```
-
 ### 3.4 集成到开发流程
 
 #### 预提交检查
@@ -555,7 +603,7 @@ cd basedpyright-workflow
 #!/bin/bash
 # pre-commit.sh
 echo "运行类型检查..."
-basedpyright-workflow check
+basedpyright autoBMAD/
 
 echo "检查代码风格..."
 ruff check --fix autoBMAD/
@@ -568,9 +616,7 @@ pytest tests/
 ```yaml
 # .github/workflows/quality-check.yml
 - name: Run BasedPyright
-  run: |
-    cd basedpyright-workflow
-    basedpyright-workflow check
+  run: basedpyright autoBMAD/
 
 - name: Run Ruff
   run: |
@@ -591,7 +637,7 @@ DocuSwarm 作为 CLI 工具运行，无需打包构建：
 python -m autoBMAD.docuswarm --help
 
 # 启动流水线
-python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
+python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
 ```
 
 ### 4.2 输出结构
@@ -677,23 +723,26 @@ pre-commit run --all-files
 
 ## 6. 类型检查配置
 
-### 6.1 .bpr.json
+### 6.1 basedpyright 配置
 
-基于pyright的配置文件：
+基于pyright的配置通过 `pyproject.toml` 管理：
 
-```json
-{
-    "include": ["autoBMAD/**/*"],
-    "exclude": ["tests/**/*", "build/**/*", "dist/**/*", "venv/**/*"],
-    "report": {
-        "enable": true,
-        "format": "json",
-        "file": "results/basedpyright_results.json"
-    },
-    "typeCheckingMode": "basic",
-    "useLibraryCodeForTypes": true,
-    "verboseOutput": true
-}
+```toml
+[tool.basedpyright]
+pythonVersion = "3.12.10"
+reportMissingImports = false
+reportMissingModuleSource = false
+reportImplicitRelativeImport = false
+reportArgumentType = false
+reportAttributeAccessIssue = false
+reportExplicitAny = false
+reportUnannotatedClassAttribute = false
+reportAssignmentType = false
+reportAny = false
+reportMissingTypeStubs = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
 ```
 
 ### 6.2 类型检查最佳实践
@@ -740,27 +789,7 @@ def get_user(user_id: UserId) -> UserName:
 
 ## 7. 代码风格检查
 
-### 7.1 Black配置
-
-#### pyproject.toml中的配置
-```toml
-[tool.black]
-line-length = 88
-target-version = ['py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.mypy_cache
-  | \.tox
-  | \venv
-  | build
-  | dist
-)/
-'''
-```
+### 7.1 Ruff 格式化
 
 #### 使用示例
 ```bash
@@ -901,6 +930,7 @@ message = "欢迎"  # 直接使用中文字符
 ---
 
 **版本历史**:
+- v3.2 (2026-05-02): 根据实际代码对齐更新依赖版本、配置示例，移除过时工具引用
 - v3.0 (2026-02-20): claude-agent-sdk 架构升级，替换 kimi-agent-sdk，更新依赖和配置
 - v2.0 (2026-02-19): DocuSwarm 项目适配
 - v1.0 (2026-01-04): 初始版本，完整的技术规范说明

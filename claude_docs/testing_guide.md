@@ -1,7 +1,7 @@
 # 测试规范详细说明
 
-**版本**: 2.1
-**最后更新**: 2026-04-05
+**版本**: 2.2
+**最后更新**: 2026-05-02
 
 ---
 
@@ -42,16 +42,11 @@
 
 ```
 tests/
-├── __init__.py
-├── conftest.py            # pytest全局fixture
-├── fixtures/              # 测试固件（TDD关键）
-│   ├── __init__.py
-│   └── mock_data.py       # 测试模拟数据
-├── unit/                  # 单元测试（无UI，快速）
-│   ├── test_models.py
-│   └── test_services.py
-├── integration/           # 集成测试（含DB、文件）
-│   └── test_config.py
+├── conftest.py            # pytest 全局 fixture
+├── test_docuswarm_p0_*.py # P0 优先级测试
+├── test_docuswarm_p1_*.py # P1 优先级测试
+├── test_docuswarm_p2_*.py # P2 优先级测试
+└── ...                    # 其他测试文件
 ```
 
 ---
@@ -141,24 +136,19 @@ class TestPipelineOrchestrator:
 
 ## 6. 测试工具
 
-### 6.1 Fixtest-Workflow
-
-使用Fixtest-Workflow进行测试的自动化扫描、运行和修复。
+### 6.1 测试自动化修复
 
 #### 工作流程
 ```bash
-# 1. 扫描测试文件
-cd fixtest-workflow
-python scan_test_files.py
+# 1. 执行测试
+pytest tests/ -v
 
-# 2. 执行测试
-python run_tests.py
+# 2. 自动修复代码风格
+ruff check --fix autoBMAD/
+ruff format autoBMAD/
 
-# 3. 自动修复
-.\fix_tests.ps1
-
-# 4. 验证修复
-python run_tests.py
+# 3. 验证修复
+pytest tests/ -v
 ```
 
 ### 6.2 代码覆盖率
@@ -178,4 +168,5 @@ pytest --cov=autoBMAD/docuswarm --cov-report=html --cov-report=term
 ---
 
 **版本历史**:
+- v2.2 (2026-05-02): 根据实际代码更新测试目录结构，移除过时工具引用
 - v1.0 (2026-01-04): 初始版本，完整的测试规范说明

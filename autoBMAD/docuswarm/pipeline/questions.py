@@ -135,6 +135,13 @@ class QuestionHandler:
 
         for q_data in questions_data:
             priority_str = q_data.get("priority", "OPTIONAL").upper()
+            # Phase 0 Fix: downgrade historic "blocking" to "clarifying"
+            if priority_str == "BLOCKING":
+                logger.warning(
+                    f"Downgrading deprecated priority 'blocking' to 'clarifying' "
+                    f"for question in pipeline {pipeline_id}"
+                )
+                priority_str = "CLARIFYING"
             try:
                 priority = QuestionPriority[priority_str]
             except KeyError:
@@ -193,87 +200,4 @@ class QuestionHandler:
 
         return unanswered
 
-    def has_blocking_questions(self, pipeline_id: str) -> bool:
-        """Check if pipeline has any unanswered blocking questions.
 
-        Args:
-            pipeline_id: The pipeline ID to check.
-
-        Returns:
-            True if there are unanswered blocking questions, False otherwise.
-        """
-        unanswered = self.get_unanswered_questions(pipeline_id)
-        return any(q.priority == QuestionPriority.BLOCKING for q in unanswered)
-
-    async def answer_question(self, pipeline_id: str, question_id: str, answer: str) -> Question:
-        """Record an answer to a question.
-
-        Args:
-            pipeline_id: The pipeline ID the question belongs to.
-            question_id: The unique question ID.
-            answer: The answer text.
-
-        Returns:
-            The updated Question object.
-
-        Raises:
-            ValueError: If the question is not found.
-        """
-        pipeline_questions = self._questions.get(pipeline_id, [])
-
-        question: Question | None = None
-        for q in pipeline_questions:
-            if q.question_id == question_id:
-                question = q
-                break
-
-        if question is None:
-            raise ValueError(f"Question not found: {question_id}")
-
-        question.answer = answer
-        question.answered_at = datetime.now(_BEIJING_TZ)
-
-        logger.info(f"Answered question {question_id} for pipeline {pipeline_id}")
-
-        # Incorporate answer into subject context
-        await self._incorporate_answer(pipeline_id, question, answer)
-
-        return question
-
-    async def _incorporate_answer(self, pipeline_id: str, question: Question, answer: str) -> None:
-        """Incorporate a question answer into the pipeline subject context.
-
-        Args:
-            pipeline_id: The pipeline ID.
-            question: The answered question.
-            answer: The answer text.
-        """
-        if self._state_manager is None:
-            logger.debug(
-                f"No StateManager available, skipping context update for {question.question_id}"
-            )
-            return
-
-        try:
-            # Build context update with question and answer
-            context_update = {
-                f"question_{question.question_id}": {
-                    "question": question.question_text,
-                    "answer": answer,
-                    "node_id": question.node_id,
-                    "priority": question.priority.value,
-                }
-            }
-
-            # Call StateManager to update subject context
-            self._state_manager.update_subject_context(
-                pipeline_id=pipeline_id, context_update=context_update
-            )
-
-            logger.info(f"Incorporated answer for {question.question_id} into pipeline context")
-        except Exception as e:
-            logger.error(
-                f"Failed to incorporate answer into context: {e}",
-                extra={"pipeline_id": pipeline_id, "question_id": question.question_id},
-            )
-            # Don't raise - answer is still recorded even if context update fails

@@ -175,7 +175,11 @@ class PathValidator:
             resolved_prefix = resolved_path.rstrip(os.sep) + os.sep
 
             if resolved_prefix.startswith(allowed_prefix) or resolved_path == allowed_dir:
-                return resolved_path
+                # ISSUE-7: Add secondary is_relative_to guard (matching SDK path)
+                from pathlib import Path
+
+                if Path(resolved_path).resolve().is_relative_to(Path(allowed_dir).resolve()):
+                    return resolved_path
 
         # Path is outside allowed directories
         raise PathNotAllowedError(

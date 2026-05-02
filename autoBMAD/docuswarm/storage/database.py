@@ -175,6 +175,18 @@ class DatabaseManager:
             )
         """)
 
+        # Add lease/heartbeat columns to pipelines if not exists
+        existing_cols = [row[1] for row in conn.execute("PRAGMA table_info(pipelines)").fetchall()]
+        new_columns = {
+            "owner_pid": "INTEGER",
+            "host": "TEXT",
+            "last_heartbeat_at": "TIMESTAMP",
+            "last_event_at": "TIMESTAMP",
+        }
+        for col, col_type in new_columns.items():
+            if col not in existing_cols:
+                conn.execute(f"ALTER TABLE pipelines ADD COLUMN {col} {col_type}")
+
         _ = conn.execute("""
             CREATE TABLE IF NOT EXISTS node_results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -4,7 +4,7 @@ This module defines the state schemas for LangGraph pipeline orchestration,
 compatible with SqliteSaver checkpointing.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 from typing import Any, TypedDict
 
 # Beijing timezone (UTC+8)
@@ -348,6 +348,12 @@ def finalize_pipeline_state(state: PipelineState) -> PipelineState:
             "type": "PipelineIncomplete",
         }
     # else: preserve existing terminal status
+
+    # Phase 1 Fix: Clear current_node on terminal status, preserve as last_node
+    current_node = result.get("current_node")
+    if current_node is not None and result["status"] in (COMPLETED, FAILED, CANCELLED):
+        result["last_node"] = current_node
+        result["current_node"] = None
 
     return result
 

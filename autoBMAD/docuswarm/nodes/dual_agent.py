@@ -659,21 +659,7 @@ Please address these issues in your revised deliverable.
                     f"Evaluator Agent failed on iteration {iteration}: {e}"
                 ) from e
 
-            # Step 3: Collect questions
-            if self.question_handler and final_questions:
-                # Transform question format from {question, priority, context} to {question_text, priority, context}
-                transformed_questions: list[dict[str, Any]] = []
-                for q in final_questions:
-                    transformed_q = {**q, "node_id": self.node_id}
-                    if "question" in transformed_q and "question_text" not in transformed_q:
-                        transformed_q["question_text"] = transformed_q.pop("question")
-                    transformed_questions.append(transformed_q)
-                self.question_handler.collect_questions(
-                    pipeline_id,
-                    transformed_questions,
-                )
-
-            # Step 4: Record iteration
+            # Step 3: Record iteration
             self.iteration_controller.record_iteration(
                 node_id=self.node_id,
                 verdict=evaluation.get("verdict", "NEEDS_REVISION"),

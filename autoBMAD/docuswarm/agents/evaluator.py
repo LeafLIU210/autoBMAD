@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
 import structlog
-import yaml
 
 from autoBMAD.docuswarm.agents.base import AgentConfig, BaseAgent
 from autoBMAD.docuswarm.agents.evaluator_config.schemas import EVALUATOR_OUTPUT_SCHEMA
@@ -557,9 +556,54 @@ valid JSON in the specified format."""
             )
 
         # Ensure verdict matches calculated score
-        data["verdict"] = self._determine_verdict(data["alignment_score"])
+        score_verdict = self._determine_verdict(data["alignment_score"])
+        data["verdict"] = self._apply_hard_gate(data, score_verdict)
 
         return data
+
+    def _apply_hard_gate(self, data: dict[str, Any], score_verdict: str) -> str:
+        """Apply discrete defect hard gate on top of score-based verdict.
+
+        Phase 3 Fix: Certain issue types should never be approved regardless
+        of alignment score.
+
+        Args:
+            data: Evaluation data including issues_found.
+            score_verdict: The verdict determined by alignment score.
+
+        Returns:
+            Final verdict after hard gate checks.
+        """
+        issues = data.get("issues_found", [])
+        if not isinstance(issues, list):
+            return score_verdict
+
+        hard_block_types = {
+            "factual_error",
+            "blocking_question",
+            "acceptance_criteria_ambiguity",
+        }
+
+        for issue in issues:
+            if isinstance(issue, dict):
+                issue_type = issue.get("type", "")
+            elif isinstance(issue, str):
+                issue_type = issue.lower()
+            else:
+                continue
+
+            if issue_type in hard_block_types:
+                if score_verdict == "APPROVED":
+                    self.logger.warning(
+                        "hard_gate_triggered",
+                        issue_type=issue_type,
+                        alignment_score=data.get("alignment_score"),
+                        original_verdict=score_verdict,
+                        new_verdict="NEEDS_REVISION",
+                    )
+                    return "NEEDS_REVISION"
+
+        return score_verdict
 
     @override
     async def execute(self, context: dict[str, Any]) -> EvaluatorOutput:

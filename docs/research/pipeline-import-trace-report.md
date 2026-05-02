@@ -1,6 +1,6 @@
 # Pipeline Import Trace Report
 
-**Generated**: 2026-04-28T20:24:23.547734
+**Generated**: 2026-04-28T20:34:58.878961
 **Tool**: pipeline_import_tracer.py
 
 ## Failure Trigger Chain
@@ -29,13 +29,11 @@ orchestrator.start_pipeline()
 |-------|--------|--------|--------|--------|
 | 0 | `autoBMAD.docuswarm.pipeline.orchestrator` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/docuswarm/pipeli... |
 | 1 | `autoBMAD.docuswarm.pipeline.graph` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/docuswarm/pipeli... |
-| 2 | `autoBMAD.docuswarm.node_execution.executor` | error | ❌ ERROR | Module import failed: cannot import name 'NodeValidationError' from 'autoBMAD.no... |
+| 2 | `autoBMAD.docuswarm.node_execution.executor` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/docuswarm/node_e... |
 | 3 | `autoBMAD.docuswarm.nodes.dual_agent` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/docuswarm/nodes/... |
-| 4 | `autoBMAD.docuswarm.nodes.__init__` | error | ❌ ERROR | Module import failed: cannot import name 'NodeValidationError' from 'autoBMAD.no... |
+| 4 | `autoBMAD.docuswarm.nodes.__init__` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/docuswarm/nodes/... |
 | 5 | `autoBMAD.nodes.loader` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/nodes/loader.py... |
-| 6 | `autoBMAD.nodes.__init__` | error | ❌ ERROR | Module import failed: cannot import name 'NodeValidationError' from 'autoBMAD.no... |
-| 4 | `autoBMAD.docuswarm.nodes` | error | ❌ ERROR | Re-export of NodeValidationError from autoBMAD.nodes.loader fails... |
-| 5 | `autoBMAD.nodes` | error | ❌ ERROR | autoBMAD.nodes.__init__ imports from 'nodes.loader' (old path) which no longer e... |
+| 6 | `autoBMAD.nodes.__init__` | ok | ✅ OK | Module loaded successfully from /home/leafliu/autoBMAD/autoBMAD/nodes/__init__.p... |
 
 ## Recommended Fixes
 

@@ -43,6 +43,8 @@ logger = logging.getLogger(__name__)
 class StateManager:
     """Manages pipeline state persistence.
 
+    Phase 1: Added PIPELINE_STATUSES as class attribute for discoverability.
+
     This class provides CRUD operations for pipelines and node results,
     supporting pipeline pause/resume functionality and concurrent access.
 
@@ -55,6 +57,8 @@ class StateManager:
         >>> await sm.update_pipeline_state(pipeline_id, {"status": "running"})
         >>> pipeline = sm.get_pipeline(pipeline_id)
     """
+
+    PIPELINE_STATUSES = PIPELINE_STATUSES
 
     def __init__(self, db_path: str | None = None) -> None:
         """Initialize StateManager.
@@ -382,9 +386,15 @@ class StateManager:
                     )
 
                 # Parse state_json and flatten it for easier access
-                state = json.loads(cast(str, row["state_json"])) if row["state_json"] else {}
+                if not row["state_json"]:
+                    raise StorageError(
+                        f"Pipeline state_json is NULL for {pipeline_id}: data corruption",
+                        operation_type="read",
+                        pipeline_id=pipeline_id,
+                    )
+                state: dict[str, Any] = json.loads(cast(str, row["state_json"]))
 
-                # Build result with flattened state fields (Phase 2 P1)
+                # ADR-STATE-001: state_json is SSOT; no fallback to top-level columns
                 result: dict[str, Any] = {
                     "pipeline_id": row["pipeline_id"],
                     "subject": row["subject"],
@@ -393,8 +403,8 @@ class StateManager:
                     # P0 Fix: Include raw state snapshot for CLI/status commands
                     "state": state,
                     # Flattened state fields for easier access
-                    "status": state.get("status", row["status"]),
-                    "current_node": state.get("current_node", row["current_node"]),
+                    "status": state["status"],
+                    "current_node": state.get("current_node"),
                     "completed_nodes": state.get("completed_nodes", []),
                     "deliverables": state.get("deliverables", {}),
                     "questions": state.get("questions", {}),
@@ -466,6 +476,49 @@ class StateManager:
                 f"Failed to list pipelines: {e}",
                 operation_type="read",
             ) from e
+
+    def health_check_repair(self) -> list[dict[str, Any]]:
+        """Scan for status mismatches and repair from state_json (SSOT).
+
+        ADR-STATE-001:启动/定期健康检查。发现 mismatch 即以 state_json
+        为准回填顶层列并返回修复记录。
+
+        Returns:
+            List of repaired pipeline records.
+        """
+        repaired: list[dict[str, Any]] = []
+        try:
+            with self._db.acquire() as conn:
+                cursor = conn.execute(
+                    "SELECT pipeline_id, state_json, status, current_node "
+                    "FROM pipelines WHERE status != json_extract(state_json, '$.status')"
+                )
+                rows = cursor.fetchall()
+                for row in rows:
+                    state = json.loads(row["state_json"] or "{}")
+                    correct_status = state.get("status")
+                    correct_node = state.get("current_node")
+                    conn.execute(
+                        "UPDATE pipelines SET status = ?, current_node = ?, "
+                        "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
+                        (correct_status, correct_node, row["pipeline_id"]),
+                    )
+                    repaired.append(
+                        {
+                            "pipeline_id": row["pipeline_id"],
+                            "old_status": row["status"],
+                            "new_status": correct_status,
+                            "old_current_node": row["current_node"],
+                            "new_current_node": correct_node,
+                        }
+                    )
+                if repaired:
+                    logger.warning(
+                        "health_check_repaired %d mismatch pipelines", len(repaired)
+                    )
+        except Exception as e:
+            logger.error("health_check_repair failed: %s", str(e))
+        return repaired
 
     def _pipeline_exists(self, pipeline_id: str) -> bool:
         """Check if pipeline exists.
@@ -854,15 +907,11 @@ class StateManager:
         pipeline_id: str,
         state_update: dict[str, Any],
     ) -> bool:
-        """Synchronous implementation of update_pipeline_state."""
-        # Check if pipeline exists
-        if not self._pipeline_exists(pipeline_id):
-            raise StorageError(
-                f"Pipeline not found: {pipeline_id}",
-                operation_type="update",
-                pipeline_id=pipeline_id,
-            )
+        """Synchronous implementation of update_pipeline_state.
 
+        ADR-STATE-001: Uses a single transaction path (no nested connection
+        acquisition) to eliminate deadlock risk under concurrent access.
+        """
         try:
             with self._db.acquire() as conn:
                 # Get current state
@@ -887,16 +936,31 @@ class StateManager:
                 # Deep merge the update
                 self._deep_merge(current_state, state_update)
 
+                # ADR-STATE-001: status is mandatory; missing status = data corruption
+                if "status" not in current_state:
+                    raise StorageError(
+                        f"Pipeline state missing required 'status' field: {pipeline_id}",
+                        operation_type="update",
+                        pipeline_id=pipeline_id,
+                    )
+
                 # Write back to database
                 updated_state_json = json.dumps(current_state)
-                # P0 Fix: Synchronize top-level columns with state_json
-                top_status = current_state.get("status")
+                top_status = current_state["status"]
                 top_current_node = current_state.get("current_node")
-                conn.execute(
+                cursor = conn.execute(
                     "UPDATE pipelines SET state_json = ?, status = ?, current_node = ?, "
                     + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
                     (updated_state_json, top_status, top_current_node, pipeline_id),
                 )
+
+                # Single-transaction existence check via rowcount
+                if cursor.rowcount == 0:
+                    raise StorageError(
+                        f"Pipeline not found: {pipeline_id}",
+                        operation_type="update",
+                        pipeline_id=pipeline_id,
+                    )
 
             return True
         except StorageError:
@@ -905,6 +969,59 @@ class StateManager:
             raise StorageError(
                 f"Failed to update pipeline state: {e}",
                 operation_type="update",
+                pipeline_id=pipeline_id,
+            ) from e
+
+    async def replace_pipeline_state(
+        self,
+        pipeline_id: str,
+        state: dict[str, Any],
+    ) -> bool:
+        """Replace complete PipelineState (not merge).
+
+        Use this for final writes where old fields must not be retained.
+        Phase 1 Fix: Provides replace semantics distinct from patch merge.
+
+        Args:
+            pipeline_id: The pipeline ID to replace state for.
+            state: Complete new state dictionary.
+
+        Returns:
+            True if replacement was successful.
+        """
+        return await asyncio.to_thread(
+            self._replace_pipeline_state_sync, pipeline_id, state
+        )
+
+    def _replace_pipeline_state_sync(
+        self,
+        pipeline_id: str,
+        state: dict[str, Any],
+    ) -> bool:
+        if not self._pipeline_exists(pipeline_id):
+            raise StorageError(
+                f"Pipeline not found: {pipeline_id}",
+                operation_type="replace",
+                pipeline_id=pipeline_id,
+            )
+
+        try:
+            with self._db.acquire() as conn:
+                updated_state_json = json.dumps(state)
+                top_status = state.get("status")
+                top_current_node = state.get("current_node")
+                conn.execute(
+                    "UPDATE pipelines SET state_json = ?, status = ?, current_node = ?, "
+                    + "updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?",
+                    (updated_state_json, top_status, top_current_node, pipeline_id),
+                )
+            return True
+        except StorageError:
+            raise
+        except Exception as e:
+            raise StorageError(
+                f"Failed to replace pipeline state: {e}",
+                operation_type="replace",
                 pipeline_id=pipeline_id,
             ) from e
 

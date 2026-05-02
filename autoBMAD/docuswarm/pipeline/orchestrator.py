@@ -9,6 +9,8 @@ This module provides the HybridOrchestrator class that combines:
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json as _json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -415,20 +417,32 @@ class HybridOrchestrator:
         Raises:
             ContextValidationError: If context validation fails.
         """
-        logger.info("starting_pipeline", subject_context=subject_context)
+        # ISSUE-8: Log redacted metadata instead of full subject_context
+        subject = subject_context.get("subject", "Untitled")
+        context_keys = list(subject_context.keys())
+        context_json = _json.dumps(subject_context, sort_keys=True)
+        logger.info(
+            "starting_pipeline",
+            subject=subject,
+            context_keys=context_keys,
+            context_length=len(context_json),
+            context_hash=hashlib.sha256(context_json.encode()).hexdigest()[:16],
+        )
 
         # Step 1: Validate context using LLM (delegates to ContextValidator)
         await self._context_validator.validate_context_with_llm(subject_context)
 
         # Step 2: Create pipeline in database
-        subject = subject_context.get("subject", "Untitled")
-        db_pipeline_id = self._state_manager.create_pipeline(
-            subject=subject,
-            subject_context=subject_context,
-        )
-
-        # Use provided pipeline_id or generated one
-        final_pipeline_id = pipeline_id or db_pipeline_id
+        # ISSUE-4: If caller provides pipeline_id and it already exists, reuse it.
+        # Otherwise create new (with explicit id if provided).
+        if pipeline_id and self._state_manager.get_pipeline(pipeline_id) is not None:
+            final_pipeline_id = pipeline_id
+        else:
+            final_pipeline_id = self._state_manager.create_pipeline(
+                subject=subject,
+                subject_context=subject_context,
+                pipeline_id=pipeline_id,
+            )
 
         # Step 3: Update status to running
         _ = await self._state_manager.update_pipeline_state(
@@ -449,12 +463,31 @@ class HybridOrchestrator:
         )
 
         # Step 4.6: Generate document summaries before graph execution (Story 36.3)
+        # ISSUE-6: Make summaries optional — catch timeout/failure and continue.
         session_manager = self._get_or_create_session_manager()
-        docs_context_summary = await self._summarize_referenced_documents(
-            subject_context=subject_context,
-            repo_root=Path(self._work_dir).parent,  # Project root
-            session_manager=session_manager,
-        )
+        try:
+            docs_context_summary = await self._summarize_referenced_documents(
+                subject_context=subject_context,
+                repo_root=Path(self._work_dir).parent,  # Project root
+                session_manager=session_manager,
+            )
+        except Exception as e:
+            logger.warning(
+                "summary_failed_skipping",
+                pipeline_id=final_pipeline_id,
+                error_type=type(e).__name__,
+            )
+            docs_context_summary = []
+
+        # Sync docs_context_summary to StateManager before graph execution
+        current_pipeline = self._state_manager.get_pipeline(final_pipeline_id)
+        if current_pipeline:
+            state_json = current_pipeline.get("state", {})
+            state_json["docs_context_summary"] = docs_context_summary
+            await self._state_manager.update_pipeline_state(
+                final_pipeline_id,
+                state_json,
+            )
 
         # Step 5: Create and execute the pipeline graph
         try:
@@ -494,7 +527,7 @@ class HybridOrchestrator:
             )
 
             logger.info(
-                "pipeline_started",
+                "pipeline_completed",
                 pipeline_id=final_pipeline_id,
                 result=result,
             )
@@ -508,6 +541,36 @@ class HybridOrchestrator:
                 "completed_nodes": result.get("completed_nodes", []),
                 "deliverables": result.get("deliverables", {}),
             }
+
+        except asyncio.CancelledError as e:
+            logger.warning(
+                "pipeline_cancelled",
+                pipeline_id=final_pipeline_id,
+                error_type=type(e).__name__,
+            )
+            await self._state_manager.update_pipeline_state(
+                final_pipeline_id,
+                {
+                    "status": "cancelled",
+                    "error": {"message": str(e), "type": type(e).__name__},
+                },
+            )
+            raise
+
+        except KeyboardInterrupt:
+            logger.warning(
+                "pipeline_interrupted",
+                pipeline_id=final_pipeline_id,
+                error_type="KeyboardInterrupt",
+            )
+            await self._state_manager.update_pipeline_state(
+                final_pipeline_id,
+                {
+                    "status": "interrupted",
+                    "error": {"message": "User interrupted", "type": "KeyboardInterrupt"},
+                },
+            )
+            raise
 
         except Exception as e:
             logger.error("pipeline_execution_error", error=str(e))

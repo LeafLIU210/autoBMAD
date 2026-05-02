@@ -104,8 +104,8 @@ SUBMIT_EXECUTION_REPORT_SCHEMA = {
                     },
                     "priority": {
                         "type": "string",
-                        "enum": ["blocking", "clarifying", "optional"],
-                        "description": "Priority level: blocking (must answer), clarifying (help refine), optional (nice-to-have)",
+                        "enum": ["clarifying", "optional"],
+                        "description": "Priority level: clarifying (help refine), optional (nice-to-have)",
                     },
                     "context": {
                         "type": "string",

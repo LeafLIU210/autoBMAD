@@ -146,12 +146,13 @@ def _create_integrated_node_executor(
             # Do NOT increment iteration or add to completed_nodes on error
             return result_state
 
-        # P0 Fix: Let PipelineAdapter be the single authority for completed_nodes/failed_nodes.
-        # Only increment iteration count here; state transitions are handled by PipelineAdapter.
+        # P1-1 Fix: Use the iteration value reported by the node executor directly,
+        # rather than incrementing unconditionally. This ensures node_iterations
+        # reflects actual rounds executed by DualAgentNode.
         node_status = executed_node_state.get("status", "")
         if node_status != "failed":
-            current_iteration = result_state["node_iterations"].get(node_id, 0)
-            result_state["node_iterations"][node_id] = current_iteration + 1
+            actual_iteration = executed_node_state.get("iteration", 1)
+            result_state["node_iterations"][node_id] = actual_iteration
         else:
             if "failed_nodes" not in result_state:
                 result_state["failed_nodes"] = []

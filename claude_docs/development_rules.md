@@ -1,7 +1,7 @@
 # 开发规则与实践详细说明
 
-**版本**: 2.1
-**最后更新**: 2026-04-05
+**版本**: 2.2
+**最后更新**: 2026-05-02
 
 ---
 
@@ -171,14 +171,10 @@ class UserService:
 3. **检查执行**:
 ```bash
 # 运行类型检查
-cd basedpyright-workflow
-basedpyright-workflow check
+basedpyright autoBMAD/
 
-# 生成详细报告
-basedpyright-workflow report
-
-# 完整工作流
-basedpyright-workflow workflow
+# 生成详细报告（JSON 格式）
+basedpyright autoBMAD/ --outputjson
 ```
 
 ### 3.2 Ruff代码风格检查
@@ -187,8 +183,10 @@ basedpyright-workflow workflow
 
 ```toml
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -199,12 +197,13 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long (handled by formatter)
     "B008",  # do not perform function calls in argument defaults
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+"tests/*" = ["B018", "B017"]
 ```
 
 #### 执行命令
@@ -234,10 +233,9 @@ BasedPyright-Workflow 提供智能冲突解决机制：
    - 避免重复修复
 
 3. **手动干预**:
-```powershell
-# 使用PowerShell脚本进行自动修复
-cd basedpyright-workflow
-.\fix_unified_errors_new.ps1
+```bash
+# 使用 Ruff 自动修复代码风格问题
+ruff check --fix autoBMAD/
 ```
 
 ### 3.4 集成到开发流程
@@ -247,7 +245,7 @@ cd basedpyright-workflow
 #!/bin/bash
 # pre-commit.sh
 echo "运行类型检查..."
-basedpyright-workflow check
+basedpyright autoBMAD/
 
 echo "检查代码风格..."
 ruff check --fix autoBMAD/
@@ -260,9 +258,7 @@ pytest tests/
 ```yaml
 # .github/workflows/quality-check.yml
 - name: Run BasedPyright
-  run: |
-    cd basedpyright-workflow
-    basedpyright-workflow check
+  run: basedpyright autoBMAD/
 
 - name: Run Ruff
   run: |
@@ -274,42 +270,32 @@ pytest tests/
 
 ## 4. 自动化测试修复
 
-### 4.1 Fixtest-Workflow集成
+### 4.1 测试修复流程
 
-项目使用 **Fixtest-Workflow** 工具进行测试的自动化扫描、运行和修复。
+#### 测试修复步骤
 
-#### 测试修复流程
-
-1. **发现测试文件**:
+1. **执行测试**:
 ```bash
-cd fixtest-workflow
-python scan_test_files.py
-# 生成 fileslist/test_files_list_20260104_143022.json
+# 运行所有测试
+pytest tests/ -v
+
+# 生成覆盖率报告
+pytest tests/ --cov=autoBMAD.docuswarm --cov-report=html
 ```
 
-2. **执行测试**:
+2. **自动修复**:
 ```bash
-# 完整测试套件
-python run_tests.py
+# 使用 Ruff 自动修复代码风格问题
+ruff check --fix autoBMAD/
 
-# 快速演示 (仅3个文件)
-python demo_run_tests.py
-# 生成 summaries/test_results_summary_*.json
+# 格式化代码
+ruff format autoBMAD/
 ```
 
-3. **自动修复**:
-```powershell
-# PowerShell脚本自动修复
-.\fix_tests.ps1
-
-# 观察Claude修复过程
-# 循环直到所有错误解决
-```
-
-4. **验证修复**:
+3. **验证修复**:
 ```bash
 # 重新运行测试验证
-python run_tests.py
+pytest tests/ -v
 ```
 
 ### 4.2 测试质量要求
@@ -356,4 +342,5 @@ python run_tests.py
 ---
 
 **版本历史**:
+- v2.2 (2026-05-02): 根据实际代码移除过时工具引用，更新 ruff 配置
 - v1.0 (2026-01-04): 初始版本，完整的开发规则与实践说明

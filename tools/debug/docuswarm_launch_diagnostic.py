@@ -137,7 +137,7 @@ class DocuswarmLaunchDiagnostic:
         if "ANTHROPIC_API_KEY" in error:
             return "Create .env file with ANTHROPIC_API_KEY=your_key or export it as environment variable."
         if "ConfigurationError" in error:
-            return "Check configuration: .env file, docuswarm.yaml, or environment variables."
+            return "Check configuration: .env file or environment variables."
         return "Review the error traceback and fix the underlying issue."
 
     # ------------------------------------------------------------------
@@ -218,7 +218,6 @@ class DocuswarmLaunchDiagnostic:
         print("=" * 80)
 
         env_path = ROOT / ".env"
-        yaml_path = DOCUSWARM / "docuswarm.yaml"
 
         # Check .env
         if not env_path.exists():
@@ -264,21 +263,6 @@ class DocuswarmLaunchDiagnostic:
         else:
             masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
             self.log(f"ANTHROPIC_API_KEY in env: {masked}")
-
-        # Check docuswarm.yaml
-        if not yaml_path.exists():
-            self.log(f"docuswarm.yaml not found at {yaml_path}", "WARN")
-            self.findings.append(
-                DiagFinding(
-                    category="configuration",
-                    severity="medium",
-                    title="Missing docuswarm.yaml",
-                    detail=f"Optional config file not found at {yaml_path}",
-                    recommendation="Create docuswarm.yaml with custom settings if needed (optional).",
-                )
-            )
-        else:
-            self.log(f"docuswarm.yaml exists: {yaml_path}")
 
         # Check output dir
         output_dir = ROOT / "output"

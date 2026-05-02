@@ -1,0 +1,119 @@
+{
+  "title": "DocuSwarm calc-one-plus-one 修复方向深度研究报告",
+  "date": "2026-05-01",
+  "findings": [
+    {
+      "issue_id": "P0-1",
+      "category": "节点契约漂移",
+      "severity": "P0",
+      "title": "Analyst 节点契约与 DocuSwarm 流水线角色严重错位",
+      "evidence": [
+        "`node.yaml` line 6: description = 'Data Analyst & Business Intelligence Specialist'",
+        "`node.yaml` lines 10-16: required_sections 包含 `data_sources`, `analysis_methodology`, `findings`, `recommendations`, `limitations` —— 全部为数据/市场研究导向",
+        "`persona.json` role = 'Data Analyst & Business Intelligence Specialist'",
+        "`persona.json` expertise 中 4/7 项为 BI/数据分析导向: ['Statistical analysis and hypothesis testing', 'Business intelligence reporting', 'Trend identification and forecasting', 'Data quality assessment and cleansing']",
+        "`evaluator.yaml` 最高权重 criteria: evidence_quality=0.40, actionability=0.30 —— 更像数据研究质量门，而非需求分析质量门",
+        "`analyst_templates.yaml` 第一个模板是 `market_research`，包含 `Market Overview`, `Target Segments`, `Competitive Landscape`, `Market Opportunities`",
+        "`contract_builder.py` `_find_best_template_match()` 在匹配失败时返回 `templates[0]`（即 `market_research`），导致 `analyst-report` 容易落入市场研究模板",
+        "实际输出文件 `analyst-report.md` 包含以下市场研究章节: ['Market Overview', 'Competitive Landscape', 'Target Segments', 'Market Opportunities']"
+      ],
+      "root_cause": "这不是模型偶发幻觉，而是系统提示契约和节点资产共同把模型推向市场研究。\n具体机制：\n1. Persona 定义了「Data Analyst & Business Intelligence Specialist」身份\n2. Required sections 要求 `data_sources`, `analysis_methodology` 等数据研究章节\n3. 模板 fallback 机制在找不到匹配时返回 `market_research`（templates[0]）\n4. Evaluator criteria 以 `evidence_quality` 和 `actionability` 为最高权重，进一步强化了数据研究导向\n5. 输入上下文（calc-context 要求需求分析）与节点契约（市场研究）产生结构性冲突，模型倾向于遵循更具体的章节要求",
+      "recommendation": "**同意审查报告建议，并基于 BMM 工作流做如下细化**：\n\n1. **Task 重定位**：将 analyst task 从「Data Analyst/BI」改为「业务需求分析与上下文澄清」（Business Requirements Analysis & Context Clarification）。\n   参考 BMM `bmad-agent-analyst` skill：战略业务分析与需求专家。\n\n2. **Required Sections 重构**：\n   - `objective_and_scope` —— 业务目标与范围\n   - `stakeholders_or_users` —— 利益相关者与目标用户\n   - `functional_requirements` —— 功能需求梳理\n   - `non_functional_constraints` —— 非功能约束\n   - `acceptance_criteria` —— 验收标准\n   - `pipeline_validation_risks` —— 流水线验证风险\n   - `downstream_guidance` —— 下游节点输入指导\n\n3. **新增需求分析模板**：在 `analyst_templates.yaml` 中增加 `requirements_analysis` 模板，\n   取代 `market_research` 作为默认/第一个模板。\n\n4. **Evaluator Criteria 重构**：\n   - `requirement_alignment` (权重 0.30) —— 需求与原始上下文对齐度\n   - `traceability` (权重 0.25) —— 需求可追溯性\n   - `scope_control` (权重 0.20) —— 范围控制（不发散、不过度设计）\n   - `downstream_usefulness` (权重 0.15) —— 对下游节点的有用性\n   - `clarity` (权重 0.10) —— 表达清晰度\n\n5. **模板 fallback 安全机制**：`_find_best_template_match()` 不应无条件返回 `templates[0]`，\n   应至少检查模板类型是否与节点角色匹配，或在没有匹配时返回 None 并由调用方处理。",
+      "files_affected": [
+        "autoBMAD/nodes/analyst/node.yaml",
+        "autoBMAD/nodes/analyst/persona.json",
+        "autoBMAD/nodes/analyst/evaluator.yaml",
+        "autoBMAD/docuswarm/templates/analyst_templates.yaml",
+        "autoBMAD/docuswarm/prompts/contract_builder.py"
+      ]
+    },
+    {
+      "issue_id": "P0-2",
+      "category": "Transport 完成语义",
+      "severity": "P0",
+      "title": "ClaudeSessionWrapper.prompt() 未将 ResultMessage 识别为 turn 完成信号",
+      "evidence": [
+        "`single_prompt()` 在 line ~780 正确识别 `ResultMessage` 并记录 `single_prompt_result`，然后自然结束循环",
+        "`ClaudeSessionWrapper.prompt()` (line ~1139-1267) 的接收循环中**没有任何对 ResultMessage 的检测逻辑**",
+        "`prompt()` 使用 idle watchdog (`_idle_watchdog`) 检测消息间空闲，超时值为 `IDLE_TIMEOUT=300` 秒",
+        "`prompt()` 主循环为 `while True:`，只在 `StopAsyncIteration`、整体 timeout 或 idle timeout 时退出",
+        "日志证据：`ResultMessage` 已在 `01:00:56` 收到（message_index=10）",
+        "日志证据：`prompt_idle_exceeded` 在 `01:07:02` 触发，idle_seconds=359.2，即 ResultMessage 收到后又空等约 6 分钟",
+        "日志证据：`llm_call_error` 被记录，但 `independent_agent_completed` 仍被调用，说明异常被降级为噪声",
+        "`IndependentAgent._call_llm_with_prompts()` 在捕获异常后，如果 `messages` 非空则返回 partial messages，进一步掩盖了 transport 完成语义错误"
+      ],
+      "root_cause": "`ClaudeSessionWrapper.prompt()` 的设计假设是：SDK 消息流在 `ResultMessage` 之后会继续产生下一条消息（如新的 AssistantMessage），\n或者在某个时刻抛出 `StopAsyncIteration`。但实际上，Claude Agent SDK 的 `ResultMessage` 表示当前 turn 的**最终完成信号**。\n\n当 `ResultMessage` 到达后：\n1. `prompt()` yield 了该消息（但 caller `_call_llm_with_prompts()` 通过 `sm._message_to_dict()` 将其过滤为 None，未加入 messages）\n2. 循环继续等待下一条消息\n3. SDK 不再发送新消息（turn 已完成）\n4. idle watchdog 在 300 秒后触发\n5. `LLMError(\"Transport idle...\")` 被抛出\n6. `prompt()` 在 except 中关闭 session\n7. `IndependentAgent` 捕获异常，因 messages 非空而返回 partial messages\n8. pipeline 继续进入 evaluator，而不是因 LLMError 失败\n\n这与 `single_prompt()` 的行为分叉：`single_prompt()` 的循环在同一文件中正确识别 `ResultMessage` 并自然结束。",
+      "recommendation": "**同意审查报告建议**：\n\n1. **在 `ClaudeSessionWrapper.prompt()` 中增加 ResultMessage 终止检测**：\n   在 yield msg 之前或之后检查 `isinstance(msg, ResultMessage)`，如果是则设置完成标志并 break 循环。\n   参考 `single_prompt()` line ~780 的实现模式：\n   ```python\n   if isinstance(msg, ResultMessage):\n       # Turn complete - record result and exit loop\n       self._logger.info(\"prompt_result_received\", ...)\n       yield msg\n       break\n   ```\n\n2. **保持 idle watchdog 作为防护而非正常退出机制**：\n   idle watchdog 仍应保留，用于检测「没有 ResultMessage 的真正挂起」场景，但不应在正常完成路径上触发。\n\n3. **统一 session mode 和 one-shot mode 的 ResultMessage 语义**：\n   确保 `single_prompt()` 和 `session.prompt()` 对 `ResultMessage` 的处理逻辑一致，避免行为分叉。\n\n4. **最小验证**：\n   - 用 fake SDK client 模拟 `AssistantMessage -> UserMessage(tool_result) -> ResultMessage` 序列\n   - 断言 `prompt()` 在 ResultMessage 后结束，不等待 IDLE_TIMEOUT\n   - 断言没有记录 `prompt_idle_exceeded`\n   - 用一个没有 ResultMessage 的 fake stream 验证 idle watchdog 仍会触发",
+      "files_affected": [
+        "autoBMAD/docuswarm/llm/session_manager.py",
+        "autoBMAD/docuswarm/agents/independent.py"
+      ]
+    },
+    {
+      "issue_id": "P1-1",
+      "category": "迭代策略与统计",
+      "severity": "P1",
+      "title": "BLOCKED/NEEDS_REVISION 策略模糊且 iteration 统计不一致",
+      "evidence": [
+        "`DualAgentNode.execute_with_context()` 在 verdict == 'BLOCKED' 时直接 break，不进入下一轮迭代",
+        "`max_iterations=3` 配置会让人误以为会修订三轮，但实际 BLOCKED 在第一轮就终止",
+        "`execute_with_context()` 从 evaluation dict 中读取 verdict，但日志显示 evaluator 返回 NEEDS_REVISION 而最终被判定为 BLOCKED",
+        "`PipelineAdapter.convert_node_to_pipeline_state()` 使用 `node_state.get('iteration', 1)` 回写 `node_iterations`，该值来自 `NodeRunState.iteration`",
+        "`_create_integrated_node_executor()` 在 node_status != 'failed' 时执行 `current_iteration + 1` 增量",
+        "日志证据：Evaluator Agent 返回的 JSON 中 verdict 为 `NEEDS_REVISION`（alignment_score=0.315）",
+        "日志证据：`evaluator_agent_completed` 记录 verdict=BLOCKED，与 evaluator 实际返回的 NEEDS_REVISION 矛盾",
+        "日志证据：最终 pipeline state 中 `node_iterations: {'analyst': 3}`，与实际只执行了 1 轮迭代不符",
+        "日志证据：`node_execution_completed` 记录 iteration=2 status=blocked，但 DualAgentNode 内部 iteration=1 时就已 break"
+      ],
+      "root_cause": "存在两层不一致：\n\n**第一层：verdict 被覆写**\nEvaluator Agent 返回 `NEEDS_REVISION`（alignment_score=0.315 < approval_threshold=0.7），\n但 `DualAgentNode.execute_with_context()` 在处理时，可能由于 `evaluation.get(\"verdict\", \"NEEDS_REVISION\")` 的默认值机制，\n或者 evaluator 输出的 JSON 解析后 verdict 字段被某些后处理逻辑修改，导致最终记录为 `BLOCKED`。\n更可能的是：evaluator 返回的 JSON 字符串中 verdict=NEEDS_REVISION，但 `EvaluatorAgent.execute_with_input()` 的解析逻辑\n或 `EvaluatorAgent` 自身的后处理（如 threshold-based verdict override）将其改为 BLOCKED。\n\n**第二层：iteration 统计不一致**\n`DualAgentNode.execute_with_context()` 内部 iteration=1 就 break 了，\n但 `PipelineAdapter.convert_node_to_pipeline_state()` 从 `node_state.get(\"iteration\")` 读取的值被设为 2（或 3），\n而 `graph.py` 中的 `_create_integrated_node_executor()` 又做了 `current_iteration + 1` 增量，\n导致最终 `node_iterations['analyst']` 显示为 3。",
+      "recommendation": "**同意审查报告建议**：\n\n1. **明确 verdict 语义**：\n   - `BLOCKED` = 终止状态，不可恢复，立即中断 pipeline\n   - `NEEDS_REVISION` = 可迭代状态，将 feedback 传回 Independent Agent 进行重写\n   - `APPROVED` = 通过，进入下一节点\n   - `FORCE_APPROVED` = 强制通过（达到 max_iterations 但 score >= escalation threshold）\n\n2. **修复 verdict 覆写逻辑**：\n   审查 `EvaluatorAgent.execute_with_input()` 和 `DualAgentNode.execute_with_context()` 之间的 verdict 传递链路，\n   确保 evaluator 返回的原始 verdict 不被意外修改。\n   如果 evaluator 返回 NEEDS_REVISION，则不应被改为 BLOCKED，除非存在明确的安全/格式违规。\n\n3. **修复 iteration 统计**：\n   - `DualAgentNode.execute_with_context()` 应返回实际执行的 iteration 次数\n   - `PipelineAdapter.convert_node_to_pipeline_state()` 应直接使用 node 返回的 iteration，不做额外增量\n   - `graph.py` 中的 `current_iteration + 1` 增量应仅在 iteration 成功完成时执行，且与 node 内部计数对齐\n\n4. **增加策略文档**：\n   在 `autoBMAD/docuswarm/nodes/README.md` 或类似文档中明确记录 BLOCKED/NEEDS_REVISION/APPROVED/FORCE_APPROVED 的语义和触发条件。",
+      "files_affected": [
+        "autoBMAD/docuswarm/nodes/dual_agent.py",
+        "autoBMAD/docuswarm/node_execution/pipeline_adapter.py",
+        "autoBMAD/docuswarm/pipeline/graph.py"
+      ]
+    },
+    {
+      "issue_id": "P1-2",
+      "category": "路径语义",
+      "severity": "P1",
+      "title": "project_root / cwd / agent_file / output_dir 路径语义漂移",
+      "evidence": [
+        "日志证据：`cwd=/home/leafliu`（用户家目录），而非项目根目录 `/home/leafliu/autoBMAD`",
+        "日志证据：`agent_file=/home/leafliu/autoBMAD/docuswarm/agents/configs/independent_agent.yaml` —— 缺少 `autoBMAD/` 包目录层级",
+        "日志证据：`output_dir=/home/leafliu/autoBMAD/output/...` 是正确的项目内输出路径",
+        "`IndependentAgent._build_agent_file_path()` 根据 `project_root.name == 'autoBMAD'` 做条件分支判断路径",
+        "路径构建逻辑依赖 `project_root.name == 'autoBMAD'`，这是脆弱的字符串匹配，容易在路径嵌套或重命名时失效",
+        "`SessionManager.__init__()` 中 `self._cwd = cwd or Path.cwd()`，当 caller 未传递 cwd 时默认使用 `Path.cwd()`，即 shell 当前工作目录",
+        "`work_dir` 参数已标记为 deprecated，但部分代码路径仍使用它，导致 `cwd` 和 `output_dir` 的来源不一致",
+        "`create_dual_agent_node(project_root=...)` 接收可选的 project_root，但调用方可能传递了 repo root 而非 package root"
+      ],
+      "root_cause": "系统中存在四个路径概念，但边界未明确：\n1. **repo root**: git 仓库根目录（`/home/leafliu/autoBMAD`）\n2. **package root**: Python 包根目录（`/home/leafliu/autoBMAD/autoBMAD`）\n3. **SDK cwd**: Claude Agent SDK 的工作目录（日志中显示为 `/home/leafliu`，即 shell cwd）\n4. **pipeline output dir**: 当前 pipeline 的输出目录（`/home/leafliu/autoBMAD/output/...`）\n\n`SessionManager` 的 `cwd` 参数在未显式传递时回退到 `Path.cwd()`，\n而 `IndependentAgent` 的 `project_root` 在传递时可能是 repo root 或 package root，\n导致 `_build_agent_file_path()` 的字符串匹配逻辑（`project_root.name == \"autoBMAD\"`）产生歧义。\n当前 `agent_file` 被跳过作为 tools 来源（TDD-07 注释），所以这不是本次阻断根因，\n但路径语义漂移会在未来引入平台/环境相关故障。",
+      "recommendation": "**同意审查报告建议**：\n\n1. **明确四个路径概念并在代码中显式命名**：\n   - `repo_root`: git 仓库根目录\n   - `package_root`: Python 包根目录（`repo_root / 'autoBMAD'`）\n   - `sdk_cwd`: SDK 进程的工作目录（应为 `repo_root`，以便 SDK CLI 正确导入本地模块）\n   - `output_dir`: 当前 pipeline 的输出目录\n\n2. **统一路径来源**：\n   - `SessionManager` 的 `cwd` 应始终由调用方显式传递 `repo_root`\n   - 移除 `work_dir` 参数的隐式回退逻辑，或在其被使用时发出 deprecation warning\n   - `IndependentAgent._build_agent_file_path()` 应使用 `repo_root` 而非 `project_root`，并通过 `Path.exists()` 验证路径存在性，而非字符串匹配\n\n3. **增加路径 snapshot 测试**：\n   - 给 `create_dual_agent_node(project_root=...)` 增加测试，验证传入不同路径时各组件（SessionManager cwd、output_dir、agent_file）的解析结果\n   - 给 `IndependentAgent._build_agent_file_path()` 增加测试，覆盖 `repo_root` 和 `package_root` 两种传入场景\n\n4. **日志增强**：\n   在 `SessionManager.__init__` 和 `create_session` 中输出 `repo_root`, `package_root`, `sdk_cwd`, `output_dir` 四个字段，避免仅靠 `cwd` 猜测。",
+      "files_affected": [
+        "autoBMAD/docuswarm/agents/independent.py",
+        "autoBMAD/docuswarm/llm/session_manager.py"
+      ]
+    }
+  ],
+  "bmm_alignment": {
+    "bmad-brainstorming": "display-name=Brainstorm Project, phase=1-analysis",
+    "bmad-market-research": "display-name=Market Research, phase=1-analysis",
+    "bmad-domain-research": "display-name=Domain Research, phase=1-analysis",
+    "bmad-technical-research": "display-name=Technical Research, phase=1-analysis"
+  },
+  "verification_plan": [
+    "编写失败测试 `test_result_message_ends_prompt_stream`：用 fake SDK client 模拟 ResultMessage 后的流终止",
+    "编写失败测试 `test_analyst_prompt_contract_is_requirements_analysis`：断言 analyst system/user prompt 不包含 Market Overview、Competitive Landscape，且包含 Functional Requirements、Acceptance Criteria",
+    "修复 `ClaudeSessionWrapper.prompt()` 的 ResultMessage 终止语义，消除 359 秒空等",
+    "修复 analyst node.yaml / persona.json / evaluator.yaml / analyst_templates.yaml，使 calc-context 生成需求背景分析",
+    "修复 iteration 统计和 BLOCKED/NEEDS_REVISION 策略，保证日志状态与实际执行一致",
+    "运行同一命令 `python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md` 做端到端回归"
+  ],
+  "risk_matrix": {
+    "P0-1": "所有依赖 analyst 的 pipeline | 中等 | 任何输入都会被错误地导向市场研究",
+    "P0-2": "所有使用 session.prompt() 的 agent 调用 | 低 | 每次调用多等 5-6 分钟，污染日志，意外关闭 session",
+    "P1-1": "迭代策略理解、可观察性 | 低 | 排障时误判迭代次数和可用策略",
+    "P1-2": "跨平台/环境部署 | 低 | 路径解析错误导致 agent_file 或 tools 加载失败"
+  }
+}

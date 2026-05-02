@@ -1,0 +1,19 @@
+# Independent Agent Configuration
+# Used by DocuSwarm IndependentAgent for deliverable creation
+
+agent_type: independent
+name: Independent Agent
+description: Creates deliverables and generates clarifying questions
+
+# Tool permissions
+tools:
+  - read_document
+  - list_documents
+  - grep_search
+  - glob_search
+  - create_deliverable
+
+# Default behavior
+behavior:
+  auto_approve_tools: true
+  max_steps: 50

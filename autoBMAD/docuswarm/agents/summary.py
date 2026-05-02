@@ -464,10 +464,11 @@ Remember to respond with ONLY valid JSON matching the required schema."""
                 if not summary_text:
                     raise LLMSummaryError("Empty response from LLM")
 
-                # Parse JSON
+                # Parse JSON (supports fenced JSON via extract_json fallback)
                 try:
-                    data = json.loads(summary_text)
-                except json.JSONDecodeError as e:
+                    from autoBMAD.docuswarm.llm.response import extract_json
+                    data = extract_json(summary_text)
+                except Exception as e:
                     raise LLMSummaryError(f"Invalid JSON response: {e}") from e
 
                 # Validate schema
@@ -480,6 +481,8 @@ Remember to respond with ONLY valid JSON matching the required schema."""
 
                 return data
 
+            except asyncio.CancelledError:
+                raise
             except TimeoutError:
                 last_error = LLMSummaryError(
                     f"Timeout after {perf_config.timeout_per_document_seconds}s"

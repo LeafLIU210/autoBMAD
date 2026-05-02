@@ -4,7 +4,7 @@ This module provides the IndependentAgent class which:
 - Loads BMAD persona from nodes/{node_id}/persona.json
 - Calls LLM with Claude Agent mode (temperature 0.7, max_tokens 32768)
 - Tool calling handled entirely by SDK auto-dispatch (Story 8.4)
-- Generates questions with priorities: blocking, clarifying, optional
+- Generates questions with priorities: clarifying, optional
 - Preserves private reasoning (NOT shared with Evaluator)
 - Returns structured output matching IndependentOutput schema
 - Updated to support SessionManager (Story 7.3)
@@ -14,6 +14,7 @@ This module provides the IndependentAgent class which:
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
@@ -132,17 +133,22 @@ class IndependentAgent(BaseAgent):
     def _build_agent_file_path(self) -> Path | None:
         """Build agent file path based on project_root.
 
-        P0 Fix: Handles both repo_root and autoBMAD as project_root.
+        P1-2 Fix: Uses path existence instead of fragile string matching.
+        Tries both repo_root and package_root conventions.
         """
-        if self.project_root.name == "autoBMAD":
-            return (
-                self.project_root
-                / "docuswarm"
-                / "agents"
-                / "configs"
-                / "independent_agent.yaml"
-            )
-        return (
+        # Try package-root convention first (project_root is the autoBMAD/ dir)
+        path_via_package = (
+            self.project_root
+            / "docuswarm"
+            / "agents"
+            / "configs"
+            / "independent_agent.yaml"
+        )
+        if path_via_package.exists():
+            return path_via_package
+
+        # Try repo-root convention (project_root is the repo root)
+        path_via_repo = (
             self.project_root
             / "autoBMAD"
             / "docuswarm"
@@ -150,6 +156,12 @@ class IndependentAgent(BaseAgent):
             / "configs"
             / "independent_agent.yaml"
         )
+        if path_via_repo.exists():
+            return path_via_repo
+
+        # Fallback: return the most likely path without existence check
+        # (caller can handle missing file gracefully)
+        return path_via_repo
 
     @override
     def _format_system_prompt(self) -> str:
@@ -214,7 +226,7 @@ The execution report must contain:
   "questions": [
     {{
       "question": "Your question text here?",
-      "priority": "blocking | clarifying | optional",
+      "priority": "clarifying | optional",
       "context": "Why this question is relevant"
     }}
   ],
@@ -269,7 +281,7 @@ Here is the CORRECT sequence:
 
 1. **ALWAYS call submit_execution_report AFTER create_deliverable** - Never skip this step
 2. **Use EXACT file_path and sha256 values** - Do not modify or guess these values
-3. **Use ONLY valid priority values**: "blocking", "clarifying", "optional"
+3. **Use ONLY valid priority values**: "clarifying", "optional"
 4. **action must be exactly**: "create_deliverable"
 5. **The document content goes ONLY to create_deliverable** - submit_execution_report only needs metadata
 
@@ -350,6 +362,7 @@ If for any reason you cannot use the submit_execution_report tool, you MAY retur
         system_prompt_append: str,
         user_prompt: str,
         timeout: int = 900,  # RC-1 Fix: timeout parameter with 900s default (was 60)
+        on_session_created: Any | None = None,
     ) -> list[dict[str, Any]]:
         """Call LLM with Four-Layer Architecture prompts (Story 29.6).
 
@@ -428,6 +441,12 @@ If for any reason you cannot use the submit_execution_report tool, you MAY retur
                 agent_file=self._agent_file,
                 system_prompt=system_prompt_append,
             )
+            # P0-2 Fix: Notify caller of session creation for persistence
+            if on_session_created is not None:
+                try:
+                    on_session_created(session.id)
+                except Exception:
+                    self.logger.warning("session_created_callback_failed", exc_info=True)
 
             # P2 Fix: 记录每个收到的消息
             message_count = 0
@@ -917,6 +936,7 @@ Please create the deliverable based on the original context above. Reference spe
         agent_input: IndependentAgentInput,
         pipeline_id: str,
         timeout: int = 900,  # RC-1 Fix: timeout parameter with 900s default (was 60)
+        state_manager: Any | None = None,
     ) -> IndependentOutput:
         """Execute the Independent Agent with structured input (Single Context Protocol).
 
@@ -998,11 +1018,9 @@ Please create the deliverable based on the original context above. Reference spe
 
         node_config = NodeLoader.load(self.node_id)
 
-        # P0 Fix: Use repo root for directory resolution, not autoBMAD subdirectory
-        # project_root currently points to autoBMAD/, but node config paths are relative to repo root
-        repo_root = (
-            self.project_root.parent if self.project_root.name == "autoBMAD" else self.project_root
-        )
+        # Phase 4 Fix: Use project_root directly as repo root.
+        # Removed dangerous .parent escape that could set cwd outside the repository.
+        repo_root = self.project_root
 
         # Prepare permission directories (absolute paths from repo root)
         file_dirs = [
@@ -1049,14 +1067,37 @@ Please create the deliverable based on the original context above. Reference spe
         try:
             # Story 29.6: Call LLM with Four-Layer Architecture
             # system_prompt from contract becomes system_prompt_append (Layers 2+3+4)
+            # P0-2 Fix: Pass callback to persist session_id to state_manager
+            def _on_session_created(session_id: str) -> None:
+                if state_manager is not None:
+                    try:
+                        # Use asyncio.create_task to fire-and-forget the async update
+                        # since we're inside an async call stack and _call_llm_with_prompts
+                        # will continue immediately after this callback returns.
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(
+                            state_manager.update_pipeline_state(
+                                pipeline_id,
+                                {
+                                    "current_node_session_id": session_id,
+                                    "session_ids": [session_id],  # appended by StateManager merge
+                                },
+                            )
+                        )
+                    except Exception:
+                        self.logger.warning("session_persistence_update_failed", exc_info=True)
+
             response = await self._call_llm_with_prompts(
                 system_prompt_append=system_prompt,
                 user_prompt=user_prompt,
                 timeout=timeout,  # FIX-1: pass timeout
+                on_session_created=_on_session_created,
             )
         finally:
             # Restore original session_manager
             self.session_manager = original_session_manager
+            # Close the pipeline-scoped session manager to prevent resource leaks
+            await pipeline_session_manager.close_all()
 
         # Parse and validate response
         output = self._parse_response(response)

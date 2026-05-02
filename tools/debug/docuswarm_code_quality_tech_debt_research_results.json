@@ -1,0 +1,706 @@
+{
+  "timestamp": "2026-05-02T00:38:49.575227+00:00",
+  "findings": [
+    {
+      "id": "ISSUE-1",
+      "category": "hang/deadlock",
+      "severity": "Critical",
+      "title": "Pipeline and state operations can hang instead of failing fast",
+      "detail": "StateManager.update_pipeline_state wraps sync IO in asyncio.to_thread. _update_pipeline_state_sync calls _pipeline_exists before acquiring another connection. DatabaseManager uses per-path singleton with connection pool and check_same_thread=False. Multiple targeted tests time out rather than fail, confirming the hang hypothesis.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/storage/state_manager.py:863",
+          "type": "nested_connection_check",
+          "code": [
+            "862:         # Check if pipeline exists",
+            "863:         if not self._pipeline_exists(pipeline_id):",
+            "864:             raise StorageError("
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/storage/database.py:132",
+          "type": "check_same_thread_config",
+          "code": "conn = sqlite3.connect(str(self._db_path), check_same_thread=False)"
+        },
+        {
+          "type": "nested_acquire_detected",
+          "detail": "_update_pipeline_state_sync calls _pipeline_exists which may also acquire connection"
+        }
+      ],
+      "recommendation": "1) Isolate update_pipeline_state with a no-LangGraph, no-SDK unit test under 1s. 2) Replace nested connection acquisition with one explicit transaction path. 3) Add bounded timeouts and structured failure logs around every DB update from async flows. 4) Add DatabaseManager.reset_instance() fixture for tests with temporary DB paths.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-2",
+      "category": "async/lifecycle",
+      "severity": "Critical",
+      "title": "LangGraph completion and cancellation leave async work unclosed",
+      "detail": "create_pipeline_graph compiles LangGraph with integrated node executors. Node executor calls async_node_executor and converts state. HybridOrchestrator.start_pipeline closes checkpointer connection in finally, but session/task lifecycle is split between orchestrator, CLI service, LangGraph, and node execution. Test timeouts with 'coroutine ignored GeneratorExit' confirm leaked tasks.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/graph.py:201",
+          "type": "langgraph_compile",
+          "code": ">>> compiled = graph.compile()"
+        },
+        {
+          "location": "autoBMAD/docuswarm/pipeline/graph.py:263",
+          "type": "langgraph_compile",
+          "code": "compiled: Runnable[dict[str, Any], dict[str, Any]] = graph.compile("
+        },
+        {
+          "location": "autoBMAD/docuswarm/pipeline/graph.py:109",
+          "type": "async_node_executor_call",
+          "code": "executed_node_state = await async_node_executor(node_run_state)"
+        },
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:566",
+          "type": "orchestrator_finally",
+          "code": [
+            "566:         finally:",
+            "567:             # Close checkpointer connection to prevent process hang",
+            "568:             if checkpointer is not None and hasattr(checkpointer, \"conn\"):",
+            "569:                 try:",
+            "570:                     await checkpointer.conn.close()",
+            "571:                 except Exception:",
+            "572:                     pass",
+            "573: "
+          ]
+        },
+        {
+          "type": "task_tracking_check",
+          "present": false,
+          "detail": "No explicit pending-task cleanup found in orchestrator"
+        }
+      ],
+      "recommendation": "1) Create a single lifecycle owner for graph invocation, checkpointer, and per-pipeline session managers. 2) Add tests that intentionally cancel graph execution and assert no pending tasks and no open checkpointer connections. 3) Avoid fire-and-forget tasks for state writes unless tracked and awaited during cleanup.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-3",
+      "category": "runtime_defect",
+      "severity": "High",
+      "title": "Runtime lint error: undefined `asyncio` in IndependentAgent",
+      "detail": "Ruff reports F821 Undefined name asyncio at independent.py. The code calls asyncio.get_running_loop() inside _on_session_created. asyncio import present in file: False. When on_session_created is exercised, session persistence update fails before scheduling the DB write.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/agents/independent.py:1070",
+          "type": "on_session_created_callback",
+          "code": [
+            "1070:             def _on_session_created(session_id: str) -> None:",
+            "1071:                 if state_manager is not None:",
+            "1072:                     try:",
+            "1073:                         # Use asyncio.create_task to fire-and-forget the async update",
+            "1074:                         # since we're inside an async call stack and _call_llm_with_prompts",
+            "1075:                         # will continue immediately after this callback returns.",
+            "1076:                         loop = asyncio.get_running_loop()",
+            "1077:                         loop.create_task(",
+            "1078:                             state_manager.update_pipeline_state(",
+            "1079:                                 pipeline_id,",
+            "1080:                                 {",
+            "1081:                                     \"current_node_session_id\": session_id,",
+            "1082:                                     \"session_ids\": [session_id],  # appended by StateManager merge",
+            "1083:                                 },",
+            "1084:                             )",
+            "1085:                         )",
+            "1086:                     except Exception:",
+            "1087:                         self.logger.warning(\"session_persistence_update_failed\", exc_info=True)",
+            "1088: ",
+            "1089:             response = await self._call_llm_with_prompts("
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/agents/independent.py:1076",
+          "type": "undefined_asyncio_usage",
+          "code": "loop = asyncio.get_running_loop()"
+        },
+        {
+          "type": "asyncio_import_check",
+          "present": false
+        }
+      ],
+      "recommendation": "1) Import asyncio in independent.py if missing. 2) Replace bare except Exception in that callback with logging that preserves exception type and session id. 3) Add a unit test that invokes _on_session_created behavior and asserts StateManager.update_pipeline_state is called or awaited.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-4",
+      "category": "data_consistency",
+      "severity": "High",
+      "title": "Custom pipeline id handling appears inconsistent",
+      "detail": "HybridOrchestrator.start_pipeline creates a DB pipeline with generated id, then swaps to pipeline_id or db_pipeline_id. If a caller supplies pipeline_id, the row with that id may not exist before update_pipeline_state(final_pipeline_id, ...) is called. create_pipeline supports custom id parameter: True. Dedicated explicit-id test exists but times out rather than proving correctness.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:425",
+          "type": "db_pipeline_id_creation",
+          "code": "db_pipeline_id = self._state_manager.create_pipeline("
+        },
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:431",
+          "type": "final_pipeline_id_assignment",
+          "code": [
+            "429: ",
+            "430:         # Use provided pipeline_id or generated one",
+            "431:         final_pipeline_id = pipeline_id or db_pipeline_id",
+            "432: ",
+            "433:         # Step 3: Update status to running",
+            "434:         _ = await self._state_manager.update_pipeline_state(",
+            "435:             final_pipeline_id,"
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/storage/state_manager.py:155",
+          "type": "create_pipeline_signature",
+          "code": [
+            "155:     def create_pipeline(",
+            "156:         self,",
+            "157:         subject: str,",
+            "158:         subject_context: dict[str, Any] | None = None,",
+            "159:         pipeline_id: str | None = None,",
+            "160:     ) -> str:",
+            "161:         \"\"\"Create a new pipeline with pending status.",
+            "162: ",
+            "163:         Args:",
+            "164:             subject: The subject/topic for the pipeline.",
+            "165:             subject_context: Optional context dictionary to store as JSON.",
+            "166:             pipeline_id: Optional explicit pipeline ID. If provided, used as primary key.",
+            "167: ",
+            "168:         Returns:",
+            "169:             The newly created pipeline ID."
+          ]
+        }
+      ],
+      "recommendation": "1) Pass the explicit id into StateManager.create_pipeline(..., pipeline_id=pipeline_id) instead of creating one id and switching later. 2) Add a direct test for HybridOrchestrator.start_pipeline(..., pipeline_id=...) that does not invoke real graph or SDK.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-5",
+      "category": "data_model",
+      "severity": "High",
+      "title": "State single-source-of-truth is still split",
+      "detail": "The pipelines table stores both top-level status/current_node columns and state_json. get_pipeline flattens state_json over top-level columns. list_pipelines filters by top-level status only. update_pipeline_state attempts to synchronize top-level fields, but consistency tests time out. Status and list commands can disagree; stale running detection acts on old top-level columns.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/storage/state_manager.py:331",
+          "type": "get_pipeline_method",
+          "code": [
+            "331:     def get_pipeline(self, pipeline_id: str) -> dict[str, Any] | None:",
+            "332:         \"\"\"Get pipeline with all related node results.",
+            "333: ",
+            "334:         Args:",
+            "335:             pipeline_id: The pipeline ID to retrieve.",
+            "336: ",
+            "337:         Returns:",
+            "338:             Dictionary with pipeline data and node_results, or None if not found.",
+            "339:         \"\"\"",
+            "340:         try:",
+            "341:             with self._db.acquire() as conn:",
+            "342:                 # Get pipeline",
+            "343:                 cursor = conn.execute(",
+            "344:                     \"SELECT pipeline_id, subject, status, current_node, state_json, \"",
+            "345:                     + \"created_at, updated_at FROM pipelines WHERE pipeline_id = ?\",",
+            "346:                     (pipeline_id,),",
+            "347:                 )",
+            "348:                 row: Row | None = cast(Row | None, cursor.fetchone())",
+            "349: ",
+            "350:                 if row is None:",
+            "351:                     return None",
+            "352: ",
+            "353:                 # Get node results",
+            "354:                 node_cursor = conn.execute(",
+            "355:                     \"SELECT id, node_id, iteration, deliverable_json, questions_json, \"",
+            "356:                     + \"evaluation_json, status, created_at FROM node_results \"",
+            "357:                     + \"WHERE pipeline_id = ? ORDER BY created_at\",",
+            "358:                     (pipeline_id,),",
+            "359:                 )",
+            "360: "
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/storage/state_manager.py:424",
+          "type": "list_pipelines_method",
+          "code": [
+            "424:     def list_pipelines(self, status: str | None = None) -> list[dict[str, Any]]:",
+            "425:         \"\"\"List pipelines, optionally filtered by status.",
+            "426: ",
+            "427:         Args:",
+            "428:             status: Optional status to filter by.",
+            "429: ",
+            "430:         Returns:",
+            "431:             List of pipeline dictionaries sorted by created_at DESC.",
+            "432: ",
+            "433:         Raises:",
+            "434:             StorageError: If status is invalid.",
+            "435:         \"\"\"",
+            "436:         if status is not None:",
+            "437:             self._validate_status(status)",
+            "438: ",
+            "439:         try:",
+            "440:             with self._db.acquire() as conn:",
+            "441:                 if status:",
+            "442:                     cursor = conn.execute(",
+            "443:                         \"SELECT pipeline_id, subject, status, current_node, \"",
+            "444:                         + \"created_at, updated_at FROM pipelines WHERE status = ? \"",
+            "445:                         + \"ORDER BY created_at DESC\",",
+            "446:                         (status,),",
+            "447:                     )",
+            "448:                 else:"
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/storage/state_manager.py:897",
+          "type": "top_level_sync",
+          "code": [
+            "895:                 updated_state_json = json.dumps(current_state)",
+            "896:                 # P0 Fix: Synchronize top-level columns with state_json",
+            "897:                 top_status = current_state.get(\"status\")",
+            "898:                 top_current_node = current_state.get(\"current_node\")",
+            "899:                 conn.execute(",
+            "900:                     \"UPDATE pipelines SET state_json = ?, status = ?, current_node = ?, \"",
+            "901:                     + \"updated_at = CURRENT_TIMESTAMP WHERE pipeline_id = ?\",",
+            "902:                     (updated_state_json, top_status, top_current_node, pipeline_id),"
+          ]
+        }
+      ],
+      "recommendation": "1) Define one canonical read model. 2) If top-level columns remain for indexes, treat them as materialized columns and update them only through one tested write path. 3) Add consistency assertions after every state mutation in tests.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-6",
+      "category": "blocking_failure",
+      "severity": "High",
+      "title": "SummaryAgent pre-graph step adds a blocking failure mode",
+      "detail": "start_pipeline calls _summarize_referenced_documents before graph execution. Summary sync tests patch the summary call but still time out before proving DB persistence. Pipeline startup now depends on another async agent lifecycle before the graph starts. A summary timeout or persistence issue prevents any node execution.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:267",
+          "type": "pre_graph_summary_call",
+          "code": [
+            "264: ",
+            "265:         return AsyncSqliteSaver(conn=aconn)",
+            "266: ",
+            "267:     async def _summarize_referenced_documents(",
+            "268:         self,",
+            "269:         subject_context: dict[str, Any],",
+            "270:         repo_root: Path,",
+            "271:         session_manager: SessionManager,",
+            "272:         timeout: int = 120,",
+            "273:     ) -> list[dict[str, Any]]:",
+            "274:         \"\"\"Run SummaryAgent with timeout protection."
+          ]
+        },
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:453",
+          "type": "pre_graph_summary_call",
+          "code": [
+            "450: ",
+            "451:         # Step 4.6: Generate document summaries before graph execution (Story 36.3)",
+            "452:         session_manager = self._get_or_create_session_manager()",
+            "453:         docs_context_summary = await self._summarize_referenced_documents(",
+            "454:             subject_context=subject_context,",
+            "455:             repo_root=Path(self._work_dir).parent,  # Project root",
+            "456:             session_manager=session_manager,",
+            "457:         )",
+            "458: ",
+            "459:         # Sync docs_context_summary to StateManager before graph execution",
+            "460:         current_pipeline = self._state_manager.get_pipeline(final_pipeline_id)"
+          ]
+        },
+        {
+          "type": "summary_status_field_check",
+          "present": false
+        }
+      ],
+      "recommendation": "1) Make summaries optional and deferred: persist an explicit summary_status (skipped, ready, failed) and let graph start from a deterministic state. 2) Keep the pre-graph sync path only after StateManager.update_pipeline_state is fast and reliable.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-7",
+      "category": "code_duplication",
+      "severity": "High",
+      "title": "Tooling has two parallel implementations",
+      "detail": "Both legacy and SDK variants exist for file/search/deliverable/context tools. Security tests check file_tools_sdk.PathValidator, while file_tools.PathValidator still uses prefix checks without the same secondary is_relative_to guard. Fixes may land in one implementation but not the other; review and test burden doubles.",
+      "evidence": [
+        {
+          "legacy_file": "autoBMAD/docuswarm/tools/file_tools.py",
+          "sdk_file": "autoBMAD/docuswarm/tools/file_tools_sdk.py",
+          "legacy_size_bytes": 16555,
+          "sdk_size_bytes": 13805,
+          "legacy_has_path_validator": true,
+          "sdk_has_path_validator": true
+        },
+        {
+          "legacy_file": "autoBMAD/docuswarm/tools/search_tools.py",
+          "sdk_file": "autoBMAD/docuswarm/tools/search_tools_sdk.py",
+          "legacy_size_bytes": 17295,
+          "sdk_size_bytes": 14718,
+          "legacy_has_path_validator": true,
+          "sdk_has_path_validator": true
+        },
+        {
+          "legacy_file": "autoBMAD/docuswarm/tools/update_context.py",
+          "sdk_file": "autoBMAD/docuswarm/tools/update_context_sdk.py",
+          "legacy_size_bytes": 10370,
+          "sdk_size_bytes": 6010,
+          "legacy_has_path_validator": false,
+          "sdk_has_path_validator": false
+        },
+        {
+          "legacy_file": "autoBMAD/docuswarm/tools/create_deliverable.py",
+          "sdk_file": "autoBMAD/docuswarm/tools/create_deliverable_sdk.py",
+          "legacy_size_bytes": 8776,
+          "sdk_size_bytes": 14698,
+          "legacy_has_path_validator": false,
+          "sdk_has_path_validator": false
+        },
+        {
+          "type": "path_validation_comparison",
+          "legacy_uses_is_relative_to": false,
+          "sdk_uses_is_relative_to": true,
+          "security_gap": true
+        }
+      ],
+      "recommendation": "1) Pick SDK tools as canonical if Claude Agent SDK is the intended runtime. 2) Move shared validation/path logic into one module and make both wrappers call it during migration. 3) Add a retirement checklist for non-SDK tools.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-8",
+      "category": "security/privacy",
+      "severity": "Medium",
+      "title": "Logging may expose raw user context",
+      "detail": "HybridOrchestrator.start_pipeline logs full subject_context. Context files may include product plans, credentials, or proprietary text. Logs become harder to share safely during incident debugging.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/pipeline/orchestrator.py:418",
+          "type": "raw_context_log",
+          "code": "logger.info(\"starting_pipeline\", subject_context=subject_context)"
+        },
+        {
+          "type": "redaction_helpers_check",
+          "present": false,
+          "file": null
+        }
+      ],
+      "recommendation": "1) Log subject, context file path, content length/hash, and selected metadata, not full content. 2) Reuse the redaction helpers in utils/logging.py for structured fields.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-9",
+      "category": "async/reliability",
+      "severity": "Medium",
+      "title": "Fire-and-forget state writes risk lost session metadata",
+      "detail": "_on_session_created schedules state_manager.update_pipeline_state with loop.create_task. The pipeline can continue before session metadata is durable. On cancellation, the task may be destroyed before writing.",
+      "evidence": [
+        {
+          "location": "autoBMAD/docuswarm/agents/independent.py:1077",
+          "type": "fire_and_forget_task",
+          "code": [
+            "1073:                         # Use asyncio.create_task to fire-and-forget the async update",
+            "1074:                         # since we're inside an async call stack and _call_llm_with_prompts",
+            "1075:                         # will continue immediately after this callback returns.",
+            "1076:                         loop = asyncio.get_running_loop()",
+            "1077:                         loop.create_task(",
+            "1078:                             state_manager.update_pipeline_state(",
+            "1079:                                 pipeline_id,",
+            "1080:                                 {",
+            "1081:                                     \"current_node_session_id\": session_id,",
+            "1082:                                     \"session_ids\": [session_id],  # appended by StateManager merge",
+            "1083:                                 },",
+            "1084:                             )"
+          ]
+        }
+      ],
+      "recommendation": "1) Return the created task and await it before leaving the node execution boundary. 2) Or make session creation persistence part of SessionManager lifecycle with explicit await.",
+      "hypothesis_status": "confirmed"
+    },
+    {
+      "id": "ISSUE-10",
+      "category": "quality_gate",
+      "severity": "Medium",
+      "title": "Ruff failures indicate quality gates are not enforced",
+      "detail": "ruff check autoBMAD/docuswarm found errors (estimated 91 lines). Besides import-order/style issues, the list includes F821 undefined name in runtime code. Obvious runtime issues can reach the working tree; refactors become riskier.",
+      "evidence": [
+        {
+          "type": "ruff_check_result",
+          "total_error_lines_estimated": 91,
+          "f821_lines": [
+            "autoBMAD/docuswarm/agents/independent.py:1076:32: F821 Undefined name `asyncio`",
+            "     |                                ^^^^^^^ F821"
+          ],
+          "returncode": 1
+        }
+      ],
+      "recommendation": "1) Fix F821 first. 2) Then fix or explicitly configure import-order rules for modules with intentional runtime import ordering. 3) Add ruff as a required pre-merge gate once the baseline is clean.",
+      "hypothesis_status": "confirmed"
+    }
+  ],
+  "test_results": [
+    {
+      "test_file": "tests/test_docuswarm_p4_security_hardening.py",
+      "command": "/home/leafliu/autoBMAD/.venv/bin/python -m pytest tests/test_docuswarm_p4_security_hardening.py -q",
+      "returncode": 0,
+      "stdout": "....                                                                     [100%]\n\n---------- coverage: platform linux, python 3.12.10-final-0 ----------\nName                                                            Stmts   Miss  Cover   Missing\n---------------------------------------------------------------------------------------------\nautoBMAD/docuswarm/__init__.py                                     13      7    46%   24-32\nautoBMAD/docuswarm/__main__.py                                      1      1     0%   6\nautoBMAD/docuswarm/agents/__init__.py                               5      0   100%\nautoBMAD/docuswarm/agents/base.py                                  16      6    62%   56-63\nautoBMAD/docuswarm/agents/evaluator.py                            218    179    18%   97-123, 141-174, 185-208, 228-287, 298-306, 317-323, 336-341, 377-400, 422-430, 441-452, 472-505, 524-563, 578-607, 632-672, 702-756, 777\nautoBMAD/docuswarm/agents/evaluator_config/__init__.py              3      0   100%\nautoBMAD/docuswarm/agents/evaluator_config/criteria_loader.py      72     53    26%   60, 80-93, 111-159, 174-206, 224-225\nautoBMAD/docuswarm/agents/evaluator_config/schemas.py              18      0   100%\nautoBMAD/docuswarm/agents/independent.py                          338    295    13%   102-127, 139-163, 174-306, 322, 343-354, 392-493, 505-518, 532-562, 585-631, 650-709, 726-782, 804-931, 964-1110, 1129-1131, 1169-1202, 1225\nautoBMAD/docuswarm/agents/persona.py                               84     55    35%   64-69, 83, 129-164, 182-235, 256-257, 265-266\nautoBMAD/docuswarm/agents/summary.py                              252    195    23%   95-100, 108, 132-137, 205-220, 231-232, 240-241, 270-297, 312-376, 387-400, 419-519, 530-538, 552-567, 598-695, 708-709, 731-748, 768\nautoBMAD/docuswarm/cli/__init__.py                                  2      2     0%   9-11\nautoBMAD/docuswarm/cli/commands/__init__.py                        10     10     0%   7-17\nautoBMAD/docuswarm/cli/commands/cancel.py                          19     19     0%   3-32\nautoBMAD/docuswarm/cli/commands/cancel_all.py                      27     27     0%   3-62\nautoBMAD/docuswarm/cli/commands/clean.py                           51     51     0%   3-107\nautoBMAD/docuswarm/cli/commands/diagnostics.py                     47     47     0%   8-76\nautoBMAD/docuswarm/cli/commands/export.py                          44     44     0%   3-77\nautoBMAD/docuswarm/cli/commands/list.py                            32     32     0%   3-68\nautoBMAD/docuswarm/cli/commands/resume.py                          39     39     0%   3-72\nautoBMAD/docuswarm/cli/commands/start.py                           36     36     0%   3-56\nautoBMAD/docuswarm/cli/commands/status.py                          49     49     0%   3-72\nautoBMAD/docuswarm/cli/main.py                                     30     30     0%   8-84\nautoBMAD/docuswarm/cli/services/__init__.py                         2      2     0%   7-9\nautoBMAD/docuswarm/cli/services/pipeline_service.py                78     78     0%   7-211\nautoBMAD/docuswarm/config.py                                       91     91     0%   12-239\nautoBMAD/docuswarm/config/__init__.py                              35      6    83%   37, 47-49, 58, 67-68\nautoBMAD/docuswarm/config/summary_agent_config.py                 161     82    49%   58-59, 71-74, 87, 115-124, 136-139, 153, 182-185, 197-200, 214, 251-254, 270, 302-305, 319, 358-361, 374-389, 411, 445-446, 458-492, 500-504\nautoBMAD/docuswarm/context/__init__.py                              5      0   100%\nautoBMAD/docuswarm/context/audit.py                                56     30    46%   59-60, 65, 87-101, 128-143, 171-190, 213-219\nautoBMAD/docuswarm/context/filter.py                               48     34    29%   45, 57-83, 94-106, 117-129, 138-140\nautoBMAD/docuswarm/context/isolation.py                            96     77    20%   76-78, 90-96, 117-169, 202-232, 261-273, 298-323, 328-347\nautoBMAD/docuswarm/context/permissions.py                           4      4     0%   6-16\nautoBMAD/docuswarm/context/validator.py                           498    386    22%   84, 94-102, 112, 205, 225-230, 248-278, 295-302, 313, 335-336, 348-349, 360-361, 375-379, 390-391, 437, 457-468, 477-493, 507-514, 528-550, 599, 617-639, 648-662, 681-704, 719-766, 778-847, 863-948, 967-1036, 1049-1051, 1070-1079, 1125, 1143-1164, 1173-1200, 1213-1232, 1245-1257, 1270-1291, 1304-1325, 1345-1350, 1393, 1411-1450, 1469-1485, 1547, 1571-1593, 1613-1652, 1670-1676, 1723-1734, 1752-1768, 1779, 1796, 1810, 1832-1843, 1864-1873, 1894-1903, 1926-1944\nautoBMAD/docuswarm/exceptions.py                                  198     95    52%   93, 98, 106, 119, 165-169, 174, 179, 228-234, 239, 244, 249, 293-299, 304, 309, 314, 357-363, 368, 373, 378, 452-464, 469, 474, 479, 484, 489, 494, 550-552, 557, 598, 600, 605, 610, 650, 661, 666, 671-676, 719-728, 733, 738, 777-781, 786, 791\nautoBMAD/docuswarm/llm/__init__.py                                  4      0   100%\nautoBMAD/docuswarm/llm/approval.py                                 39     39     0%   21-182\nautoBMAD/docuswarm/llm/config.py                                   31      8    74%   79-80, 90-96\nautoBMAD/docuswarm/llm/mode_mapper.py                              16     16     0%   13-84\nautoBMAD/docuswarm/llm/response.py                                159    137    14%   69-103, 120-137, 172-345\nautoBMAD/docuswarm/llm/session_manager.py                         450    392    13%   56-79, 139-177, 191-202, 211, 216, 221, 226, 231, 236, 241, 246, 257-262, 275-315, 335-484, 515-603, 621-647, 674-691, 726-851, 867-941, 958-1027, 1031-1035, 1045-1082, 1086, 1090, 1094-1095, 1104-1105, 1131-1142, 1147, 1171-1286, 1293-1294\nautoBMAD/docuswarm/llm/tool_filter.py                              89     65    27%   80-85, 101, 125-182, 211-288, 296, 304, 312, 320\nautoBMAD/docuswarm/node_execution/__init__.py                      35     31    11%   19-83\nautoBMAD/docuswarm/node_execution/chaining.py                      44     44     0%   7-165\nautoBMAD/docuswarm/node_execution/context_builder.py               60     60     0%   9-177\nautoBMAD/docuswarm/node_execution/contracts.py                     41      0   100%\nautoBMAD/docuswarm/node_execution/executor.py                     159    159     0%   11-479\nautoBMAD/docuswarm/node_execution/metrics.py                       68     68     0%   16-274\nautoBMAD/docuswarm/node_execution/node_escalation.py               67     67     0%   15-255\nautoBMAD/docuswarm/node_execution/pipeline_adapter.py             134    134     0%   10-396\nautoBMAD/docuswarm/node_execution/run_tracker.py                   23     23     0%   14-149\nautoBMAD/docuswarm/node_execution/state.py                        108    108     0%   7-465\nautoBMAD/docuswarm/nodes/__init__.py                                4      4     0%   3-16\nautoBMAD/docuswarm/nodes/dual_agent.py                            273    273     0%   13-877\nautoBMAD/docuswarm/nodes/iteration.py                              92     92     0%   13-322\nautoBMAD/docuswarm/pipeline/__init__.py                             7      7     0%   3-51\nautoBMAD/docuswarm/pipeline/escalation.py                          60     60     0%   19-281\nautoBMAD/docuswarm/pipeline/force_completion.py                    41     41     0%   12-185\nautoBMAD/docuswarm/pipeline/graph.py                              109    109     0%   13-441\nautoBMAD/docuswarm/pipeline/lease.py                               30     30     0%   7-76\nautoBMAD/docuswarm/pipeline/metrics.py                             45     45     0%   12-185\nautoBMAD/docuswarm/pipeline/orchestrator.py                       358    358     0%   9-1170\nautoBMAD/docuswarm/pipeline/quality.py                             50     50     0%   13-180\nautoBMAD/docuswarm/pipeline/questions.py                           56     56     0%   13-201\nautoBMAD/docuswarm/pipeline/state.py                              172    172     0%   7-656\nautoBMAD/docuswarm/pipeline/transitions.py                         54     54     0%   10-218\nautoBMAD/docuswarm/prompts/__init__.py                              8      0   100%\nautoBMAD/docuswarm/prompts/contract_builder.py                    364    320    12%   65-67, 81-86, 109-119, 135, 148-170, 182-210, 218-261, 281-331, 347-383, 397-425, 441-463, 476-518, 522-561, 583-617, 637-647, 737-753, 763-780, 790-819, 823, 831-843, 853-858, 865-870, 877, 908-915, 920\nautoBMAD/docuswarm/prompts/evaluator_agent.py                       4      0   100%\nautoBMAD/docuswarm/prompts/independent_agent.py                     4      0   100%\nautoBMAD/docuswarm/prompts/skill_injector.py                       58     40    31%   104-117, 135-158, 172-197, 210-216\nautoBMAD/docuswarm/prompts/template_engine.py                     162    135    17%   93-94, 108, 119-131, 142-177, 188-209, 220, 238-298, 322-388\nautoBMAD/docuswarm/prompts/template_loader.py                     123     80    35%   98-101, 116-163, 178-205, 219-239, 254-260, 271-272, 280-289, 293-294\nautoBMAD/docuswarm/prompts/validator.py                            24     14    42%   49-67, 79, 90-94\nautoBMAD/docuswarm/public_api.py                                    7      7     0%   23-37\nautoBMAD/docuswarm/storage/__init__.py                              4      0   100%\nautoBMAD/docuswarm/storage/checkpoints.py                          95     74    22%   39-41, 48-68, 79-81, 95-122, 142-168, 172-174, 193-219, 239-241, 257, 287-303, 312\nautoBMAD/docuswarm/storage/database.py                            109     82    25%   54-62, 77-82, 87-90, 95, 105-117, 132-135, 150-156, 166-279, 301-316, 324-327, 335-339, 343-349\nautoBMAD/docuswarm/storage/files.py                                83     83     0%   7-283\nautoBMAD/docuswarm/storage/state_access.py                         50     50     0%   3-138\nautoBMAD/docuswarm/storage/state_manager.py                       411    359    13%   72, 81, 90, 101-103, 115-116, 136, 174-193, 203-237, 244-265, 291-324, 340-418, 436-469, 483-490, 502-514, 532-575, 607, 624-806, 822-829, 852, 863-909, 932, 941-962, 975-980, 1001-1057, 1078-1127, 1152-1161, 1191-1228, 1265-1268, 1308-1366, 1381-1384, 1395-1398, 1410-1414\nautoBMAD/docuswarm/templates/__init__.py                            3      3     0%   6-10\nautoBMAD/docuswarm/tools/__init__.py                                9      0   100%\nautoBMAD/docuswarm/tools/callable_tool_wrapper.py                  21      5    76%   49-50, 64-66\nautoBMAD/docuswarm/tools/create_deliverable.py                     81     45    44%   67-70, 76-79, 84-91, 104-113, 126-128, 140, 152, 186-187, 199-237, 257-258\nautoBMAD/docuswarm/tools/create_deliverable_sdk.py                102     83    19%   25-26, 144-157, 162, 167, 172-173, 193-235, 255-273, 295-416\nautoBMAD/docuswarm/tools/create_document_set.py                   114     83    27%   65-70, 99-102, 107-122, 134-142, 156-174, 185-213, 225-293, 307, 320-321\nautoBMAD/docuswarm/tools/file_tools.py                            156    133    15%   132-136, 143, 159-181, 196-200, 212-228, 259-300, 332-401, 433-500\nautoBMAD/docuswarm/tools/file_tools_sdk.py                        158    122    23%   105, 125-126, 152-156, 161-177, 186-227, 237-306, 331-410\nautoBMAD/docuswarm/tools/protocols.py                               4      4     0%   3-16\nautoBMAD/docuswarm/tools/sdk_adapter.py                            34     26    24%   34-55, 79-108, 122-128\nautoBMAD/docuswarm/tools/search_tools.py                          168    168     0%   18-518\nautoBMAD/docuswarm/tools/search_tools_sdk.py                      171    147    14%   42-44, 48, 57-62, 68-96, 106-211, 221-303, 328-433\nautoBMAD/docuswarm/tools/tool_registry.py                          46     23    50%   39, 59-65, 76, 88-101, 109, 117, 121, 135-137, 161-165, 174\nautoBMAD/docuswarm/tools/tool_result.py                            14      3    79%   17, 26, 34\nautoBMAD/docuswarm/tools/tool_result_extractor.py                  67     67     0%   3-154\nautoBMAD/docuswarm/tools/update_context.py                         80     53    34%   88-100, 111-125, 140-154, 166-172, 187-253, 275\nautoBMAD/docuswarm/tools/update_context_sdk.py                     35     28    20%   50-167\nautoBMAD/docuswarm/utils/__init__.py                                2      0   100%\nautoBMAD/docuswarm/utils/logging.py                               159    116    27%   46-47, 96-98, 107-120, 129, 136-199, 206-207, 235-311, 333-343, 357-366, 372-373, 378-379, 384-385, 390-391, 403-410, 419, 430-436\nautoBMAD/docuswarm/utils/session_ids.py                             7      7     0%   13-60\n---------------------------------------------------------------------------------------------\nTOTAL                                                            8493   7124    16%\nCoverage HTML written to dir htmlcov\n\n",
+      "stderr": "",
+      "duration_sec": 2.0576651096343994,
+      "timeout": false,
+      "timed_out": false
+    },
+    {
+      "test_file": "tests/test_docuswarm_p1_summary_sync.py",
+      "command": "/home/leafliu/autoBMAD/.venv/bin/python -m pytest tests/test_docuswarm_p1_summary_sync.py --timeout=60 -q",
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n\n---------- coverage: platform linux, python 3.12.10-final-0 ----------\nName                                                            Stmts   Miss  Cover   Missing\n---------------------------------------------------------------------------------------------\nautoBMAD/docuswarm/__init__.py                                     13      7    46%   24-32\nautoBMAD/docuswarm/__main__.py                                      1      1     0%   6\nautoBMAD/docuswarm/agents/__init__.py                               5      0   100%\nautoBMAD/docuswarm/agents/base.py                                  16      6    62%   56-63\nautoBMAD/docuswarm/agents/evaluator.py                            218    179    18%   97-123, 141-174, 185-208, 228-287, 298-306, 317-323, 336-341, 377-400, 422-430, 441-452, 472-505, 524-563, 578-607, 632-672, 702-756, 777\nautoBMAD/docuswarm/agents/evaluator_config/__init__.py              3      0   100%\nautoBMAD/docuswarm/agents/evaluator_config/criteria_loader.py      72     53    26%   60, 80-93, 111-159, 174-206, 224-225\nautoBMAD/docuswarm/agents/evaluator_config/schemas.py              18      0   100%\nautoBMAD/docuswarm/agents/independent.py                          338    295    13%   102-127, 139-163, 174-306, 322, 343-354, 392-493, 505-518, 532-562, 585-631, 650-709, 726-782, 804-931, 964-1110, 1129-1131, 1169-1202, 1225\nautoBMAD/docuswarm/agents/persona.py                               84     55    35%   64-69, 83, 129-164, 182-235, 256-257, 265-266\nautoBMAD/docuswarm/agents/summary.py                              252    195    23%   95-100, 108, 132-137, 205-220, 231-232, 240-241, 270-297, 312-376, 387-400, 419-519, 530-538, 552-567, 598-695, 708-709, 731-748, 768\nautoBMAD/docuswarm/cli/__init__.py                                  2      2     0%   9-11\nautoBMAD/docuswarm/cli/commands/__init__.py                        10     10     0%   7-17\nautoBMAD/docuswarm/cli/commands/cancel.py                          19     19     0%   3-32\nautoBMAD/docuswarm/cli/commands/cancel_all.py                      27     27     0%   3-62\nautoBMAD/docuswarm/cli/commands/clean.py                           51     51     0%   3-107\nautoBMAD/docuswarm/cli/commands/diagnostics.py                     47     47     0%   8-76\nautoBMAD/docuswarm/cli/commands/export.py                          44     44     0%   3-77\nautoBMAD/docuswarm/cli/commands/list.py                            32     32     0%   3-68\nautoBMAD/docuswarm/cli/commands/resume.py                          39     39     0%   3-72\nautoBMAD/docuswarm/cli/commands/start.py                           36     36     0%   3-56\nautoBMAD/docuswarm/cli/commands/status.py                          49     49     0%   3-72\nautoBMAD/docuswarm/cli/main.py                                     30     30     0%   8-84\nautoBMAD/docuswarm/cli/services/__init__.py                         2      2     0%   7-9\nautoBMAD/docuswarm/cli/services/pipeline_service.py                78     78     0%   7-211\nautoBMAD/docuswarm/config.py                                       91     91     0%   12-239\nautoBMAD/docuswarm/config/__init__.py                              35      6    83%   37, 47-49, 58, 67-68\nautoBMAD/docuswarm/config/summary_agent_config.py                 161     82    49%   58-59, 71-74, 87, 115-124, 136-139, 153, 182-185, 197-200, 214, 251-254, 270, 302-305, 319, 358-361, 374-389, 411, 445-446, 458-492, 500-504\nautoBMAD/docuswarm/context/__init__.py                              5      0   100%\nautoBMAD/docuswarm/context/audit.py                                56     30    46%   59-60, 65, 87-101, 128-143, 171-190, 213-219\nautoBMAD/docuswarm/context/filter.py                               48     34    29%   45, 57-83, 94-106, 117-129, 138-140\nautoBMAD/docuswarm/context/isolation.py                            96     77    20%   76-78, 90-96, 117-169, 202-232, 261-273, 298-323, 328-347\nautoBMAD/docuswarm/context/permissions.py                           4      4     0%   6-16\nautoBMAD/docuswarm/context/validator.py                           498    377    24%   84, 94-102, 112, 205, 225-230, 248-278, 295-302, 313, 348-349, 360-361, 375-379, 390-391, 437, 457-468, 477-493, 507-514, 528-550, 599, 617-639, 648-662, 681-704, 719-766, 778-847, 863-948, 967-1036, 1049-1051, 1070-1079, 1125, 1143-1164, 1173-1200, 1213-1232, 1245-1257, 1270-1291, 1304-1325, 1345-1350, 1393, 1411-1450, 1469-1485, 1547, 1571-1593, 1613-1652, 1670-1676, 1752-1768, 1779, 1796, 1810, 1832-1843, 1864-1873, 1894-1903, 1926-1944\nautoBMAD/docuswarm/exceptions.py                                  198    108    45%   80-84, 93, 98, 106, 119, 165-169, 174, 179, 228-234, 239, 244, 249, 293-299, 304, 309, 314, 357-363, 368, 373, 378, 452-464, 469, 474, 479, 484, 489, 494, 550-552, 557, 596-600, 605, 610, 649-656, 661, 666, 671-676, 719-728, 733, 738, 777-781, 786, 791\nautoBMAD/docuswarm/llm/__init__.py                                  4      0   100%\nautoBMAD/docuswarm/llm/approval.py                                 39     39     0%   21-182\nautoBMAD/docuswarm/llm/config.py                                   31      8    74%   79-80, 90-96\nautoBMAD/docuswarm/llm/mode_mapper.py                              16     16     0%   13-84\nautoBMAD/docuswarm/llm/response.py                                159    137    14%   69-103, 120-137, 172-345\nautoBMAD/docuswarm/llm/session_manager.py                         450    373    17%   56-79, 142, 144, 152-153, 191-202, 211, 216, 221, 226, 231, 236, 241, 246, 257-262, 275-315, 335-484, 515-603, 621-647, 674-691, 726-851, 867-941, 958-1027, 1031-1035, 1045-1082, 1086, 1090, 1094-1095, 1104-1105, 1131-1142, 1147, 1171-1286, 1293-1294\nautoBMAD/docuswarm/llm/tool_filter.py                              89     65    27%   80-85, 101, 125-182, 211-288, 296, 304, 312, 320\nautoBMAD/docuswarm/node_execution/__init__.py                      35     31    11%   19-83\nautoBMAD/docuswarm/node_execution/chaining.py                      44     44     0%   7-165\nautoBMAD/docuswarm/node_execution/context_builder.py               60     60     0%   9-177\nautoBMAD/docuswarm/node_execution/contracts.py                     41      0   100%\nautoBMAD/docuswarm/node_execution/executor.py                     159    159     0%   11-479\nautoBMAD/docuswarm/node_execution/metrics.py                       68     68     0%   16-274\nautoBMAD/docuswarm/node_execution/node_escalation.py               67     67     0%   15-255\nautoBMAD/docuswarm/node_execution/pipeline_adapter.py             134    108    19%   37-45, 79, 91, 103-126, 138, 153-177, 190-193, 223-260, 294-359, 379-396\nautoBMAD/docuswarm/node_execution/run_tracker.py                   23     23     0%   14-149\nautoBMAD/docuswarm/node_execution/state.py                        108     67    38%   84, 126, 157-159, 171, 187-202, 218-246, 258, 270-271, 283, 295-296, 329-334, 375-390, 440-465\nautoBMAD/docuswarm/nodes/__init__.py                                4      4     0%   3-16\nautoBMAD/docuswarm/nodes/dual_agent.py                            273    273     0%   13-877\nautoBMAD/docuswarm/nodes/iteration.py                              92     92     0%   13-322\nautoBMAD/docuswarm/pipeline/__init__.py                             7      0   100%\nautoBMAD/docuswarm/pipeline/escalation.py                          60     30    50%   116-118, 142-180, 201-225, 247-259, 270, 281\nautoBMAD/docuswarm/pipeline/force_completion.py                    41     20    51%   45-46, 79-82, 107-122, 155-175\nautoBMAD/docuswarm/pipeline/graph.py                              109     87    20%   70-166, 204-268, 284-285, 352-354, 368-381, 402-405, 433-438\nautoBMAD/docuswarm/pipeline/lease.py                               30     30     0%   7-76\nautoBMAD/docuswarm/pipeline/metrics.py                             45     45     0%   12-185\nautoBMAD/docuswarm/pipeline/orchestrator.py                       358    241    33%   137, 147, 160, 177, 197, 202, 223-225, 240-241, 252-265, 290-337, 359-394, 537-558, 571-572, 592-726, 750-866, 884-924, 945-1002, 1016-1030, 1053-1133, 1147-1153, 1165-1167\nautoBMAD/docuswarm/pipeline/quality.py                             50     27    46%   81-82, 97-131, 147, 167-180\nautoBMAD/docuswarm/pipeline/questions.py                           56     56     0%   13-201\nautoBMAD/docuswarm/pipeline/state.py                              172    111    35%   143-171, 183-185, 197-199, 228-248, 266-268, 282, 309-358, 376-394, 424-444, 473-485, 515-537, 560-569, 598-606, 626, 647-656\nautoBMAD/docuswarm/pipeline/transitions.py                         54     54     0%   10-218\nautoBMAD/docuswarm/prompts/__init__.py                              8      0   100%\nautoBMAD/docuswarm/prompts/contract_builder.py                    364    320    12%   65-67, 81-86, 109-119, 135, 148-170, 182-210, 218-261, 281-331, 347-383, 397-425, 441-463, 476-518, 522-561, 583-617, 637-647, 737-753, 763-780, 790-819, 823, 831-843, 853-858, 865-870, 877, 908-915, 920\nautoBMAD/docuswarm/prompts/evaluator_agent.py                       4      0   100%\nautoBMAD/docuswarm/prompts/independent_agent.py                     4      0   100%\nautoBMAD/docuswarm/prompts/skill_injector.py                       58     40    31%   104-117, 135-158, 172-197, 210-216\nautoBMAD/docuswarm/prompts/template_engine.py                     162    135    17%   93-94, 108, 119-131, 142-177, 188-209, 220, 238-298, 322-388\nautoBMAD/docuswarm/prompts/template_loader.py                     123     80    35%   98-101, 116-163, 178-205, 219-239, 254-260, 271-272, 280-289, 293-294\nautoBMAD/docuswarm/prompts/validator.py                            24     14    42%   49-67, 79, 90-94\nautoBMAD/docuswarm/public_api.py                                    7      7     0%   23-37\nautoBMAD/docuswarm/storage/__init__.py                              4      0   100%\nautoBMAD/docuswarm/storage/checkpoints.py                          95     71    25%   39-41, 48-68, 79-81, 95-122, 142-168, 172-174, 193-219, 241, 287-303, 312\nautoBMAD/docuswarm/storage/database.py                            109     19    83%   87-90, 107, 116-117, 306-309, 339, 343-349\nautoBMAD/docuswarm/storage/files.py                                83     83     0%   7-283\nautoBMAD/docuswarm/storage/state_access.py                         50     50     0%   3-138\nautoBMAD/docuswarm/storage/state_manager.py                       411    310    25%   81, 115-116, 186-187, 203-237, 244-265, 291-324, 351, 363, 417-418, 436-469, 489-490, 502-514, 532-575, 607, 624-806, 822-829, 864, 880, 906-909, 932, 941-962, 1001-1057, 1078-1127, 1152-1161, 1191-1228, 1265-1268, 1308-1366, 1381-1384, 1395-1398, 1410-1414\nautoBMAD/docuswarm/templates/__init__.py                            3      3     0%   6-10\nautoBMAD/docuswarm/tools/__init__.py                                9      0   100%\nautoBMAD/docuswarm/tools/callable_tool_wrapper.py                  21      5    76%   49-50, 64-66\nautoBMAD/docuswarm/tools/create_deliverable.py                     81     45    44%   67-70, 76-79, 84-91, 104-113, 126-128, 140, 152, 186-187, 199-237, 257-258\nautoBMAD/docuswarm/tools/create_deliverable_sdk.py                102     83    19%   25-26, 144-157, 162, 167, 172-173, 193-235, 255-273, 295-416\nautoBMAD/docuswarm/tools/create_document_set.py                   114     83    27%   65-70, 99-102, 107-122, 134-142, 156-174, 185-213, 225-293, 307, 320-321\nautoBMAD/docuswarm/tools/file_tools.py                            156    133    15%   132-136, 143, 159-181, 196-200, 212-228, 259-300, 332-401, 433-500\nautoBMAD/docuswarm/tools/file_tools_sdk.py                        158    135    15%   104-108, 115, 120-144, 152-156, 161-177, 186-227, 237-306, 331-410\nautoBMAD/docuswarm/tools/protocols.py                               4      4     0%   3-16\nautoBMAD/docuswarm/tools/sdk_adapter.py                            34     26    24%   34-55, 79-108, 122-128\nautoBMAD/docuswarm/tools/search_tools.py                          168    168     0%   18-518\nautoBMAD/docuswarm/tools/search_tools_sdk.py                      171    147    14%   42-44, 48, 57-62, 68-96, 106-211, 221-303, 328-433\nautoBMAD/docuswarm/tools/tool_registry.py                          46     23    50%   39, 59-65, 76, 88-101, 109, 117, 121, 135-137, 161-165, 174\nautoBMAD/docuswarm/tools/tool_result.py                            14      3    79%   17, 26, 34\nautoBMAD/docuswarm/tools/tool_result_extractor.py                  67     67     0%   3-154\nautoBMAD/docuswarm/tools/update_context.py                         80     53    34%   88-100, 111-125, 140-154, 166-172, 187-253, 275\nautoBMAD/docuswarm/tools/update_context_sdk.py                     35     28    20%   50-167\nautoBMAD/docuswarm/utils/__init__.py                                2      0   100%\nautoBMAD/docuswarm/utils/logging.py                               159    109    31%   46-47, 96-98, 107-120, 129, 136-199, 206-207, 235-311, 333-343, 357-366, 372-373, 378-379, 384-385, 390-391, 419, 430-436\nautoBMAD/docuswarm/utils/session_ids.py                             7      3    57%   54-58\n---------------------------------------------------------------------------------------------\nTOTAL                                                            8493   6648    22%\nCoverage HTML written to dir htmlcov\n\n",
+      "stderr": "",
+      "duration_sec": 1.8011558055877686,
+      "timeout": false,
+      "timed_out": false
+    },
+    {
+      "test_file": "tests/test_docuswarm_p0_calc_regression.py",
+      "command": "/home/leafliu/autoBMAD/.venv/bin/python -m pytest tests/test_docuswarm_p0_calc_regression.py -q",
+      "returncode": 0,
+      "stdout": ".                                                                        [100%]\n\n---------- coverage: platform linux, python 3.12.10-final-0 ----------\nName                                                            Stmts   Miss  Cover   Missing\n---------------------------------------------------------------------------------------------\nautoBMAD/docuswarm/__init__.py                                     13      7    46%   24-32\nautoBMAD/docuswarm/__main__.py                                      1      1     0%   6\nautoBMAD/docuswarm/agents/__init__.py                               5      0   100%\nautoBMAD/docuswarm/agents/base.py                                  16      6    62%   56-63\nautoBMAD/docuswarm/agents/evaluator.py                            218    179    18%   97-123, 141-174, 185-208, 228-287, 298-306, 317-323, 336-341, 377-400, 422-430, 441-452, 472-505, 524-563, 578-607, 632-672, 702-756, 777\nautoBMAD/docuswarm/agents/evaluator_config/__init__.py              3      0   100%\nautoBMAD/docuswarm/agents/evaluator_config/criteria_loader.py      72     53    26%   60, 80-93, 111-159, 174-206, 224-225\nautoBMAD/docuswarm/agents/evaluator_config/schemas.py              18      0   100%\nautoBMAD/docuswarm/agents/independent.py                          338    295    13%   102-127, 139-163, 174-306, 322, 343-354, 392-493, 505-518, 532-562, 585-631, 650-709, 726-782, 804-931, 964-1110, 1129-1131, 1169-1202, 1225\nautoBMAD/docuswarm/agents/persona.py                               84     55    35%   64-69, 83, 129-164, 182-235, 256-257, 265-266\nautoBMAD/docuswarm/agents/summary.py                              252    195    23%   95-100, 108, 132-137, 205-220, 231-232, 240-241, 270-297, 312-376, 387-400, 419-519, 530-538, 552-567, 598-695, 708-709, 731-748, 768\nautoBMAD/docuswarm/cli/__init__.py                                  2      2     0%   9-11\nautoBMAD/docuswarm/cli/commands/__init__.py                        10     10     0%   7-17\nautoBMAD/docuswarm/cli/commands/cancel.py                          19     19     0%   3-32\nautoBMAD/docuswarm/cli/commands/cancel_all.py                      27     27     0%   3-62\nautoBMAD/docuswarm/cli/commands/clean.py                           51     51     0%   3-107\nautoBMAD/docuswarm/cli/commands/diagnostics.py                     47     47     0%   8-76\nautoBMAD/docuswarm/cli/commands/export.py                          44     44     0%   3-77\nautoBMAD/docuswarm/cli/commands/list.py                            32     32     0%   3-68\nautoBMAD/docuswarm/cli/commands/resume.py                          39     39     0%   3-72\nautoBMAD/docuswarm/cli/commands/start.py                           36     36     0%   3-56\nautoBMAD/docuswarm/cli/commands/status.py                          49     49     0%   3-72\nautoBMAD/docuswarm/cli/main.py                                     30     30     0%   8-84\nautoBMAD/docuswarm/cli/services/__init__.py                         2      2     0%   7-9\nautoBMAD/docuswarm/cli/services/pipeline_service.py                78     78     0%   7-211\nautoBMAD/docuswarm/config.py                                       91     91     0%   12-239\nautoBMAD/docuswarm/config/__init__.py                              35      6    83%   37, 47-49, 58, 67-68\nautoBMAD/docuswarm/config/summary_agent_config.py                 161     82    49%   58-59, 71-74, 87, 115-124, 136-139, 153, 182-185, 197-200, 214, 251-254, 270, 302-305, 319, 358-361, 374-389, 411, 445-446, 458-492, 500-504\nautoBMAD/docuswarm/context/__init__.py                              5      0   100%\nautoBMAD/docuswarm/context/audit.py                                56     30    46%   59-60, 65, 87-101, 128-143, 171-190, 213-219\nautoBMAD/docuswarm/context/filter.py                               48     34    29%   45, 57-83, 94-106, 117-129, 138-140\nautoBMAD/docuswarm/context/isolation.py                            96     77    20%   76-78, 90-96, 117-169, 202-232, 261-273, 298-323, 328-347\nautoBMAD/docuswarm/context/permissions.py                           4      4     0%   6-16\nautoBMAD/docuswarm/context/validator.py                           498    386    22%   84, 94-102, 112, 205, 225-230, 248-278, 295-302, 313, 335-336, 348-349, 360-361, 375-379, 390-391, 437, 457-468, 477-493, 507-514, 528-550, 599, 617-639, 648-662, 681-704, 719-766, 778-847, 863-948, 967-1036, 1049-1051, 1070-1079, 1125, 1143-1164, 1173-1200, 1213-1232, 1245-1257, 1270-1291, 1304-1325, 1345-1350, 1393, 1411-1450, 1469-1485, 1547, 1571-1593, 1613-1652, 1670-1676, 1723-1734, 1752-1768, 1779, 1796, 1810, 1832-1843, 1864-1873, 1894-1903, 1926-1944\nautoBMAD/docuswarm/exceptions.py                                  198    108    45%   80-84, 93, 98, 106, 119, 165-169, 174, 179, 228-234, 239, 244, 249, 293-299, 304, 309, 314, 357-363, 368, 373, 378, 452-464, 469, 474, 479, 484, 489, 494, 550-552, 557, 596-600, 605, 610, 649-656, 661, 666, 671-676, 719-728, 733, 738, 777-781, 786, 791\nautoBMAD/docuswarm/llm/__init__.py                                  4      0   100%\nautoBMAD/docuswarm/llm/approval.py                                 39     39     0%   21-182\nautoBMAD/docuswarm/llm/config.py                                   31      8    74%   79-80, 90-96\nautoBMAD/docuswarm/llm/mode_mapper.py                              16     16     0%   13-84\nautoBMAD/docuswarm/llm/response.py                                159    137    14%   69-103, 120-137, 172-345\nautoBMAD/docuswarm/llm/session_manager.py                         450    392    13%   56-79, 139-177, 191-202, 211, 216, 221, 226, 231, 236, 241, 246, 257-262, 275-315, 335-484, 515-603, 621-647, 674-691, 726-851, 867-941, 958-1027, 1031-1035, 1045-1082, 1086, 1090, 1094-1095, 1104-1105, 1131-1142, 1147, 1171-1286, 1293-1294\nautoBMAD/docuswarm/llm/tool_filter.py                              89     65    27%   80-85, 101, 125-182, 211-288, 296, 304, 312, 320\nautoBMAD/docuswarm/node_execution/__init__.py                      35     31    11%   19-83\nautoBMAD/docuswarm/node_execution/chaining.py                      44     44     0%   7-165\nautoBMAD/docuswarm/node_execution/context_builder.py               60     60     0%   9-177\nautoBMAD/docuswarm/node_execution/contracts.py                     41      0   100%\nautoBMAD/docuswarm/node_execution/executor.py                     159    139    13%   64-77, 96-246, 258-278, 290-303, 308-325, 330-345, 356-358, 384-433, 452-476\nautoBMAD/docuswarm/node_execution/metrics.py                       68     68     0%   16-274\nautoBMAD/docuswarm/node_execution/node_escalation.py               67     67     0%   15-255\nautoBMAD/docuswarm/node_execution/pipeline_adapter.py             134     53    60%   39-44, 79, 91, 103-126, 138, 153-177, 190-193, 239, 300, 306-308, 314, 319, 326, 331-340, 350, 383-384\nautoBMAD/docuswarm/node_execution/run_tracker.py                   23     23     0%   14-149\nautoBMAD/docuswarm/node_execution/state.py                        108     67    38%   84, 126, 157-159, 171, 187-202, 218-246, 258, 270-271, 283, 295-296, 329-334, 375-390, 440-465\nautoBMAD/docuswarm/nodes/__init__.py                                4      0   100%\nautoBMAD/docuswarm/nodes/dual_agent.py                            273    221    19%   79, 86-90, 170-188, 204-221, 239-269, 297-534, 562-813, 837-868\nautoBMAD/docuswarm/nodes/iteration.py                              92     63    32%   118-120, 135-158, 180-198, 222-251, 265-283, 295-322\nautoBMAD/docuswarm/pipeline/__init__.py                             7      0   100%\nautoBMAD/docuswarm/pipeline/escalation.py                          60     30    50%   116-118, 142-180, 201-225, 247-259, 270, 281\nautoBMAD/docuswarm/pipeline/force_completion.py                    41     20    51%   45-46, 79-82, 107-122, 155-175\nautoBMAD/docuswarm/pipeline/graph.py                              109     43    61%   87, 89, 91, 93, 95, 126-147, 157-162, 205, 238, 268, 284-285, 352-354, 368-381, 402-405, 433-438\nautoBMAD/docuswarm/pipeline/lease.py                               30     30     0%   7-76\nautoBMAD/docuswarm/pipeline/metrics.py                             45     18    60%   91, 116-142, 156-159, 177-185\nautoBMAD/docuswarm/pipeline/orchestrator.py                       358    314    12%   119-151, 160, 174-178, 196-225, 240-241, 252-265, 290-337, 359-394, 418-572, 592-726, 750-866, 884-924, 945-1002, 1016-1030, 1053-1133, 1147-1153, 1165-1167\nautoBMAD/docuswarm/pipeline/quality.py                             50     27    46%   81-82, 97-131, 147, 167-180\nautoBMAD/docuswarm/pipeline/questions.py                           56     29    48%   96-97, 130-169, 188-201\nautoBMAD/docuswarm/pipeline/state.py                              172     96    44%   143-171, 183-185, 197-199, 228-248, 266-268, 282, 320, 327, 334-336, 343-346, 376-394, 424-444, 473-485, 515-537, 560-569, 598-606, 626, 647-656\nautoBMAD/docuswarm/pipeline/transitions.py                         54     54     0%   10-218\nautoBMAD/docuswarm/prompts/__init__.py                              8      0   100%\nautoBMAD/docuswarm/prompts/contract_builder.py                    364    320    12%   65-67, 81-86, 109-119, 135, 148-170, 182-210, 218-261, 281-331, 347-383, 397-425, 441-463, 476-518, 522-561, 583-617, 637-647, 737-753, 763-780, 790-819, 823, 831-843, 853-858, 865-870, 877, 908-915, 920\nautoBMAD/docuswarm/prompts/evaluator_agent.py                       4      0   100%\nautoBMAD/docuswarm/prompts/independent_agent.py                     4      0   100%\nautoBMAD/docuswarm/prompts/skill_injector.py                       58     40    31%   104-117, 135-158, 172-197, 210-216\nautoBMAD/docuswarm/prompts/template_engine.py                     162    135    17%   93-94, 108, 119-131, 142-177, 188-209, 220, 238-298, 322-388\nautoBMAD/docuswarm/prompts/template_loader.py                     123     80    35%   98-101, 116-163, 178-205, 219-239, 254-260, 271-272, 280-289, 293-294\nautoBMAD/docuswarm/prompts/validator.py                            24     14    42%   49-67, 79, 90-94\nautoBMAD/docuswarm/public_api.py                                    7      7     0%   23-37\nautoBMAD/docuswarm/storage/__init__.py                              4      0   100%\nautoBMAD/docuswarm/storage/checkpoints.py                          95     74    22%   39-41, 48-68, 79-81, 95-122, 142-168, 172-174, 193-219, 239-241, 257, 287-303, 312\nautoBMAD/docuswarm/storage/database.py                            109     82    25%   54-62, 77-82, 87-90, 95, 105-117, 132-135, 150-156, 166-279, 301-316, 324-327, 335-339, 343-349\nautoBMAD/docuswarm/storage/files.py                                83     83     0%   7-283\nautoBMAD/docuswarm/storage/state_access.py                         50     50     0%   3-138\nautoBMAD/docuswarm/storage/state_manager.py                       411    359    13%   72, 81, 90, 101-103, 115-116, 136, 174-193, 203-237, 244-265, 291-324, 340-418, 436-469, 483-490, 502-514, 532-575, 607, 624-806, 822-829, 852, 863-909, 932, 941-962, 975-980, 1001-1057, 1078-1127, 1152-1161, 1191-1228, 1265-1268, 1308-1366, 1381-1384, 1395-1398, 1410-1414\nautoBMAD/docuswarm/templates/__init__.py                            3      3     0%   6-10\nautoBMAD/docuswarm/tools/__init__.py                                9      0   100%\nautoBMAD/docuswarm/tools/callable_tool_wrapper.py                  21      5    76%   49-50, 64-66\nautoBMAD/docuswarm/tools/create_deliverable.py                     81     45    44%   67-70, 76-79, 84-91, 104-113, 126-128, 140, 152, 186-187, 199-237, 257-258\nautoBMAD/docuswarm/tools/create_deliverable_sdk.py                102     83    19%   25-26, 144-157, 162, 167, 172-173, 193-235, 255-273, 295-416\nautoBMAD/docuswarm/tools/create_document_set.py                   114     83    27%   65-70, 99-102, 107-122, 134-142, 156-174, 185-213, 225-293, 307, 320-321\nautoBMAD/docuswarm/tools/file_tools.py                            156    133    15%   132-136, 143, 159-181, 196-200, 212-228, 259-300, 332-401, 433-500\nautoBMAD/docuswarm/tools/file_tools_sdk.py                        158    135    15%   104-108, 115, 120-144, 152-156, 161-177, 186-227, 237-306, 331-410\nautoBMAD/docuswarm/tools/protocols.py                               4      4     0%   3-16\nautoBMAD/docuswarm/tools/sdk_adapter.py                            34     26    24%   34-55, 79-108, 122-128\nautoBMAD/docuswarm/tools/search_tools.py                          168    168     0%   18-518\nautoBMAD/docuswarm/tools/search_tools_sdk.py                      171    147    14%   42-44, 48, 57-62, 68-96, 106-211, 221-303, 328-433\nautoBMAD/docuswarm/tools/tool_registry.py                          46     23    50%   39, 59-65, 76, 88-101, 109, 117, 121, 135-137, 161-165, 174\nautoBMAD/docuswarm/tools/tool_result.py                            14      3    79%   17, 26, 34\nautoBMAD/docuswarm/tools/tool_result_extractor.py                  67     67     0%   3-154\nautoBMAD/docuswarm/tools/update_context.py                         80     53    34%   88-100, 111-125, 140-154, 166-172, 187-253, 275\nautoBMAD/docuswarm/tools/update_context_sdk.py                     35     28    20%   50-167\nautoBMAD/docuswarm/utils/__init__.py                                2      0   100%\nautoBMAD/docuswarm/utils/logging.py                               159    116    27%   46-47, 96-98, 107-120, 129, 136-199, 206-207, 235-311, 333-343, 357-366, 372-373, 378-379, 384-385, 390-391, 403-410, 419, 430-436\nautoBMAD/docuswarm/utils/session_ids.py                             7      3    57%   54-58\n---------------------------------------------------------------------------------------------\nTOTAL                                                            8493   6598    22%\nCoverage HTML written to dir htmlcov\n\n",
+      "stderr": "",
+      "duration_sec": 1.8720510005950928,
+      "timeout": false,
+      "timed_out": false
+    },
+    {
+      "test_file": "tests/test_docuswarm_p0_state_manager_consistency.py",
+      "command": "/home/leafliu/autoBMAD/.venv/bin/python -m pytest tests/test_docuswarm_p0_state_manager_consistency.py -q",
+      "returncode": 0,
+      "stdout": "....                                                                     [100%]\n\n---------- coverage: platform linux, python 3.12.10-final-0 ----------\nName                                                            Stmts   Miss  Cover   Missing\n---------------------------------------------------------------------------------------------\nautoBMAD/docuswarm/__init__.py                                     13      7    46%   24-32\nautoBMAD/docuswarm/__main__.py                                      1      1     0%   6\nautoBMAD/docuswarm/agents/__init__.py                               5      5     0%   3-24\nautoBMAD/docuswarm/agents/base.py                                  16     16     0%   11-79\nautoBMAD/docuswarm/agents/evaluator.py                            218    218     0%   14-785\nautoBMAD/docuswarm/agents/evaluator_config/__init__.py              3      3     0%   4-18\nautoBMAD/docuswarm/agents/evaluator_config/criteria_loader.py      72     72     0%   14-228\nautoBMAD/docuswarm/agents/evaluator_config/schemas.py              18     18     0%   10-128\nautoBMAD/docuswarm/agents/independent.py                          338    338     0%   15-1233\nautoBMAD/docuswarm/agents/persona.py                               84     84     0%   9-266\nautoBMAD/docuswarm/agents/summary.py                              252    252     0%   24-776\nautoBMAD/docuswarm/cli/__init__.py                                  2      2     0%   9-11\nautoBMAD/docuswarm/cli/commands/__init__.py                        10     10     0%   7-17\nautoBMAD/docuswarm/cli/commands/cancel.py                          19     19     0%   3-32\nautoBMAD/docuswarm/cli/commands/cancel_all.py                      27     27     0%   3-62\nautoBMAD/docuswarm/cli/commands/clean.py                           51     51     0%   3-107\nautoBMAD/docuswarm/cli/commands/diagnostics.py                     47     47     0%   8-76\nautoBMAD/docuswarm/cli/commands/export.py                          44     44     0%   3-77\nautoBMAD/docuswarm/cli/commands/list.py                            32     32     0%   3-68\nautoBMAD/docuswarm/cli/commands/resume.py                          39     39     0%   3-72\nautoBMAD/docuswarm/cli/commands/start.py                           36     36     0%   3-56\nautoBMAD/docuswarm/cli/commands/status.py                          49     49     0%   3-72\nautoBMAD/docuswarm/cli/main.py                                     30     30     0%   8-84\nautoBMAD/docuswarm/cli/services/__init__.py                         2      2     0%   7-9\nautoBMAD/docuswarm/cli/services/pipeline_service.py                78     78     0%   7-211\nautoBMAD/docuswarm/config.py                                       91     91     0%   12-239\nautoBMAD/docuswarm/config/__init__.py                              35      6    83%   37, 47-49, 58, 67-68\nautoBMAD/docuswarm/config/summary_agent_config.py                 161     82    49%   58-59, 71-74, 87, 115-124, 136-139, 153, 182-185, 197-200, 214, 251-254, 270, 302-305, 319, 358-361, 374-389, 411, 445-446, 458-492, 500-504\nautoBMAD/docuswarm/context/__init__.py                              5      5     0%   3-28\nautoBMAD/docuswarm/context/audit.py                                56     56     0%   10-219\nautoBMAD/docuswarm/context/filter.py                               48     48     0%   3-140\nautoBMAD/docuswarm/context/isolation.py                            96     96     0%   11-351\nautoBMAD/docuswarm/context/permissions.py                           4      4     0%   6-16\nautoBMAD/docuswarm/context/validator.py                           498    498     0%   14-1947\nautoBMAD/docuswarm/exceptions.py                                  198    108    45%   80-84, 93, 98, 106, 119, 165-169, 174, 179, 228-234, 239, 244, 249, 293-299, 304, 309, 314, 357-363, 368, 373, 378, 452-464, 469, 474, 479, 484, 489, 494, 550-552, 557, 596-600, 605, 610, 649-656, 661, 666, 671-676, 719-728, 733, 738, 777-781, 786, 791\nautoBMAD/docuswarm/llm/__init__.py                                  4      4     0%   12-30\nautoBMAD/docuswarm/llm/approval.py                                 39     39     0%   21-182\nautoBMAD/docuswarm/llm/config.py                                   31     31     0%   10-96\nautoBMAD/docuswarm/llm/mode_mapper.py                              16     16     0%   13-84\nautoBMAD/docuswarm/llm/response.py                                159    159     0%   8-345\nautoBMAD/docuswarm/llm/session_manager.py                         450    450     0%   16-1301\nautoBMAD/docuswarm/llm/tool_filter.py                              89     89     0%   21-324\nautoBMAD/docuswarm/node_execution/__init__.py                      35     35     0%   3-127\nautoBMAD/docuswarm/node_execution/chaining.py                      44     44     0%   7-165\nautoBMAD/docuswarm/node_execution/context_builder.py               60     60     0%   9-177\nautoBMAD/docuswarm/node_execution/contracts.py                     41     41     0%   10-68\nautoBMAD/docuswarm/node_execution/executor.py                     159    159     0%   11-479\nautoBMAD/docuswarm/node_execution/metrics.py                       68     68     0%   16-274\nautoBMAD/docuswarm/node_execution/node_escalation.py               67     67     0%   15-255\nautoBMAD/docuswarm/node_execution/pipeline_adapter.py             134    134     0%   10-396\nautoBMAD/docuswarm/node_execution/run_tracker.py                   23     23     0%   14-149\nautoBMAD/docuswarm/node_execution/state.py                        108    108     0%   7-465\nautoBMAD/docuswarm/nodes/__init__.py                                4      4     0%   3-16\nautoBMAD/docuswarm/nodes/dual_agent.py                            273    273     0%   13-877\nautoBMAD/docuswarm/nodes/iteration.py                              92     92     0%   13-322\nautoBMAD/docuswarm/pipeline/__init__.py                             7      7     0%   3-51\nautoBMAD/docuswarm/pipeline/escalation.py                          60     60     0%   19-281\nautoBMAD/docuswarm/pipeline/force_completion.py                    41     41     0%   12-185\nautoBMAD/docuswarm/pipeline/graph.py                              109    109     0%   13-441\nautoBMAD/docuswarm/pipeline/lease.py                               30     30     0%   7-76\nautoBMAD/docuswarm/pipeline/metrics.py                             45     45     0%   12-185\nautoBMAD/docuswarm/pipeline/orchestrator.py                       358    358     0%   9-1170\nautoBMAD/docuswarm/pipeline/quality.py                             50     50     0%   13-180\nautoBMAD/docuswarm/pipeline/questions.py                           56     56     0%   13-201\nautoBMAD/docuswarm/pipeline/state.py                              172    172     0%   7-656\nautoBMAD/docuswarm/pipeline/transitions.py                         54     54     0%   10-218\nautoBMAD/docuswarm/prompts/__init__.py                              8      8     0%   10-39\nautoBMAD/docuswarm/prompts/contract_builder.py                    364    364     0%   9-920\nautoBMAD/docuswarm/prompts/evaluator_agent.py                       4      4     0%   6-12\nautoBMAD/docuswarm/prompts/independent_agent.py                     4      4     0%   6-12\nautoBMAD/docuswarm/prompts/skill_injector.py                       58     58     0%   10-216\nautoBMAD/docuswarm/prompts/template_engine.py                     162    162     0%   14-391\nautoBMAD/docuswarm/prompts/template_loader.py                     123    123     0%   7-294\nautoBMAD/docuswarm/prompts/validator.py                            24     24     0%   7-94\nautoBMAD/docuswarm/public_api.py                                    7      7     0%   23-37\nautoBMAD/docuswarm/storage/__init__.py                              4      0   100%\nautoBMAD/docuswarm/storage/checkpoints.py                          95     74    22%   39-41, 48-68, 79-81, 95-122, 142-168, 172-174, 193-219, 239-241, 257, 287-303, 312\nautoBMAD/docuswarm/storage/database.py                            109     20    82%   87-90, 95, 107, 116-117, 306-309, 339, 343-349\nautoBMAD/docuswarm/storage/files.py                                83     83     0%   7-283\nautoBMAD/docuswarm/storage/state_access.py                         50     50     0%   3-138\nautoBMAD/docuswarm/storage/state_manager.py                       411    302    27%   81, 90, 116, 186-187, 203-237, 244-265, 291-324, 351, 363, 417-418, 449, 468-469, 489-490, 502-514, 532-575, 607, 624-806, 822-829, 864, 880, 906-909, 932, 941-962, 977-978, 1001-1057, 1078-1127, 1152-1161, 1191-1228, 1265-1268, 1308-1366, 1381-1384, 1395-1398, 1410-1414\nautoBMAD/docuswarm/templates/__init__.py                            3      3     0%   6-10\nautoBMAD/docuswarm/tools/__init__.py                                9      9     0%   20-55\nautoBMAD/docuswarm/tools/callable_tool_wrapper.py                  21     21     0%   7-89\nautoBMAD/docuswarm/tools/create_deliverable.py                     81     81     0%   10-258\nautoBMAD/docuswarm/tools/create_deliverable_sdk.py                102    102     0%   9-419\nautoBMAD/docuswarm/tools/create_document_set.py                   114    114     0%   9-321\nautoBMAD/docuswarm/tools/file_tools.py                            156    156     0%   18-504\nautoBMAD/docuswarm/tools/file_tools_sdk.py                        158    158     0%   9-416\nautoBMAD/docuswarm/tools/protocols.py                               4      4     0%   3-16\nautoBMAD/docuswarm/tools/sdk_adapter.py                            34     34     0%   7-131\nautoBMAD/docuswarm/tools/search_tools.py                          168    168     0%   18-518\nautoBMAD/docuswarm/tools/search_tools_sdk.py                      171    171     0%   3-439\nautoBMAD/docuswarm/tools/tool_registry.py                          46     46     0%   6-177\nautoBMAD/docuswarm/tools/tool_result.py                            14     14     0%   3-34\nautoBMAD/docuswarm/tools/tool_result_extractor.py                  67     67     0%   3-154\nautoBMAD/docuswarm/tools/update_context.py                         80     80     0%   6-275\nautoBMAD/docuswarm/tools/update_context_sdk.py                     35     35     0%   7-174\nautoBMAD/docuswarm/utils/__init__.py                                2      2     0%   3-15\nautoBMAD/docuswarm/utils/logging.py                               159    159     0%   12-436\nautoBMAD/docuswarm/utils/session_ids.py                             7      7     0%   13-60\n---------------------------------------------------------------------------------------------\nTOTAL                                                            8493   8066     5%\nCoverage HTML written to dir htmlcov\n\n",
+      "stderr": "",
+      "duration_sec": 1.8290269374847412,
+      "timeout": false,
+      "timed_out": false
+    }
+  ],
+  "db_audit": {
+    "db_path": "/home/leafliu/autoBMAD/docuswarm.db",
+    "db_exists": true,
+    "pipelines_count": 22,
+    "stale_running_count": 5,
+    "pipelines": [
+      {
+        "pipeline_id": "pipeline-1777639914414-a28b60fe",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": null,
+        "created_at": "2026-05-01 12:51:54"
+      },
+      {
+        "pipeline_id": "pipeline-1777610205512-d6ce6a21",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-05-01 04:36:45"
+      },
+      {
+        "pipeline_id": "pipeline-1777607528722-bf2e3471",
+        "subject": "calc-context",
+        "top_level_status": "failed",
+        "state_json_status": "failed",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-05-01 03:52:08"
+      },
+      {
+        "pipeline_id": "pipeline-1777568337821-ac4426e4",
+        "subject": "calc-context",
+        "top_level_status": "failed",
+        "state_json_status": "failed",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-30 16:58:57"
+      },
+      {
+        "pipeline_id": "pipeline-1777548246143-43a13bf8",
+        "subject": "calc-context",
+        "top_level_status": "running",
+        "state_json_status": "running",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-30 11:24:06"
+      },
+      {
+        "pipeline_id": "pipeline-1777439345215-46a35fb3",
+        "subject": "calc-context",
+        "top_level_status": "running",
+        "state_json_status": "running",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-29 05:09:05"
+      },
+      {
+        "pipeline_id": "pipeline-1777437705338-d1843527",
+        "subject": "calc-context",
+        "top_level_status": "running",
+        "state_json_status": "running",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-29 04:41:45"
+      },
+      {
+        "pipeline_id": "pipeline-1777435390024-2aea7383",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-04-29 04:03:10"
+      },
+      {
+        "pipeline_id": "pipeline-1777434982924-72524f27",
+        "subject": "calc-context",
+        "top_level_status": "failed",
+        "state_json_status": "failed",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-29 03:56:22"
+      },
+      {
+        "pipeline_id": "pipeline-1777434845776-6213db14",
+        "subject": "calc-context",
+        "top_level_status": "failed",
+        "state_json_status": "failed",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-29 03:54:05"
+      },
+      {
+        "pipeline_id": "pipeline-1777434772177-88dcc4b6",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-04-29 03:52:52"
+      },
+      {
+        "pipeline_id": "pipeline-1777434592967-eaf04484",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-04-29 03:49:52"
+      },
+      {
+        "pipeline_id": "pipeline-1777434457422-83233803",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-04-29 03:47:37"
+      },
+      {
+        "pipeline_id": "pipeline-1777434300489-d5ecb6b6",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-04-29 03:45:00"
+      },
+      {
+        "pipeline_id": "pipeline-1777434054066-121ceed6",
+        "subject": "calc-context",
+        "top_level_status": "completed",
+        "state_json_status": "completed",
+        "status_mismatch": false,
+        "current_node": "po",
+        "created_at": "2026-04-29 03:40:54"
+      },
+      {
+        "pipeline_id": "pipeline-1777433838659-eb42ac7d",
+        "subject": "calc-context",
+        "top_level_status": "failed",
+        "state_json_status": "failed",
+        "status_mismatch": false,
+        "current_node": "architect",
+        "created_at": "2026-04-29 03:37:18"
+      },
+      {
+        "pipeline_id": "pipeline-1777432796674-281acb43",
+        "subject": "calc-context",
+        "top_level_status": "running",
+        "state_json_status": "running",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-29 03:19:56"
+      },
+      {
+        "pipeline_id": "pipeline-1777432672599-6f044d0c",
+        "subject": "calc-context",
+        "top_level_status": "running",
+        "state_json_status": "running",
+        "status_mismatch": false,
+        "current_node": "analyst",
+        "created_at": "2026-04-29 03:17:52"
+      },
+      {
+        "pipeline_id": "pipeline-1777391639065-c7afe16e",
+        "subject": "calc-context",
+        "top_level_status": "pending",
+        "state_json_status": "running",
+        "status_mismatch": true,
+        "current_node": null,
+        "created_at": "2026-04-28 15:53:59"
+      },
+      {
+        "pipeline_id": "pipeline-1777380083297-cc65c03f",
+        "subject": "calc-context",
+        "top_level_status": "pending",
+        "state_json_status": "failed",
+        "status_mismatch": true,
+        "current_node": null,
+        "created_at": "2026-04-28 12:41:23"
+      }
+    ]
+  },
+  "code_audit": {
+    "state_manager_isolation_test": {
+      "temp_db_used": true,
+      "create_pipeline_ms": 3.4,
+      "update_pipeline_state_ms": 0.92,
+      "get_pipeline_ms": 0.08,
+      "list_pipelines_ms": 0.02,
+      "success": true,
+      "error": null,
+      "pipeline_status_from_get": "running",
+      "pipeline_current_node_from_get": "analyst"
+    },
+    "async_lifecycle_check": {
+      "modules_checked": [
+        {
+          "module": "autoBMAD/docuswarm/pipeline/orchestrator.py",
+          "create_task_count": 0,
+          "create_task_locations": [],
+          "has_explicit_cleanup": true
+        },
+        {
+          "module": "autoBMAD/docuswarm/agents/independent.py",
+          "create_task_count": 1,
+          "create_task_locations": [
+            "autoBMAD/docuswarm/agents/independent.py:1077"
+          ],
+          "has_explicit_cleanup": true
+        },
+        {
+          "module": "autoBMAD/docuswarm/pipeline/graph.py",
+          "create_task_count": 0,
+          "create_task_locations": [],
+          "has_explicit_cleanup": false
+        }
+      ],
+      "create_task_without_await_count": 1,
+      "unclosed_connection_patterns": [
+        "orchestrator manually closes checkpointer.conn in finally; no broader session cleanup"
+      ]
+    }
+  }
+}

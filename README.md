@@ -73,8 +73,8 @@ DocuSwarm 编排 5 个专业 Agent（Analyst、PM、UX Designer、Architect、PO
 Start a new pipeline with a context file:
 
 ```bash
-python -m autoBMAD.docuswarm start --context docs/examples/project-requirements.md
-source .venv/bin/activate && python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
+python -m autoBMAD.docuswarm start --context docs/bubble-sort/bubble-sort-context.md
+source .venv/bin/activate && python -m autoBMAD.docuswarm start --context docs/bubble-sort/bubble-sort-context.md
 ```
 
 Check pipeline status:
@@ -137,29 +137,33 @@ autoBMAD/
 ├── autoBMAD/                    # Main source code
 │   ├── docuswarm/              # DocuSwarm core system
 │   │   ├── agents/             # Agent implementations (Independent + Evaluator)
-│   │   ├── context/            # Context isolation (filter, audit, memory)
+│   │   ├── cli/                # CLI commands and entry point
+│   │   ├── context/            # Context isolation (filter, audit, validator)
 │   │   ├── llm/                # LLM integration (Claude SDK wrapper)
 │   │   ├── node_execution/     # Node execution engine
 │   │   ├── nodes/              # Node definitions (DualAgentNode)
 │   │   ├── pipeline/           # Pipeline orchestration (LangGraph)
 │   │   ├── prompts/            # Prompt templates (YAML + Markdown)
 │   │   ├── storage/            # State persistence (SQLite + files)
-│   │   ├── tools/              # Tool system (deliverables, context)
+│   │   ├── tools/              # Tool system (deliverables, context, file, search)
 │   │   ├── utils/              # Utilities (logging, session IDs)
-│   │   ├── tests/              # Unit and integration tests
 │   │   ├── config.py           # Configuration management
-│   │   ├── main.py             # CLI entry point
+│   │   ├── exceptions.py       # Custom exceptions
+│   │   ├── public_api.py       # Stable public API
 │   │   └── docuswarm.yaml      # Default YAML configuration
-│   └── epic_automation/        # Epic automation system
-├── nodes/                       # Node configurations (BMAD personas)
-│   ├── analyst/                # Analyst node config
-│   ├── pm/                     # PM node config
-│   ├── ux/                     # UX node config
-│   ├── architect/              # Architect node config
-│   └── po/                     # PO node config
-├── tests/                       # Additional test suite
+│   ├── epic_automation/        # Epic automation system
+│   └── nodes/                  # Node configurations (BMAD personas)
+│       ├── analyst/            # Analyst node config
+│       ├── pm/                 # PM node config
+│       ├── ux/                 # UX node config
+│       ├── architect/          # Architect node config
+│       └── po/                 # PO node config
+├── tests/                       # Test suite
 ├── docs/                        # Documentation & examples
-│   └── examples/               # Example context files
+│   ├── bubble-sort/            # Bubble Sort example
+│   ├── calc-one-plus-one/      # Calculator example
+│   ├── evaluation/             # Evaluation reports
+│   └── research/               # Research documents
 ├── scripts/                     # Utility scripts
 ├── claude_docs/                # AI-assisted development guides
 ├── pyproject.toml              # Project configuration
@@ -198,7 +202,7 @@ python -m autoBMAD.docuswarm start --context <file>
 
 **Example:**
 ```bash
-python -m autoBMAD.docuswarm start --context docs/examples/my-project.md
+python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
 ```
 
 #### `status` - Show pipeline status
@@ -268,32 +272,15 @@ python -m autoBMAD.docuswarm export abc123-def456
 python -m autoBMAD.docuswarm export abc123-def456 ./output --include-metadata
 ```
 
-#### `questions` - List unanswered questions
+#### `diagnostics` - Run pipeline diagnostics
 
 ```bash
-python -m autoBMAD.docuswarm questions <pipeline-id> [OPTIONS]
+python -m autoBMAD.docuswarm diagnostics <pipeline-id>
 ```
-
-**Options:**
-- `-r, --run RUN_ID` - Query a specific run ID instead of latest
 
 **Example:**
 ```bash
-python -m autoBMAD.docuswarm questions abc123-def456
-```
-
-#### `answer` - Answer a question
-
-```bash
-python -m autoBMAD.docuswarm answer <question-id> [answer] [OPTIONS]
-```
-
-**Options:**
-- `-t, --text TEXT` - Answer text (alternative to positional argument)
-
-**Example:**
-```bash
-python -m autoBMAD.docuswarm answer abc123_analyst_0 "Yes, we should use PostgreSQL"
+python -m autoBMAD.docuswarm diagnostics abc123-def456
 ```
 
 #### `cancel` - Cancel a running pipeline
@@ -339,16 +326,23 @@ python -m autoBMAD.docuswarm clean --status completed --older-than-days 7 --conf
 ```toml
 [tool.basedpyright]
 pythonVersion = "3.12.10"
+reportMissingImports = false
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = ["E", "F", "B", "I", "W", "C4", "UP"]
+ignore = ["E501", "B008"]
 
 [tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers --cov=autoBMAD.docuswarm --cov-report=term-missing --cov-report=html --tb=short --basetemp=.pytest-temp"
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "--verbose"
+pythonpath = [".", "autoBMAD"]
+timeout = 300
 ```
 
 ### Environment Variables
@@ -398,16 +392,12 @@ max_iterations: 100
 
 ```bash
 # 1. Start pipeline
-python -m autoBMAD.docuswarm start --context docs/examples/project.md
+python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
 
 # 2. Check status (repeat as needed)
 python -m autoBMAD.docuswarm status <pipeline-id>
 
-# 3. Answer any blocking questions
-python -m autoBMAD.docuswarm questions <pipeline-id>
-python -m autoBMAD.docuswarm answer <question-id> "Your answer"
-
-# 4. Export results when complete
+# 3. Export results when complete
 python -m autoBMAD.docuswarm export <pipeline-id> ./output --include-metadata
 ```
 

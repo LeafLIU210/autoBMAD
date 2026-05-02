@@ -1,7 +1,7 @@
 # 常用命令速查
 
-**版本**: 2.1
-**最后更新**: 2026-04-05
+**版本**: 2.2
+**最后更新**: 2026-05-02
 
 ---
 
@@ -38,7 +38,7 @@ deactivate
 python -m autoBMAD.docuswarm --help
 
 # 直接运行
-python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
+python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
 ```
 
 ---
@@ -110,16 +110,16 @@ ruff format autoBMAD/
 ruff check --select I autoBMAD/
 ```
 
-### Black格式化
+### Ruff 格式化
 ```bash
-# 格式化代码 (如果使用black)
-black autoBMAD/ tests/
+# 格式化代码
+ruff format autoBMAD/ tests/
 
 # 检查但不修改
-black --check autoBMAD/ tests/
+ruff format --check autoBMAD/ tests/
 
 # 显示差异
-black --diff autoBMAD/ tests/
+ruff format --diff autoBMAD/ tests/
 ```
 
 ### 自动化修复
@@ -331,6 +331,7 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --skip-qual
 ---
 
 **版本历史**:
+- v2.2 (2026-05-02): 根据实际代码更新命令和路径
 - v1.0 (2026-01-04): 初始版本，完整的常用命令速查
 
 

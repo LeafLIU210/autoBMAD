@@ -4,29 +4,32 @@ node_id: analyst
 description: "Templates for Analyst node deliverables"
 
 templates:
-  - template_id: market_research
-    title: "Market Research Report"
-    filename_pattern: "market-research-report.md"
-    description: "Comprehensive market analysis and trends"
+  - template_id: requirements_analysis
+    title: "Requirements Analysis Report"
+    filename_pattern: "requirements-analysis-report.md"
+    description: "Comprehensive requirements analysis and context clarification"
     sections:
-      - heading: "Executive Summary"
+      - heading: "Objective and Scope"
         required: true
-        description: "High-level overview of findings"
-      - heading: "Market Overview"
+        description: "Clear statement of business objectives and defined scope boundaries"
+      - heading: "Stakeholders and Users"
         required: true
-        description: "Current market state and trends"
-      - heading: "Target Segments"
+        description: "Primary stakeholders, end users, and their needs"
+      - heading: "Functional Requirements"
         required: true
-        description: "Identified customer segments"
-      - heading: "Competitive Landscape"
+        description: "Detailed functional requirements with prioritization"
+      - heading: "Non-Functional Constraints"
         required: true
-        description: "Competitor analysis"
-      - heading: "Market Opportunities"
+        description: "Performance, security, compatibility, and other constraints"
+      - heading: "Acceptance Criteria"
         required: true
-        description: "Growth opportunities"
-      - heading: "Recommendations"
+        description: "Specific, measurable criteria for validating each requirement"
+      - heading: "Pipeline Validation Risks"
         required: true
-        description: "Strategic recommendations"
+        description: "Risks that could affect downstream nodes or pipeline execution"
+      - heading: "Downstream Guidance"
+        required: true
+        description: "Recommendations and context for PM, UX, Architect nodes"
 
   - template_id: user_personas
     title: "User Persona Analysis"

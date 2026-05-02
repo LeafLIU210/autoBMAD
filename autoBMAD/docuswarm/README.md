@@ -54,37 +54,95 @@ DocuSwarm 是一个基于 BMAD 方法论的多智能体文档编排系统，通�
 
 ```
 DocuSwarm
+├── CLI (命令行接口)
+│   ├── main.py            # CLI 入口
+│   └── commands/          # 命令实现
+│       ├── start, status, resume, cancel
+│       ├── cancel-all, clean, list-pipelines
+│       ├── export, diagnostics
+│       └── services/      # 业务逻辑服务
+│
 ├── Pipeline (流水线编排)
-│   ├── HybridOrchestrator (混合编排器)
-│   ├── PipelineState (流水线状态)
-│   ├── StateGraph (LangGraph 状态图)
-│   ├── VerdictDeterminer (质量判定器)
-│   └── QuestionHandler (问题处理器)
+│   ├── orchestrator.py    # HybridOrchestrator
+│   ├── state.py           # PipelineState & 状态常量
+│   ├── graph.py           # LangGraph 状态图
+│   ├── quality.py         # VerdictDeterminer
+│   ├── questions.py       # QuestionHandler
+│   ├── transitions.py     # StateTransitions
+│   ├── metrics.py         # PipelineMetrics
+│   ├── force_completion.py # ForceCompletion
+│   ├── escalation.py      # EscalationHandler
+│   └── lease.py           # LeaseManager
 │
 ├── Nodes (节点系统)
-│   └── DualAgentNode (双 Agent 节点)
-│       ├── IndependentAgent (独立 Agent)
-│       └── EvaluatorAgent (评估 Agent)
+│   ├── dual_agent.py      # DualAgentNode
+│   ├── iteration.py       # IterationController
+│   └── loader.py          # NodeConfigLoader
+│
+├── Node Execution (节点执行)
+│   ├── executor.py        # NodeExecutor
+│   ├── pipeline_adapter.py # PipelineAdapter
+│   ├── context_builder.py # ContextBuilder
+│   ├── chaining.py        # NodeChaining
+│   ├── metrics.py         # ExecutionMetrics
+│   ├── node_escalation.py # EscalationHandler
+│   ├── run_tracker.py     # RunTracker
+│   ├── state.py           # ExecutionState
+│   └── contracts.py       # ExecutionContracts
+│
+├── Agents (Agent 实现)
+│   ├── base.py            # BaseAgent
+│   ├── independent.py     # IndependentAgent
+│   ├── evaluator.py       # EvaluatorAgent
+│   ├── persona.py         # PersonaLoader
+│   ├── summary.py         # SummaryAgent
+│   ├── configs/           # Agent 配置
+│   └── evaluator_config/  # Evaluator 配置加载器
 │
 ├── Context (上下文管理)
-│   ├── ContextManager (上下文管理器)
-│   ├── ContextFilter (上下文过滤器)
-│   └── IsolationAuditLogger (隔离审计日志)
+│   ├── isolation.py       # ContextManager
+│   ├── filter.py          # ContextFilter
+│   ├── audit.py           # IsolationAuditLogger
+│   ├── validator.py       # ContextValidator
+│   └── permissions.py     # PermissionManager
 │
 ├── Storage (存储层)
-│   ├── StateManager (状态管理器)
-│   ├── CheckpointManager (检查点管理器)
-│   ├── FileStorage (文件存储)
-│   └── Database (数据库操作)
+│   ├── state_manager.py   # StateManager
+│   ├── checkpoints.py     # CheckpointManager
+│   ├── database.py        # Database 操作
+│   ├── files.py           # FileStorage
+│   └── state_access.py    # StateAccess
 │
 ├── LLM (LLM 集成)
-│   ├── SessionManager (会话管理器)
-│   ├── ResponseParser (响应解析器)
-│   └── ModeMapper (模式映射器)
+│   ├── session_manager.py # SessionManager
+│   ├── response.py        # ResponseParser
+│   ├── approval.py        # ApprovalSystem
+│   ├── mode_mapper.py     # ModeMapper
+│   ├── tool_filter.py     # ToolFilter
+│   └── config.py          # LLM 配置
 │
-└── Tools (工具函数)
-    ├── create_deliverable (创建交付物)
-    └── update_context (更新上下文)
+├── Prompts (提示词模板)
+│   ├── template_loader.py # 模板加载器
+│   ├── template_engine.py # 模板引擎
+│   ├── contract_builder.py # 合约构建器
+│   ├── skill_injector.py  # Skill 注入器
+│   ├── validator.py       # 模板验证器
+│   └── templates/         # YAML 模板文件
+│
+├── Tools (工具函数)
+│   ├── create_deliverable.py      # 创建交付物
+│   ├── create_deliverable_sdk.py  # SDK 交付物工具
+│   ├── create_document_set.py     # 创建文档集
+│   ├── update_context.py          # 更新上下文
+│   ├── update_context_sdk.py      # SDK 上下文更新
+│   ├── file_tools.py / file_tools_sdk.py
+│   ├── search_tools.py / search_tools_sdk.py
+│   ├── tool_registry.py           # 工具注册表
+│   └── tool_result.py             # 工具结果
+│
+└── Utils (工具类)
+    ├── logging.py         # 日志配置
+    └── session_ids.py     # Session ID 管理
 ```
 
 ## 快速开始
@@ -154,15 +212,14 @@ python -m autoBMAD.docuswarm start --context <context_file>
 
 **示例**：
 ```bash
-python -m autoBMAD.docuswarm start -c docs/epics/EPIC-01.md
-python -m autoBMAD.docuswarm start -c docs/proposal.md
+python -m autoBMAD.docuswarm start -c docs/calc-one-plus-one/calc-context.md
 ```
 
 **输出**：
 ```
 + Pipeline started: abc123xyz
-  Subject: EPIC-01
-  Context: docs/epics/EPIC-01.md
+  Subject: calc-one-plus-one
+  Context: docs/calc-one-plus-one/calc-context.md
 ```
 
 #### 2. 查看流水线状态
@@ -311,37 +368,7 @@ python -m autoBMAD.docuswarm clean --status completed --older-than-days 7
 
 **可用状态过滤**：`pending`, `cancelled`, `failed`, `completed`
 
-#### 7. 管理问题与回答
-
-**列出未回答的问题**：
-
-```bash
-python -m autoBMAD.docuswarm questions <pipeline_id> [--run RUN_ID]
-```
-
-**回答问题**：
-
-```bash
-python -m autoBMAD.docuswarm answer <question_id> <answer>
-# 或使用选项
-python -m autoBMAD.docuswarm answer <question_id> --text "答案内容"
-```
-
-**示例**：
-```bash
-# 查看问题
-python -m autoBMAD.docuswarm questions abc123xyz
-
-# 回答问题
-python -m autoBMAD.docuswarm answer abc123xyz_analyst_0 "使用 React + TypeScript"
-```
-
-**问题优先级**：
-- 🚨 **BLOCKING**（阻塞）：必须回答才能继续
-- ℹ️ **CLARIFYING**（澄清）：建议回答以提高质量
-- ○ **OPTIONAL**（可选）：可选回答
-
-#### 8. 导出交付物
+#### 7. 导出交付物
 
 将流水线的所有交付物导出到指定目录：
 
@@ -368,16 +395,12 @@ python -m autoBMAD.docuswarm export abc123xyz -o ./deliverables --include-metada
 
 ```bash
 # 1. 启动新流水线
-python -m autoBMAD.docuswarm start -c docs/proposal.md
+python -m autoBMAD.docuswarm start -c docs/calc-one-plus-one/calc-context.md
 
 # 2. 查看状态
 python -m autoBMAD.docuswarm status <pipeline_id>
 
-# 3. 如果需要，回答问题
-python -m autoBMAD.docuswarm questions <pipeline_id>
-python -m autoBMAD.docuswarm answer <question_id> "答案内容"
-
-# 4. 导出结果
+# 3. 导出结果
 python -m autoBMAD.docuswarm export <pipeline_id> -o ./output
 ```
 
@@ -475,19 +498,20 @@ graph TB
 
 ### 配置文件位置
 
-DocuSwarm 使用多层配置系统：
+DocuSwarm 使用两层配置来源：
 
-1. **环境变量文件**：`.env`（项目根目录）
-2. **YAML 配置文件**：`autoBMAD/docuswarm/docuswarm.yaml`
-3. **节点配置**：`nodes/{node_id}/` 目录下的配置文件
+1. **环境变量文件**：`.env`（项目根目录或当前工作目录）
+2. **节点配置**：`autoBMAD/nodes/{node_id}/` 目录下的配置文件
+
+> 注意：`docuswarm.yaml` 已从项目中移除，全局运行时配置仅支持环境变量方式。
 
 ### 配置优先级
 
-配置加载顺序（后者覆盖前者）：
+配置加载优先级（从高到低）：
 
-1. **默认值**：代码中定义的默认配置
-2. **YAML 配置**：`docuswarm.yaml`
-3. **环境变量**：`.env` 文件或系统环境变量
+1. **`.env` 文件**：通过 `python-dotenv` 以 `override=True` 加载，会覆盖同名系统环境变量
+2. **系统环境变量**：当 `.env` 未定义相应键时从进程环境读取
+3. **默认值**：代码中定义的内置默认配置
 
 ### 环境变量配置
 
@@ -499,42 +523,17 @@ DocuSwarm 使用多层配置系统：
 | `DOCUSWARM_OUTPUT_DIR` | ❌ | `output` | 交付物输出目录 |
 | `DOCUSWARM_LOG_LEVEL` | ❌ | `INFO` | 日志级别（DEBUG/INFO/WARNING/ERROR） |
 | `DOCUSWARM_MAX_ITERATIONS` | ❌ | `100` | 最大迭代次数 |
-
-### YAML 配置示例
-
-创建 `autoBMAD/docuswarm/docuswarm.yaml`：
-
-```yaml
-# Anthropic API 配置
-# 注意：ANTHROPIC_API_KEY 必须通过环境变量设置，不应写入此文件
-base_url: https://api.anthropic.com/v1/
-
-# 数据库配置
-db_path: docuswarm.db
-
-# 输出目录
-output_dir: output
-
-# 日志级别（DEBUG, INFO, WARNING, ERROR）
-log_level: INFO
-
-# 最大迭代次数
-max_iterations: 100
-```
-
-**注意**：
-- `ANTHROPIC_API_KEY` 不应写入 YAML 文件，必须通过环境变量设置
-- 所有 YAML 配置项都可以被环境变量覆盖
+| `DOCUSWARM_AGENT_TIMEOUT` | ❌ | `7200` | Agent 执行超时（秒） |
 
 ### 节点配置文件
 
-每个节点需要三个配置文件，存放在 `nodes/{node_id}/` 目录：
+每个节点需要三个配置文件，存放在 `autoBMAD/nodes/{node_id}/` 目录：
 
 1. **`node.yaml`**：节点基础配置
 2. **`persona.json`**：Independent Agent 的 BMAD 人设
 3. **`evaluator.yaml`**：Evaluator Agent 的评估标准
 
-**示例：nodes/analyst/node.yaml**
+**示例：autoBMAD/nodes/analyst/node.yaml**
 
 ```yaml
 node_id: analyst
@@ -544,7 +543,7 @@ max_iterations: 10
 quality_threshold: 80
 ```
 
-**示例：nodes/analyst/persona.json**
+**示例：autoBMAD/nodes/analyst/persona.json**
 
 ```json
 {
@@ -571,7 +570,7 @@ quality_threshold: 80
 }
 ```
 
-**示例：nodes/analyst/evaluator.yaml**
+**示例：autoBMAD/nodes/analyst/evaluator.yaml**
 
 ```yaml
 criteria:
@@ -646,8 +645,8 @@ pending → running → completed
    - 每个 Agent 有独立的会话 ID
 
 2. **提示模板隔离**：
-   - Independent Agent 提示词：`prompts/templates/independent_agent.yaml`
-   - Evaluator Agent 提示词：`prompts/templates/evaluator_agent.yaml`
+   - Independent Agent 提示词：`autoBMAD/docuswarm/prompts/templates/independent_agent.yaml`
+   - Evaluator Agent 提示词：`autoBMAD/docuswarm/prompts/templates/evaluator_agent.yaml`
    - 两个模板完全独立，互不引用
 
 3. **消息过滤**：
@@ -746,24 +745,28 @@ class ForceCompletion:
 autoBMAD/docuswarm/
 ├── agents/              # Agent 实现
 │   ├── configs/         # Agent 配置文件
-│   │   └── independent_agent.yaml
 │   ├── evaluator_config/  # Evaluator 配置加载器
-│   │   ├── criteria_loader.py
-│   │   └── schemas.py
 │   ├── base.py          # BaseAgent 基类
 │   ├── independent.py   # IndependentAgent
 │   ├── evaluator.py     # EvaluatorAgent
-│   └── persona.py       # PersonaLoader
+│   ├── persona.py       # PersonaLoader
+│   └── summary.py       # SummaryAgent
+├── cli/                 # 命令行接口
+│   ├── main.py          # CLI 入口
+│   ├── commands/        # 命令定义
+│   └── services/        # 业务逻辑服务
 ├── context/             # 上下文管理
 │   ├── isolation.py     # ContextManager
 │   ├── filter.py        # ContextFilter
 │   ├── audit.py         # IsolationAuditLogger
-│   └── memory.py        # ContextMemory
+│   ├── validator.py     # ContextValidator
+│   └── permissions.py   # PermissionManager
 ├── llm/                 # LLM 集成
 │   ├── session_manager.py  # SessionManager
 │   ├── response.py         # ResponseParser
 │   ├── approval.py         # ApprovalSystem
 │   ├── mode_mapper.py      # ModeMapper
+│   ├── tool_filter.py      # ToolFilter
 │   └── config.py           # LLM 配置
 ├── nodes/               # 节点系统
 │   ├── dual_agent.py    # DualAgentNode
@@ -771,56 +774,59 @@ autoBMAD/docuswarm/
 │   └── loader.py        # NodeConfigLoader
 ├── node_execution/      # 节点执行系统
 │   ├── executor.py      # NodeExecutor
-│   ├── flow.py          # ExecutionFlow
+│   ├── pipeline_adapter.py # PipelineAdapter
+│   ├── context_builder.py  # ContextBuilder
 │   ├── state.py         # ExecutionState
-│   ├── metrics.py       # MetricsCollector
-│   ├── escalation.py    # EscalationHandler
+│   ├── metrics.py       # ExecutionMetrics
+│   ├── node_escalation.py  # EscalationHandler
+│   ├── run_tracker.py   # RunTracker
 │   ├── chaining.py      # NodeChaining
-│   ├── graph.py         # ExecutionGraph
-│   ├── validator.py     # ContextValidator
-│   └── run_tracker.py   # RunTracker
+│   └── contracts.py     # ExecutionContracts
 ├── pipeline/            # 流水线编排
 │   ├── orchestrator.py  # HybridOrchestrator
 │   ├── state.py         # PipelineState & 状态常量
 │   ├── graph.py         # LangGraph 图定义
 │   ├── quality.py       # VerdictDeterminer
-│   ├── escalation.py    # EscalationHandler
 │   ├── questions.py     # QuestionHandler
 │   ├── transitions.py   # StateTransitions
 │   ├── metrics.py       # PipelineMetrics
-│   └── force_completion.py  # ForceCompletion
+│   ├── force_completion.py  # ForceCompletion
+│   ├── escalation.py    # EscalationHandler
+│   └── lease.py         # LeaseManager
 ├── prompts/             # 提示词模板
-│   ├── templates/       # YAML 模板文件
-│   │   ├── independent_agent.yaml
-│   │   └── evaluator_agent.yaml
+│   ├── templates/       # YAML/Markdown 模板文件
 │   ├── template_loader.py  # 模板加载器
+│   ├── template_engine.py  # 模板引擎
+│   ├── contract_builder.py # 合约构建器
+│   ├── skill_injector.py   # Skill 注入器
 │   ├── validator.py        # 模板验证器
-│   ├── independent_agent.py  # Independent Agent 提示词
-│   └── evaluator_agent.py    # Evaluator Agent 提示词
+│   ├── independent_agent.py
+│   └── evaluator_agent.py
 ├── storage/             # 存储层
 │   ├── state_manager.py    # StateManager
 │   ├── checkpoints.py      # CheckpointManager
 │   ├── database.py         # Database 操作
-│   └── files.py            # FileStorage
+│   ├── files.py            # FileStorage
+│   └── state_access.py     # StateAccess
 ├── tools/               # 工具函数
-│   ├── protocols.py         # 工具协议定义
-│   ├── create_deliverable.py  # 创建交付物工具
-│   └── update_context.py      # 更新上下文工具
+│   ├── create_deliverable.py / create_deliverable_sdk.py
+│   ├── create_document_set.py
+│   ├── update_context.py / update_context_sdk.py
+│   ├── file_tools.py / file_tools_sdk.py
+│   ├── search_tools.py / search_tools_sdk.py
+│   ├── tool_registry.py    # 工具注册表
+│   ├── tool_result.py      # 工具结果
+│   ├── callable_tool_wrapper.py
+│   ├── sdk_adapter.py
+│   └── protocols.py        # 工具协议定义
 ├── utils/               # 工具类
 │   ├── logging.py       # 日志配置
 │   └── session_ids.py   # Session ID 管理
-├── tests/               # 测试文件
-│   ├── unit/            # 单元测试
-│   ├── integration/     # 集成测试
-│   ├── cli/             # CLI 测试
-│   └── conftest.py      # Pytest 配置
 ├── config.py            # 配置管理
 ├── exceptions.py        # 异常定义
-├── main.py              # CLI 入口
+├── public_api.py        # 稳定公共 API
 ├── __main__.py          # 模块入口
-├── __init__.py          # 包初始化
-├── docuswarm.yaml       # YAML 配置文件
-└── pytest.ini           # Pytest 配置
+└── __init__.py          # 包初始化
 ```
 
 ### 添加新节点
@@ -828,12 +834,12 @@ autoBMAD/docuswarm/
 1. **创建节点配置目录**：
 
 ```bash
-mkdir -p nodes/my_node
+mkdir -p autoBMAD/nodes/my_node
 ```
 
 2. **创建配置文件**：
 
-**nodes/my_node/node.yaml**：
+**autoBMAD/nodes/my_node/node.yaml**：
 ```yaml
 node_id: my_node
 name: My Custom Node
@@ -842,7 +848,7 @@ max_iterations: 10
 quality_threshold: 80
 ```
 
-**nodes/my_node/persona.json**：
+**autoBMAD/nodes/my_node/persona.json**：
 ```json
 {
   "role": "My Role",
@@ -856,7 +862,7 @@ quality_threshold: 80
 }
 ```
 
-**nodes/my_node/evaluator.yaml**：
+**autoBMAD/nodes/my_node/evaluator.yaml**：
 ```yaml
 criteria:
   quality:
@@ -875,7 +881,7 @@ scoring:
 
 3. **注册节点到流水线**：
 
-在 `pipeline/state.py` 中添加节点 ID：
+在 `autoBMAD/docuswarm/pipeline/state.py` 中添加节点 ID：
 
 ```python
 # Pipeline node order - must execute in sequence
@@ -923,7 +929,7 @@ def my_custom_tool(param: str) -> dict[str, Any]:
 在 Independent Agent 配置中注册工具：
 
 ```python
-# agents/configs/independent_agent.yaml
+# autoBMAD/docuswarm/agents/configs/independent_agent.yaml
 tools:
   - autoBMAD.docuswarm.tools.create_deliverable.create_deliverable
   - autoBMAD.docuswarm.tools.update_context.update_context
@@ -972,16 +978,16 @@ python -m autoBMAD.docuswarm --json-log start -c context.md
 
 ```bash
 # 标准日志
-tail -f logs/docuswarm.log
+tail -f logs/docuswarm-*.log
 
 # JSON 格式日志（使用 jq 美化）
 tail -f logs/docuswarm.json | jq .
 
 # 过滤特定级别的日志
-grep "ERROR" logs/docuswarm.log
+grep "ERROR" logs/docuswarm-*.log
 
 # 查看特定流水线的日志
-grep "pipeline-abc123" logs/docuswarm.log
+grep "pipeline-abc123" logs/docuswarm-*.log
 ```
 
 #### 调试技巧
@@ -1040,16 +1046,16 @@ PipelineNotFoundError: Pipeline not found: abc123xyz
 
 **错误信息**：
 ```
-FileNotFoundError: Node configuration not found: nodes/analyst/node.yaml
+FileNotFoundError: Node configuration not found: autoBMAD/nodes/analyst/node.yaml
 # 或
 ValidationError: Invalid persona format
 ```
 
 **解决方法**：
-- 检查节点配置文件是否存在：`ls nodes/analyst/`
+- 检查节点配置文件是否存在：`ls autoBMAD/nodes/analyst/`
 - 验证 JSON/YAML 格式是否正确：
-  - JSON: `python -m json.tool nodes/analyst/persona.json`
-  - YAML: `python -c "import yaml; yaml.safe_load(open('nodes/analyst/node.yaml'))"`
+  - JSON: `python -m json.tool autoBMAD/nodes/analyst/persona.json`
+  - YAML: `python -c "import yaml; yaml.safe_load(open('autoBMAD/nodes/analyst/node.yaml'))"`
 - 确保文件编码为 UTF-8
 - 检查文件权限是否可读
 

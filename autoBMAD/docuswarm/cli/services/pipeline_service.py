@@ -6,6 +6,7 @@ It separates the CLI interface from the business logic for better testability.
 
 from __future__ import annotations
 
+import atexit
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,7 @@ class PipelineService:
         config = load_config()
         self._db_path = db_path or str(config.db_path)
         self._state_manager = StateManager(db_path=self._db_path)
+        self._current_pipeline_id: str | None = None
 
     async def start(self, context_file: str) -> dict[str, Any]:
         """Start a new pipeline.
@@ -72,10 +74,37 @@ class PipelineService:
             session_manager=session_manager,
         )
 
+        self._current_pipeline_id = None
+        atexit.register(self._emergency_finalize)
         try:
-            return await orchestrator.start_pipeline(subject_context)
+            result = await orchestrator.start_pipeline(subject_context)
+            self._current_pipeline_id = result.get("pipeline_id")
+            return result
         finally:
+            atexit.unregister(self._emergency_finalize)
+            self._current_pipeline_id = None
             await session_manager.close_all()
+
+    def _emergency_finalize(self) -> None:
+        """Emergency finalization on unclean exit.
+
+        Phase 1 Fix: Uses 'cancelled' (valid status) and StateManager
+        to ensure state_json is synchronized with top-level columns.
+        """
+        pipeline_id = self._current_pipeline_id
+        if pipeline_id is None:
+            return
+        try:
+            from autoBMAD.docuswarm.storage.state_manager import StateManager
+
+            state_manager = StateManager(db_path=self._db_path)
+            # Update state_json and top-level columns atomically
+            state_manager._update_pipeline_state_sync(
+                pipeline_id,
+                {"status": "cancelled", "error": {"type": "EmergencyCancel", "message": "Unclean exit"}},
+            )
+        except Exception:
+            pass
 
     def status(self, pipeline_id: str) -> dict[str, Any] | None:
         """Get pipeline status.

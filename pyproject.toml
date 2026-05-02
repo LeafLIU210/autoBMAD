@@ -123,6 +123,11 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["B018", "B017"]
+"autoBMAD/docuswarm/nodes/dual_agent.py" = ["E402"]
+"autoBMAD/docuswarm/storage/checkpoints.py" = ["E402"]
+"autoBMAD/docuswarm/storage/files.py" = ["E402"]
+"autoBMAD/docuswarm/storage/state_manager.py" = ["E402"]
+"autoBMAD/docuswarm/utils/logging.py" = ["E402"]
 
 [tool.basedpyright]
 pythonVersion = "3.12.10"

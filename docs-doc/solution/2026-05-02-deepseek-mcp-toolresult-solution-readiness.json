@@ -1,0 +1,260 @@
+{
+  "generated_at": "2026-05-02T05:22:39.430754+00:00",
+  "source_report": "docs-doc/research/2026-05-02-deepseek-mcp-toolresult-deep-research.md",
+  "readiness": [
+    {
+      "fix_id": "7.1",
+      "title": "提取器补齐 list 分支（P0 阻塞级）",
+      "scope": "autoBMAD/docuswarm/agents/independent.py :: _extract_create_deliverable_result, _extract_submit_report_result",
+      "prereq_status": "ready",
+      "prereq_evidence": [
+        "_extract_create_deliverable_result: missing_list_branch=True",
+        "_extract_submit_report_result: missing_list_branch=True"
+      ],
+      "risk": "low",
+      "effort_hours": 1.0,
+      "test_cases": [
+        {
+          "file": "tests/test_docuswarm_p0_independent_extractor.py",
+          "class_name": "TestExtractCreateDeliverableResult",
+          "function": "test_list_content_with_json_text_block_returns_file_path",
+          "arrange": "messages = [{'role':'user','content':[{'type':'tool_result','tool_use_id':'tu1','content':[{'type':'text','text': json.dumps({'file_path':'/x/a.md','sha256':'aa'})}],'is_error':False}]}]",
+          "act": "file_path, sha = agent._extract_create_deliverable_result(messages)",
+          "assert_": "assert file_path == '/x/a.md' and sha == 'aa'",
+          "target_symbol": "IndependentAgent._extract_create_deliverable_result"
+        },
+        {
+          "file": "tests/test_docuswarm_p0_independent_extractor.py",
+          "class_name": "TestExtractCreateDeliverableResult",
+          "function": "test_str_content_backward_compat",
+          "arrange": "messages = [{'content':[{'type':'tool_result','tool_use_id':'t','content': json.dumps({'file_path':'/x/b.md','sha256':'bb'}),'is_error':False}]}]",
+          "act": "file_path, sha = agent._extract_create_deliverable_result(messages)",
+          "assert_": "assert file_path == '/x/b.md' and sha == 'bb'",
+          "target_symbol": "IndependentAgent._extract_create_deliverable_result"
+        },
+        {
+          "file": "tests/test_docuswarm_p0_independent_extractor.py",
+          "class_name": "TestExtractCreateDeliverableResult",
+          "function": "test_list_content_non_text_block_is_skipped",
+          "arrange": "messages=[{'content':[{'type':'tool_result','tool_use_id':'t','content':[{'type':'image','source':{...}}],'is_error':False}]}]",
+          "act": "fp, sh = agent._extract_create_deliverable_result(messages)",
+          "assert_": "assert fp is None and sh is None  # non-text skipped, no crash",
+          "target_symbol": "IndependentAgent._extract_create_deliverable_result"
+        },
+        {
+          "file": "tests/test_docuswarm_p0_independent_extractor.py",
+          "class_name": "TestExtractSubmitReportResult",
+          "function": "test_list_content_returns_report",
+          "arrange": "report={'status':'success','report':{'deliverable':{'title':'T','file_path':'/x.md','sha256':'aa'},'questions':[],'action':'create_deliverable'}}; messages=[{'content':[{'type':'tool_result','tool_use_id':'t','content':[{'type':'text','text':json.dumps(report)}],'is_error':False}]}]",
+          "act": "reports = agent._extract_submit_report_result(messages)",
+          "assert_": "assert len(reports)==1 and reports[0]['deliverable']['file_path']=='/x.md'",
+          "target_symbol": "IndependentAgent._extract_submit_report_result"
+        },
+        {
+          "file": "tests/test_docuswarm_p0_independent_extractor.py",
+          "class_name": "TestExtractSubmitReportResult",
+          "function": "test_error_is_error_flag_skipped",
+          "arrange": "messages=[{'content':[{'type':'tool_result','tool_use_id':'t','content':[{'type':'text','text':'Error: invalid'}],'is_error':True}]}]",
+          "act": "reports = agent._extract_submit_report_result(messages)",
+          "assert_": "assert reports == []",
+          "target_symbol": "IndependentAgent._extract_submit_report_result"
+        },
+        {
+          "file": "tests/test_docuswarm_p0_independent_extractor.py",
+          "class_name": "TestMarkdownFallbackEndToEnd",
+          "function": "test_parse_response_recovers_from_markdown_with_list_tool_result",
+          "arrange": "messages=[{'content':[{'type':'tool_result','tool_use_id':'t1','content':[{'type':'text','text':json.dumps({'file_path':'/o/ux.md','sha256':'ae2e5715'})}]}]},{'content':[{'type':'text','text':'## Execution Complete\\nI have successfully...'}]}]",
+          "act": "data = agent._parse_response(messages)",
+          "assert_": "assert data['deliverable']['file_path']=='/o/ux.md' and data['deliverable']['sha256']=='ae2e5715' and data['action']=='create_deliverable'",
+          "target_symbol": "IndependentAgent._parse_response"
+        }
+      ],
+      "blocking_unknowns": []
+    },
+    {
+      "fix_id": "7.2",
+      "title": "回归测试套件（P0 伴生）",
+      "scope": "tests/test_docuswarm_p0_independent_extractor.py",
+      "prereq_status": "ready",
+      "prereq_evidence": [
+        "tracked_count=21",
+        "conftest_tracked=True",
+        "deliverable_tools_test_tracked=True",
+        "note: tests/ 当前在本地被删除但 git HEAD 仍保留；重启 TDD 前需 git checkout 恢复"
+      ],
+      "risk": "low",
+      "effort_hours": 2.0,
+      "test_cases": [],
+      "blocking_unknowns": []
+    },
+    {
+      "fix_id": "7.3",
+      "title": "Prompt 收紧：删除 Legacy Fallback，启用 output_format（P1）",
+      "scope": "autoBMAD/docuswarm/agents/independent.py :: _format_system_prompt, autoBMAD/docuswarm/llm/session_manager.py :: create_session",
+      "prereq_status": "partial",
+      "prereq_evidence": [
+        "legacy_fallback_header_present=True",
+        "evaluator_uses_output_format=True",
+        "independent_uses_output_format=False",
+        "single_prompt_supports_output_format=True",
+        "create_session_supports_output_format=False"
+      ],
+      "risk": "medium",
+      "effort_hours": 4.0,
+      "test_cases": [
+        {
+          "file": "tests/test_docuswarm_p1_prompt_tightening.py",
+          "class_name": "TestLegacyFallbackRemoved",
+          "function": "test_system_prompt_does_not_advertise_legacy_fallback",
+          "arrange": "agent = build_agent(node_id='ux')",
+          "act": "prompt = agent._format_system_prompt()",
+          "assert_": "assert 'Legacy Output Format' not in prompt and 'MAY return this JSON structure directly' not in prompt",
+          "target_symbol": "IndependentAgent._format_system_prompt"
+        },
+        {
+          "file": "tests/test_docuswarm_p1_prompt_tightening.py",
+          "class_name": "TestExplicitFileSha256Contract",
+          "function": "test_prompt_requires_file_and_sha256_lines",
+          "arrange": "agent = build_agent(node_id='ux')",
+          "act": "prompt = agent._format_system_prompt()",
+          "assert_": "assert 'File:' in prompt and 'SHA256:' in prompt  # enforce fallback-regex harvest contract",
+          "target_symbol": "IndependentAgent._format_system_prompt"
+        },
+        {
+          "file": "tests/test_docuswarm_p1_prompt_tightening.py",
+          "class_name": "TestSubmitReportMandatoryHeader",
+          "function": "test_prompt_still_requires_submit_execution_report",
+          "arrange": "agent = build_agent(node_id='ux')",
+          "act": "prompt = agent._format_system_prompt()",
+          "assert_": "assert 'submit_execution_report' in prompt and 'MANDATORY' in prompt",
+          "target_symbol": "IndependentAgent._format_system_prompt"
+        },
+        {
+          "file": "tests/test_docuswarm_p3_output_format_for_independent.py",
+          "class_name": "TestCreateSessionOutputFormat",
+          "function": "test_create_session_accepts_output_format",
+          "arrange": "sm = SessionManager(config=...)",
+          "act": "session = await sm.create_session(mode='agent', yolo=True, output_format=INDEPENDENT_OUTPUT_SCHEMA)",
+          "assert_": "assert session._options.output_format == {'type':'json_schema','schema':INDEPENDENT_OUTPUT_SCHEMA}",
+          "target_symbol": "SessionManager.create_session"
+        },
+        {
+          "file": "tests/test_docuswarm_p3_output_format_for_independent.py",
+          "class_name": "TestIndependentPassesOutputFormat",
+          "function": "test_independent_agent_passes_output_format_through",
+          "arrange": "agent = build_agent(node_id='ux'); patched_create_session = record_calls(sm)",
+          "act": "await agent._call_llm_with_prompts('s','u')",
+          "assert_": "call = patched_create_session.call_args; assert 'output_format' in call.kwargs",
+          "target_symbol": "IndependentAgent._call_llm_with_prompts"
+        }
+      ],
+      "blocking_unknowns": [
+        "SessionManager.create_session 尚未接受 output_format 参数，启用 IndependentAgent 硬约束需先扩展该 API（复用 single_prompt 实现逻辑）。",
+        "ClaudeSessionWrapper 路径可能需要透传 output_format 到 options。"
+      ]
+    },
+    {
+      "fix_id": "7.4",
+      "title": "Markdown 正则兜底抓取 File/SHA256（P1 防御）",
+      "scope": "autoBMAD/docuswarm/agents/independent.py :: _extract_data_from_content",
+      "prereq_status": "partial",
+      "prereq_evidence": [
+        "has_file_sha_contract_in_prompt=False",
+        "若 prompt 未要求 LLM 打印 'File: / SHA256:'，需在 §7.3 一起加入"
+      ],
+      "risk": "low",
+      "effort_hours": 2.0,
+      "test_cases": [
+        {
+          "file": "tests/test_docuswarm_p1_markdown_regex_fallback.py",
+          "class_name": "TestFileShaRegexHarvest",
+          "function": "test_extracts_file_and_sha256_from_markdown_summary",
+          "arrange": "content = '## Execution Complete\\n\\nFile: /out/ux.md\\nSHA256: ae2e5715bae2d9e6...'",
+          "act": "fp, sh = agent._extract_file_sha_from_markdown(content)",
+          "assert_": "assert fp == '/out/ux.md' and sh.startswith('ae2e5715')",
+          "target_symbol": "IndependentAgent._extract_file_sha_from_markdown"
+        },
+        {
+          "file": "tests/test_docuswarm_p1_markdown_regex_fallback.py",
+          "class_name": "TestFileShaRegexHarvest",
+          "function": "test_returns_none_when_missing",
+          "arrange": "content = '## Summary\\n\\nNo metadata here.'",
+          "act": "fp, sh = agent._extract_file_sha_from_markdown(content)",
+          "assert_": "assert fp is None and sh is None",
+          "target_symbol": "IndependentAgent._extract_file_sha_from_markdown"
+        },
+        {
+          "file": "tests/test_docuswarm_p1_markdown_regex_fallback.py",
+          "class_name": "TestRegexFallbackIntegration",
+          "function": "test_parse_response_uses_regex_when_tool_result_missing",
+          "arrange": "messages=[{'content':[{'type':'text','text':'## Done\\nFile: /out/ux.md\\nSHA256: '+'a'*64}]}]",
+          "act": "data = agent._parse_response(messages)",
+          "assert_": "assert data['deliverable']['file_path']=='/out/ux.md' and data['deliverable']['sha256']=='a'*64",
+          "target_symbol": "IndependentAgent._parse_response"
+        }
+      ],
+      "blocking_unknowns": []
+    },
+    {
+      "fix_id": "7.5",
+      "title": "DeepSeek 兼容性适配（P2）",
+      "scope": "autoBMAD/docuswarm/tools/create_deliverable_sdk.py :: create_deliverable_tool/submit_execution_report_tool, autoBMAD/docuswarm/llm/session_manager.py :: _convert_content_block",
+      "prereq_status": "ready",
+      "prereq_evidence": [
+        "error_returns_plain_text_count=0",
+        "error_sets_is_error_flag=False",
+        "error_embeds_structured_json=False",
+        "DeepSeek 忽略 is_error，需要把错误嵌入 text 为 JSON。"
+      ],
+      "risk": "medium",
+      "effort_hours": 3.0,
+      "test_cases": [
+        {
+          "file": "tests/test_docuswarm_p2_deepseek_adaptation.py",
+          "class_name": "TestToolErrorEmbedding",
+          "function": "test_error_response_embeds_structured_json",
+          "arrange": "server = create_deliverable_server(output_dir='/nonexistent/no-perm')",
+          "act": "result = await server.tools['create_deliverable'].handler({'title':'x','content':'y'})",
+          "assert_": "body = json.loads(result['content'][0]['text']); assert body['error'] and 'hint' in body  # structured, not plain 'Error: ...'",
+          "target_symbol": "create_deliverable_tool (inside create_deliverable_server)"
+        },
+        {
+          "file": "tests/test_docuswarm_p2_deepseek_adaptation.py",
+          "class_name": "TestToolErrorIsErrorFlag",
+          "function": "test_error_sets_is_error_true",
+          "arrange": "server = create_deliverable_server(output_dir='/nonexistent')",
+          "act": "result = await server.tools['create_deliverable'].handler({'title':'x','content':'y'})",
+          "assert_": "assert result.get('is_error') is True  # honor Anthropic contract even if DeepSeek ignores",
+          "target_symbol": "create_deliverable_tool"
+        },
+        {
+          "file": "tests/test_docuswarm_p2_deepseek_adaptation.py",
+          "class_name": "TestObservabilityToolResultShape",
+          "function": "test_llm_tool_result_logs_content_shape",
+          "arrange": "item = ToolResultBlock(tool_use_id='x', content=[{'type':'text','text':'{}'}], is_error=False)",
+          "act": "converted = session_manager._convert_content_block(item); session_manager._logger.info_calls",
+          "assert_": "# structlog capture asserts a 'tool_result_content_shape' log field # is emitted with value 'list' when content is list",
+          "target_symbol": "session_manager._convert_content_block"
+        }
+      ],
+      "blocking_unknowns": []
+    }
+  ],
+  "summary": {
+    "total_fix_items": 5,
+    "total_test_cases": 17,
+    "total_effort_hours_estimate": 12.0,
+    "by_prereq_status": {
+      "ready": 3,
+      "partial": 2
+    },
+    "critical_path": [
+      "7.1",
+      "7.2",
+      "7.5"
+    ],
+    "has_blocking_unknowns": [
+      "7.3"
+    ]
+  }
+}

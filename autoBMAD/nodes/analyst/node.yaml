@@ -3,33 +3,34 @@
 
 node_id: analyst
 name: Analyst
-description: Data Analyst & Business Intelligence Specialist - transforms raw data into actionable business insights
+description: 业务需求分析与上下文澄清专家 - 负责梳理功能需求、定义验收标准、识别流水线验证风险
 sequence: 1
 deliverable_type: analyst-report
 deliverable:
   required_sections:
-    - executive_summary
-    - data_sources
-    - analysis_methodology
-    - findings
-    - recommendations
-    - limitations
+    - objective_and_scope
+    - stakeholders_or_users
+    - functional_requirements
+    - non_functional_constraints
+    - acceptance_criteria
+    - pipeline_validation_risks
+    - downstream_guidance
 task:
   name: Analyst
-  description: Data Analyst & Business Intelligence Specialist - transforms raw data into actionable business insights
-  role_supplement: Focus on evidence quality and actionability
+  description: Business Requirements Analysis & Context Clarification Specialist - elicits and documents functional requirements, acceptance criteria, and pipeline validation risks
+  role_supplement: Focus on requirement alignment and traceability
 agent:
   type: independent
   model: sonnet
   temperature: 0.7
 questions:
   - id: q1
-    text: "What is the business context and objectives for this analysis?"
+    text: "What is the business objective and scope of this requirement?"
     required: true
   - id: q2
-    text: "What data sources are available for this analysis?"
+    text: "Who are the primary stakeholders or end users?"
     required: true
   - id: q3
-    text: "What specific questions should the analysis answer?"
+    text: "What are the key functional requirements and acceptance criteria?"
     required: true
 dependencies: []

@@ -51,7 +51,7 @@ DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 |------|------|------|
 | **Phase 1 (P0)** | CheckpointManager + ContextValidator 提取 | ✅ 已完成 |
 | **Phase 2 (P1)** | SDK统一异常处理 + 消息格式切换 | ✅ 已完成 |
-| **Phase 3 (P2)** | 质量保障增强 + 测试覆盖提升 | 🔄 进行中 |
+| **Phase 3 (P2)** | 质量保障增强 + 测试覆盖提升 | ✅ 已完成 |
 
 **关键TDD方案**:
 - [TDD-01](docs/solution/TDD-01-CheckpointManager-Refactor.md) - CheckpointManager提取 (DRY修复)
@@ -133,22 +133,22 @@ project/
 │   │   ├── storage/          # 存储层
 │   │   ├── tools/            # 工具系统
 │   │   ├── utils/            # 工具函数
+│   │   ├── config.py         # 配置管理
+│   │   ├── exceptions.py     # 异常定义
+│   │   ├── public_api.py     # 公共API
 │   │   ├── README.md         # DocuSwarm文档
 │   │   └── CONFIGURATION.md  # 配置说明
-│   └── epic_automation/      # Epic自动化系统
-├── nodes/                    # 节点配置（BMAD personas）
+│   ├── epic_automation/      # Epic自动化系统
+│   └── nodes/                # 节点配置（BMAD personas）
 ├── tests/                    # 测试代码
-├── docs/                     # 项目文档 ⭐
-│   ├── architecture/         # 架构文档
-│   ├── research/             # 研究报告
-│   ├── solution/             # TDD方案
-│   ├── epics/                # Epic定义
-│   └── ...                   # 其他文档（PRD、设计、评估等）
-├── docs-test/                # 测试示例文档
+├── docs/                     # 示例文档 ⭐
 │   ├── bubble-sort/          # Bubble Sort示例
-│   └── calc-one-plus-one/    # 计算器示例
+│   ├── calc-one-plus-one/    # 计算器示例
+│   ├── evaluation/           # 评估报告
+│   └── research/             # 研究文档
 ├── claude_docs/              # 开发规范文档 ⭐
 ├── pyproject.toml            # 项目配置
+├── requirements.txt          # 依赖列表
 └── README.md                 # 项目概览
 ```
 
@@ -393,6 +393,7 @@ Epic处理
 
 | 日期 | 版本 | 提交信息 | 变更内容 |
 |------|------|----------|----------|
+| 2026-05-02 | 3.3 | docs: 根据 autoBMAD/docuswarm 实际代码对齐更新全部文档 | 修正CLI命令、目录结构、依赖版本、移除过时引用 |
 | 2026-04-28 | 3.2 | docs: 对齐更新全部文档至 autoBMAD/docuswarm 开发目标 | 移除Kimi引用、修复路径、更新依赖、重写SETUP.md |
 | 2026-04-05 | 3.1 | bd8b0f2d - refactor(docuswarm): 替换 Kimi API 为 Anthropic API 并清理遗留代码 | Kimi API 替换为 Anthropic API，遗留代码清理 |
 | 2026-03-02 | 3.0 | 22a59d34 - refactor(docuswarm): 完成SDK异常统一处理及消息格式切换 | SDK异常统一处理完成，消息格式切换 |

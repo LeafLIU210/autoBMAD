@@ -45,6 +45,9 @@ def start(context_file: str) -> None:
 
     except click.ClickException:
         raise
+    except KeyboardInterrupt:
+        console.print("[yellow]Pipeline interrupted by user[/yellow]")
+        raise click.ClickException("Pipeline interrupted") from None
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")
         raise click.ClickException(str(e)) from e
