@@ -15,6 +15,7 @@ This module provides the IndependentAgent class which:
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
@@ -285,24 +286,16 @@ Here is the CORRECT sequence:
 4. **action must be exactly**: "create_deliverable"
 5. **The document content goes ONLY to create_deliverable** - submit_execution_report only needs metadata
 
-## Legacy Output Format (Fallback)
+## Hard Fallback Contract (when tools fail)
 
-If for any reason you cannot use the submit_execution_report tool, you MAY return this JSON structure directly:
+If and ONLY if BOTH tools fail (create_deliverable returns is_error:true
+or submit_execution_report is unavailable), end your message with EXACTLY
+these two lines on separate lines:
 
-```json
-{{
-  "deliverable": {{
-    "title": "Brief title",
-    "content": "Brief summary (1-2 sentences)",
-    "file_path": "path from tool output",
-    "sha256": "hash from tool output"
-  }},
-  "questions": [],
-  "action": "create_deliverable"
-}}
-```
+File: <absolute path you would have written>
+SHA256: <64-hex-digit placeholder "0"*64>
 
-**Note**: The tool-based approach (submit_execution_report) is STRONGLY preferred.
+Do NOT use this fallback if your tool calls succeeded.
 """
         return f"{persona_prompt}\n\n{instructions}"
 
@@ -518,6 +511,51 @@ If for any reason you cannot use the submit_execution_report tool, you MAY retur
                     return "".join(texts)
         return ""
 
+    @staticmethod
+    def _unwrap_tool_result_content(content_list: list[Any]) -> dict[str, Any] | None:
+        """解包 MCP SDK tool_result 的 list[dict] content 为 dict.
+
+        MCP SDK 契约 (claude-agent-sdk create_sdk_mcp_server):
+            tool_result["content"] = [{"type":"text","text": json.dumps(result)}]
+        本方法遍历 list，取第一个 type=='text' 的 text 字段并 json.loads。
+
+        Args:
+            content_list: tool_result block 的 content 字段（list 形态）。
+
+        Returns:
+            解析后的 dict，或 None（无可解析 text block）。
+        """
+        import json as json_module
+
+        for b in content_list:
+            if isinstance(b, dict) and b.get("type") == "text":
+                try:
+                    return json_module.loads(b.get("text", ""))
+                except json_module.JSONDecodeError:
+                    continue
+        return None
+
+    _FILE_SHA_RE = re.compile(
+        r"^\s*File:\s*(?P<file>\S+)\s*\n\s*SHA256:\s*(?P<sha>[0-9a-fA-F]{64})\s*$",
+        re.MULTILINE,
+    )
+
+    def _extract_file_sha_from_markdown(
+        self, content: str
+    ) -> tuple[str | None, str | None]:
+        """从 Markdown 文本中正则抓取 File:/SHA256: 作为最后一道防线.
+
+        Args:
+            content: LLM 返回的文本内容。
+
+        Returns:
+            (file_path, sha256) 元组，未找到时返回 (None, None)。
+        """
+        m = self._FILE_SHA_RE.search(content or "")
+        if not m:
+            return None, None
+        return m.group("file"), m.group("sha").lower()
+
     def _extract_create_deliverable_result(
         self, messages: list[dict[str, Any]]
     ) -> tuple[str | None, str | None]:
@@ -547,8 +585,16 @@ If for any reason you cannot use the submit_execution_report tool, you MAY retur
 
                 tool_output = block.get("content", {})
 
-                # 关键修复: content 是 JSON字符串 (sdk_adapter 序列化结果)
-                # 必须先 json.loads() 才能得到 dict
+                # MCP SDK 契约：create_sdk_mcp_server 工具返回
+                #   {"content":[{"type":"text","text": json.dumps(result)}]}
+                # 必须先解包 list -> 第一个 type=='text' 的 text 字段 -> json.loads。
+                if isinstance(tool_output, list):
+                    decoded = self._unwrap_tool_result_content(tool_output)
+                    if decoded is None:
+                        continue
+                    tool_output = decoded
+
+                # 向后兼容: content 是 JSON字符串 (sdk_adapter 序列化结果)
                 if isinstance(tool_output, str):
                     try:
                         tool_output = json_module.loads(tool_output)
@@ -601,6 +647,13 @@ If for any reason you cannot use the submit_execution_report tool, you MAY retur
                     continue  # Skip error results
 
                 tool_output = block.get("content", {})
+
+                # MCP SDK 契约：list[dict] 解包（同 _extract_create_deliverable_result）
+                if isinstance(tool_output, list):
+                    decoded = self._unwrap_tool_result_content(tool_output)
+                    if decoded is None:
+                        continue
+                    tool_output = decoded
 
                 # Handle JSON string content (SDK serialization)
                 if isinstance(tool_output, str):
@@ -772,6 +825,30 @@ If for any reason you cannot use the submit_execution_report tool, you MAY retur
                     )
                     return data
                 else:
+                    # §7.4: 正则兜底 - 从 Markdown 文本中抓取 File:/SHA256:
+                    file_path, sha256 = self._extract_file_sha_from_markdown(content)
+                    if file_path:
+                        self.logger.info(
+                            "markdown_regex_fallback_hit",
+                            file_path=file_path,
+                            sha=sha256,
+                        )
+
+                        title_match = re.search(r"^#+\s*(.+)$", content, re.MULTILINE)
+                        title = title_match.group(1) if title_match else "LLM Generated Document"
+
+                        data: dict[str, Any] = {
+                            "deliverable": {
+                                "title": title,
+                                "content": content[:500] + "..." if len(content) > 500 else content,
+                                "file_path": file_path,
+                                "sha256": sha256 or "",
+                            },
+                            "questions": [],
+                            "action": "create_deliverable",
+                        }
+                        return data
+
                     # 工具未执行或结果丢失，拒绝处理，触发重试
                     raise ResponseParseAgentError(
                         f"LLM returned {content_type} instead of JSON, and no create_deliverable "

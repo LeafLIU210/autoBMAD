@@ -341,22 +341,41 @@ class SessionManager:
             "extra_args": {"bare": None},
         }
 
-        # Pass API credentials to CLI subprocess via env
-        # This ensures ANTHROPIC_API_KEY and ANTHROPIC_BASE_URL are available
-        # to the bundled Claude Code CLI, enabling real-mode LLM execution.
+        # Inject explicit model name when configured.
+        # Priority: config.model_name > CLI-native resolution (ANTHROPIC_MODEL env).
+        model_name = getattr(self._config, "model_name", None) if self._config else None
+        if model_name:
+            options_dict["model"] = model_name
+
+        # Pass API credentials and model-related env vars to CLI subprocess.
+        # This ensures the bundled Claude Code CLI can resolve both credentials
+        # and model selection when docuswarm does not inject an explicit model.
         env_vars: dict[str, str] = {}
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        base_url = os.environ.get("ANTHROPIC_BASE_URL")
-        if api_key:
-            env_vars["ANTHROPIC_API_KEY"] = api_key
-        if base_url:
-            env_vars["ANTHROPIC_BASE_URL"] = base_url
+        _env_passthrough_keys = (
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN",
+            "ANTHROPIC_BASE_URL",
+            "ANTHROPIC_MODEL",
+            "ANTHROPIC_MODEL_NAME",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+            "CLAUDE_CODE_SUBAGENT_MODEL",
+            "CLAUDE_CODE_EFFORT_LEVEL",
+        )
+        for _key in _env_passthrough_keys:
+            _val = os.environ.get(_key)
+            if _val:
+                env_vars[_key] = _val
         if env_vars:
             options_dict["env"] = env_vars
             self._logger.info(
                 "api_credentials_configured",
-                has_api_key=bool(api_key),
-                has_base_url=bool(base_url),
+                has_api_key=bool(env_vars.get("ANTHROPIC_API_KEY")),
+                has_base_url=bool(env_vars.get("ANTHROPIC_BASE_URL")),
+                model_name=model_name,
+                env_model=env_vars.get("ANTHROPIC_MODEL_NAME")
+                or env_vars.get("ANTHROPIC_MODEL"),
             )
 
         # F1 Fix: Conditionally set setting_sources based on sdk_native setting
@@ -491,6 +510,7 @@ class SessionManager:
         agent_file: Path | None = None,
         approval_handler_fn: Any | None = None,
         system_prompt: str | dict[str, Any] | None = None,
+        output_format: dict[str, Any] | None = None,
     ) -> ClaudeSessionWrapper:
         """
         Create a new Claude session.
@@ -505,6 +525,7 @@ class SessionManager:
                 approval logic. If provided and yolo=False, this handler will
                 be used instead of the default prompt-based approval.
             system_prompt: Optional system prompt to provide context to the model.
+            output_format: Optional JSON schema for structured output.
 
         Returns:
             ClaudeSessionWrapper: A wrapper around SDK client.
@@ -524,7 +545,9 @@ class SessionManager:
             effective_agent_file = agent_file if agent_file is not None else self._agent_file
 
             # Create options
-            options = self._create_options(mode=mode, yolo=yolo)
+            options = self._create_options(
+                mode=mode, yolo=yolo, output_format=output_format,
+            )
 
             # TDD-07: Removed options.tools override with agent_file
             # The kimi-agent-sdk YAML format is not compatible with claude-agent-sdk.
@@ -979,10 +1002,18 @@ class SessionManager:
                     "id": getattr(item, "id", ""),
                 }
             elif isinstance(item, ToolResultBlock):
+                content_val = getattr(item, "content", "")
+                content_shape = type(content_val).__name__
+                self._logger.debug(
+                    "tool_result_converted",
+                    tool_use_id=getattr(item, "tool_use_id", ""),
+                    tool_result_content_shape=content_shape,
+                    is_error=getattr(item, "is_error", False),
+                )
                 converted = {
                     "type": "tool_result",
                     "tool_use_id": getattr(item, "tool_use_id", ""),
-                    "content": getattr(item, "content", ""),
+                    "content": content_val,
                     "is_error": getattr(item, "is_error", False),
                 }
         except ImportError:

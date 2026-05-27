@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total_files": 43,
+    "total_files": 26,
     "failed_files_initial": 0,
-    "failed_files_final": 0,
+    "failed_files_final": 2,
     "cycles": 1
   },
   "rounds": [
@@ -11,6 +11,68 @@
       "round_type": "initial",
       "timestamp": "2026-05-02T01:29:27Z",
       "failed_files": []
+    },
+    {
+      "round_index": 1,
+      "round_type": "initial",
+      "timestamp": "2026-05-02T12:45:15Z",
+      "failed_files": [
+        {
+          "test_file": "tests/test_docuswarm_p0_path_resolution.py",
+          "status": "failed",
+          "failures": [
+            {
+              "nodeid": "tests/test_docuswarm_p0_path_resolution.py::TestPersonaLoaderFromRepoRoot::test_persona_loader_from_repo_root_returns_real_persona",
+              "failure_type": "failed",
+              "message": "tests/test_docuswarm_p0_path_resolution.py:54: in test_persona_loader_from_repo_root_returns_real_persona\n    assert \"Data Analyst\" in persona.role or \"Analyst\" in persona.role\nE   AssertionError: assert ('Data Analyst' in 'Business Requirements Analysis & Context Clarification Specialist' or 'Analyst' in 'Business Requirements Analysis & Context Clarification Specialist')\nE    +  where 'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role\nE    +  and   'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role",
+              "short_tb": "E   AssertionError: assert ('Data Analyst' in 'Business Requirements Analysis & Context Clarification Specialist' or 'Analyst' in 'Business Requirements Analysis & Context Clarification Specialist')\nE    +  where 'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role\nE    +  and   'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role"
+            }
+          ]
+        },
+        {
+          "test_file": "tests/test_docuswarm_p1_cli_status.py",
+          "status": "failed",
+          "failures": [
+            {
+              "nodeid": "tests/test_docuswarm_p1_cli_status.py::TestStartPipelineReturnsStatusDict::test_start_pipeline_returns_status_dict",
+              "failure_type": "failed",
+              "message": "autoBMAD/docuswarm/storage/database.py:304: in acquire\n    yield conn\nautoBMAD/docuswarm/storage/state_manager.py:343: in get_pipeline\n    cursor = conn.execute(\nE   sqlite3.OperationalError: no such table: pipelines\n\nThe above exception was the direct cause of the following exception:\nautoBMAD/docuswarm/storage/state_manager.py:341: in get_pipeline\n    with self._db.acquire() as conn:\n         ^^^^^^^^^^^^^^^^^^\n../.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/contextlib.py:158: in __exit__\n    self.gen.throw(value)\nautoBMAD/docuswarm/storage/database.py:309: in acquire\n    raise StorageError(\nE   autoBMAD.docuswarm.exceptions.StorageError: Database operation failed: no such table: pipelines\n\nThe above exception was the direct cause of the following exception:\ntests/test_docuswarm_p1_cli_status.py:97: in test_start_pipeline_returns_status_dict\n    result = await orchestrator.start_pipeline(\nautoBMAD/docuswarm/pipeline/orchestrator.py:483: in start_pipeline\n    current_pipeline = self._state_manager.get_pipeline(final_pipeline_id)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nautoBMAD/docuswarm/storage/state_manager.py:424: in get_pipeline\n    raise StorageError(\nE   autoBMAD.docuswarm.exceptions.StorageError: Failed to get pipeline: Database operation failed: no such table: pipelines",
+              "short_tb": "autoBMAD/docuswarm/storage/state_manager.py:424: in get_pipeline\n    raise StorageError(\nE   autoBMAD.docuswarm.exceptions.StorageError: Failed to get pipeline: Database operation failed: no such table: pipelines"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "round_index": 1,
+      "round_type": "initial",
+      "timestamp": "2026-05-02T12:47:26Z",
+      "failed_files": [
+        {
+          "test_file": "tests/test_docuswarm_p0_path_resolution.py",
+          "status": "failed",
+          "failures": [
+            {
+              "nodeid": "tests/test_docuswarm_p0_path_resolution.py::TestPersonaLoaderFromRepoRoot::test_persona_loader_from_repo_root_returns_real_persona",
+              "failure_type": "failed",
+              "message": "tests/test_docuswarm_p0_path_resolution.py:54: in test_persona_loader_from_repo_root_returns_real_persona\n    assert \"Data Analyst\" in persona.role or \"Analyst\" in persona.role\nE   AssertionError: assert ('Data Analyst' in 'Business Requirements Analysis & Context Clarification Specialist' or 'Analyst' in 'Business Requirements Analysis & Context Clarification Specialist')\nE    +  where 'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role\nE    +  and   'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role",
+              "short_tb": "E   AssertionError: assert ('Data Analyst' in 'Business Requirements Analysis & Context Clarification Specialist' or 'Analyst' in 'Business Requirements Analysis & Context Clarification Specialist')\nE    +  where 'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role\nE    +  and   'Business Requirements Analysis & Context Clarification Specialist' = Persona(name='Analyst', role='Business Requirements Analysis & Context Clarification Specialist', identity='You are an expert requirements analyst who clarifies business context and documents functional requirements. You have deep expertise in eliciting stakeholder needs, defining clear acceptance criteria, and identifying risks that could affect downstream pipeline nodes.', expertise=['需求分析与上下文澄清', '业务目标与范围定义', '功能需求梳理', '验收标准制定', '非功能约束记录', '下游节点输入指导', '流水线验证风险识别'], principles=['Always clarify scope and objectives before documenting requirements', 'Present requirements with clear traceability to business goals', 'Focus on actionable acceptance criteria that drive validation', 'Use appropriate analysis methods for the domain at hand', 'Document assumptions, constraints, and risks explicitly']).role"
+            }
+          ]
+        },
+        {
+          "test_file": "tests/test_docuswarm_p1_cli_status.py",
+          "status": "failed",
+          "failures": [
+            {
+              "nodeid": "tests/test_docuswarm_p1_cli_status.py::TestStartPipelineReturnsStatusDict::test_start_pipeline_returns_status_dict",
+              "failure_type": "failed",
+              "message": "autoBMAD/docuswarm/storage/database.py:304: in acquire\n    yield conn\nautoBMAD/docuswarm/storage/state_manager.py:343: in get_pipeline\n    cursor = conn.execute(\nE   sqlite3.OperationalError: no such table: pipelines\n\nThe above exception was the direct cause of the following exception:\nautoBMAD/docuswarm/storage/state_manager.py:341: in get_pipeline\n    with self._db.acquire() as conn:\n         ^^^^^^^^^^^^^^^^^^\n../.local/share/uv/python/cpython-3.12.10-linux-x86_64-gnu/lib/python3.12/contextlib.py:158: in __exit__\n    self.gen.throw(value)\nautoBMAD/docuswarm/storage/database.py:309: in acquire\n    raise StorageError(\nE   autoBMAD.docuswarm.exceptions.StorageError: Database operation failed: no such table: pipelines\n\nThe above exception was the direct cause of the following exception:\ntests/test_docuswarm_p1_cli_status.py:97: in test_start_pipeline_returns_status_dict\n    result = await orchestrator.start_pipeline(\nautoBMAD/docuswarm/pipeline/orchestrator.py:483: in start_pipeline\n    current_pipeline = self._state_manager.get_pipeline(final_pipeline_id)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nautoBMAD/docuswarm/storage/state_manager.py:424: in get_pipeline\n    raise StorageError(\nE   autoBMAD.docuswarm.exceptions.StorageError: Failed to get pipeline: Database operation failed: no such table: pipelines",
+              "short_tb": "autoBMAD/docuswarm/storage/state_manager.py:424: in get_pipeline\n    raise StorageError(\nE   autoBMAD.docuswarm.exceptions.StorageError: Failed to get pipeline: Database operation failed: no such table: pipelines"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

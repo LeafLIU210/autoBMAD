@@ -379,7 +379,17 @@ def create_deliverable_server(
                     }
                 ]
             }
-        return {"content": [{"type": "text", "text": f"Error: {result.error}"}]}
+        error_body = {
+            "error": result.error,
+            "hint": "create_deliverable failed. LLM should retry with corrected parameters.",
+            "tool": "create_deliverable",
+        }
+        return {
+            "content": [
+                {"type": "text", "text": json.dumps(error_body, ensure_ascii=False)}
+            ],
+            "is_error": True,
+        }
 
     @tool(
         "submit_execution_report",
@@ -401,7 +411,17 @@ def create_deliverable_server(
                     }
                 ]
             }
-        return {"content": [{"type": "text", "text": f"Error: {result.error}"}]}
+        error_body = {
+            "error": result.error,
+            "hint": "submit_execution_report failed. Check report structure.",
+            "tool": "submit_execution_report",
+        }
+        return {
+            "content": [
+                {"type": "text", "text": json.dumps(error_body, ensure_ascii=False)}
+            ],
+            "is_error": True,
+        }
 
     logger.info(
         f"Created SDK MCP deliverable server for node '{node_id}' " f"with output_dir: {output_dir}"

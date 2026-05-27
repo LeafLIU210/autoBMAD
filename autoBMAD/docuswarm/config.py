@@ -35,6 +35,9 @@ DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_MAX_ITERATIONS = 100
 DEFAULT_BASE_URL = "https://api.anthropic.com/v1/"
 DEFAULT_AGENT_TIMEOUT = 7200
+# When None, docuswarm will not pass an explicit model to the SDK and
+# defer to the Claude Code CLI subprocess to resolve ANTHROPIC_MODEL on its own.
+DEFAULT_MODEL_NAME: str | None = None
 
 
 def _find_project_root() -> Path:
@@ -104,6 +107,9 @@ class Config:
     log_level: str = field(default=DEFAULT_LOG_LEVEL)
     max_iterations: int = field(default=DEFAULT_MAX_ITERATIONS)
     agent_timeout: int = field(default=DEFAULT_AGENT_TIMEOUT)
+    # Model name docuswarm passes explicitly to the Claude Agent SDK.
+    # None means "do not inject model" — the CLI subprocess resolves it natively.
+    model_name: str | None = field(default=DEFAULT_MODEL_NAME)
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
@@ -150,6 +156,13 @@ class Config:
         agent_timeout = int(
             os.environ.get("DOCUSWARM_AGENT_TIMEOUT", str(DEFAULT_AGENT_TIMEOUT))
         )
+        # Model name priority: ANTHROPIC_MODEL_NAME (docuswarm custom) >
+        # ANTHROPIC_MODEL (CLI-native) > default (None).
+        model_name = (
+            os.environ.get("ANTHROPIC_MODEL_NAME")
+            or os.environ.get("ANTHROPIC_MODEL")
+            or DEFAULT_MODEL_NAME
+        )
 
         return cls(
             api_key=api_key,
@@ -159,6 +172,7 @@ class Config:
             log_level=log_level,
             max_iterations=max_iterations,
             agent_timeout=agent_timeout,
+            model_name=model_name,
         )
 
 
