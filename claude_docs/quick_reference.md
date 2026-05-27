@@ -38,7 +38,7 @@ deactivate
 python -m autoBMAD.docuswarm --help
 
 # 直接运行
-python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
+python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
 ```
 
 ---
@@ -134,10 +134,7 @@ python -m autoBMAD.epic_automation.epic_driver docs/epics/my-epic.md --verbose
 
 ### Pre-commit 检查
 ```bash
-# 使用构建脚本
-python build/build.py
-
-# 使用spec文件
+# 运行所有钩子
 pre-commit run --all-files
 
 # 启用控制台（调试用）

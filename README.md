@@ -1,556 +1,168 @@
-# DocuSwarm Multi-Agent Document Orchestration System
+# autoBMAD — 多智能体 BMAD 自动化系统
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Python](https://img.shields.io/badge/python-3.12.10+-blue.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
+![Python](https://img.shields.io/badge/Python-%3E%3D3.12-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Version](https://img.shields.io/badge/Version-1.0.0-orange)
 
-**DocuSwarm** is an intelligent multi-agent orchestration system that automates BMAD (Breakthrough Method of Agile AI-driven Development) workflows through a dual-agent pattern with context isolation.
+---
 
-## 🎯 Project Overview
+## 项目简介
 
-DocuSwarm 编排 5 个专业 Agent（Analyst、PM、UX Designer、Architect、PO），按照 BMAD 方法论创建全面的项目文档。
+**autoBMAD** 是一个面向 BMAD（Breakthrough Method of Agile AI-driven Development）方法论的多智能体自动化系统，致力于将 AI 驱动的敏捷开发流程标准化、可复用、可恢复。项目包含两个核心子系统：
 
-架构基于：
-- **[LangGraph](https://langchain-ai.github.io/langgraph/)** - 多 Agent 工作流状态机
-- **[claude-agent-sdk](https://github.com/anthropics/claude-agent-sdk)** - Anthropic Claude Agent SDK
-- **[Anthropic Claude](https://docs.anthropic.com/)** - 大上下文窗口 LLM（200K tokens）
-- **[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)** - AI 驱动的敏捷开发方法论
-- **上下文隔离** - 运行时访问控制 + 提示模板隔离 + 消息过滤
+- **DocuSwarm**：多智能体文档编排系统，通过双 Agent 模式（Independent Agent + Evaluator Agent）顺序编排 5 个 BMAD 阶段（Analyst → PM → UX → Architect → PO），自动化产出完整项目文档。
+- **Epic Automation**：Epic 级 BMAD 工作流自动化，基于 SM-Dev-QA 循环 + 质量门控 + 测试自动化，实现从故事拆分到代码交付的端到端开发闭环。
 
-### Core Features
-- **Dual-Agent Pattern** - Independent Agent (creates deliverables + questions) + Evaluator Agent (reviews with context isolation)
-- **Sequential Pipeline** - 5 BMAD phases: Analyst → PM → UX → Architect → PO
-- **Context Isolation** - Three-layer defense (runtime access control + prompt templates + message filtering)
-- **State Persistence** - SQLite with WAL mode for checkpoint/resume
-- **Session Management** - Stateless query-based SDK calls
-- **Native Tool System** - Standard Tool Use Block pattern
-- **Streaming** - AsyncGenerator-based message streaming
+整体架构基于 **LangGraph** 状态机 + **Claude Agent SDK** + **SQLite WAL** 持久化，具备上下文隔离、检查点恢复与可观测性能力。
 
-## 🚀 Quick Start
+---
 
-### Prerequisites
+## 核心特性
 
-- Python 3.12+
-- Anthropic API Key
-- Git
+- **双 Agent 协作**：Independent Agent 负责生产交付物，Evaluator Agent 在隔离上下文中独立评审，避免单点偏差。
+- **顺序流水线**：DocuSwarm 内置 Analyst → PM → UX → Architect → PO 五阶段固定流水线，自动衔接上下游交付物。
+- **三层上下文隔离**：运行时访问控制、提示词模板隔离、消息过滤三重防御，违规即抛出 `ContextIsolationError`。
+- **检查点恢复**：基于 LangGraph Checkpointing + SQLite WAL，流水线可在中断后从最近检查点恢复，乐观锁防止并发损坏。
+- **Epic 五层架构**：Driver / Controller / Phase / Agent / Tool 分层清晰，便于扩展与替换。
+- **SM-Dev-QA 循环**：Story Manager → Developer → QA 自动闭环，配合质量门控保证交付质量。
+- **质量门控**：内置 Ruff（lint）+ BasedPyright（类型检查）双重门控，未通过即阻塞流水线。
+- **Pytest 测试自动化**：开发产物自动触发 pytest 测试套件，失败可回流至 QA 节点重新修正。
+- **结构化日志**：基于 structlog 的 per-pipeline 日志分流，支持敏感信息脱敏。
+- **可插拔 LLM**：支持 Anthropic Claude 原生协议，并兼容 DeepSeek 等 Anthropic 兼容模式提供商。
 
-### Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/LeafLIU210/autoBMAD.git
-   cd autoBMAD
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python -m venv .venv
-   # .venv\Scripts\activate  # Windows
-   # or
-   source .venv/bin/activate  # Linux/macOS/WSL
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure API Keys**
-   ```bash
-   # Create .env file
-   echo "ANTHROPIC_API_KEY=your_api_key_here" > .env
-   # Optional: Custom API Base URL
-   # echo "ANTHROPIC_BASE_URL=https://custom-api-url/" >> .env
-   ```
-
-5. **Verify installation**
-   ```bash
-   python -m autoBMAD.docuswarm --help
-   ```
-
-### Basic Usage
-
-Start a new pipeline with a context file:
+## 快速开始
 
 ```bash
-python -m autoBMAD.docuswarm start --context docs/bubble-sort/bubble-sort-context.md
-source .venv/bin/activate && python -m autoBMAD.docuswarm start --context docs/bubble-sort/bubble-sort-context.md
-```
-
-Check pipeline status:
-
-```bash
-python -m autoBMAD.docuswarm status <pipeline-id>
-```
-
-Resume an interrupted pipeline:
-
-```bash
-python -m autoBMAD.docuswarm resume <pipeline-id>
-```
-
-## 📊 DocuSwarm 架构
-
-DocuSwarm 通过**5个顺序 BMAD 阶段**处理工作流，采用双 Agent 模式：
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                DOCUSWARM PIPELINE (Sequential)              │
-└─────────────────────────────────────────────────────────────┘
-
-Phase 1: Analysis
-├── Analyst Node (Dual-Agent)
-│   ├── Independent Agent
-│   │   ├── Creates analyst report
-│   │   └── Generates clarifying questions
-│   └── Evaluator Agent
-│       ├── Reviews report (context isolated)
-│       └── Provides feedback + verdict
-│
-Phase 2: Planning
-├── PM Node (Dual-Agent)
-│   ├── Creates Product Requirements Document (PRD)
-│   └── Evaluator reviews
-├── UX Node (Dual-Agent)
-│   ├── Creates UX Design
-│   └── Evaluator reviews
-│
-Phase 3: Solutioning
-├── Architect Node (Dual-Agent)
-│   ├── Creates Architecture Document
-│   └── Evaluator reviews
-├── PO Node (Dual-Agent)
-│   ├── Creates Epics + Stories
-│   └── Evaluator reviews
-│
-State Management:
-├── SQLite with WAL mode
-├── LangGraph checkpointing
-├── Optimistic locking
-└── Automatic resume on failure
-```
-
-### Project Structure
-
-```
-autoBMAD/
-├── autoBMAD/                    # Main source code
-│   ├── docuswarm/              # DocuSwarm core system
-│   │   ├── agents/             # Agent implementations (Independent + Evaluator)
-│   │   ├── cli/                # CLI commands and entry point
-│   │   ├── context/            # Context isolation (filter, audit, validator)
-│   │   ├── llm/                # LLM integration (Claude SDK wrapper)
-│   │   ├── node_execution/     # Node execution engine
-│   │   ├── nodes/              # Node definitions (DualAgentNode)
-│   │   ├── pipeline/           # Pipeline orchestration (LangGraph)
-│   │   ├── prompts/            # Prompt templates (YAML + Markdown)
-│   │   ├── storage/            # State persistence (SQLite + files)
-│   │   ├── tools/              # Tool system (deliverables, context, file, search)
-│   │   ├── utils/              # Utilities (logging, session IDs)
-│   │   ├── config.py           # Configuration management
-│   │   ├── exceptions.py       # Custom exceptions
-│   │   ├── public_api.py       # Stable public API
-│   │   └── docuswarm.yaml      # Default YAML configuration
-│   ├── epic_automation/        # Epic automation system
-│   └── nodes/                  # Node configurations (BMAD personas)
-│       ├── analyst/            # Analyst node config
-│       ├── pm/                 # PM node config
-│       ├── ux/                 # UX node config
-│       ├── architect/          # Architect node config
-│       └── po/                 # PO node config
-├── tests/                       # Test suite
-├── docs/                        # Documentation & examples
-│   ├── bubble-sort/            # Bubble Sort example
-│   ├── calc-one-plus-one/      # Calculator example
-│   ├── evaluation/             # Evaluation reports
-│   └── research/               # Research documents
-├── scripts/                     # Utility scripts
-├── claude_docs/                # AI-assisted development guides
-├── pyproject.toml              # Project configuration
-├── requirements.txt            # Dependencies
-└── README.md                   # This file
-```
-
-## 📋 CLI Reference
-
-```bash
-python -m autoBMAD.docuswarm [OPTIONS] COMMAND [ARGS]...
-```
-
-### Global Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-v, --verbose` | Enable verbose debug output | false |
-| `--log-level` | Set logging level (DEBUG/INFO/WARNING/ERROR) | INFO |
-| `--log-file DIR` | Directory for log files | ./logs |
-| `--json-log` | Use JSON format for log file output | false |
-| `--version` | Show version and exit | - |
-
-**Note**: Use `-v` or `--verbose` for detailed debug output. Useful for troubleshooting.
-
-### Commands
-
-#### `start` - Start a new pipeline
-
-```bash
-python -m autoBMAD.docuswarm start --context <file>
-```
-
-**Options:**
-- `-c, --context FILE` - Path to the context file (required)
-
-**Example:**
-```bash
-python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
-```
-
-#### `status` - Show pipeline status
-
-```bash
-python -m autoBMAD.docuswarm status <pipeline-id>
-```
-
-**Example:**
-```bash
-python -m autoBMAD.docuswarm status abc123-def456
-```
-
-#### `resume` - Resume an interrupted pipeline
-
-```bash
-python -m autoBMAD.docuswarm resume <pipeline-id> [OPTIONS]
-```
-
-**Options:**
-- `-n, --node NODE` - Restart from a specific node (analyst/pm/ux/architect/po)
-- `-f, --force` - Force resume even if pipeline is running
-
-**Examples:**
-```bash
-# Resume from last checkpoint
-python -m autoBMAD.docuswarm resume abc123-def456
-
-# Restart from specific node
-python -m autoBMAD.docuswarm resume abc123-def456 --node pm
-```
-
-#### `list-pipelines` - List all pipelines
-
-```bash
-python -m autoBMAD.docuswarm list-pipelines [OPTIONS]
-```
-
-**Options:**
-- `-s, --status STATUS` - Filter by status (pending/running/completed/failed/paused)
-
-**Examples:**
-```bash
-# List all pipelines
-python -m autoBMAD.docuswarm list-pipelines
-
-# List only running pipelines
-python -m autoBMAD.docuswarm list-pipelines --status running
-```
-
-#### `export` - Export deliverables
-
-```bash
-python -m autoBMAD.docuswarm export <pipeline-id> [OUTPUT_DIR] [OPTIONS]
-```
-
-**Options:**
-- `-o, --output PATH` - Custom destination directory
-- `--include-metadata` - Include _metadata.json in export
-
-**Examples:**
-```bash
-# Export to current directory
-python -m autoBMAD.docuswarm export abc123-def456
-
-# Export to specific directory
-python -m autoBMAD.docuswarm export abc123-def456 ./output --include-metadata
-```
-
-#### `diagnostics` - Run pipeline diagnostics
-
-```bash
-python -m autoBMAD.docuswarm diagnostics <pipeline-id>
-```
-
-**Example:**
-```bash
-python -m autoBMAD.docuswarm diagnostics abc123-def456
-```
-
-#### `cancel` - Cancel a running pipeline
-
-```bash
-python -m autoBMAD.docuswarm cancel <pipeline-id>
-```
-
-#### `cancel-all` - Cancel all pipelines
-
-```bash
-python -m autoBMAD.docuswarm cancel-all [OPTIONS]
-```
-
-**Options:**
-- `--status STATUS` - Only cancel pipelines with this status
-- `--confirm` - Skip confirmation prompt
-
-#### `clean` - Delete pipelines from database
-
-```bash
-python -m autoBMAD.docuswarm clean [OPTIONS]
-```
-
-**Options:**
-- `--status STATUS` - Only delete pipelines with this status
-- `--older-than-days N` - Only delete pipelines older than N days
-- `--confirm` - Skip confirmation prompt
-
-**Examples:**
-```bash
-# Delete all cancelled pipelines
-python -m autoBMAD.docuswarm clean --status cancelled --confirm
-
-# Delete completed pipelines older than 7 days
-python -m autoBMAD.docuswarm clean --status completed --older-than-days 7 --confirm
-```
-
-## ⚙️ Configuration
-
-### pyproject.toml
-
-```toml
-[tool.basedpyright]
-pythonVersion = "3.12.10"
-reportMissingImports = false
-
-[tool.ruff]
-line-length = 100
-target-version = "py312"
-
-[tool.ruff.lint]
-select = ["E", "F", "B", "I", "W", "C4", "UP"]
-ignore = ["E501", "B008"]
-
-[tool.pytest.ini_options]
-minversion = "8.0"
-addopts = "-ra -q --strict-markers --cov=autoBMAD.docuswarm --cov-report=term-missing --cov-report=html --tb=short --basetemp=.pytest-temp"
-testpaths = ["tests"]
-asyncio_mode = "auto"
-pythonpath = [".", "autoBMAD"]
-timeout = 300
-```
-
-### Environment Variables
-
-Create a `.env` file in the project root:
-
-```bash
-# Required - Anthropic API Key
-ANTHROPIC_API_KEY=your_api_key_here
-
-# Optional - Custom API Base URL
-# ANTHROPIC_BASE_URL=https://custom-api-url/
-
-# Optional - DocuSwarm Configuration
-DOCUSWARM_DB_PATH=docuswarm.db
-DOCUSWARM_OUTPUT_DIR=output
-DOCUSWARM_LOG_LEVEL=INFO
-DOCUSWARM_MAX_ITERATIONS=100
-```
-
-### YAML Configuration
-
-You can also configure DocuSwarm via `autoBMAD/docuswarm/docuswarm.yaml`:
-
-```yaml
-# API Configuration
-base_url: https://api.anthropic.com/v1/
-
-# Database Configuration
-db_path: docuswarm.db
-
-# Output Configuration
-output_dir: output
-
-# Logging Configuration
-log_level: INFO
-
-# Pipeline Configuration
-max_iterations: 100
-```
-
-**Configuration Priority**: Environment Variables > YAML Config > Default Values
-
-## 🔄 Common Workflows
-
-### Full Pipeline Execution
-
-```bash
-# 1. Start pipeline
-python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
-
-# 2. Check status (repeat as needed)
-python -m autoBMAD.docuswarm status <pipeline-id>
-
-# 3. Export results when complete
-python -m autoBMAD.docuswarm export <pipeline-id> ./output --include-metadata
-```
-
-### Pipeline Management
-
-```bash
-# List all pipelines
-python -m autoBMAD.docuswarm list-pipelines
-
-# Cancel a running pipeline
-python -m autoBMAD.docuswarm cancel <pipeline-id>
-
-# Cancel all pending pipelines
-python -m autoBMAD.docuswarm cancel-all --status pending --confirm
-
-# Clean up old pipelines
-python -m autoBMAD.docuswarm clean --status completed --older-than-days 7 --confirm
-```
-
-### Development Workflow
-
-```bash
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=autoBMAD.docuswarm --cov-report=html
-
-# Quality checks
-ruff check autoBMAD/
-basedpyright autoBMAD/
-
-# Format code
-ruff format autoBMAD/
-```
-
-## 🔍 Troubleshooting
-
-### Pipeline Issues
-
-**Pipeline stuck or failed:**
-```bash
-# Check status
-python -m autoBMAD.docuswarm status <pipeline-id>
-
-# Resume from last checkpoint
-python -m autoBMAD.docuswarm resume <pipeline-id>
-
-# Or restart from specific node
-python -m autoBMAD.docuswarm resume <pipeline-id> --node analyst --force
-```
-
-**Quality Gates Fail:**
-
-```bash
-# Check BasedPyRight errors
-basedpyright autoBMAD/ --output-format=json
-
-# Check Ruff errors
-ruff check autoBMAD/ --output-format=json
-
-# Fix all issues automatically
-ruff check --fix autoBMAD/
-```
-
-**Test Failures:**
-
-```bash
-# Run tests with verbose output
-pytest tests/ -v --tb=long
-
-# Debug specific test
-pytest tests/test_specific.py -s --pdb
-```
-
-### Common Errors
-
-**API Key Error:**
-```
-ConfigurationError: ANTHROPIC_API_KEY is required
-```
-**Solution:**
-- Ensure `.env` file exists with `ANTHROPIC_API_KEY=your_key`
-- Verify the API key is valid and not expired
-
-**Pipeline Not Found:**
-```
-Error: Pipeline not found: abc123xyz
-```
-**Solution:**
-- Use `list-pipelines` to see all available pipelines
-- Check the pipeline ID spelling (case-sensitive)
-- Verify the database file exists: `ls docuswarm.db`
-
-**Database Locked:**
-```
-sqlite3.OperationalError: database is locked
-```
-**Solution:**
-- Ensure only one process is accessing the database
-- Enable WAL mode: `sqlite3 docuswarm.db "PRAGMA journal_mode=WAL;"`
-
-### Installation Issues
-
-```bash
-# Recreate virtual environment (Windows)
-.venv\Scripts\deactivate
-rmdir /s .venv
-python -m venv .venv
-.venv\Scripts\activate
+git clone https://github.com/LeafLIU210/autoBMAD.git
+cd autoBMAD
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Recreate virtual environment (Linux/macOS)
-deactivate
-rm -rf .venv
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+echo "ANTHROPIC_API_KEY=your_key" > .env
 ```
 
-## 📚 Documentation
+详细安装与配置说明见 [SETUP.md](SETUP.md)。
 
-### User Documentation
-- [Setup Guide](SETUP.md) - Installation and setup
-- [Claude Code Guide](CLAUDE.md) - AI-assisted development guide
-- [DocuSwarm Detailed Guide](autoBMAD/docuswarm/README.md) - Complete usage guide
-- [Configuration Guide](autoBMAD/docuswarm/CONFIGURATION.md) - API and configuration details
+---
 
-### Development Guides
-- [Core Principles](claude_docs/core_principles.md) - DRY, KISS, YAGNI, Occam's Razor
-- [Development Rules](claude_docs/development_rules.md) - Coding standards
-- [Testing Guide](claude_docs/testing_guide.md) - Testing practices
-- [Quality Assurance](claude_docs/quality_assurance.md) - QA processes
-- [AI Workflow](claude_docs/ai_workflow.md) - Three-phase AI workflow
+## 项目结构 — 各文件夹介绍
 
-### DocuSwarm Internal Documentation
-- [DocuSwarm CLI Research Report](autoBMAD/docuswarm/docs/DocuSwarm-CLI-Research-Report.md)
-- [DocuSwarm TDD Refactor Plan](autoBMAD/docuswarm/docs/DocuSwarm-TDD-Refactor-Plan.md)
-- [Pipeline CurrentNode Analysis](autoBMAD/docuswarm/docs/DocuSwarm流水线CurrentNode问题分析与操作指引.md)
+| 目录 | 说明 |
+| --- | --- |
+| `autoBMAD/docuswarm/` | DocuSwarm 多智能体文档编排系统（核心子系统） |
+| `autoBMAD/epic_automation/` | Epic 级 BMAD 工作流自动化（核心子系统） |
+| `autoBMAD/nodes/` | BMAD 节点配置（analyst / pm / ux / architect / po） |
+| `autoBMAD/agentdocs/` | Claude Agent SDK 官方文档参考资料 |
+| `claude_docs/` | 项目开发指南与规范文档（中文） |
+| `tests/` | pytest 测试套件，按优先级组织（P0–P4） |
+| `docs-doc/` | DocuSwarm 文档产出示例（PRD、架构、评估报告等） |
+| `docs-test/` | 测试用例文档（bubble-sort、calc-one-plus-one 等示例） |
+| `scripts/` | 实用脚本（post-commit hook 等） |
+| `tools/` | 独立工具脚本 |
+| `src/` | 遗留最小核心代码（models、config 等，主代码已迁移至 `autoBMAD/`） |
 
-## 🤝 Contributing
+---
 
-1. Follow the [Development Rules](claude_docs/development_rules.md)
-2. Run quality gates before submitting
-3. Add tests for new features
-4. Update documentation
+## 重要文件说明
 
-## 📄 License
+### 开发文档
 
-MIT License - see LICENSE file for details
+| 文件 | 说明 |
+| --- | --- |
+| [CLAUDE.md](CLAUDE.md) | AI 开发工作流指南，描述 Claude 在本仓库的协作约定 |
+| [AGENTS.md](AGENTS.md) | AI Agent 参考手册，面向自动化代理零知识接入 |
+| [SETUP.md](SETUP.md) | 完整安装与环境配置指南 |
+| [claude_docs/](claude_docs/) | 核心原则、AI 工作流、测试指南等开发规范文档 |
 
-## 🆘 Support
+### 配置文件
 
-- 创建 issue 提交 bug 或功能请求
-- 查看 [quality_assurance.md](claude_docs/quality_assurance.md) 了解质量保证流程
-- 查看 [workflow_tools.md](claude_docs/workflow_tools.md) 了解 autoBMAD 工作流
+| 文件 | 说明 |
+| --- | --- |
+| [pyproject.toml](pyproject.toml) | 构建系统、依赖、Ruff、BasedPyright、Pytest 等工具配置 |
+| [.env.example](.env.example) | 环境变量模板（复制为 `.env` 后填写） |
+| [requirements.txt](requirements.txt) | 生产环境依赖清单 |
+| [requirements-dev.txt](requirements-dev.txt) | 开发与测试依赖清单 |
+
+### 运行文件
+
+| 文件 | 说明 |
+| --- | --- |
+| [.gitignore](.gitignore) | Git 忽略规则 |
+| [LICENSE](LICENSE) | MIT 开源许可证 |
+| `progress.db` | Epic Automation 状态数据库（SQLite，运行时生成） |
+| `docuswarm.db` | DocuSwarm 流水线状态数据库（SQLite WAL，运行时生成） |
+
+---
+
+## 两个核心子系统概要
+
+### DocuSwarm — 多智能体文档编排
+
+DocuSwarm 通过双 Agent 模式自动化生成完整项目文档。Independent Agent 在每个 BMAD 阶段产出交付物（如 Brief、PRD、UX Spec、架构文档、PO Backlog），Evaluator Agent 在隔离上下文中独立评审并给出 verdict，未通过则触发迭代修正。状态由 LangGraph + SQLite 持久化，支持中断恢复。
+
+详细文档：[autoBMAD/docuswarm/README.md](autoBMAD/docuswarm/README.md)
+
+```bash
+python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
+```
+
+### Epic Automation — Epic 级 BMAD 工作流
+
+Epic Automation 接收 Epic 文档作为输入，按五层架构（Driver / Controller / Phase / Agent / Tool）执行 SM-Dev-QA 循环：Story Manager 拆分故事，Developer 实现代码，QA 运行测试与质量门控。每阶段完成后由 Ruff + BasedPyright 把关，未达标自动回流至开发节点。
+
+详细文档：[autoBMAD/epic_automation/README.md](autoBMAD/epic_automation/README.md)
+
+```bash
+python -m autoBMAD.epic_automation.epic_driver docs-doc/epics/my-epic.md --verbose
+```
+
+---
+
+## 技术栈概览
+
+| 技术 | 版本 | 用途 |
+| --- | --- | --- |
+| LangGraph | 0.2.x | 多 Agent 状态机与流水线编排 |
+| claude-agent-sdk | 0.1.x | Claude Agent SDK，工具调用与会话管理 |
+| Anthropic Claude | Sonnet | 主要 LLM（200K 上下文） |
+| SQLite WAL | — | 状态持久化与检查点 |
+| Pydantic | >=2.0 | 数据校验与配置模型 |
+| Click | 8.x | CLI 框架 |
+| structlog | >=24.0 | 结构化日志 |
+| Ruff | 0.5.x | 代码 lint 与格式化 |
+| BasedPyright | 1.x | 静态类型检查 |
+| pytest | 8.x | 测试框架（含 asyncio / cov / timeout） |
+
+---
+
+## 贡献指南
+
+### 开发流程
+
+1. Fork 本仓库并 clone 到本地
+2. 基于 `main` 创建 Feature Branch（命名建议：`feat/xxx`、`fix/xxx`）
+3. 提交前运行 `pre-commit run --all-files`
+4. 提交 Pull Request 并描述变更
+
+### 代码规范
+
+- 遵循 [Ruff](https://docs.astral.sh/ruff/) 规则（line-length=100，target=py312）
+- 公开函数必须包含返回类型注解，通过 BasedPyright 检查
+- 使用绝对导入，禁止相对导入
+- 中文文本直接书写，禁用 Unicode 转义
+
+### 测试
+
+```bash
+pytest -v --tb=short
+pytest --cov=autoBMAD.docuswarm --cov-report=term-missing
+```
+
+详细开发指南见 [CLAUDE.md](CLAUDE.md) 与 [claude_docs/](claude_docs/)。
+
+---
+
+## 许可证
+
+本项目基于 [MIT License](LICENSE) 开源。

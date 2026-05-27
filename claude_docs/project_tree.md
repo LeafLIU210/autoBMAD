@@ -141,11 +141,15 @@ DocuSwarm/                     # 项目根目录
 │   ├── venv.md                # 虚拟环境管理
 │   └── git-commit-trigger-update.md  # Git 提交触发更新
 │
-├── docs/                      # 项目文档
+├── docs-test/                 # 测试用示例文档
 │   ├── bubble-sort/           # Bubble Sort 示例
 │   ├── calc-one-plus-one/     # 计算器示例
-│   ├── evaluation/            # 评估报告
-│   └── research/              # 研究文档
+│   └── evaluation/            # 评估报告
+│
+├── docs-doc/                  # 项目文档
+│   ├── solution/              # TDD 重构方案
+│   ├── research/              # 研究文档
+│   └── architecture/          # 架构文档
 │
 ├── scripts/                   # 脚本工具
 ├── tests/                     # 测试目录
@@ -159,8 +163,7 @@ DocuSwarm/                     # 项目根目录
 ├── pyproject.toml             # 项目配置
 ├── requirements.txt           # 生产依赖
 ├── .env                       # 环境变量（不提交）
-├── .gitignore                 # Git 忽略规则
-└── .pre-commit-config.yaml    # 预提交钩子
+└── .gitignore                 # Git 忽略规则
 ```
 
 ---
@@ -189,12 +192,16 @@ Epic 自动化工作流系统，包含：
 - 编码规范和测试指南
 - 质量保证和技术规范
 
-### docs/
+### docs-doc/
 项目文档目录：
 - **architecture/**: 系统架构设计文档
-- **epics/**: Epic 规格说明
 - **solution/**: TDD 重构方案
 - **research/**: 深度研究报告
+
+### docs-test/
+测试用示例文档：
+- **calc-one-plus-one/**: 计算器示例
+- **bubble-sort/**: 排序示例
 
 ---
 

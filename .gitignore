@@ -60,6 +60,9 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+pytest_summary.json
+test_results.json
+final_verification_test.txt
 
 # ========== Type Checking & Linting ==========
 .mypy_cache/
@@ -96,6 +99,9 @@ Thumbs.db
 # ========== Tools ==========
 # Byterover
 .brv/
+
+# AI agent debug logs
+.ai/
 
 # Jupyter
 .ipynb_checkpoints

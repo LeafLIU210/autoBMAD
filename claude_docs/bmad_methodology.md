@@ -136,19 +136,19 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 6. **文档准备**: 将最终文档复制到项目
 
 #### 输出要求
-- PRD文档：`docs/prd.md`
-- 架构文档：`docs/architecture.md`
-- 故事列表：`docs/stories/`
+- PRD文档：`docs-doc/PRD.md`
+- 架构文档：`docs-doc/architecture.md`
+- 故事列表：`docs-doc/stories/`
 
 ### 5.2 IDE开发工作流
 
 #### 前置条件
-规划文档必须存在于`docs/`文件夹中。
+规划文档必须存在于`docs-doc/`文件夹中。
 
 #### 关键步骤：文档分片
 文档必须被分片以便开发：
-- `docs/prd.md` → `docs/prd/` 文件夹
-- `docs/architecture.md` → `docs/architecture/` 文件夹
+- `docs-doc/PRD.md` → `docs-doc/prd/` 文件夹
+- `docs-doc/architecture.md` → `docs-doc/architecture/` 文件夹
 
 #### 开发周期（顺序进行，一次一个故事）
 
@@ -157,7 +157,7 @@ Enterprise Method → 扩展规划（安全 + DevOps + 测试）
 新聊天 → 选择强大模型 → @sm → *create
 ```
 - SM执行创建下一个故事任务
-- 在`docs/stories/`中审查生成的故事
+- 在`docs-doc/stories/`中审查生成的故事
 - 状态从"Draft"更新为"Approved"
 
 **步骤2 - 故事实现**:
@@ -300,7 +300,7 @@ class BMADWorkflowState {
 #### 基本执行
 ```powershell
 cd bmad-workflow
-.\BMAD-Workflow.ps1 -StoryPath "docs/stories/my-story.md"
+.\BMAD-Workflow.ps1 -StoryPath "docs-doc/stories/my-story.md"
 ```
 
 #### 高级选项

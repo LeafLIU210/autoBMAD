@@ -1,0 +1,456 @@
+{
+  "project_root": "/home/leafliu/autoBMAD",
+  "bmad_core": {
+    "path": ".bmad-core",
+    "exists": true,
+    "file_count": 80,
+    "top_level": [
+      "agent-teams",
+      "agents",
+      "checklists",
+      "core-config.yaml",
+      "data",
+      "enhanced-ide-development-workflow.md",
+      "help_commands.md",
+      "install-manifest.yaml",
+      "reports",
+      "tasks",
+      "temp_help.txt",
+      "temp_help_output.md",
+      "templates",
+      "user-guide.md",
+      "utils",
+      "workflows",
+      "working-in-the-brownfield.md"
+    ],
+    "size_kb": 595.3
+  },
+  "bmad_v6": {
+    "path": "_bmad",
+    "exists": true,
+    "file_count": 15,
+    "top_level": [
+      "_config",
+      "bmm",
+      "config.toml",
+      "config.user.toml",
+      "core",
+      "custom",
+      "scripts"
+    ],
+    "size_kb": 90.4
+  },
+  "autobmad_refs_to_bmad_core": [
+    {
+      "file": "autoBMAD/epic_automation/README.md",
+      "line": 229,
+      "snippet": "The `.bmad-core/tasks/` directory contains task guidance files that customize agent behavior:",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/epic_driver.py",
+      "line": 917,
+      "snippet": "tasks_dir: str = \".bmad-core/tasks\",",
+      "target": ".bmad-core/tasks",
+      "target_dir": ".bmad-core",
+      "kind": "code-default-arg"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 24,
+      "snippet": "| **.bmad-core/tasks/** | Required | Task guidance files | Create directory + add files |",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 40,
+      "snippet": "### 3. .bmad-core/tasks/ Directory",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 42,
+      "snippet": "- **Location**: `.bmad-core/tasks/` in project root",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 133,
+      "snippet": "mkdir -p .bmad-core/tasks",
+      "target": ".bmad-core/tasks",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 149,
+      "snippet": "mkdir -p .bmad-core/tasks",
+      "target": ".bmad-core/tasks",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 162,
+      "snippet": "mkdir -p .bmad-core/tasks",
+      "target": ".bmad-core/tasks",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 182,
+      "snippet": "ls -la .bmad-core/tasks/",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 210,
+      "snippet": "**Symptom**: Warning about missing `.bmad-core/tasks/` directory",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 214,
+      "snippet": "mkdir -p .bmad-core/tasks",
+      "target": ".bmad-core/tasks",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+      "line": 244,
+      "snippet": "├── .bmad-core/tasks/ (required)",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/source-tree.md",
+      "line": 114,
+      "snippet": "- Coordinate with task guidance (.bmad-core/tasks/create-next-story.md)",
+      "target": ".bmad-core/tasks/create-next-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/source-tree.md",
+      "line": 142,
+      "snippet": "- Coordinate with task guidance (.bmad-core/tasks/review-story.md)",
+      "target": ".bmad-core/tasks/review-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/architecture/source-tree.md",
+      "line": 539,
+      "snippet": "5. Add agent-specific task guidance in `.bmad-core/tasks/`",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "doc"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 329,
+      "snippet": "prompt = f'@.bmad-core\\\\agents\\\\sm.md @.bmad-core\\\\tasks\\\\create-next-story.md According to epic @{epic_rel_path}. Build all the stories listed in: {story_list}. Change all the story document Status f",
+      "target": ".bmad-core\\\\agents\\\\sm.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 329,
+      "snippet": "prompt = f'@.bmad-core\\\\agents\\\\sm.md @.bmad-core\\\\tasks\\\\create-next-story.md According to epic @{epic_rel_path}. Build all the stories listed in: {story_list}. Change all the story document Status f",
+      "target": ".bmad-core\\\\tasks\\\\create-next-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 329,
+      "snippet": "prompt = f'@.bmad-core\\\\agents\\\\sm.md @.bmad-core\\\\tasks\\\\create-next-story.md According to epic @{epic_rel_path}. Build all the stories listed in: {story_list}. Change all the story document Status f",
+      "target": "@.bmad-core\\\\agents\\\\sm.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 329,
+      "snippet": "prompt = f'@.bmad-core\\\\agents\\\\sm.md @.bmad-core\\\\tasks\\\\create-next-story.md According to epic @{epic_rel_path}. Build all the stories listed in: {story_list}. Change all the story document Status f",
+      "target": "@.bmad-core\\\\tasks\\\\create-next-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 691,
+      "snippet": "prompt = f\"\"\"@.bmad-core\\\\agents\\\\sm.md",
+      "target": ".bmad-core\\\\agents\\\\sm.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 691,
+      "snippet": "prompt = f\"\"\"@.bmad-core\\\\agents\\\\sm.md",
+      "target": "@.bmad-core\\\\agents\\\\sm.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 692,
+      "snippet": "@.bmad-core\\\\tasks\\\\create-next-story.md",
+      "target": ".bmad-core\\\\tasks\\\\create-next-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+      "line": 692,
+      "snippet": "@.bmad-core\\\\tasks\\\\create-next-story.md",
+      "target": "@.bmad-core\\\\tasks\\\\create-next-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/dev_agent.py",
+      "line": 172,
+      "snippet": "f'@.bmad-core\\\\agents\\\\dev.md '",
+      "target": ".bmad-core\\\\agents\\\\dev.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/dev_agent.py",
+      "line": 172,
+      "snippet": "f'@.bmad-core\\\\agents\\\\dev.md '",
+      "target": "@.bmad-core\\\\agents\\\\dev.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/dev_agent.py",
+      "line": 173,
+      "snippet": "f'@.bmad-core\\\\tasks\\\\develop-story.md '",
+      "target": ".bmad-core\\\\tasks\\\\develop-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/dev_agent.py",
+      "line": 173,
+      "snippet": "f'@.bmad-core\\\\tasks\\\\develop-story.md '",
+      "target": "@.bmad-core\\\\tasks\\\\develop-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/base_agent.py",
+      "line": 97,
+      "snippet": "# 尝试从 .bmad-core/tasks/{task_name}.md 加载",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "code-other"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/base_agent.py",
+      "line": 98,
+      "snippet": "task_file = Path(f\".bmad-core/tasks/{task_name}.md\")",
+      "target": ".bmad-core/tasks/",
+      "target_dir": ".bmad-core",
+      "kind": "code-runtime"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/qa_agent.py",
+      "line": 105,
+      "snippet": "\"@.bmad-core\\\\agents\\\\qa.md \"",
+      "target": ".bmad-core\\\\agents\\\\qa.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/qa_agent.py",
+      "line": 105,
+      "snippet": "\"@.bmad-core\\\\agents\\\\qa.md \"",
+      "target": "@.bmad-core\\\\agents\\\\qa.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/qa_agent.py",
+      "line": 106,
+      "snippet": "\"@.bmad-core\\\\tasks\\\\review-story.md \"",
+      "target": ".bmad-core\\\\tasks\\\\review-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    },
+    {
+      "file": "autoBMAD/epic_automation/agents/qa_agent.py",
+      "line": 106,
+      "snippet": "\"@.bmad-core\\\\tasks\\\\review-story.md \"",
+      "target": "@.bmad-core\\\\tasks\\\\review-story.md",
+      "target_dir": ".bmad-core",
+      "kind": "code-prompt"
+    }
+  ],
+  "autobmad_refs_to_bmad_v6": [
+    {
+      "file": "autoBMAD/docuswarm/templates/po_templates.yaml",
+      "line": 66,
+      "snippet": "style_guide: \"_bmad/_memory/tech-writer-sidecar/documentation-standards.md\"",
+      "target": "_bmad/_memory/tech-writer-sidecar/documentation-standards.md",
+      "target_dir": "_bmad",
+      "kind": "config"
+    },
+    {
+      "file": "autoBMAD/docuswarm/templates/architect_templates.yaml",
+      "line": 59,
+      "snippet": "style_guide: \"_bmad/_memory/tech-writer-sidecar/documentation-standards.md\"",
+      "target": "_bmad/_memory/tech-writer-sidecar/documentation-standards.md",
+      "target_dir": "_bmad",
+      "kind": "config"
+    },
+    {
+      "file": "autoBMAD/docuswarm/templates/analyst_templates.yaml",
+      "line": 65,
+      "snippet": "style_guide: \"_bmad/_memory/tech-writer-sidecar/documentation-standards.md\"",
+      "target": "_bmad/_memory/tech-writer-sidecar/documentation-standards.md",
+      "target_dir": "_bmad",
+      "kind": "config"
+    },
+    {
+      "file": "autoBMAD/docuswarm/templates/pm_templates.yaml",
+      "line": 54,
+      "snippet": "style_guide: \"_bmad/_memory/tech-writer-sidecar/documentation-standards.md\"",
+      "target": "_bmad/_memory/tech-writer-sidecar/documentation-standards.md",
+      "target_dir": "_bmad",
+      "kind": "config"
+    },
+    {
+      "file": "autoBMAD/docuswarm/templates/ux_templates.yaml",
+      "line": 67,
+      "snippet": "style_guide: \"_bmad/_memory/tech-writer-sidecar/documentation-standards.md\"",
+      "target": "_bmad/_memory/tech-writer-sidecar/documentation-standards.md",
+      "target_dir": "_bmad",
+      "kind": "config"
+    }
+  ],
+  "reverse_refs_in_bmad_core": [],
+  "reverse_refs_in_bmad_v6": [
+    {
+      "file": "_bmad/config.toml",
+      "line": 18,
+      "snippet": "project_name = \"autoBMAD\"",
+      "target": "autoBMAD",
+      "target_dir": "_bmad",
+      "kind": "config"
+    },
+    {
+      "file": "_bmad/bmm/config.yaml",
+      "line": 6,
+      "snippet": "project_name: autoBMAD",
+      "target": "autoBMAD",
+      "target_dir": "_bmad",
+      "kind": "config"
+    }
+  ],
+  "dead_targets_bmad_core": [],
+  "dead_targets_bmad_v6": [
+    "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+  ],
+  "summary": {
+    "autobmad_to_bmad_core": {
+      "total": 33,
+      "by_kind": {
+        "doc": 14,
+        "code-default-arg": 1,
+        "code-prompt": 16,
+        "code-other": 1,
+        "code-runtime": 1
+      },
+      "top_files": [
+        {
+          "file": "autoBMAD/epic_automation/architecture/dependencies.md",
+          "hits": 10
+        },
+        {
+          "file": "autoBMAD/epic_automation/agents/sm_agent.py",
+          "hits": 8
+        },
+        {
+          "file": "autoBMAD/epic_automation/agents/dev_agent.py",
+          "hits": 4
+        },
+        {
+          "file": "autoBMAD/epic_automation/agents/qa_agent.py",
+          "hits": 4
+        },
+        {
+          "file": "autoBMAD/epic_automation/architecture/source-tree.md",
+          "hits": 3
+        },
+        {
+          "file": "autoBMAD/epic_automation/agents/base_agent.py",
+          "hits": 2
+        },
+        {
+          "file": "autoBMAD/epic_automation/README.md",
+          "hits": 1
+        },
+        {
+          "file": "autoBMAD/epic_automation/epic_driver.py",
+          "hits": 1
+        }
+      ]
+    },
+    "autobmad_to_bmad_v6": {
+      "total": 5,
+      "by_kind": {
+        "config": 5
+      },
+      "top_files": [
+        {
+          "file": "autoBMAD/docuswarm/templates/po_templates.yaml",
+          "hits": 1
+        },
+        {
+          "file": "autoBMAD/docuswarm/templates/architect_templates.yaml",
+          "hits": 1
+        },
+        {
+          "file": "autoBMAD/docuswarm/templates/analyst_templates.yaml",
+          "hits": 1
+        },
+        {
+          "file": "autoBMAD/docuswarm/templates/pm_templates.yaml",
+          "hits": 1
+        },
+        {
+          "file": "autoBMAD/docuswarm/templates/ux_templates.yaml",
+          "hits": 1
+        }
+      ]
+    },
+    "reverse_bmad_core_to_autobmad": 0,
+    "reverse_bmad_v6_to_autobmad": 2,
+    "dead_targets": {
+      ".bmad-core": [],
+      "_bmad": [
+        "_bmad/_memory/tech-writer-sidecar/documentation-standards.md"
+      ]
+    }
+  }
+}

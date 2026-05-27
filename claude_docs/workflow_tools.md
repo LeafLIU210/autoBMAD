@@ -435,9 +435,9 @@ python autoBMAD/epic_automation/epic_driver.py docs/epics/my-epic.md --retry-fai
 
 ## 故事列表
 
-- **[Story 001: 数据结构实现](docs/stories/story-001.md)**
-- **[Story 002: 算法优化](docs/stories/story-002.md)**
-- **[Story 003: 测试覆盖](docs/stories/story-003.md)**
+- **[Story 001: 数据结构实现](docs-doc/stories/story-001.md)**
+- **[Story 002: 算法优化](docs-doc/stories/story-002.md)**
+- **[Story 003: 测试覆盖](docs-doc/stories/story-003.md)**
 
 ## Story 001: 数据结构实现
 

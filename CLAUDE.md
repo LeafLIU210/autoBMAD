@@ -1,8 +1,8 @@
 # Claude Code 指导文档
 
 **项目名称**: DocuSwarm Multi-Agent Orchestration System
-**版本**: 3.2
-**最后更新**: 2026-04-28
+**版本**: 3.3
+**最后更新**: 2026-05-27
 
 ---
 
@@ -45,7 +45,7 @@ DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 
 ### 1.3 架构演进
 
-当前系统已完成核心重构，详见 [TDD重构方案](docs/solution/README.md):
+当前系统已完成核心重构，详见 [TDD重构方案](docs-doc/solution/README.md):
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
@@ -54,11 +54,11 @@ DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 | **Phase 3 (P2)** | 质量保障增强 + 测试覆盖提升 | ✅ 已完成 |
 
 **关键TDD方案**:
-- [TDD-01](docs/solution/TDD-01-CheckpointManager-Refactor.md) - CheckpointManager提取 (DRY修复)
-- [TDD-02](docs/solution/TDD-02-ContextValidator-Refactor.md) - ContextValidator提取 (职责拆分)
-- [TDD-03](docs/solution/TDD-03-ToolResultExtractor-Refactor.md) - 纯工具输出模式 (12-Factor对齐)
-- [TDD-04](docs/solution/TDD-04-ContextResolver-Refactor.md) - @路径注入系统
-- [TDD-05](docs/solution/TDD-05-SDKWrapper-Refactor.md) - SDK替换 (kimi→claude)
+- [TDD-01](docs-doc/solution/TDD-01-CheckpointManager-Refactor.md) - CheckpointManager提取 (DRY修复)
+- [TDD-02](docs-doc/solution/TDD-02-ContextValidator-Refactor.md) - ContextValidator提取 (职责拆分)
+- [TDD-03](docs-doc/solution/TDD-03-ToolResultExtractor-Refactor.md) - 纯工具输出模式 (12-Factor对齐)
+- [TDD-04](docs-doc/solution/TDD-04-ContextResolver-Refactor.md) - @路径注入系统
+- [TDD-05](docs-doc/solution/TDD-05-SDKWrapper-Refactor.md) - SDK替换 (kimi→claude)
 
 ### 1.4 项目依赖
 
@@ -94,27 +94,27 @@ DocuSwarm是一个**多代理文档编排系统**,基于BMAD方法论,集成了:
 
 ### 2.2 重构与架构文档
 
-📋 **重构方案位于 `docs/solution/` 目录**：
+📋 **重构方案位于 `docs-doc/solution/` 目录**：
 
 | 文档 | 描述 | 何时使用 |
 |------|------|----------|
-| **[solution/README.md](docs/solution/README.md)** | TDD重构方案总览和实施路线图 | 规划重构工作时 |
-| **[TDD-SDK-Migration](docs/solution/TDD-SDK-Migration-2026-03-25.md)** | SDK迁移方案 | kimi→claude迁移 |
+| **[solution/README.md](docs-doc/solution/README.md)** | TDD重构方案总览和实施路线图 | 规划重构工作时 |
+| **[TDD-SDK-Migration](docs-doc/solution/TDD-SDK-Migration-2026-03-25.md)** | SDK迁移方案 | kimi→claude迁移 |
 
-📊 **研究文档位于 `docs/research/` 目录**：
-
-| 文档 | 描述 | 何时使用 |
-|------|------|----------|
-| **[Context Refactor Overview](docs/research/2026-03-13-docuswarm-context-refactor-overview.md)** | 上下文重构概览 | 理解重构背景时 |
-| **[Dependency Drift](docs/research/dependency-drift-2026-03-25/README.md)** | 依赖漂移分析 | 了解SDK迁移时 |
-
-🏗️ **架构文档位于 `docs/architecture/` 目录**：
+📊 **研究文档位于 `docs-doc/research/` 目录**：
 
 | 文档 | 描述 | 何时使用 |
 |------|------|----------|
-| **[Project Structure](docs/architecture/project-structure.md)** | 项目结构规范 | 理解项目布局时 |
-| **[Tech Stack](docs/architecture/tech-stack.md)** | 技术栈规范 | 理解技术选型时 |
-| **[Pipeline Architecture](docs/architecture/03_PIPELINE_ARCHITECTURE.md)** | 管道执行架构 | 理解节点执行时 |
+| **[Context Refactor Overview](docs-doc/research/2026-03-13-docuswarm-context-refactor-overview.md)** | 上下文重构概览 | 理解重构背景时 |
+| **[Dependency Drift](docs-doc/research/dependency-drift-2026-03-25/README.md)** | 依赖漂移分析 | 了解SDK迁移时 |
+
+🏗️ **架构文档位于 `docs-doc/architecture/` 目录**：
+
+| 文档 | 描述 | 何时使用 |
+|------|------|----------|
+| **[Project Structure](docs-doc/architecture/project-structure.md)** | 项目结构规范 | 理解项目布局时 |
+| **[Tech Stack](docs-doc/architecture/tech-stack.md)** | 技术栈规范 | 理解技术选型时 |
+| **[Pipeline Architecture](docs-doc/architecture/03_PIPELINE_ARCHITECTURE.md)** | 管道执行架构 | 理解节点执行时 |
 
 ### 2.3 核心目录结构
 
@@ -124,6 +124,7 @@ project/
 │   ├── docuswarm/            # DocuSwarm系统 ⭐
 │   │   ├── agents/           # Agent实现
 │   │   ├── cli/              # CLI命令
+│   │   ├── config/           # 配置模块
 │   │   ├── context/          # 上下文管理
 │   │   ├── llm/              # LLM集成
 │   │   ├── node_execution/   # 节点执行
@@ -131,6 +132,7 @@ project/
 │   │   ├── pipeline/         # 管道编排
 │   │   ├── prompts/          # 提示模板
 │   │   ├── storage/          # 存储层
+│   │   ├── templates/        # 节点模板配置
 │   │   ├── tools/            # 工具系统
 │   │   ├── utils/            # 工具函数
 │   │   ├── config.py         # 配置管理
@@ -141,11 +143,14 @@ project/
 │   ├── epic_automation/      # Epic自动化系统
 │   └── nodes/                # 节点配置（BMAD personas）
 ├── tests/                    # 测试代码
-├── docs/                     # 示例文档 ⭐
+├── docs-test/                # 测试用示例文档 ⭐
 │   ├── bubble-sort/          # Bubble Sort示例
 │   ├── calc-one-plus-one/    # 计算器示例
-│   ├── evaluation/           # 评估报告
-│   └── research/             # 研究文档
+│   └── evaluation/           # 评估报告
+├── docs-doc/                 # 项目文档 ⭐
+│   ├── solution/             # TDD重构方案
+│   ├── research/             # 研究文档
+│   └── architecture/         # 架构文档
 ├── claude_docs/              # 开发规范文档 ⭐
 ├── pyproject.toml            # 项目配置
 ├── requirements.txt          # 依赖列表
@@ -393,7 +398,7 @@ Epic处理
 
 | 日期 | 版本 | 提交信息 | 变更内容 |
 |------|------|----------|----------|
-| 2026-05-02 | 3.3 | docs: 根据 autoBMAD/docuswarm 实际代码对齐更新全部文档 | 修正CLI命令、目录结构、依赖版本、移除过时引用 |
+| 2026-05-27 | 3.3 | docs: 审查并改进开发文档，修正路径和过时引用 | 修正docs路径为docs-doc/docs-test、更新目录结构、清理过时内容 |
 | 2026-04-28 | 3.2 | docs: 对齐更新全部文档至 autoBMAD/docuswarm 开发目标 | 移除Kimi引用、修复路径、更新依赖、重写SETUP.md |
 | 2026-04-05 | 3.1 | bd8b0f2d - refactor(docuswarm): 替换 Kimi API 为 Anthropic API 并清理遗留代码 | Kimi API 替换为 Anthropic API，遗留代码清理 |
 | 2026-03-02 | 3.0 | 22a59d34 - refactor(docuswarm): 完成SDK异常统一处理及消息格式切换 | SDK异常统一处理完成，消息格式切换 |

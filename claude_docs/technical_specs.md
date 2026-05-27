@@ -26,7 +26,7 @@
 本项目依赖以下核心技术：
 
 #### LangGraph (多代理工作流)
-- **版本**: >=0.2.0
+- **版本**: >=0.2.50,<0.3.0
 - **用途**: 状态机和多代理工作流编排
 - **链接**: [LangGraph](https://langchain-ai.github.io/langgraph/)
 - **特性**:
@@ -71,7 +71,7 @@
 ### 1.2 生产依赖
 
 #### langgraph
-- **版本**: >=0.2.0
+- **版本**: >=0.2.50,<0.3.0
 - **用途**: 多代理工作流状态机
 - **特性**:
   - StateGraph工作流定义
@@ -378,29 +378,17 @@ reportUnknownMemberType = false
 reportUnusedCallResult = false
 ```
 
-### 2.2 pytest.ini
+### 2.2 测试配置
 
-pytest测试框架配置：
+测试配置通过 `pyproject.toml` 中的 `[tool.pytest.ini_options]` 管理，不使用独立的 `pytest.ini` 文件。关键配置：
 
-```ini
-[pytest]
-minversion = 7.0
-addopts = -ra -q --strict-markers --strict-config
-testpaths = tests
-python_files = test_*.py *_test.py
-python_classes = Test*
-python_functions = test_*
-timeout = 120
-filterwarnings =
-    error
-    ignore::UserWarning
-    ignore::DeprecationWarning
-markers =
-    slow: marks tests as slow (deselect with '-m "not slow"')
-    gui: marks tests as GUI tests
-    unit: marks tests as unit tests
-    integration: marks tests as integration tests
-```
+- **minversion**: 8.0
+- **asyncio_mode**: auto
+- **timeout**: 300 秒
+- **basetemp**: .pytest-temp
+- **pythonpath**: [".", "autoBMAD"]
+- **testpaths**: ["tests"]
+- **markers**: slow, integration, unit, e2e, agent, pipeline, smoke, llm
 
 ### 2.3 .gitignore
 
@@ -476,37 +464,26 @@ logs/
 resource_rc.py
 ```
 
-### 2.4 .pre-commit-config.yaml
+### 2.4 Pre-commit 配置
 
-代码质量预检查钩子：
+代码质量预检查钩子可通过 `pre-commit` 安装。参考配置：
 
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
 
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-      - id: black
-        language_version: python3
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.270
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-all]
+      - id: ruff-format
 ```
 
 ---
@@ -575,13 +552,13 @@ ignore = [
 #### 执行命令
 ```bash
 # 检查代码风格
-ruff check docuswarm/
+ruff check autoBMAD/
 
 # 自动修复可修复的问题
-ruff check --fix docuswarm/
+ruff check --fix autoBMAD/
 
 # 格式化代码
-ruff format docuswarm/
+ruff format autoBMAD/
 ```
 
 ### 3.3 冲突解决策略
@@ -637,16 +614,20 @@ DocuSwarm 作为 CLI 工具运行，无需打包构建：
 python -m autoBMAD.docuswarm --help
 
 # 启动流水线
-python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
+python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
 ```
 
 ### 4.2 输出结构
 
-#### dist/ 目录
+流水线执行后，交付物保存在 `output/` 目录：
 ```
-dist/
-├── MyQtApp.exe          # 可执行文件
-└── build.log            # 构建日志
+output/
+└── <pipeline-id>/
+    ├── analyst_deliverable.md
+    ├── pm_deliverable.md
+    ├── ux_deliverable.md
+    ├── architect_deliverable.md
+    └── po_deliverable.md
 ```
 
 ---
@@ -660,23 +641,19 @@ dist/
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
 
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-      - id: black
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.270
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
 ```
 
 #### 安装和使用
@@ -696,14 +673,13 @@ pre-commit run --all-files
 #### VS Code推荐插件
 - Python
 - Pylance
-- Qt for Python
 - GitLens
 - Error Lens
 
 #### VS Code设置 (.vscode/settings.json)
 ```json
 {
-    "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "./.venv/bin/python",
     "python.linting.enabled": true,
     "python.linting.ruffEnabled": true,
     "python.linting.pyrightEnabled": true,
@@ -803,15 +779,9 @@ ruff format --check autoBMAD/ tests/
 ruff format --diff autoBMAD/ tests/
 ```
 
-### 7.2 isort配置
+### 7.2 Import排序
 
-#### pyproject.toml中的配置
-```toml
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-```
+Import排序通过 Ruff 的 `I` 规则处理，无需单独配置 isort。
 
 #### 使用示例
 ```bash

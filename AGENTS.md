@@ -30,6 +30,7 @@ autoBMAD/
 ├── docuswarm/              # Core DocuSwarm system
 │   ├── agents/             # Agent implementations (independent + evaluator)
 │   ├── cli/                # Click-based CLI commands and entry point
+│   ├── config/             # Configuration module (summary agent config)
 │   ├── context/            # Context isolation (filter, audit, validator, permissions)
 │   ├── llm/                # LLM integration (session manager, tool filter, response)
 │   ├── node_execution/     # Node execution engine (executor, contracts, state, metrics)
@@ -37,12 +38,12 @@ autoBMAD/
 │   ├── pipeline/           # Pipeline orchestration (LangGraph graph, transitions, quality)
 │   ├── prompts/            # Prompt templates (YAML + Markdown + Python loaders)
 │   ├── storage/            # State persistence (SQLite checkpoints, state manager, files)
+│   ├── templates/          # Node template configurations (per-persona YAML)
 │   ├── tools/              # Tool system (deliverables, file tools, search tools, registry)
 │   ├── utils/              # Utilities (logging, session IDs)
 │   ├── config.py           # Configuration management (env + YAML + defaults)
 │   ├── exceptions.py       # Comprehensive exception hierarchy
-│   ├── public_api.py       # Stable public API facade
-│   └── docuswarm.yaml      # Default YAML configuration
+│   └── public_api.py       # Stable public API facade
 ├── epic_automation/        # Epic automation system (SM-Dev-QA cycle, quality gates)
 └── nodes/                  # Node configurations for BMAD personas
     ├── analyst/
@@ -57,7 +58,8 @@ tests/                      # pytest test suite
 ├── conftest.py             # Shared fixtures (isolated StateManager, temp nodes, etc.)
 └── test_docuswarm_p{0-4}_*.py   # Priority-based test files
 
-docs/                       # Example documents and evaluation reports
+docs-test/                  # Test example documents (calc-one-plus-one, bubble-sort)
+docs-doc/                   # Project documentation (solution, research, architecture)
 claude_docs/                # Development guides (in Chinese)
 scripts/                    # Utility scripts (post-commit hooks, etc.)
 tools/                      # Standalone tooling scripts
@@ -112,7 +114,7 @@ pip install -r requirements-dev.txt    # production + dev
 python -m autoBMAD.docuswarm --help
 
 # Start a new pipeline
-python -m autoBMAD.docuswarm start --context docs/calc-one-plus-one/calc-context.md
+python -m autoBMAD.docuswarm start --context docs-test/calc-one-plus-one/calc-context.md
 
 # Check pipeline status
 python -m autoBMAD.docuswarm status <pipeline-id>
@@ -275,7 +277,7 @@ DOCUSWARM_AGENT_TIMEOUT=7200
 ```
 
 ### YAML Configuration
-`autoBMAD/docuswarm/docuswarm.yaml` provides defaults. Precedence:
+`autoBMAD/docuswarm/config/summary_agent.yaml` provides agent-specific defaults. Precedence:
 **Environment Variables > `.env` file > YAML config > defaults**
 
 ### `pyproject.toml` Key Sections

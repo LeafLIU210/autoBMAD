@@ -14,6 +14,7 @@ DocuSwarm 是一个基于 BMAD 方法论的多智能体文档编排系统，通�
 - [工作流程](#工作流程)
 - [配置说明](#配置说明)
   - [配置文件位置](#配置文件位置)
+  - [配置优先级](#配置优先级)
   - [环境变量配置](#环境变量配置)
   - [节点配置文件](#节点配置文件)
 - [核心概念](#核心概念)
@@ -22,28 +23,28 @@ DocuSwarm 是一个基于 BMAD 方法论的多智能体文档编排系统，通�
 
 ## 核心特性
 
-### 🎯 双 Agent 协作模式
+### 双 Agent 协作模式
 - **独立 Agent (Independent Agent)**：负责创建交付物（deliverable）和生成问题
 - **评估 Agent (Evaluator Agent)**：评估交付物质量并提供反馈
 - **迭代优化**：支持多轮迭代直至达到质量标准
 
-### 🔄 基于 LangGraph 的状态机流水线
+### 基于 LangGraph 的状态机流水线
 - **5 个顺序节点**：analyst → pm → ux → architect → po
 - **状态管理**：SQLite WAL 模式持久化，使用 `StateManager` 管理流水线状态
 - **检查点恢复**：支持中断后从断点恢复执行，使用 `SqliteSaver` 实现检查点机制
 
-### 🛡️ 三层上下文隔离防御
+### 三层上下文隔离防御
 1. **运行时访问控制**：Independent Agent 和 Evaluator Agent 独立上下文
 2. **提示模板隔离**：确保 private_reasoning 不泄露给 Evaluator
 3. **消息过滤机制**：ContextFilter 过滤敏感字段
 
-### 🔌 Claude Agent SDK 集成
+### Claude Agent SDK 集成
 - **会话管理**：`SessionManager` 管理 LLM 会话
 - **自动工具调度**：SDK 自动处理工具调用
 - **结构化输出**：支持 JSON 格式的结构化响应
 - **模式映射**：自动映射 instant、thinking、agent 三种模式
 
-### 📊 质量控制与监控
+### 质量控制与监控
 - **质量判定**：基于评分阈值的智能判定
 - **强制完成机制**：达到最大迭代次数时强制完成
 - **升级处理**：支持阻塞问题的人工介入
@@ -165,7 +166,7 @@ pip install -r requirements.txt
 
 创建 `.env` 文件并设置必需的环境变量：
 
-```env
+```bash
 # 必需：Anthropic API Key
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
@@ -364,7 +365,7 @@ python -m autoBMAD.docuswarm clean --status failed --confirm
 python -m autoBMAD.docuswarm clean --status completed --older-than-days 7
 ```
 
-**⚠️ 警告**：此操作会永久删除数据（包括数据库记录和 node_results），无法恢复！
+**警告**：此操作会永久删除数据（包括数据库记录和 node_results），无法恢复！
 
 **可用状态过滤**：`pending`, `cancelled`, `failed`, `completed`
 
@@ -388,6 +389,40 @@ python -m autoBMAD.docuswarm export abc123xyz
 # 导出到指定目录并包含元数据
 python -m autoBMAD.docuswarm export abc123xyz -o ./deliverables --include-metadata
 ```
+
+#### 8. 查看流水线诊断信息
+
+显示流水线的诊断信息，包括执行过程中记录的非阻塞性跟进问题：
+
+```bash
+python -m autoBMAD.docuswarm diagnostics <pipeline_id>
+```
+
+**示例**：
+```bash
+python -m autoBMAD.docuswarm diagnostics pipeline-1771949849410-4aba545c
+```
+
+**输出**：
+```
+Diagnostics for Pipeline: pipeline-1771949849410-4aba545c
+
+Status: completed
+Current node: None
+Completed nodes: ['analyst', 'pm', 'ux', 'architect', 'po']
+
+Follow-up Questions (2):
+
+  CLARIFYING
+  Question: 是否需要支持多语言？
+  From node: analyst
+
+  OPTIONAL
+  Question: 是否需要移动端适配？
+  From node: ux
+```
+
+**说明**：该命令仅显示 clarifying 和 optional 级别的问题，用于审计和跟进。
 
 ### 常用工作流
 
@@ -517,13 +552,16 @@ DocuSwarm 使用两层配置来源：
 
 | 环境变量 | 必需 | 默认值 | 说明 |
 |---------|------|--------|------|
-| `ANTHROPIC_API_KEY` | ✅ | 无 | Anthropic API 密钥（必须设置） |
-| `ANTHROPIC_BASE_URL` | ❌ | `https://api.anthropic.com/v1/` | Anthropic API Base URL |
-| `DOCUSWARM_DB_PATH` | ❌ | `docuswarm.db` | SQLite 数据库路径 |
-| `DOCUSWARM_OUTPUT_DIR` | ❌ | `output` | 交付物输出目录 |
-| `DOCUSWARM_LOG_LEVEL` | ❌ | `INFO` | 日志级别（DEBUG/INFO/WARNING/ERROR） |
-| `DOCUSWARM_MAX_ITERATIONS` | ❌ | `100` | 最大迭代次数 |
-| `DOCUSWARM_AGENT_TIMEOUT` | ❌ | `7200` | Agent 执行超时（秒） |
+| `ANTHROPIC_API_KEY` | 是 | 无 | Anthropic API 密钥（必须设置） |
+| `ANTHROPIC_BASE_URL` | 否 | `https://api.anthropic.com/v1/` | Anthropic API Base URL |
+| `ANTHROPIC_MODEL_NAME` | 否 | 无 | 主模型名称，优先级最高，传递给 SDK |
+| `ANTHROPIC_MODEL` | 否 | 无 | 备用模型名称，当 MODEL_NAME 未设置时读取 |
+| `DOCUSWARM_DB_PATH` | 否 | `docuswarm.db` | SQLite 数据库路径 |
+| `DOCUSWARM_OUTPUT_DIR` | 否 | `output` | 交付物输出目录 |
+| `DOCUSWARM_LOG_LEVEL` | 否 | `INFO` | 日志级别（DEBUG/INFO/WARNING/ERROR） |
+| `DOCUSWARM_MAX_ITERATIONS` | 否 | `100` | 最大迭代次数 |
+| `DOCUSWARM_AGENT_TIMEOUT` | 否 | `7200` | Agent 执行超时（秒） |
+| `LOG_LEVEL` | 否 | `INFO` | 全局 Python 日志级别，影响所有 logger |
 
 ### 节点配置文件
 
@@ -613,7 +651,7 @@ scoring:
 |------|------|------------|
 | `pending` | 待启动 | `start`, `cancel`, `clean` |
 | `running` | 运行中 | `status`, `cancel`, `export` |
-| `paused` | 暂停（等待回答） | `resume`, `answer`, `questions`, `cancel` |
+| `paused` | 暂停（等待回答） | `resume`, `diagnostics`, `cancel` |
 | `completed` | 已完成 | `status`, `export`, `clean` |
 | `failed` | 失败 | `status`, `resume`, `cancel`, `clean` |
 | `cancelled` | 已取消 | `status`, `clean` |
@@ -684,9 +722,8 @@ class QuestionPriority:
 当遇到阻塞问题时：
 
 1. **自动暂停**：流水线状态变更为 `paused`
-2. **等待回答**：使用 `questions` 命令查看问题
-3. **提供答案**：使用 `answer` 命令回答
-4. **自动恢复**：答案被整合到上下文后自动继续执行
+2. **查看问题**：使用 `diagnostics` 命令查看记录的问题
+3. **恢复执行**：使用 `resume` 命令恢复流水线执行
 
 ### 检查点与恢复
 
@@ -1268,8 +1305,8 @@ open htmlcov/index.html
 
 ---
 
-**版本**：1.1.0  
-**最后更新**：2026-04-28
+**版本**：1.0.0  
+**最后更新**：2026-05-27
 
 ## 相关文档
 
